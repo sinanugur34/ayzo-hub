@@ -1,3 +1,5 @@
+import WaitlistForm from "@/components/WaitlistForm";
+
 const proFeatures = [
   [
     "Deeper Wallet Intelligence",
@@ -77,26 +79,34 @@ export default function ProComingSoon() {
             )}
           </div>
 
-          <div className="mt-7 flex flex-col gap-4 border-t border-zinc-800/80 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-7 border-t border-zinc-800/80 pt-6">
             <div>
               <div className="text-sm font-medium text-zinc-200">
                 Free includes 3 analyses per 24 hours.
               </div>
 
               <div className="mt-1 text-xs text-zinc-600">
-                AYZO Pro will unlock higher limits and
-                deeper intelligence.
+                Join the waitlist for AYZO Pro launch
+                access, higher limits and deeper
+                intelligence.
               </div>
             </div>
 
-            <a
-              href="https://t.me/ayzo_io"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex h-11 items-center justify-center rounded-xl bg-white px-5 text-sm font-semibold text-black transition hover:bg-zinc-200"
-            >
-              Get Pro updates
-            </a>
+            <div className="mt-5">
+              <WaitlistForm source="pro-card" />
+            </div>
+
+            <div className="mt-4 text-xs text-zinc-600">
+              Prefer Telegram?{" "}
+              <a
+                href="https://t.me/ayzo_io"
+                target="_blank"
+                rel="noreferrer"
+                className="text-violet-300 transition hover:text-violet-200"
+              >
+                Join the AYZO community
+              </a>
+            </div>
           </div>
         </div>
       </div>

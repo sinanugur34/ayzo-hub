@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import WaitlistForm from "@/components/WaitlistForm";
 
 type Holder = {
   rank: number;
@@ -304,13 +305,20 @@ export default function IntelligenceReport({
             ))}
           </div>
 
+          <div className="mt-6">
+            <WaitlistForm
+              source="free-limit"
+              compact
+            />
+          </div>
+
           <a
             href="https://t.me/ayzo_io"
             target="_blank"
             rel="noreferrer"
-            className="mt-6 inline-flex h-11 items-center justify-center rounded-xl bg-white px-5 text-sm font-semibold text-black transition hover:bg-zinc-200"
+            className="mt-4 inline-flex text-xs text-violet-300 transition hover:text-violet-200"
           >
-            Get Pro launch updates
+            Or join the AYZO Telegram community
           </a>
         </div>
       </div>
