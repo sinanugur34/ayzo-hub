@@ -44,3 +44,6 @@ next-env.d.ts
 .local-backups/
 *.before-*
 *.bak
+.agents/
+.claude/
+skills-lock.json

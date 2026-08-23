@@ -3,6 +3,8 @@
 import { FormEvent, useState } from "react";
 import { isAddress } from "@solana/kit";
 import IntelligenceReport from "@/components/IntelligenceReport";
+import FreePlanStatus from "@/components/FreePlanStatus";
+import ProComingSoon from "@/components/ProComingSoon";
 
 type MintInfo = {
   supply: string;
@@ -87,6 +89,15 @@ export default function Home() {
       setIsValid(false);
       setMessage("This is not a valid Solana address.");
       return;
+    }
+
+    try {
+      await fetch("/api/free/status", {
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+    } catch {
+      // Quota status must not block token verification.
     }
 
     setLoading(true);
@@ -220,6 +231,8 @@ export default function Home() {
           )}
         </form>
 
+        <FreePlanStatus />
+
         {result && (
           <section className="mt-12 w-full max-w-4xl text-left">
             <div className="rounded-3xl border border-zinc-800 bg-zinc-950/70 p-6 shadow-2xl shadow-purple-950/10 backdrop-blur-xl sm:p-8">
@@ -317,6 +330,8 @@ export default function Home() {
             ))}
           </div>
         )}
+
+        <ProComingSoon />
       </section>
     </main>
   );

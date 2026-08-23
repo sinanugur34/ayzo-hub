@@ -1,8 +1,14 @@
 import { isAddress } from "@solana/kit";
+import { cookies } from "next/headers";
 import {
   checkRateLimit,
   getClientIp,
 } from "@/lib/rateLimit";
+import {
+  consumeFreeAnalysis,
+  FREE_DEVICE_COOKIE,
+  FREE_DEVICE_COOKIE_MAX_AGE,
+} from "@/lib/freeQuota";
 
 type JsonObject = Record<string, unknown>;
 
@@ -121,6 +127,65 @@ export async function POST(request: Request) {
         },
         { status: 400 }
       );
+    }
+
+    if (!isDevelopmentTestRequest) {
+      const quota =
+        await consumeFreeAnalysis(request);
+
+      if (quota.deviceCookie) {
+        const cookieStore = await cookies();
+
+        cookieStore.set(
+          FREE_DEVICE_COOKIE,
+          quota.deviceCookie,
+          {
+            httpOnly: true,
+            secure:
+              process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+            maxAge: FREE_DEVICE_COOKIE_MAX_AGE,
+          }
+        );
+      }
+
+      if (!quota.allowed) {
+        const retryAfterSeconds =
+          quota.resetAt
+            ? Math.max(
+                1,
+                Math.ceil(
+                  (quota.resetAt - Date.now()) /
+                    1000
+                )
+              )
+            : 24 * 60 * 60;
+
+        return Response.json(
+          {
+            ok: false,
+            code: "DAILY_FREE_LIMIT",
+            error:
+              "Daily free analysis limit reached.",
+            plan: "free",
+            quota: {
+              limit: quota.limit,
+              remaining: 0,
+              resetAt: quota.resetAt,
+            },
+          },
+          {
+            status: 429,
+            headers: {
+              "Retry-After": String(
+                retryAfterSeconds
+              ),
+              "Cache-Control": "no-store",
+            },
+          }
+        );
+      }
     }
 
     const origin = new URL(request.url).origin;

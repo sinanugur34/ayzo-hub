@@ -93,6 +93,7 @@ export default function IntelligenceReport({
   const [data, setData] = useState<IntelligenceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [dailyLimitReached, setDailyLimitReached] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   useEffect(() => {
@@ -101,6 +102,7 @@ export default function IntelligenceReport({
     async function load() {
       setLoading(true);
       setError("");
+      setDailyLimitReached(false);
 
       try {
         const response = await fetch("/api/solana/intelligence", {
@@ -113,9 +115,20 @@ export default function IntelligenceReport({
 
         const result = await response.json();
 
+        window.dispatchEvent(
+          new Event("ayzo:quota-updated")
+        );
+
         if (cancelled) return;
 
         if (!result.ok) {
+          if (result.code === "DAILY_FREE_LIMIT") {
+            setDailyLimitReached(true);
+            setData(null);
+            setError("");
+            return;
+          }
+
           throw new Error(
             result.details || result.error || "Intelligence analysis failed."
           );
@@ -240,6 +253,65 @@ export default function IntelligenceReport({
           <p className="mt-4 text-[10px] leading-5 text-zinc-700">
             Analysis time can vary with network and RPC conditions.
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (dailyLimitReached) {
+    return (
+      <div className="mt-6 overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-b from-violet-500/10 to-zinc-950/80">
+        <div className="p-6 sm:p-8">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div className="text-xs font-medium tracking-[0.18em] text-violet-300">
+                FREE PLAN
+              </div>
+
+              <h3 className="mt-2 text-2xl font-semibold text-zinc-100">
+                Daily Free Limit Reached
+              </h3>
+
+              <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-400">
+                You&apos;ve used your 3 free analyses for
+                the current 24-hour window.
+              </p>
+            </div>
+
+            <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-[10px] font-medium tracking-wide text-violet-300">
+              AYZO PRO · COMING SOON
+            </span>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            {[
+              "Deeper wallet intelligence",
+              "Funding provenance",
+              "Monitoring & alerts",
+            ].map((feature) => (
+              <div
+                key={feature}
+                className="rounded-2xl border border-zinc-800 bg-black/30 p-4"
+              >
+                <div className="text-[9px] font-medium tracking-[0.12em] text-violet-400">
+                  PRO
+                </div>
+
+                <div className="mt-2 text-sm text-zinc-300">
+                  {feature}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <a
+            href="https://t.me/ayzo_io"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-6 inline-flex h-11 items-center justify-center rounded-xl bg-white px-5 text-sm font-semibold text-black transition hover:bg-zinc-200"
+          >
+            Get Pro launch updates
+          </a>
         </div>
       </div>
     );
