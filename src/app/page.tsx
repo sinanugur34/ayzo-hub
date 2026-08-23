@@ -187,13 +187,13 @@ export default function Home() {
                 placeholder="Paste a Solana token address"
                 spellCheck={false}
                 autoComplete="off"
-                className="h-12 min-w-0 flex-1 rounded-xl bg-transparent px-3 text-[11px] text-white outline-none placeholder:text-zinc-600 sm:h-14 sm:px-5 sm:text-sm"
+                className="h-12 min-w-0 flex-1 rounded-xl border border-zinc-700/70 bg-zinc-900/60 px-4 text-xs text-white outline-none transition focus:border-violet-500/60 placeholder:text-zinc-500 sm:h-14 sm:border-0 sm:bg-transparent sm:px-5 sm:text-sm"
               />
 
               <button
                 type="submit"
                 disabled={loading}
-                className="h-12 w-full rounded-xl bg-white px-5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 sm:h-14 sm:w-auto sm:px-7"
+                className="h-11 w-36 self-end rounded-xl bg-white px-5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 sm:h-14 sm:w-auto sm:self-stretch sm:px-7"
               >
                 {loading ? "Analyzing..." : "Analyze"}
               </button>
