@@ -187,7 +187,7 @@ export default function Home() {
                 placeholder="Paste a Solana token address"
                 spellCheck={false}
                 autoComplete="off"
-                className="h-20 min-w-0 flex-1 rounded-2xl border border-zinc-500/80 bg-zinc-900/90 px-5 text-base text-white outline-none transition focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 placeholder:text-zinc-500 sm:h-14 sm:rounded-xl sm:border-0 sm:bg-transparent sm:px-5 sm:text-sm sm:focus:ring-0"
+                className="h-[200px] min-w-0 flex-1 rounded-2xl border-2 border-zinc-400/90 bg-zinc-900/95 px-5 py-4 text-lg text-white outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/30 placeholder:text-zinc-500 sm:h-14 sm:rounded-xl sm:border-0 sm:bg-transparent sm:px-5 sm:py-0 sm:text-sm sm:focus:ring-0"
               />
 
               <button
