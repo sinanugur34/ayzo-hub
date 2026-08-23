@@ -166,7 +166,7 @@ export default function Home() {
 
         <form onSubmit={handleAnalyze} className="mt-12 w-full max-w-3xl">
           <div
-            className={`rounded-2xl border bg-zinc-950/80 p-2 shadow-2xl backdrop-blur-xl ${
+            className={`rounded-2xl border bg-zinc-950/80 p-3 shadow-2xl backdrop-blur-xl sm:p-2 ${
               isValid === false
                 ? "border-red-500/40"
                 : isValid === true
@@ -187,13 +187,13 @@ export default function Home() {
                 placeholder="Paste a Solana token address"
                 spellCheck={false}
                 autoComplete="off"
-                className="h-14 min-w-0 flex-1 rounded-xl border border-zinc-600/80 bg-zinc-900/80 px-4 text-sm text-white outline-none transition focus:border-violet-500/70 placeholder:text-zinc-500 sm:h-14 sm:border-0 sm:bg-transparent sm:px-5 sm:text-sm"
+                className="h-20 min-w-0 flex-1 rounded-2xl border border-zinc-500/80 bg-zinc-900/90 px-5 text-base text-white outline-none transition focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 placeholder:text-zinc-500 sm:h-14 sm:rounded-xl sm:border-0 sm:bg-transparent sm:px-5 sm:text-sm sm:focus:ring-0"
               />
 
               <button
                 type="submit"
                 disabled={loading}
-                className="h-12 w-32 self-end rounded-xl bg-white px-4 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 sm:h-14 sm:w-auto sm:self-stretch sm:px-7"
+                className="h-12 w-36 self-end rounded-xl bg-white px-5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 sm:h-14 sm:w-auto sm:self-stretch sm:px-7"
               >
                 {loading ? "Analyzing..." : "Analyze"}
               </button>
