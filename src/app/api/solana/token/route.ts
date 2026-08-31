@@ -119,7 +119,6 @@ export async function POST(request: Request) {
         {
           ok: false,
           error: "Solana RPC returned an error.",
-          details: rpc.error.message ?? null,
         },
         { status: 502 }
       );

@@ -363,13 +363,11 @@ export async function POST(request: Request) {
           "Exchange, bridge, treasury, protocol and custody addresses can legitimately fund many unrelated wallets.",
       },
     });
-  } catch (error) {
+  } catch {
     return Response.json(
       {
         ok: false,
         error: "Funding analysis failed.",
-        details:
-          error instanceof Error ? error.message : "Unknown server error.",
       },
       { status: 500 }
     );

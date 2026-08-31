@@ -365,14 +365,10 @@ export async function POST(request: Request) {
           "/api/solana/relationships",
           { addresses: wallets }
         );
-      } catch (error) {
+      } catch {
         relationships = {
           ok: false,
           error: "Relationship analysis unavailable.",
-          details:
-            error instanceof Error
-              ? error.message
-              : "Unknown relationship analysis error.",
         };
       }
     }
@@ -401,14 +397,10 @@ export async function POST(request: Request) {
           "/api/solana/funding",
           { addresses: wallets }
         );
-      } catch (error) {
+      } catch {
         funding = {
           ok: false,
           error: "Funding analysis unavailable.",
-          details:
-            error instanceof Error
-              ? error.message
-              : "Unknown funding analysis error.",
         };
       }
     }

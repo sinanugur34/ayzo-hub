@@ -309,12 +309,11 @@ export async function POST(request: Request) {
           "Alpha analysis covers recent direct activity and does not yet identify original funding sources.",
       },
     });
-  } catch (error) {
+  } catch {
     return Response.json(
       {
         ok: false,
         error: "Relationship analysis failed.",
-        details: error instanceof Error ? error.message : "Unknown server error.",
       },
       { status: 500 }
     );

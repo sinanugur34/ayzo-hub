@@ -326,15 +326,11 @@ export async function POST(request: Request) {
 
       owners: resultOwners,
     });
-  } catch (error) {
+  } catch {
     return Response.json(
       {
         ok: false,
         error: "Holder analysis failed.",
-        details:
-          error instanceof Error
-            ? error.message
-            : "Unknown server error.",
       },
       { status: 500 }
     );
