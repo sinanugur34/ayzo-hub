@@ -10,6 +10,7 @@ import {
   FREE_DEVICE_COOKIE_MAX_AGE,
 } from "@/lib/freeQuota";
 import { getInternalApiKey } from "@/lib/apiSecurity";
+import { readJsonObjectBody } from "@/lib/requestBody";
 
 type JsonObject = Record<string, unknown>;
 
@@ -96,19 +97,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    let body: JsonObject;
+    const parsedBody =
+      await readJsonObjectBody(request);
 
-    try {
-      body = (await request.json()) as JsonObject;
-    } catch {
-      return Response.json(
-        {
-          ok: false,
-          error: "Invalid JSON body.",
-        },
-        { status: 400 }
-      );
+    if (!parsedBody.ok) {
+      return parsedBody.response;
     }
+
+    const body = parsedBody.body;
 
     const address =
       typeof body?.address === "string"

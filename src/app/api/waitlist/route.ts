@@ -3,6 +3,7 @@ import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
 import { getClientIp } from "@/lib/rateLimit";
 import { getInternalApiKey } from "@/lib/apiSecurity";
+import { readJsonObjectBody } from "@/lib/requestBody";
 
 export const dynamic = "force-dynamic";
 
@@ -37,19 +38,14 @@ function hashEmail(email: string) {
 
 export async function POST(request: Request) {
   try {
-    let body: Record<string, unknown>;
+    const parsedBody =
+      await readJsonObjectBody(request);
 
-    try {
-      body = (await request.json()) as Record<string, unknown>;
-    } catch {
-      return Response.json(
-        {
-          ok: false,
-          error: "Invalid JSON body.",
-        },
-        { status: 400 }
-      );
+    if (!parsedBody.ok) {
+      return parsedBody.response;
     }
+
+    const body = parsedBody.body;
 
     const email =
       typeof body?.email === "string"

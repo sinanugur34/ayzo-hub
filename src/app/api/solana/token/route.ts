@@ -3,6 +3,7 @@ import {
   checkRateLimit,
   getClientIp,
 } from "@/lib/rateLimit";
+import { readJsonObjectBody } from "@/lib/requestBody";
 
 function getRpcUrl() {
   const apiKey = process.env.HELIUS_API_KEY;
@@ -67,19 +68,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    let body: Record<string, unknown>;
+    const parsedBody =
+      await readJsonObjectBody(request);
 
-    try {
-      body = (await request.json()) as Record<string, unknown>;
-    } catch {
-      return Response.json(
-        {
-          ok: false,
-          error: "Invalid JSON body.",
-        },
-        { status: 400 }
-      );
+    if (!parsedBody.ok) {
+      return parsedBody.response;
     }
+
+    const body = parsedBody.body;
 
     const address =
       typeof body?.address === "string" ? body.address.trim() : "";
