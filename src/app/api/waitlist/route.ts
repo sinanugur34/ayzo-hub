@@ -2,6 +2,7 @@ import { createHmac, createHash } from "node:crypto";
 import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
 import { getClientIp } from "@/lib/rateLimit";
+import { getInternalApiKey } from "@/lib/apiSecurity";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +23,7 @@ const EMAIL_PATTERN =
 function hashIp(ip: string) {
   return createHmac(
     "sha256",
-    process.env.AYZO_INTERNAL_API_KEY ??
-      "ayzo-waitlist-local-secret"
+    getInternalApiKey()
   )
     .update(ip)
     .digest("hex");

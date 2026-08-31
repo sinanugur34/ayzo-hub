@@ -5,6 +5,7 @@ import {
 } from "node:crypto";
 import { Redis } from "@upstash/redis";
 import { getClientIp } from "@/lib/rateLimit";
+import { getInternalApiKey } from "@/lib/apiSecurity";
 
 export const FREE_ANALYSIS_LIMIT = 3;
 export const FREE_ANALYSIS_WINDOW_SECONDS = 24 * 60 * 60;
@@ -50,10 +51,7 @@ function getRedis() {
 }
 
 function getSigningSecret() {
-  return (
-    process.env.AYZO_INTERNAL_API_KEY ||
-    "ayzo-local-development-cookie-secret"
-  );
+  return getInternalApiKey();
 }
 
 function signDeviceId(deviceId: string) {
