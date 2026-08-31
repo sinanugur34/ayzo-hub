@@ -9,6 +9,7 @@ import {
   FREE_DEVICE_COOKIE,
   FREE_DEVICE_COOKIE_MAX_AGE,
 } from "@/lib/freeQuota";
+import { getInternalApiKey } from "@/lib/apiSecurity";
 
 type JsonObject = Record<string, unknown>;
 
@@ -36,7 +37,7 @@ async function postInternal(
       headers: {
         "Content-Type": "application/json",
         "x-ayzo-internal-key":
-          process.env.AYZO_INTERNAL_API_KEY ?? "",
+          getInternalApiKey(),
       },
       body: JSON.stringify(body),
       cache: "no-store",
@@ -188,7 +189,12 @@ export async function POST(request: Request) {
       }
     }
 
-    const origin = new URL(request.url).origin;
+    const origin =
+      process.env.NODE_ENV === "production"
+        ? process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : "https://app.ayzo.io"
+        : new URL(request.url).origin;
     const pipelineStartedAt = performance.now();
 
     const cached = testFailure
