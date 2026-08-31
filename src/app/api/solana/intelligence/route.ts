@@ -96,7 +96,19 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = await request.json();
+    let body: JsonObject;
+
+    try {
+      body = (await request.json()) as JsonObject;
+    } catch {
+      return Response.json(
+        {
+          ok: false,
+          error: "Invalid JSON body.",
+        },
+        { status: 400 }
+      );
+    }
 
     const address =
       typeof body?.address === "string"
@@ -611,15 +623,11 @@ export async function POST(request: Request) {
     }
 
     return Response.json(payload);
-  } catch (error) {
+  } catch {
     return Response.json(
       {
         ok: false,
         error: "AYZO Intelligence Pipeline failed.",
-        details:
-          error instanceof Error
-            ? error.message
-            : "Unknown server error.",
       },
       { status: 500 }
     );
