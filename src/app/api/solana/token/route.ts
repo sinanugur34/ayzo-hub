@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   if (!isDevelopmentTestRequest) {
     const clientIp = getClientIp(request);
 
-    const rateLimit = checkRateLimit({
+    const rateLimit = await checkRateLimit({
       key: `token:${clientIp}`,
       limit: 30,
       windowMs: 60_000,

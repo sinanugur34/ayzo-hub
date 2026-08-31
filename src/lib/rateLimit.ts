@@ -1,22 +1,78 @@
-type Bucket = {
-  count: number;
-  resetAt: number;
-};
+import { createHmac } from "node:crypto";
+import { Redis } from "@upstash/redis";
+import { Ratelimit } from "@upstash/ratelimit";
+import { getInternalApiKey } from "@/lib/apiSecurity";
 
-type RateLimitGlobal = typeof globalThis & {
-  __ayzoRateLimitBuckets?: Map<string, Bucket>;
-};
+let redisClient: Redis | null = null;
 
-const globalStore = globalThis as RateLimitGlobal;
+const rateLimiters = new Map<string, Ratelimit>();
 
-const buckets =
-  globalStore.__ayzoRateLimitBuckets ??
-  new Map<string, Bucket>();
+function getRedis() {
+  if (redisClient) {
+    return redisClient;
+  }
 
-globalStore.__ayzoRateLimitBuckets = buckets;
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+
+  if (!url || !token) {
+    throw new Error("Rate-limit Redis is not configured.");
+  }
+
+  redisClient = new Redis({
+    url,
+    token,
+  });
+
+  return redisClient;
+}
+
+function getRateLimiter(
+  limit: number,
+  windowMs: number
+) {
+  const windowSeconds = Math.max(
+    1,
+    Math.ceil(windowMs / 1000)
+  );
+
+  const cacheKey = `${limit}:${windowSeconds}`;
+
+  const existing = rateLimiters.get(cacheKey);
+
+  if (existing) {
+    return existing;
+  }
+
+  const limiter = new Ratelimit({
+    redis: getRedis(),
+    limiter: Ratelimit.slidingWindow(
+      limit,
+      `${windowSeconds} s`
+    ),
+    prefix:
+      `ayzo:api:rate:${limit}:${windowSeconds}`,
+    analytics: false,
+  });
+
+  rateLimiters.set(cacheKey, limiter);
+
+  return limiter;
+}
+
+function hashRateLimitKey(key: string) {
+  return createHmac(
+    "sha256",
+    getInternalApiKey()
+  )
+    .update(key)
+    .digest("hex");
+}
 
 export function getClientIp(request: Request) {
-  const forwarded = request.headers.get("x-forwarded-for");
+  const forwarded = request.headers.get(
+    "x-forwarded-for"
+  );
 
   if (forwarded) {
     return forwarded.split(",")[0].trim();
@@ -29,7 +85,7 @@ export function getClientIp(request: Request) {
   );
 }
 
-export function checkRateLimit({
+export async function checkRateLimit({
   key,
   limit,
   windowMs,
@@ -38,44 +94,26 @@ export function checkRateLimit({
   limit: number;
   windowMs: number;
 }) {
-  const now = Date.now();
+  const limiter = getRateLimiter(
+    limit,
+    windowMs
+  );
 
-  const existing = buckets.get(key);
-
-  if (!existing || existing.resetAt <= now) {
-    const resetAt = now + windowMs;
-
-    buckets.set(key, {
-      count: 1,
-      resetAt,
-    });
-
-    return {
-      allowed: true,
-      remaining: limit - 1,
-      resetAt,
-      retryAfterSeconds: 0,
-    };
-  }
-
-  if (existing.count >= limit) {
-    return {
-      allowed: false,
-      remaining: 0,
-      resetAt: existing.resetAt,
-      retryAfterSeconds: Math.max(
-        1,
-        Math.ceil((existing.resetAt - now) / 1000)
-      ),
-    };
-  }
-
-  existing.count += 1;
+  const result = await limiter.limit(
+    hashRateLimitKey(key)
+  );
 
   return {
-    allowed: true,
-    remaining: Math.max(0, limit - existing.count),
-    resetAt: existing.resetAt,
-    retryAfterSeconds: 0,
+    allowed: result.success,
+    remaining: result.remaining,
+    resetAt: result.reset,
+    retryAfterSeconds: result.success
+      ? 0
+      : Math.max(
+          1,
+          Math.ceil(
+            (result.reset - Date.now()) / 1000
+          )
+        ),
   };
 }
