@@ -55,6 +55,30 @@ export async function readJsonObjectBody(
     }
   }
 
+  const contentType =
+    request.headers
+      .get("content-type")
+      ?.split(";")[0]
+      .trim()
+      .toLowerCase();
+
+  const isJsonContentType =
+    contentType === "application/json" ||
+    contentType?.endsWith("+json") === true;
+
+  if (!isJsonContentType) {
+    return {
+      ok: false,
+      response: Response.json(
+        {
+          ok: false,
+          error: "Content-Type must be application/json.",
+        },
+        { status: 415 }
+      ),
+    };
+  }
+
   if (!request.body) {
     return invalidJson();
   }
