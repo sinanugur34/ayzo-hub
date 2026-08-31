@@ -19,12 +19,23 @@ const securityHeaders = [
   },
 ];
 
+const apiHeaders = [
+  {
+    key: "Cache-Control",
+    value: "no-store",
+  },
+];
+
 const nextConfig: NextConfig = {
   async headers() {
     return [
       {
         source: "/(.*)",
         headers: securityHeaders,
+      },
+      {
+        source: "/api/:path*",
+        headers: apiHeaders,
       },
     ];
   },
