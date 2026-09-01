@@ -3,6 +3,25 @@
 import { useEffect, useState } from "react";
 import WaitlistForm from "@/components/WaitlistForm";
 
+type AnalyticsWindow = Window & {
+  gtag?: (...args: unknown[]) => void;
+};
+
+function trackEvent(
+  name: string,
+  params?: Record<string, string | number | boolean>
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  (window as AnalyticsWindow).gtag?.(
+    "event",
+    name,
+    params ?? {}
+  );
+}
+
 type Holder = {
   rank: number;
   owner: string;
@@ -745,6 +764,11 @@ export default function IntelligenceReport({
             )}`}
             target="_blank"
             rel="noreferrer"
+            onClick={() =>
+              trackEvent("share_x_clicked", {
+                feature: "intelligence_report",
+              })
+            }
             className="inline-flex items-center justify-center rounded-xl border border-violet-400/30 bg-violet-500/10 px-5 py-3 text-sm font-medium text-violet-200 transition hover:border-violet-400/50 hover:bg-violet-500/20"
           >
             Share Analysis on X ↗
