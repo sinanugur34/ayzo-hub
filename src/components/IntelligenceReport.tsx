@@ -130,9 +130,22 @@ export default function IntelligenceReport({
             return;
           }
 
-          throw new Error(
-            result.details || result.error || "Intelligence analysis failed."
-          );
+          const rawError =
+            result.error ??
+            result.details ??
+            "Intelligence analysis failed.";
+
+          const errorMessage =
+            typeof rawError === "string"
+              ? rawError
+              : typeof rawError === "object" &&
+                  rawError !== null &&
+                  "message" in rawError &&
+                  typeof rawError.message === "string"
+                ? rawError.message
+                : "Intelligence analysis temporarily unavailable.";
+
+          throw new Error(errorMessage);
         }
 
         setData(result);
