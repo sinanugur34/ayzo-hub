@@ -722,6 +722,40 @@ export default function IntelligenceReport({
           )}
         </div>
       </details>
+
+      <section className="rounded-3xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 to-zinc-950/70 p-6 sm:p-7">
+        <div className="flex flex-wrap items-center justify-between gap-5">
+          <div>
+            <div className="text-[10px] font-medium tracking-[0.18em] text-violet-400">
+              SHARE AYZO
+            </div>
+
+            <h3 className="mt-2 text-lg font-semibold text-zinc-100">
+              Share your investigation
+            </h3>
+
+            <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-500">
+              Help other Solana users discover evidence-first token intelligence.
+            </p>
+          </div>
+
+          <a
+            href={`https://x.com/intent/post?text=${encodeURIComponent(
+              "I investigated a Solana token with @IOAYZO.\n\nHolder intelligence • Wallet relationships • Funding signals\n\nTry AYZO Alpha → https://app.ayzo.io"
+            )}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center rounded-xl border border-violet-400/30 bg-violet-500/10 px-5 py-3 text-sm font-medium text-violet-200 transition hover:border-violet-400/50 hover:bg-violet-500/20"
+          >
+            Share Analysis on X ↗
+          </a>
+        </div>
+
+        <p className="mt-4 text-[10px] leading-5 text-zinc-700">
+          AYZO reports on-chain evidence and does not classify a token as safe,
+          fraudulent, or suitable for investment.
+        </p>
+      </section>
     </div>
   );
 }
