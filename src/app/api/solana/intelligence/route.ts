@@ -197,12 +197,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const origin =
-      process.env.NODE_ENV === "production"
-        ? process.env.VERCEL_URL
-          ? `https://${process.env.VERCEL_URL}`
-          : "https://app.ayzo.io"
-        : new URL(request.url).origin;
+    const origin = new URL(request.url).origin;
     const pipelineStartedAt = performance.now();
 
     const cached = testFailure
