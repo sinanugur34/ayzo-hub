@@ -125,6 +125,10 @@ export default function IntelligenceReport({
       setDailyLimitReached(false);
 
       try {
+        trackEvent("analysis_started", {
+          feature: "intelligence_report",
+        });
+
         const response = await fetch("/api/solana/intelligence", {
           method: "POST",
           headers: {
@@ -166,6 +170,10 @@ export default function IntelligenceReport({
 
           throw new Error(errorMessage);
         }
+
+        trackEvent("intelligence_completed", {
+          feature: "intelligence_report",
+        });
 
         setData(result);
       } catch (err) {
