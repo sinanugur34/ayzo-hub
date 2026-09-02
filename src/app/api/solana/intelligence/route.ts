@@ -147,11 +147,16 @@ export async function POST(request: Request) {
       }
     }
 
-    return await runSolanaIntelligence({
+    const result = await runSolanaIntelligence({
       address,
       requestUrl: request.url,
       testFailure,
     });
+
+    return Response.json(
+      result.data,
+      { status: result.status }
+    );
 
   } catch {
     return Response.json(

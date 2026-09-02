@@ -1,4 +1,5 @@
 import { getInternalApiKey } from "@/lib/apiSecurity";
+import type { IntelligenceEngineResult } from "@/lib/intelligence/types";
 
 type JsonObject = Record<string, unknown>;
 
@@ -65,7 +66,7 @@ export async function runSolanaIntelligence({
   address,
   requestUrl,
   testFailure,
-}: RunSolanaIntelligenceInput) {
+}: RunSolanaIntelligenceInput): Promise<IntelligenceEngineResult> {
   const origin = new URL(requestUrl).origin;
   const pipelineStartedAt = performance.now();
 
@@ -74,17 +75,20 @@ export async function runSolanaIntelligence({
     : intelligenceCache.get(address);
 
   if (cached && cached.expiresAt > Date.now()) {
-    return Response.json({
-      ...cached.data,
-      cache: {
-        hit: true,
-        ttlMs: CACHE_TTL_MS,
+    return {
+      status: 200,
+      data: {
+        ...cached.data,
+        cache: {
+          hit: true,
+          ttlMs: CACHE_TTL_MS,
+        },
+        performance: {
+          totalMs: Math.round(performance.now() - pipelineStartedAt),
+          source: "cache",
+        },
       },
-      performance: {
-        totalMs: Math.round(performance.now() - pipelineStartedAt),
-        source: "cache",
-      },
-    });
+    };
   }
 
   if (cached) {
@@ -102,14 +106,14 @@ export async function runSolanaIntelligence({
   const holdersMs = performance.now() - holdersStartedAt;
 
   if (!holders?.ok) {
-    return Response.json(
-      {
+    return {
+      status: 502,
+      data: {
         ok: false,
         stage: "holders",
         error: holders?.error ?? "Holder analysis failed.",
       },
-      { status: 502 }
-    );
+    };
   }
 
   const wallets = Array.isArray(holders.owners)
@@ -201,7 +205,13 @@ export async function runSolanaIntelligence({
       });
     }
 
-    return Response.json(payload);
+    return {
+
+      status: 200,
+
+      data: payload,
+
+    };
   }
 
   // Give the provider a little breathing room.
@@ -474,5 +484,11 @@ export async function runSolanaIntelligence({
     });
   }
 
-  return Response.json(payload);
+  return {
+
+    status: 200,
+
+    data: payload,
+
+  };
 }

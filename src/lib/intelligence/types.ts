@@ -54,3 +54,10 @@ export type IntelligenceErrorResponse = {
   error: string;
   network?: NetworkId;
 };
+
+export type IntelligenceEngineResult<
+  TData = Record<string, unknown>,
+> = {
+  status: number;
+  data: TData;
+};
