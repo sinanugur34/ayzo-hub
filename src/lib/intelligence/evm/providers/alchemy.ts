@@ -73,6 +73,14 @@ function classifyRpcError(
     return "RATE_LIMITED";
   }
 
+  if (
+    normalized.includes("execution reverted") ||
+    normalized.includes("reverted") ||
+    normalized.includes("revert")
+  ) {
+    return "CALL_REVERTED";
+  }
+
   return "UPSTREAM_ERROR";
 }
 

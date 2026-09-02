@@ -12,6 +12,7 @@ export type EvmProviderErrorCode =
   | "UNSUPPORTED_NETWORK"
   | "UNSUPPORTED_CAPABILITY"
   | "INVALID_ADDRESS"
+  | "CALL_REVERTED"
   | "RATE_LIMITED"
   | "TIMEOUT"
   | "UPSTREAM_ERROR";
@@ -42,6 +43,7 @@ export type EvmTokenMetadata = {
   decimals: number | null;
   totalSupply: string | null;
   isContract: boolean;
+  isErc20: boolean;
 };
 
 export type EvmTokenHolder = {
