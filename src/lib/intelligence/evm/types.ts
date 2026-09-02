@@ -87,3 +87,10 @@ export type EvmContractVerification = {
   providerId: ProviderId;
   latencyMs: number;
 };
+
+export type EvmContractCall = {
+  address: string;
+  data: string;
+  blockTag: string;
+  result: string;
+};

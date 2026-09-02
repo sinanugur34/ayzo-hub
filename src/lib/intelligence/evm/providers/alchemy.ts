@@ -4,11 +4,15 @@ import type {
 
 import type {
   EvmAddressRequest,
+  EvmContractCallProvider,
+  EvmContractCallRequest,
   EvmContractCodeProvider,
 } from "../provider";
 
 import type {
+  EvmContractCall,
   EvmContractCode,
+  EvmNetworkContext,
   EvmProviderErrorCode,
   EvmProviderResult,
 } from "../types";
@@ -19,6 +23,7 @@ import {
 
 const ALCHEMY_CAPABILITIES = [
   "contractCode",
+  "contractCall",
   "rpc",
 ] as const satisfies readonly ProviderCapability[];
 
@@ -34,10 +39,19 @@ type JsonRpcResponse = {
   error?: JsonRpcError;
 };
 
+type RpcRequest = {
+  network: EvmNetworkContext;
+  method: string;
+  params: readonly unknown[];
+  signal?: AbortSignal;
+};
+
 function elapsedMs(startedAt: number) {
   return Math.max(
     0,
-    Math.round(performance.now() - startedAt)
+    Math.round(
+      performance.now() - startedAt
+    )
   );
 }
 
@@ -49,8 +63,12 @@ function classifyRpcError(
 
   if (
     normalized.includes("rate limit") ||
-    normalized.includes("too many requests") ||
-    normalized.includes("compute units")
+    normalized.includes(
+      "too many requests"
+    ) ||
+    normalized.includes(
+      "compute units"
+    )
   ) {
     return "RATE_LIMITED";
   }
@@ -59,7 +77,9 @@ function classifyRpcError(
 }
 
 export class AlchemyEvmProvider
-  implements EvmContractCodeProvider
+  implements
+    EvmContractCodeProvider,
+    EvmContractCallProvider
 {
   readonly id = "alchemy" as const;
 
@@ -67,17 +87,16 @@ export class AlchemyEvmProvider
     ALCHEMY_CAPABILITIES;
 
   supportsNetwork(
-    requestNetwork: EvmAddressRequest["network"]
+    network: EvmNetworkContext
   ): boolean {
     const config =
       getAlchemyEvmNetwork(
-        requestNetwork.networkId
+        network.networkId
       );
 
     return (
       config !== null &&
-      config.chainId ===
-        requestNetwork.chainId
+      config.chainId === network.chainId
     );
   }
 
@@ -89,20 +108,22 @@ export class AlchemyEvmProvider
     ).includes(capability);
   }
 
-  async getContractCode(
-    request: EvmAddressRequest
-  ): Promise<
-    EvmProviderResult<EvmContractCode>
+  private async rpcRequest({
+    network,
+    method,
+    params,
+    signal,
+  }: RpcRequest): Promise<
+    EvmProviderResult<unknown>
   > {
     const config =
       getAlchemyEvmNetwork(
-        request.network.networkId
+        network.networkId
       );
 
     if (
       !config ||
-      config.chainId !==
-        request.network.chainId
+      config.chainId !== network.chainId
     ) {
       return {
         ok: false,
@@ -110,7 +131,7 @@ export class AlchemyEvmProvider
         latencyMs: null,
         code: "UNSUPPORTED_NETWORK",
         error:
-          `Alchemy is not enabled for ${request.network.name}.`,
+          `Alchemy is not enabled for ${network.name}.`,
       };
     }
 
@@ -139,11 +160,11 @@ export class AlchemyEvmProvider
     const abortFromCaller = () =>
       controller.abort();
 
-    if (request.signal) {
-      if (request.signal.aborted) {
+    if (signal) {
+      if (signal.aborted) {
         controller.abort();
       } else {
-        request.signal.addEventListener(
+        signal.addEventListener(
           "abort",
           abortFromCaller,
           { once: true }
@@ -160,18 +181,16 @@ export class AlchemyEvmProvider
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${apiKey}`,
+            Authorization:
+              `Bearer ${apiKey}`,
             "Content-Type":
               "application/json",
           },
           body: JSON.stringify({
             jsonrpc: "2.0",
             id: 1,
-            method: "eth_getCode",
-            params: [
-              request.address,
-              "latest",
-            ],
+            method,
+            params,
           }),
           cache: "no-store",
           signal: controller.signal,
@@ -224,8 +243,10 @@ export class AlchemyEvmProvider
       }
 
       if (
-        typeof payload.result !==
-        "string"
+        !Object.prototype.hasOwnProperty.call(
+          payload,
+          "result"
+        )
       ) {
         return {
           ok: false,
@@ -233,29 +254,15 @@ export class AlchemyEvmProvider
           latencyMs,
           code: "UPSTREAM_ERROR",
           error:
-            "Alchemy returned an invalid eth_getCode response.",
+            "Alchemy RPC response did not contain a result.",
         };
       }
-
-      const code =
-        payload.result.trim();
-
-      const normalized =
-        code.toLowerCase();
-
-      const isContract =
-        normalized.length > 2 &&
-        normalized !== "0x0";
 
       return {
         ok: true,
         providerId: this.id,
         latencyMs,
-        data: {
-          address: request.address,
-          code,
-          isContract,
-        },
+        data: payload.result,
       };
     } catch {
       const latencyMs =
@@ -283,11 +290,118 @@ export class AlchemyEvmProvider
     } finally {
       clearTimeout(timeout);
 
-      request.signal?.removeEventListener(
+      signal?.removeEventListener(
         "abort",
         abortFromCaller
       );
     }
+  }
+
+  async getContractCode(
+    request: EvmAddressRequest
+  ): Promise<
+    EvmProviderResult<EvmContractCode>
+  > {
+    const result =
+      await this.rpcRequest({
+        network: request.network,
+        method: "eth_getCode",
+        params: [
+          request.address,
+          "latest",
+        ],
+        signal: request.signal,
+      });
+
+    if (!result.ok) {
+      return result;
+    }
+
+    if (
+      typeof result.data !== "string"
+    ) {
+      return {
+        ok: false,
+        providerId: this.id,
+        latencyMs: result.latencyMs,
+        code: "UPSTREAM_ERROR",
+        error:
+          "Alchemy returned an invalid eth_getCode result.",
+      };
+    }
+
+    const code =
+      result.data.trim();
+
+    const normalized =
+      code.toLowerCase();
+
+    const isContract =
+      normalized.length > 2 &&
+      normalized !== "0x0";
+
+    return {
+      ok: true,
+      providerId: this.id,
+      latencyMs: result.latencyMs,
+      data: {
+        address: request.address,
+        code,
+        isContract,
+      },
+    };
+  }
+
+  async callContract(
+    request: EvmContractCallRequest
+  ): Promise<
+    EvmProviderResult<EvmContractCall>
+  > {
+    const blockTag =
+      request.blockTag ?? "latest";
+
+    const result =
+      await this.rpcRequest({
+        network: request.network,
+        method: "eth_call",
+        params: [
+          {
+            to: request.address,
+            data: request.data,
+          },
+          blockTag,
+        ],
+        signal: request.signal,
+      });
+
+    if (!result.ok) {
+      return result;
+    }
+
+    if (
+      typeof result.data !== "string"
+    ) {
+      return {
+        ok: false,
+        providerId: this.id,
+        latencyMs: result.latencyMs,
+        code: "UPSTREAM_ERROR",
+        error:
+          "Alchemy returned an invalid eth_call result.",
+      };
+    }
+
+    return {
+      ok: true,
+      providerId: this.id,
+      latencyMs: result.latencyMs,
+      data: {
+        address: request.address,
+        data: request.data,
+        blockTag,
+        result: result.data,
+      },
+    };
   }
 }
 

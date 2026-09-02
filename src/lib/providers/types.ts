@@ -16,6 +16,7 @@ export type ProviderRuntimeStatus =
 
 export type ProviderCapability =
   | "contractCode"
+  | "contractCall"
   | "tokenMetadata"
   | "tokenHolders"
   | "historicalTokenHolders"

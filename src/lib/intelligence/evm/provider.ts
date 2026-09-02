@@ -4,6 +4,7 @@ import type {
 } from "@/lib/providers/types";
 
 import type {
+  EvmContractCall,
   EvmContractCode,
   EvmNetworkContext,
   EvmProviderResult,
@@ -23,6 +24,12 @@ export type EvmPaginatedAddressRequest =
   EvmAddressRequest & {
     limit?: number;
     cursor?: string | null;
+  };
+
+export type EvmContractCallRequest =
+  EvmAddressRequest & {
+    data: string;
+    blockTag?: string;
   };
 
 export type EvmTraceRequest = {
@@ -57,6 +64,15 @@ export interface EvmContractCodeProvider
     request: EvmAddressRequest
   ): Promise<
     EvmProviderResult<EvmContractCode>
+  >;
+}
+
+export interface EvmContractCallProvider
+  extends EvmProviderBase {
+  callContract(
+    request: EvmContractCallRequest
+  ): Promise<
+    EvmProviderResult<EvmContractCall>
   >;
 }
 
