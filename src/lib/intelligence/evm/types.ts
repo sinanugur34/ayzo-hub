@@ -68,6 +68,11 @@ export type EvmTransaction = {
   value: string | null;
 };
 
+export type EvmTransactionsPage = {
+  transactions: readonly EvmTransaction[];
+  nextCursor: string | null;
+};
+
 export type EvmTransfer = {
   transactionHash: string;
   blockNumber: number | null;

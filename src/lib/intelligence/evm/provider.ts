@@ -11,6 +11,7 @@ import type {
   EvmTokenHolders,
   EvmTokenMetadata,
   EvmTransaction,
+  EvmTransactionsPage,
   EvmTransfer,
 } from "./types";
 
@@ -100,7 +101,7 @@ export interface EvmTransactionsProvider
     request: EvmPaginatedAddressRequest
   ): Promise<
     EvmProviderResult<
-      readonly EvmTransaction[]
+      EvmTransactionsPage
     >
   >;
 }
