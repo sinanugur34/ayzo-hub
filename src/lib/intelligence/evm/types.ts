@@ -55,6 +55,7 @@ export type EvmTokenHolder = {
 export type EvmTokenHolders = {
   holders: readonly EvmTokenHolder[];
   totalSupply: string | null;
+  totalCount: number | null;
   nextCursor: string | null;
 };
 
