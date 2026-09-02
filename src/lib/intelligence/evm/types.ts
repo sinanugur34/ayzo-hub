@@ -73,3 +73,17 @@ export type EvmTransfer = {
   tokenAddress: string | null;
   value: string | null;
 };
+
+export type EvmContractCode = {
+  address: string;
+  code: string;
+  isContract: boolean;
+};
+
+export type EvmContractVerification = {
+  networkId: NetworkId;
+  address: string;
+  isContract: boolean;
+  providerId: ProviderId;
+  latencyMs: number;
+};

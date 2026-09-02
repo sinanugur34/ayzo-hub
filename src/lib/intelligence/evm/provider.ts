@@ -4,6 +4,7 @@ import type {
 } from "@/lib/providers/types";
 
 import type {
+  EvmContractCode,
   EvmNetworkContext,
   EvmProviderResult,
   EvmTokenHolders,
@@ -35,7 +36,7 @@ export type EvmTraceResult = {
   calls: readonly Record<string, unknown>[];
 };
 
-export interface EvmDataProvider {
+export interface EvmProviderBase {
   readonly id: ProviderId;
 
   readonly capabilities:
@@ -48,19 +49,37 @@ export interface EvmDataProvider {
   supportsCapability(
     capability: ProviderCapability
   ): boolean;
+}
 
+export interface EvmContractCodeProvider
+  extends EvmProviderBase {
+  getContractCode(
+    request: EvmAddressRequest
+  ): Promise<
+    EvmProviderResult<EvmContractCode>
+  >;
+}
+
+export interface EvmTokenMetadataProvider
+  extends EvmProviderBase {
   getTokenMetadata(
     request: EvmAddressRequest
   ): Promise<
     EvmProviderResult<EvmTokenMetadata>
   >;
+}
 
+export interface EvmTokenHoldersProvider
+  extends EvmProviderBase {
   getTokenHolders(
     request: EvmPaginatedAddressRequest
   ): Promise<
     EvmProviderResult<EvmTokenHolders>
   >;
+}
 
+export interface EvmTransactionsProvider
+  extends EvmProviderBase {
   getTransactions(
     request: EvmPaginatedAddressRequest
   ): Promise<
@@ -68,7 +87,10 @@ export interface EvmDataProvider {
       readonly EvmTransaction[]
     >
   >;
+}
 
+export interface EvmTransfersProvider
+  extends EvmProviderBase {
   getTokenTransfers(
     request: EvmPaginatedAddressRequest
   ): Promise<
@@ -76,7 +98,10 @@ export interface EvmDataProvider {
       readonly EvmTransfer[]
     >
   >;
+}
 
+export interface EvmTraceProvider
+  extends EvmProviderBase {
   traceTransaction(
     request: EvmTraceRequest
   ): Promise<

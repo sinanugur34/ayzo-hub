@@ -15,6 +15,7 @@ export type ProviderRuntimeStatus =
   | "unknown";
 
 export type ProviderCapability =
+  | "contractCode"
   | "tokenMetadata"
   | "tokenHolders"
   | "historicalTokenHolders"
