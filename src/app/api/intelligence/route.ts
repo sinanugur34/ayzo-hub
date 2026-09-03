@@ -10,6 +10,9 @@ import {
   resolveIntelligenceNetwork,
 } from "@/lib/intelligence/router";
 import {
+  runBitcoinIntelligence,
+} from "@/lib/intelligence/bitcoin/engine";
+import {
   runEvmUnifiedIntelligence,
 } from "@/lib/intelligence/evm/unifiedOrchestrator";
 import {
@@ -235,17 +238,20 @@ export async function POST(request: Request) {
         );
       }
 
-      case "bitcoin":
+      case "bitcoin": {
+        const result =
+          await runBitcoinIntelligence({
+            address,
+          });
+
         return Response.json(
+          result.data,
           {
-            ok: false,
-            code: "NETWORK_NOT_AVAILABLE",
-            error:
-              `${resolution.network.name} intelligence engine is not available yet.`,
-            network: resolution.networkId,
-          },
-          { status: 503 }
+            status:
+              result.status,
+          }
         );
+      }
     }
   } catch {
     return Response.json(

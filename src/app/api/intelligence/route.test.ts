@@ -274,3 +274,58 @@ test(
     }
   }
 );
+
+test(
+  "keeps Bitcoin blocked on the public route while the network is in development",
+  async () => {
+    const response =
+      await POST(
+        new Request(
+          "http://localhost/api/intelligence",
+          {
+            method:
+              "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+
+              "x-ayzo-test-request":
+                "smoke",
+            },
+
+            body:
+              JSON.stringify({
+                network:
+                  "bitcoin",
+
+                address:
+                  "34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo",
+              }),
+          }
+        )
+      );
+
+    assert.equal(
+      response.status,
+      503
+    );
+
+    assert.deepEqual(
+      await response.json(),
+      {
+        ok:
+          false,
+
+        code:
+          "NETWORK_NOT_AVAILABLE",
+
+        error:
+          "Bitcoin intelligence is not live yet.",
+
+        network:
+          "bitcoin",
+      }
+    );
+  }
+);
