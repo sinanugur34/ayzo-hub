@@ -450,3 +450,59 @@ test(
     );
   }
 );
+
+test(
+  "rejects invalid Bitcoin address before provider work",
+  async () => {
+    let providerCalls =
+      0;
+
+    const deps:
+      BitcoinEngineDependencies = {
+        async getAddressTransactions() {
+          providerCalls += 1;
+
+          throw new Error(
+            "History provider must not run."
+          );
+        },
+
+        async getTransactionEvidence() {
+          throw new Error(
+            "Evidence provider must not run."
+          );
+        },
+      };
+
+    const result =
+      await runBitcoinIntelligence(
+        {
+          address:
+            "not-bitcoin",
+        },
+
+        deps
+      );
+
+    assert.equal(
+      result.status,
+      400
+    );
+
+    if (result.data.ok) {
+      throw new Error(
+        "Invalid Bitcoin address unexpectedly passed."
+      );
+    }
+
+    assert.equal(
+      result.data.code,
+      "INVALID_ADDRESS"
+    );
+
+    assert.equal(
+      providerCalls,
+      0
+    );
+  }
+);

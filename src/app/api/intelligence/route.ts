@@ -10,6 +10,9 @@ import {
   resolveIntelligenceNetwork,
 } from "@/lib/intelligence/router";
 import {
+  isBitcoinMainnetAddress,
+} from "@/lib/intelligence/bitcoin/address";
+import {
   runBitcoinIntelligence,
 } from "@/lib/intelligence/bitcoin/engine";
 import {
@@ -134,6 +137,23 @@ export async function POST(request: Request) {
           ok: false,
           code: "INVALID_ADDRESS",
           error: "Invalid EVM address.",
+          network: resolution.networkId,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      resolution.engine === "bitcoin" &&
+      !isBitcoinMainnetAddress(
+        address
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          code: "INVALID_ADDRESS",
+          error: "Invalid Bitcoin address.",
           network: resolution.networkId,
         },
         { status: 400 }

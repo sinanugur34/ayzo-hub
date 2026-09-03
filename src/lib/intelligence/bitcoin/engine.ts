@@ -3,6 +3,10 @@ import type {
   IntelligenceFinding,
 } from "@/lib/intelligence/types";
 
+import {
+  isBitcoinMainnetAddress,
+} from "./address";
+
 import type {
   BitcoinAddressHistoryPage,
   BitcoinNetworkContext,
@@ -189,6 +193,31 @@ export async function runBitcoinIntelligence(
 > {
   const normalizedAddress =
     address.trim();
+
+  if (
+    !isBitcoinMainnetAddress(
+      normalizedAddress
+    )
+  ) {
+    return {
+      status:
+        400,
+
+      data: {
+        ok:
+          false,
+
+        code:
+          "INVALID_ADDRESS",
+
+        error:
+          "Invalid Bitcoin address.",
+
+        network:
+          "bitcoin",
+      },
+    };
+  }
 
   const historyResult =
     await deps

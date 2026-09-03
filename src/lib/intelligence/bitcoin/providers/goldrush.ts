@@ -1,3 +1,7 @@
+import {
+  isBitcoinMainnetAddress,
+} from "../address";
+
 import type {
   ProviderCapability,
 } from "@/lib/providers/types";
@@ -28,12 +32,6 @@ const sleep = (ms: number) =>
   new Promise<void>((resolve) =>
     setTimeout(resolve, ms)
   );
-
-const LEGACY_MAINNET_ADDRESS =
-  /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
-
-const BECH32_MAINNET_ADDRESS =
-  /^bc1[ac-hj-np-z02-9]{11,71}$/i;
 
 const TX_HASH =
   /^[0-9a-fA-F]{64}$/;
@@ -153,35 +151,6 @@ function classifyError(
   }
 
   return "UPSTREAM_ERROR";
-}
-
-function isBitcoinMainnetAddress(
-  value: string
-): boolean {
-  if (
-    LEGACY_MAINNET_ADDRESS.test(
-      value
-    )
-  ) {
-    return true;
-  }
-
-  if (
-    !BECH32_MAINNET_ADDRESS.test(
-      value
-    )
-  ) {
-    return false;
-  }
-
-  // Bech32 strings cannot use
-  // mixed upper/lower casing.
-  return (
-    value ===
-      value.toLowerCase() ||
-    value ===
-      value.toUpperCase()
-  );
 }
 
 function parsePage(
