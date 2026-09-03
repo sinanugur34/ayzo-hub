@@ -14,11 +14,15 @@ export default function GoogleAnalytics() {
   useEffect(() => {
     const saved = localStorage.getItem("ayzo_analytics_consent");
 
-    if (saved === "granted" || saved === "denied") {
-      setConsent(saved);
-    }
+    const timer = window.setTimeout(() => {
+      if (saved === "granted" || saved === "denied") {
+        setConsent(saved);
+      }
 
-    setReady(true);
+      setReady(true);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   function chooseConsent(value: "granted" | "denied") {
