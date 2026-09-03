@@ -18,6 +18,7 @@ export type ProviderCapability =
   | "contractCode"
   | "contractCall"
   | "contractDeployment"
+  | "transactionReceipt"
   | "tokenMetadata"
   | "tokenHolders"
   | "historicalTokenHolders"

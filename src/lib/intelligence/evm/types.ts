@@ -13,6 +13,7 @@ export type EvmProviderErrorCode =
   | "UNSUPPORTED_CAPABILITY"
   | "INVALID_ADDRESS"
   | "INVALID_TOKEN_ADDRESS"
+  | "INVALID_TRANSACTION_HASH"
   | "CALL_REVERTED"
   | "RATE_LIMITED"
   | "TIMEOUT"
@@ -144,4 +145,14 @@ export type EvmContractCall = {
   data: string;
   blockTag: string;
   result: string;
+};
+
+
+export type EvmTransactionReceipt = {
+  transactionHash: string;
+  blockNumber: number;
+  from: string;
+  to: string | null;
+  contractAddress: string | null;
+  success: boolean | null;
 };

@@ -8,6 +8,8 @@ import type {
   EvmContractCallRequest,
   EvmContractCodeProvider,
   EvmContractDeploymentProvider,
+  EvmTransactionReceiptProvider,
+  EvmTransactionReceiptRequest,
 } from "../provider";
 
 import type {
@@ -18,6 +20,7 @@ import type {
   EvmProviderErrorCode,
   EvmProviderFailure,
   EvmProviderResult,
+  EvmTransactionReceipt,
 } from "../types";
 
 import {
@@ -35,6 +38,7 @@ const ALCHEMY_CAPABILITIES = [
   "contractCode",
   "contractCall",
   "contractDeployment",
+  "transactionReceipt",
   "rpc",
 ] as const satisfies readonly ProviderCapability[];
 
@@ -203,7 +207,8 @@ export class AlchemyEvmProvider
   implements
     EvmContractCodeProvider,
     EvmContractCallProvider,
-    EvmContractDeploymentProvider
+    EvmContractDeploymentProvider,
+    EvmTransactionReceiptProvider
 {
   readonly id = "alchemy" as const;
 
@@ -524,6 +529,169 @@ export class AlchemyEvmProvider
         data: request.data,
         blockTag,
         result: result.data,
+      },
+    };
+  }
+
+  async getTransactionReceipt(
+    request:
+      EvmTransactionReceiptRequest
+  ): Promise<
+    EvmProviderResult<
+      EvmTransactionReceipt
+    >
+  > {
+    const transactionHash =
+      request.transactionHash
+        .trim()
+        .toLowerCase();
+
+    if (
+      !TX_HASH.test(
+        transactionHash
+      )
+    ) {
+      return {
+        ok: false,
+        providerId:
+          this.id,
+        latencyMs:
+          null,
+        code:
+          "INVALID_TRANSACTION_HASH",
+        error:
+          "Invalid EVM transaction hash.",
+      };
+    }
+
+    const result =
+      await this.rpcRequest({
+        network:
+          request.network,
+
+        method:
+          "eth_getTransactionReceipt",
+
+        params: [
+          transactionHash,
+        ],
+
+        signal:
+          request.signal,
+      });
+
+    if (!result.ok) {
+      return result;
+    }
+
+    const receipt =
+      asObject(
+        result.data
+      );
+
+    if (!receipt) {
+      return {
+        ok: false,
+        providerId:
+          this.id,
+        latencyMs:
+          result.latencyMs,
+        code:
+          "UPSTREAM_ERROR",
+        error:
+          "Alchemy returned an invalid transaction receipt.",
+      };
+    }
+
+    const hash =
+      parseRpcHash(
+        receipt.transactionHash
+      );
+
+    const blockNumber =
+      parseEvmHexQuantity(
+        receipt.blockNumber
+      );
+
+    const from =
+      parseRpcAddress(
+        receipt.from
+      );
+
+    const to =
+      receipt.to === null
+        ? null
+        : parseRpcAddress(
+            receipt.to
+          );
+
+    const contractAddress =
+      receipt.contractAddress ===
+        null
+        ? null
+        : parseRpcAddress(
+            receipt.contractAddress
+          );
+
+    if (
+      !hash ||
+      blockNumber === null ||
+      !from ||
+      (
+        receipt.to !== null &&
+        to === null
+      ) ||
+      (
+        receipt.contractAddress !==
+          null &&
+        contractAddress === null
+      )
+    ) {
+      return {
+        ok: false,
+        providerId:
+          this.id,
+        latencyMs:
+          result.latencyMs,
+        code:
+          "UPSTREAM_ERROR",
+        error:
+          "Alchemy returned malformed transaction receipt fields.",
+      };
+    }
+
+    const status =
+      parseEvmHexQuantity(
+        receipt.status
+      );
+
+    const success =
+      status === 1
+        ? true
+        : status === 0
+          ? false
+          : null;
+
+    return {
+      ok: true,
+      providerId:
+        this.id,
+      latencyMs:
+        result.latencyMs,
+
+      data: {
+        transactionHash:
+          hash,
+
+        blockNumber,
+
+        from,
+
+        to,
+
+        contractAddress,
+
+        success,
       },
     };
   }

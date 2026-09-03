@@ -11,6 +11,7 @@ import type {
   EvmProviderResult,
   EvmTokenHolders,
   EvmTokenMetadata,
+  EvmTransactionReceipt,
   EvmTransactionsPage,
   EvmTransfersPage,
 } from "./types";
@@ -39,6 +40,13 @@ export type EvmContractCallRequest =
   };
 
 export type EvmTraceRequest = {
+  network: EvmNetworkContext;
+  transactionHash: string;
+  signal?: AbortSignal;
+};
+
+
+export type EvmTransactionReceiptRequest = {
   network: EvmNetworkContext;
   transactionHash: string;
   signal?: AbortSignal;
@@ -129,6 +137,18 @@ export interface EvmTransfersProvider
   ): Promise<
     EvmProviderResult<
       EvmTransfersPage
+    >
+  >;
+}
+
+export interface EvmTransactionReceiptProvider
+  extends EvmProviderBase {
+  getTransactionReceipt(
+    request:
+      EvmTransactionReceiptRequest
+  ): Promise<
+    EvmProviderResult<
+      EvmTransactionReceipt
     >
   >;
 }
