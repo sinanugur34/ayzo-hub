@@ -42,11 +42,11 @@ test(
 );
 
 test(
-  "keeps Bitcoin planned until its UTXO engine exists",
+  "keeps Bitcoin in development until its engine is live",
   () => {
     assert.equal(
       NETWORKS.bitcoin.status,
-      "planned"
+      "development"
     );
 
     assert.equal(
