@@ -11,9 +11,11 @@ export const EVM_ENGINE_MODULES = [
   "assetVerification",
   "holderIntelligence",
   "walletRelationships",
-  "fundingIntelligence",
   "fundingProvenance",
+  "deploymentIntelligence",
   "developerHistory",
+  "coordinatedWalletBehavior",
+  "walletGraph",
 ] as const;
 
 export type EvmEngineModule =
