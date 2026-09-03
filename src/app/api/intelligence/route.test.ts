@@ -220,3 +220,57 @@ test(
     }
   }
 );
+
+
+test(
+  "rejects invalid Sonic and Monad addresses before provider work",
+  async () => {
+    for (
+      const network of [
+        "sonic",
+        "monad",
+      ] as const
+    ) {
+      const response =
+        await POST(
+          new Request(
+            "http://localhost/api/intelligence",
+            {
+              method:
+                "POST",
+              headers: {
+                "Content-Type":
+                  "application/json",
+                "x-ayzo-test-request":
+                  "smoke",
+              },
+              body:
+                JSON.stringify({
+                  network,
+                  address:
+                    "0x123",
+                }),
+            }
+          )
+        );
+
+      assert.equal(
+        response.status,
+        400
+      );
+
+      assert.deepEqual(
+        await response.json(),
+        {
+          ok:
+            false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid EVM address.",
+          network,
+        }
+      );
+    }
+  }
+);

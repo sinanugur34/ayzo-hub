@@ -20,6 +20,8 @@ test(
         "optimism",
         "avalanche",
         "mantle",
+        "monad",
+        "sonic",
         "scroll",
         "linea",
       ] as const
@@ -98,8 +100,6 @@ test(
   () => {
     for (
       const networkId of [
-        "sonic",
-        "monad",
       ] as const
     ) {
       assert.equal(

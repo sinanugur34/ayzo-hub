@@ -156,6 +156,13 @@ const EVM_NETWORK_CAPABILITIES = {
   mantle:
     supportedEvmCapabilities(),
 
+
+  sonic:
+    supportedEvmCapabilities(),
+
+  monad:
+    supportedEvmCapabilities(),
+
 } as const satisfies Partial<
   Record<
     NetworkId,

@@ -69,6 +69,19 @@ export const ALCHEMY_EVM_NETWORKS = {
       "mantle-mainnet.g.alchemy.com",
   },
 
+
+  sonic: {
+    chainId: 146,
+    httpHost:
+      "sonic-mainnet.g.alchemy.com",
+  },
+
+  monad: {
+    chainId: 143,
+    httpHost:
+      "monad-mainnet.g.alchemy.com",
+  },
+
 } as const satisfies Partial<
   Record<
     NetworkId,

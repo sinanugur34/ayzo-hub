@@ -68,8 +68,6 @@ test(
   () => {
     for (
       const network of [
-        "sonic",
-        "monad",
       ]
     ) {
       const result =
@@ -338,6 +336,53 @@ test(
         ["linea", 59144],
         ["scroll", 534352],
         ["mantle", 5000],
+      ] as const
+    ) {
+      const result =
+        resolveIntelligenceNetwork(
+          networkId
+        );
+
+      assert.equal(
+        result.ok,
+        true
+      );
+
+      if (!result.ok) {
+        throw new Error(
+          `Expected ${networkId} to resolve`
+        );
+      }
+
+      assert.equal(
+        result.engine,
+        "evm"
+      );
+
+      assert.equal(
+        result.network.chainId,
+        chainId
+      );
+
+      assert.equal(
+        result.network.status,
+        "live"
+      );
+    }
+  }
+);
+
+
+test(
+  "resolves Sonic and Monad through the shared EVM engine",
+  () => {
+    for (
+      const [
+        networkId,
+        chainId,
+      ] of [
+        ["sonic", 146],
+        ["monad", 143],
       ] as const
     ) {
       const result =

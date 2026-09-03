@@ -124,3 +124,24 @@ test(
     }
   }
 );
+
+
+test(
+  "keeps Sonic and Monad selected for valid EVM addresses",
+  () => {
+    for (
+      const networkId of [
+        "sonic",
+        "monad",
+      ] as const
+    ) {
+      assert.equal(
+        resolveSelectedNetworkForAddress(
+          networkId,
+          "evm"
+        ),
+        networkId
+      );
+    }
+  }
+);

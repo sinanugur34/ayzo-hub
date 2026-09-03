@@ -42,35 +42,22 @@ test(
 );
 
 test(
-  "keeps unvalidated rollout networks planned",
+  "keeps Bitcoin planned until its UTXO engine exists",
   () => {
-    for (
-      const networkId of [
-        "sonic",
-        "monad",
-        "bitcoin",
-      ] as const
-    ) {
-      assert.equal(
-        NETWORKS[
-          networkId
-        ].status,
-        "planned"
-      );
+    assert.equal(
+      NETWORKS.bitcoin.status,
+      "planned"
+    );
 
-      if (
-        NETWORKS[
-          networkId
-        ].family === "evm"
-      ) {
-        assert.deepEqual(
-          NETWORKS[
-            networkId
-          ].capabilities,
-          []
-        );
-      }
-    }
+    assert.equal(
+      NETWORKS.bitcoin.family,
+      "bitcoin"
+    );
+
+    assert.equal(
+      NETWORKS.bitcoin.chainId,
+      null
+    );
   }
 );
 
@@ -159,6 +146,43 @@ test(
         ["linea", 59144],
         ["scroll", 534352],
         ["mantle", 5000],
+      ] as const
+    ) {
+      assert.equal(
+        NETWORKS[
+          networkId
+        ].status,
+        "live"
+      );
+
+      assert.equal(
+        NETWORKS[
+          networkId
+        ].chainId,
+        chainId
+      );
+
+      assert.ok(
+        NETWORKS[
+          networkId
+        ].capabilities
+          .length > 0
+      );
+    }
+  }
+);
+
+
+test(
+  "keeps Sonic and Monad live after provider quality gates",
+  () => {
+    for (
+      const [
+        networkId,
+        chainId,
+      ] of [
+        ["sonic", 146],
+        ["monad", 143],
       ] as const
     ) {
       assert.equal(

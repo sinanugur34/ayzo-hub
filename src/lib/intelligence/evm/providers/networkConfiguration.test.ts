@@ -399,3 +399,95 @@ test(
     }
   }
 );
+
+
+test(
+  "maps Sonic and Monad provider configuration",
+  () => {
+    const expected = [
+      {
+        networkId:
+          "sonic",
+        chainId:
+          146,
+        httpHost:
+          "sonic-mainnet.g.alchemy.com",
+        chainName:
+          "sonic-mainnet",
+      },
+      {
+        networkId:
+          "monad",
+        chainId:
+          143,
+        httpHost:
+          "monad-mainnet.g.alchemy.com",
+        chainName:
+          "monad-mainnet",
+      },
+    ] as const;
+
+    for (const config of expected) {
+      assert.deepEqual(
+        getAlchemyEvmNetwork(
+          config.networkId
+        ),
+        {
+          chainId:
+            config.chainId,
+          httpHost:
+            config.httpHost,
+        }
+      );
+
+      assert.deepEqual(
+        getGoldRushEvmNetwork(
+          config.networkId
+        ),
+        {
+          networkId:
+            config.networkId,
+          chainId:
+            config.chainId,
+          chainName:
+            config.chainName,
+        }
+      );
+    }
+  }
+);
+
+test(
+  "all existing EVM adapters support Sonic and Monad",
+  () => {
+    for (
+      const networkId of [
+        "sonic",
+        "monad",
+      ] as const
+    ) {
+      const network =
+        getEvmNetworkContext(
+          networkId
+        );
+
+      assert.ok(network);
+
+      for (
+        const provider of [
+          alchemyEvmProvider,
+          goldRushEvmProvider,
+          goldRushTransactionsProvider,
+          goldRushTransfersProvider,
+        ]
+      ) {
+        assert.equal(
+          provider.supportsNetwork(
+            network
+          ),
+          true
+        );
+      }
+    }
+  }
+);

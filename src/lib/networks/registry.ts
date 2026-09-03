@@ -169,11 +169,11 @@ export const NETWORKS = {
     name: "Sonic",
     shortName: "S",
     family: "evm",
-    status: "planned",
+    status: "live",
     chainId: 146,
     nativeCurrency: "S",
     explorerUrl: "https://sonicscan.org",
-    capabilities: NO_CAPABILITIES,
+    capabilities: EVM_CAPABILITIES,
   },
 
   monad: {
@@ -181,11 +181,11 @@ export const NETWORKS = {
     name: "Monad",
     shortName: "MON",
     family: "evm",
-    status: "planned",
+    status: "live",
     chainId: 143,
     nativeCurrency: "MON",
     explorerUrl: "https://monadscan.com",
-    capabilities: NO_CAPABILITIES,
+    capabilities: EVM_CAPABILITIES,
   },
 
   bitcoin: {

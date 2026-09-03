@@ -76,6 +76,19 @@ const GOLDRUSH_EVM_NETWORKS:
     chainName: "mantle-mainnet",
   },
 
+
+  sonic: {
+    networkId: "sonic",
+    chainId: 146,
+    chainName: "sonic-mainnet",
+  },
+
+  monad: {
+    networkId: "monad",
+    chainId: 143,
+    chainName: "monad-mainnet",
+  },
+
 };
 
 export function getGoldRushEvmNetwork(
