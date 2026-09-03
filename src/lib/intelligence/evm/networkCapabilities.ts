@@ -137,6 +137,15 @@ const EVM_NETWORK_CAPABILITIES = {
   arbitrum:
     supportedEvmCapabilities(),
 
+  polygon:
+    supportedEvmCapabilities(),
+
+  optimism:
+    supportedEvmCapabilities(),
+
+  avalanche:
+    supportedEvmCapabilities(),
+
 } as const satisfies Partial<
   Record<
     NetworkId,

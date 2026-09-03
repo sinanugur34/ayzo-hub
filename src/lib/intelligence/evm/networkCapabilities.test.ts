@@ -16,6 +16,9 @@ test(
         "base",
         "bnb",
         "arbitrum",
+        "polygon",
+        "optimism",
+        "avalanche",
       ] as const
     ) {
       const capabilities =
@@ -93,9 +96,6 @@ test(
     for (
       const networkId of [
 
-        "polygon",
-        "optimism",
-        "avalanche",
         "linea",
         "scroll",
         "mantle",

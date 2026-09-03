@@ -111,3 +111,57 @@ test(
     }
   }
 );
+
+test(
+  "rejects invalid Polygon, Optimism, and Avalanche addresses before provider work",
+  async () => {
+    for (
+      const network of [
+        "polygon",
+        "optimism",
+        "avalanche",
+      ] as const
+    ) {
+      const response =
+        await POST(
+          new Request(
+            "http://localhost/api/intelligence",
+            {
+              method:
+                "POST",
+              headers: {
+                "Content-Type":
+                  "application/json",
+                "x-ayzo-test-request":
+                  "smoke",
+              },
+              body:
+                JSON.stringify({
+                  network,
+                  address:
+                    "0x123",
+                }),
+            }
+          )
+        );
+
+      assert.equal(
+        response.status,
+        400
+      );
+
+      assert.deepEqual(
+        await response.json(),
+        {
+          ok:
+            false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid EVM address.",
+          network,
+        }
+      );
+    }
+  }
+);

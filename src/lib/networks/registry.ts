@@ -97,11 +97,11 @@ export const NETWORKS = {
     name: "Polygon",
     shortName: "POL",
     family: "evm",
-    status: "planned",
+    status: "live",
     chainId: 137,
     nativeCurrency: "POL",
     explorerUrl: "https://polygonscan.com",
-    capabilities: NO_CAPABILITIES,
+    capabilities: EVM_CAPABILITIES,
   },
 
   optimism: {
@@ -109,11 +109,11 @@ export const NETWORKS = {
     name: "Optimism",
     shortName: "OP",
     family: "evm",
-    status: "planned",
+    status: "live",
     chainId: 10,
     nativeCurrency: "ETH",
     explorerUrl: "https://optimistic.etherscan.io",
-    capabilities: NO_CAPABILITIES,
+    capabilities: EVM_CAPABILITIES,
   },
 
   avalanche: {
@@ -121,11 +121,11 @@ export const NETWORKS = {
     name: "Avalanche",
     shortName: "AVAX",
     family: "evm",
-    status: "planned",
+    status: "live",
     chainId: 43114,
     nativeCurrency: "AVAX",
     explorerUrl: "https://snowtrace.io",
-    capabilities: NO_CAPABILITIES,
+    capabilities: EVM_CAPABILITIES,
   },
 
   linea: {

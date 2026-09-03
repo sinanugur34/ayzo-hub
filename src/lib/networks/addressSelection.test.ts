@@ -81,3 +81,24 @@ test(
     );
   }
 );
+
+test(
+  "keeps Polygon, Optimism, and Avalanche selected for valid EVM addresses",
+  () => {
+    for (
+      const networkId of [
+        "polygon",
+        "optimism",
+        "avalanche",
+      ] as const
+    ) {
+      assert.equal(
+        resolveSelectedNetworkForAddress(
+          networkId,
+          "evm"
+        ),
+        networkId
+      );
+    }
+  }
+);

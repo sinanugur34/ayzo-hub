@@ -68,9 +68,6 @@ test(
   () => {
     for (
       const network of [
-        "polygon",
-        "optimism",
-        "avalanche",
         "linea",
         "scroll",
         "mantle",
@@ -249,6 +246,53 @@ test(
       ] of [
         ["bnb", 56],
         ["arbitrum", 42161],
+      ] as const
+    ) {
+      const result =
+        resolveIntelligenceNetwork(
+          networkId
+        );
+
+      assert.equal(
+        result.ok,
+        true
+      );
+
+      if (!result.ok) {
+        throw new Error(
+          `Expected ${networkId} to resolve.`
+        );
+      }
+
+      assert.equal(
+        result.engine,
+        "evm"
+      );
+
+      assert.equal(
+        result.network.chainId,
+        chainId
+      );
+
+      assert.equal(
+        result.network.status,
+        "live"
+      );
+    }
+  }
+);
+
+test(
+  "resolves Polygon, Optimism, and Avalanche through the shared EVM engine",
+  () => {
+    for (
+      const [
+        networkId,
+        chainId,
+      ] of [
+        ["polygon", 137],
+        ["optimism", 10],
+        ["avalanche", 43114],
       ] as const
     ) {
       const result =

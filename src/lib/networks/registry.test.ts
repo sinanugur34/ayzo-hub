@@ -46,9 +46,6 @@ test(
   () => {
     for (
       const networkId of [
-        "polygon",
-        "optimism",
-        "avalanche",
         "linea",
         "scroll",
         "mantle",
@@ -76,6 +73,43 @@ test(
           []
         );
       }
+    }
+  }
+);
+
+test(
+  "keeps Polygon, Optimism, and Avalanche live after provider quality gates",
+  () => {
+    for (
+      const [
+        networkId,
+        chainId,
+      ] of [
+        ["polygon", 137],
+        ["optimism", 10],
+        ["avalanche", 43114],
+      ] as const
+    ) {
+      assert.equal(
+        NETWORKS[
+          networkId
+        ].status,
+        "live"
+      );
+
+      assert.equal(
+        NETWORKS[
+          networkId
+        ].chainId,
+        chainId
+      );
+
+      assert.ok(
+        NETWORKS[
+          networkId
+        ].capabilities
+          .length > 0
+      );
     }
   }
 );

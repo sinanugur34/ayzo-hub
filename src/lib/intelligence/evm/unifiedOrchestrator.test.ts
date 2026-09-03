@@ -676,3 +676,237 @@ test(
     );
   }
 );
+
+test(
+  "routes Polygon, Optimism, and Avalanche through the shared unified EVM orchestrator",
+  async () => {
+    const networks = [
+      {
+        networkId:
+          "polygon",
+        name:
+          "Polygon",
+        chainId: 137,
+        nativeCurrency:
+          "POL",
+      },
+      {
+        networkId:
+          "optimism",
+        name:
+          "Optimism",
+        chainId: 10,
+        nativeCurrency:
+          "ETH",
+      },
+      {
+        networkId:
+          "avalanche",
+        name:
+          "Avalanche",
+        chainId: 43114,
+        nativeCurrency:
+          "AVAX",
+      },
+    ] as const;
+
+    for (const expected of networks) {
+      const observedNetworks:
+        string[] = [];
+
+      const never = async () => {
+        throw new Error(
+          "Unexpected provider call."
+        );
+      };
+
+      const result =
+        await runEvmUnifiedIntelligence(
+          {
+            networkId:
+              expected.networkId,
+            address:
+              walletA,
+          },
+          {
+            readTokenMetadata:
+              async request => {
+                observedNetworks.push(
+                  request.network
+                    .networkId
+                );
+
+                return success(
+                  {
+                    address:
+                      walletA,
+                    name:
+                      null,
+                    symbol:
+                      null,
+                    decimals:
+                      null,
+                    totalSupply:
+                      null,
+                    isContract:
+                      false,
+                    isErc20:
+                      false,
+                  },
+                  "alchemy"
+                );
+              },
+            getTokenHolders:
+              never,
+            getTransactions:
+              async request => {
+                observedNetworks.push(
+                  request.network
+                    .networkId
+                );
+
+                return success({
+                  transactions: [],
+                  nextCursor:
+                    null,
+                });
+              },
+            getTokenTransfers:
+              never,
+            getContractDeployment:
+              never,
+            getTransactionReceipt:
+              never,
+          }
+        );
+
+      assert.equal(
+        result.status,
+        200
+      );
+
+      assert.equal(
+        result.data.ok,
+        true
+      );
+
+      if (!result.data.ok) {
+        throw new Error(
+          `Expected ${expected.networkId} unified success.`
+        );
+      }
+
+      assert.deepEqual(
+        result.data.network,
+        {
+          id:
+            expected.networkId,
+          name:
+            expected.name,
+          family:
+            "evm",
+          chainId:
+            expected.chainId,
+          nativeCurrency:
+            expected.nativeCurrency,
+        }
+      );
+
+      assert.deepEqual(
+        observedNetworks,
+        [
+          expected.networkId,
+          expected.networkId,
+        ]
+      );
+
+      const serialized =
+        JSON.stringify(
+          result.data
+        ).toLowerCase();
+
+      assert.equal(
+        serialized.includes(
+          "alchemy"
+        ),
+        false
+      );
+
+      assert.equal(
+        serialized.includes(
+          "goldrush"
+        ),
+        false
+      );
+
+      assert.equal(
+        serialized.includes(
+          "providerid"
+        ),
+        false
+      );
+    }
+  }
+);
+
+test(
+  "rejects invalid Polygon, Optimism, and Avalanche addresses before providers run",
+  async () => {
+    let providerCalled =
+      false;
+
+    const fail = async () => {
+      providerCalled =
+        true;
+      throw new Error(
+        "Provider should not run."
+      );
+    };
+
+    for (
+      const networkId of [
+        "polygon",
+        "optimism",
+        "avalanche",
+      ] as const
+    ) {
+      const result =
+        await runEvmUnifiedIntelligence(
+          {
+            networkId,
+            address:
+              "0x123",
+          },
+          {
+            readTokenMetadata:
+              fail,
+            getTokenHolders:
+              fail,
+            getTransactions:
+              fail,
+            getTokenTransfers:
+              fail,
+            getContractDeployment:
+              fail,
+            getTransactionReceipt:
+              fail,
+          }
+        );
+
+      assert.equal(
+        result.status,
+        400
+      );
+
+      assert.equal(
+        result.data.ok,
+        false
+      );
+    }
+
+    assert.equal(
+      providerCalled,
+      false
+    );
+  }
+);

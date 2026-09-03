@@ -193,3 +193,106 @@ test(
     }
   }
 );
+
+test(
+  "maps Polygon, Optimism, and Avalanche provider identifiers only inside provider configuration",
+  () => {
+    // K3 live gates use each network's canonical native USDC:
+    // Polygon  0x3c499c542cef5e3811e1192ce70d8cc03d5c3359
+    // Optimism 0x0b2c639c533813f4aa9d7837caf62653d097ff85
+    // Avalanche 0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e
+    const expected = [
+      {
+        networkId:
+          "polygon",
+        chainId: 137,
+        httpHost:
+          "polygon-mainnet.g.alchemy.com",
+        chainName:
+          "matic-mainnet",
+      },
+      {
+        networkId:
+          "optimism",
+        chainId: 10,
+        httpHost:
+          "opt-mainnet.g.alchemy.com",
+        chainName:
+          "optimism-mainnet",
+      },
+      {
+        networkId:
+          "avalanche",
+        chainId: 43114,
+        httpHost:
+          "avax-mainnet.g.alchemy.com",
+        chainName:
+          "avalanche-mainnet",
+      },
+    ] as const;
+
+    for (const config of expected) {
+      assert.deepEqual(
+        getAlchemyEvmNetwork(
+          config.networkId
+        ),
+        {
+          chainId:
+            config.chainId,
+          httpHost:
+            config.httpHost,
+        }
+      );
+
+      assert.deepEqual(
+        getGoldRushEvmNetwork(
+          config.networkId
+        ),
+        {
+          networkId:
+            config.networkId,
+          chainId:
+            config.chainId,
+          chainName:
+            config.chainName,
+        }
+      );
+    }
+  }
+);
+
+test(
+  "all existing EVM adapters support Polygon, Optimism, and Avalanche",
+  () => {
+    for (
+      const networkId of [
+        "polygon",
+        "optimism",
+        "avalanche",
+      ] as const
+    ) {
+      const network =
+        getEvmNetworkContext(
+          networkId
+        );
+
+      assert.ok(network);
+
+      for (
+        const provider of [
+          alchemyEvmProvider,
+          goldRushEvmProvider,
+          goldRushTransactionsProvider,
+          goldRushTransfersProvider,
+        ]
+      ) {
+        assert.equal(
+          provider.supportsNetwork(
+            network
+          ),
+          true
+        );
+      }
+    }
+  }
+);

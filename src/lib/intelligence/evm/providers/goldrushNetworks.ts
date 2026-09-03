@@ -39,6 +39,24 @@ const GOLDRUSH_EVM_NETWORKS:
     chainName: "arbitrum-mainnet",
   },
 
+  polygon: {
+    networkId: "polygon",
+    chainId: 137,
+    chainName: "matic-mainnet",
+  },
+
+  optimism: {
+    networkId: "optimism",
+    chainId: 10,
+    chainName: "optimism-mainnet",
+  },
+
+  avalanche: {
+    networkId: "avalanche",
+    chainId: 43114,
+    chainName: "avalanche-mainnet",
+  },
+
 };
 
 export function getGoldRushEvmNetwork(

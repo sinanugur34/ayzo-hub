@@ -32,6 +32,24 @@ export const ALCHEMY_EVM_NETWORKS = {
       "arb-mainnet.g.alchemy.com",
   },
 
+  polygon: {
+    chainId: 137,
+    httpHost:
+      "polygon-mainnet.g.alchemy.com",
+  },
+
+  optimism: {
+    chainId: 10,
+    httpHost:
+      "opt-mainnet.g.alchemy.com",
+  },
+
+  avalanche: {
+    chainId: 43114,
+    httpHost:
+      "avax-mainnet.g.alchemy.com",
+  },
+
 } as const satisfies Partial<
   Record<
     NetworkId,
