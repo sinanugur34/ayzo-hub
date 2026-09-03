@@ -46,9 +46,6 @@ test(
   () => {
     for (
       const networkId of [
-        "linea",
-        "scroll",
-        "mantle",
         "sonic",
         "monad",
         "bitcoin",
@@ -147,5 +144,43 @@ test(
       NETWORKS.arbitrum.nativeCurrency,
       "ETH"
     );
+  }
+);
+
+
+test(
+  "keeps Linea, Scroll, and Mantle live after provider quality gates",
+  () => {
+    for (
+      const [
+        networkId,
+        chainId,
+      ] of [
+        ["linea", 59144],
+        ["scroll", 534352],
+        ["mantle", 5000],
+      ] as const
+    ) {
+      assert.equal(
+        NETWORKS[
+          networkId
+        ].status,
+        "live"
+      );
+
+      assert.equal(
+        NETWORKS[
+          networkId
+        ].chainId,
+        chainId
+      );
+
+      assert.ok(
+        NETWORKS[
+          networkId
+        ].capabilities
+          .length > 0
+      );
+    }
   }
 );

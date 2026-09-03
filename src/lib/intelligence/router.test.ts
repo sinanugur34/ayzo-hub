@@ -68,9 +68,6 @@ test(
   () => {
     for (
       const network of [
-        "linea",
-        "scroll",
-        "mantle",
         "sonic",
         "monad",
       ]
@@ -308,6 +305,54 @@ test(
       if (!result.ok) {
         throw new Error(
           `Expected ${networkId} to resolve.`
+        );
+      }
+
+      assert.equal(
+        result.engine,
+        "evm"
+      );
+
+      assert.equal(
+        result.network.chainId,
+        chainId
+      );
+
+      assert.equal(
+        result.network.status,
+        "live"
+      );
+    }
+  }
+);
+
+
+test(
+  "resolves Linea, Scroll, and Mantle through the shared EVM engine",
+  () => {
+    for (
+      const [
+        networkId,
+        chainId,
+      ] of [
+        ["linea", 59144],
+        ["scroll", 534352],
+        ["mantle", 5000],
+      ] as const
+    ) {
+      const result =
+        resolveIntelligenceNetwork(
+          networkId
+        );
+
+      assert.equal(
+        result.ok,
+        true
+      );
+
+      if (!result.ok) {
+        throw new Error(
+          `Expected ${networkId} to resolve`
         );
       }
 

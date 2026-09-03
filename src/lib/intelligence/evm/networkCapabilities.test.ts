@@ -19,6 +19,9 @@ test(
         "polygon",
         "optimism",
         "avalanche",
+        "mantle",
+        "scroll",
+        "linea",
       ] as const
     ) {
       const capabilities =
@@ -95,10 +98,6 @@ test(
   () => {
     for (
       const networkId of [
-
-        "linea",
-        "scroll",
-        "mantle",
         "sonic",
         "monad",
       ] as const

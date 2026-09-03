@@ -296,3 +296,106 @@ test(
     }
   }
 );
+
+
+test(
+  "maps Linea, Scroll, and Mantle provider configuration",
+  () => {
+    const expected = [
+      {
+        networkId:
+          "linea",
+        chainId:
+          59144,
+        httpHost:
+          "linea-mainnet.g.alchemy.com",
+        chainName:
+          "linea-mainnet",
+      },
+      {
+        networkId:
+          "scroll",
+        chainId:
+          534352,
+        httpHost:
+          "scroll-mainnet.g.alchemy.com",
+        chainName:
+          "scroll-mainnet",
+      },
+      {
+        networkId:
+          "mantle",
+        chainId:
+          5000,
+        httpHost:
+          "mantle-mainnet.g.alchemy.com",
+        chainName:
+          "mantle-mainnet",
+      },
+    ] as const;
+
+    for (const config of expected) {
+      assert.deepEqual(
+        getAlchemyEvmNetwork(
+          config.networkId
+        ),
+        {
+          chainId:
+            config.chainId,
+          httpHost:
+            config.httpHost,
+        }
+      );
+
+      assert.deepEqual(
+        getGoldRushEvmNetwork(
+          config.networkId
+        ),
+        {
+          networkId:
+            config.networkId,
+          chainId:
+            config.chainId,
+          chainName:
+            config.chainName,
+        }
+      );
+    }
+  }
+);
+
+test(
+  "all existing EVM adapters support Linea, Scroll, and Mantle",
+  () => {
+    for (
+      const networkId of [
+        "linea",
+        "scroll",
+        "mantle",
+      ] as const
+    ) {
+      const network =
+        getEvmNetworkContext(
+          networkId
+        );
+
+      assert.ok(network);
+
+      for (
+        const provider of [
+          alchemyEvmProvider,
+          goldRushEvmProvider,
+          goldRushTransactionsProvider,
+          goldRushTransfersProvider,
+        ]
+      ) {
+        assert.equal(
+          provider.supportsNetwork(
+            network
+          ),
+          true
+        );
+      }
+    }
+  }
+);

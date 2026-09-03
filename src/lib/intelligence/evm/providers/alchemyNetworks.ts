@@ -50,6 +50,25 @@ export const ALCHEMY_EVM_NETWORKS = {
       "avax-mainnet.g.alchemy.com",
   },
 
+
+  linea: {
+    chainId: 59144,
+    httpHost:
+      "linea-mainnet.g.alchemy.com",
+  },
+
+  scroll: {
+    chainId: 534352,
+    httpHost:
+      "scroll-mainnet.g.alchemy.com",
+  },
+
+  mantle: {
+    chainId: 5000,
+    httpHost:
+      "mantle-mainnet.g.alchemy.com",
+  },
+
 } as const satisfies Partial<
   Record<
     NetworkId,

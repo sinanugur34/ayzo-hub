@@ -146,6 +146,16 @@ const EVM_NETWORK_CAPABILITIES = {
   avalanche:
     supportedEvmCapabilities(),
 
+
+  linea:
+    supportedEvmCapabilities(),
+
+  scroll:
+    supportedEvmCapabilities(),
+
+  mantle:
+    supportedEvmCapabilities(),
+
 } as const satisfies Partial<
   Record<
     NetworkId,

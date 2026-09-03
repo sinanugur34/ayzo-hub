@@ -133,11 +133,11 @@ export const NETWORKS = {
     name: "Linea",
     shortName: "LINEA",
     family: "evm",
-    status: "planned",
+    status: "live",
     chainId: 59144,
     nativeCurrency: "ETH",
     explorerUrl: "https://lineascan.build",
-    capabilities: NO_CAPABILITIES,
+    capabilities: EVM_CAPABILITIES,
   },
 
   scroll: {
@@ -145,11 +145,11 @@ export const NETWORKS = {
     name: "Scroll",
     shortName: "SCROLL",
     family: "evm",
-    status: "planned",
+    status: "live",
     chainId: 534352,
     nativeCurrency: "ETH",
     explorerUrl: "https://scrollscan.com",
-    capabilities: NO_CAPABILITIES,
+    capabilities: EVM_CAPABILITIES,
   },
 
   mantle: {
@@ -157,11 +157,11 @@ export const NETWORKS = {
     name: "Mantle",
     shortName: "MNT",
     family: "evm",
-    status: "planned",
+    status: "live",
     chainId: 5000,
     nativeCurrency: "MNT",
     explorerUrl: "https://mantlescan.xyz",
-    capabilities: NO_CAPABILITIES,
+    capabilities: EVM_CAPABILITIES,
   },
 
   sonic: {

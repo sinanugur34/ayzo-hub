@@ -57,6 +57,25 @@ const GOLDRUSH_EVM_NETWORKS:
     chainName: "avalanche-mainnet",
   },
 
+
+  linea: {
+    networkId: "linea",
+    chainId: 59144,
+    chainName: "linea-mainnet",
+  },
+
+  scroll: {
+    networkId: "scroll",
+    chainId: 534352,
+    chainName: "scroll-mainnet",
+  },
+
+  mantle: {
+    networkId: "mantle",
+    chainId: 5000,
+    chainName: "mantle-mainnet",
+  },
+
 };
 
 export function getGoldRushEvmNetwork(

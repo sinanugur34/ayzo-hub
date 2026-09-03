@@ -102,3 +102,25 @@ test(
     }
   }
 );
+
+
+test(
+  "keeps Linea, Scroll, and Mantle selected for valid EVM addresses",
+  () => {
+    for (
+      const networkId of [
+        "linea",
+        "scroll",
+        "mantle",
+      ] as const
+    ) {
+      assert.equal(
+        resolveSelectedNetworkForAddress(
+          networkId,
+          "evm"
+        ),
+        networkId
+      );
+    }
+  }
+);
