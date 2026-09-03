@@ -24,6 +24,13 @@ export default function WaitlistForm({
   const [loading, setLoading] =
     useState(false);
 
+  const expandedPaidCard =
+    compact &&
+    (
+      source === "pro-card" ||
+      source === "advanced-card"
+    );
+
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
   ) {
@@ -123,11 +130,11 @@ export default function WaitlistForm({
       />
 
       <div
-        className={`flex gap-2 ${
-          compact
-            ? "flex-col sm:flex-row"
-            : "flex-col sm:flex-row"
-        }`}
+        className={
+          expandedPaidCard
+            ? "flex flex-col gap-3"
+            : "flex flex-col gap-2 sm:flex-row"
+        }
       >
         <input
           type="email"
@@ -140,15 +147,23 @@ export default function WaitlistForm({
             );
             setMessage("");
           }}
-          placeholder="you@email.com"
+          placeholder="Enter your email address"
           disabled={loading}
-          className="h-12 min-w-0 flex-1 rounded-xl border border-zinc-700 bg-black/40 px-4 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-violet-500/70 disabled:opacity-60"
+          className={`min-w-0 flex-1 rounded-xl border border-zinc-700 bg-black/40 text-white outline-none transition placeholder:text-zinc-600 focus:border-violet-500/70 disabled:opacity-60 ${
+            expandedPaidCard
+              ? "h-14 w-full px-5 text-base"
+              : "h-12 px-4 text-sm"
+          }`}
         />
 
         <button
           type="submit"
           disabled={loading}
-          className="h-12 shrink-0 rounded-xl bg-white px-5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+          className={`shrink-0 rounded-xl bg-white font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 ${
+            expandedPaidCard
+              ? "h-14 w-full px-6 text-sm"
+              : "h-12 px-5 text-sm"
+          }`}
         >
           {loading
             ? "Joining..."

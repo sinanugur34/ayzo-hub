@@ -564,7 +564,7 @@ export default function Home() {
                         LiveAnalysisNetworkId
                     )
                   }
-                  className="h-14 w-full appearance-none rounded-2xl border border-zinc-700 bg-zinc-950 px-4 pr-12 text-sm font-medium text-white outline-none transition focus:border-violet-500"
+                  className="h-16 w-full appearance-none rounded-2xl border border-zinc-700 bg-zinc-950 px-5 pr-12 text-base font-medium text-white outline-none transition focus:border-violet-500"
                 >
                   {LIVE_NETWORKS.map(
                     id => {
@@ -596,7 +596,7 @@ export default function Home() {
             </div>
 
             {/* Tablet / desktop: wrap instead of clipping. */}
-            <div className="hidden w-full flex-wrap justify-center gap-1 rounded-2xl border border-zinc-800 bg-zinc-950/80 p-1.5 sm:flex">
+            <div className="hidden w-full flex-wrap justify-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-950/80 p-2 sm:flex">
               {LIVE_NETWORKS.map(
                 id => {
                   const definition =
@@ -615,7 +615,7 @@ export default function Home() {
                           id
                         )
                       }
-                      className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-medium transition ${
+                      className={`flex items-center gap-2 rounded-xl px-4 py-3 text-xs font-medium transition sm:text-[13px] ${
                         active
                           ? "bg-white text-black shadow-lg"
                           : "text-zinc-500 hover:bg-zinc-900 hover:text-zinc-300"
