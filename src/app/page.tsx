@@ -444,7 +444,7 @@ export default function Home() {
         </div>
 
         <div className="rounded-full border border-zinc-800 bg-zinc-950/80 px-4 py-2 text-xs text-zinc-400">
-          Private Alpha
+          Early Access
         </div>
       </header>
 
@@ -746,7 +746,7 @@ export default function Home() {
 
               [
                 "Multichain",
-                "Solana, Ethereum and Base live",
+                "Solana, 12 EVM networks and Bitcoin live",
               ],
             ].map(
               ([
