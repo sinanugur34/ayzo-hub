@@ -7,15 +7,25 @@ import type {
   EvmContractCallProvider,
   EvmContractCallRequest,
   EvmContractCodeProvider,
+  EvmContractDeploymentProvider,
 } from "../provider";
 
 import type {
   EvmContractCall,
   EvmContractCode,
+  EvmContractDeploymentLookup,
   EvmNetworkContext,
   EvmProviderErrorCode,
+  EvmProviderFailure,
   EvmProviderResult,
 } from "../types";
+
+import {
+  findFirstContractCodeBlock,
+  hasEvmRuntimeCode,
+  parseEvmHexQuantity,
+  toEvmBlockTag,
+} from "../contractDeployment";
 
 import {
   getAlchemyEvmNetwork,
@@ -24,10 +34,115 @@ import {
 const ALCHEMY_CAPABILITIES = [
   "contractCode",
   "contractCall",
+  "contractDeployment",
   "rpc",
 ] as const satisfies readonly ProviderCapability[];
 
 const REQUEST_TIMEOUT_MS = 8_000;
+
+const EVM_ADDRESS =
+  /^0x[0-9a-fA-F]{40}$/;
+
+const TX_HASH =
+  /^0x[0-9a-fA-F]{64}$/;
+
+type JsonObject =
+  Record<string, unknown>;
+
+function asObject(
+  value: unknown
+): JsonObject | null {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    Array.isArray(value)
+  ) {
+    return null;
+  }
+
+  return value as JsonObject;
+}
+
+function parseRpcAddress(
+  value: unknown
+): string | null {
+  if (
+    typeof value !== "string"
+  ) {
+    return null;
+  }
+
+  const normalized =
+    value.trim().toLowerCase();
+
+  return EVM_ADDRESS.test(
+    normalized
+  )
+    ? normalized
+    : null;
+}
+
+function parseRpcHash(
+  value: unknown
+): string | null {
+  if (
+    typeof value !== "string"
+  ) {
+    return null;
+  }
+
+  const normalized =
+    value.trim().toLowerCase();
+
+  return TX_HASH.test(
+    normalized
+  )
+    ? normalized
+    : null;
+}
+
+function blockTimestampToIso(
+  value: unknown
+): string | null {
+  const seconds =
+    parseEvmHexQuantity(value);
+
+  if (seconds === null) {
+    return null;
+  }
+
+  const milliseconds =
+    seconds * 1000;
+
+  if (
+    !Number.isSafeInteger(
+      milliseconds
+    )
+  ) {
+    return null;
+  }
+
+  const date =
+    new Date(milliseconds);
+
+  return Number.isFinite(
+    date.getTime()
+  )
+    ? date.toISOString()
+    : null;
+}
+
+class DeploymentProbeFailure
+  extends Error {
+  constructor(
+    readonly failure:
+      EvmProviderFailure
+  ) {
+    super(
+      "Historical contract-code probe failed."
+    );
+  }
+}
 
 type JsonRpcError = {
   code?: number;
@@ -87,7 +202,8 @@ function classifyRpcError(
 export class AlchemyEvmProvider
   implements
     EvmContractCodeProvider,
-    EvmContractCallProvider
+    EvmContractCallProvider,
+    EvmContractDeploymentProvider
 {
   readonly id = "alchemy" as const;
 
@@ -411,7 +527,385 @@ export class AlchemyEvmProvider
       },
     };
   }
+
+  async getContractDeployment(
+    request: EvmAddressRequest
+  ): Promise<
+    EvmProviderResult<
+      EvmContractDeploymentLookup
+    >
+  > {
+    const normalizedAddress =
+      request.address
+        .trim()
+        .toLowerCase();
+
+    if (
+      !EVM_ADDRESS.test(
+        normalizedAddress
+      )
+    ) {
+      return {
+        ok: false,
+        providerId: this.id,
+        latencyMs: null,
+        code: "INVALID_ADDRESS",
+        error:
+          "Invalid EVM address.",
+      };
+    }
+
+    const codeResult =
+      await this.getContractCode({
+        ...request,
+        address:
+          normalizedAddress,
+      });
+
+    if (!codeResult.ok) {
+      return codeResult;
+    }
+
+    const baseCoverage = {
+      historicalCodeSearch:
+        true,
+      topLevelCreateReceipts:
+        true,
+      internalCreate:
+        false,
+      create2:
+        false,
+    } as const;
+
+    if (
+      !codeResult.data.isContract
+    ) {
+      return {
+        ok: true,
+        providerId:
+          this.id,
+        latencyMs:
+          codeResult.latencyMs,
+        data: {
+          contractAddress:
+            normalizedAddress,
+          isContract: false,
+          firstObservedCodeBlock:
+            null,
+          deployment:
+            null,
+          coverage: {
+            ...baseCoverage,
+            limitation:
+              "Address has no runtime contract code at latest block.",
+          },
+        },
+      };
+    }
+
+    const startedAt =
+      performance.now();
+
+    const latestBlockResult =
+      await this.rpcRequest({
+        network:
+          request.network,
+        method:
+          "eth_blockNumber",
+        params: [],
+        signal:
+          request.signal,
+      });
+
+    if (!latestBlockResult.ok) {
+      return latestBlockResult;
+    }
+
+    const latestBlock =
+      parseEvmHexQuantity(
+        latestBlockResult.data
+      );
+
+    if (latestBlock === null) {
+      return {
+        ok: false,
+        providerId:
+          this.id,
+        latencyMs:
+          elapsedMs(startedAt),
+        code:
+          "UPSTREAM_ERROR",
+        error:
+          "Alchemy returned an invalid eth_blockNumber result.",
+      };
+    }
+
+    let firstObservedCodeBlock:
+      number | null = null;
+
+    try {
+      firstObservedCodeBlock =
+        await findFirstContractCodeBlock(
+          latestBlock,
+          async blockNumber => {
+            const result =
+              await this.rpcRequest({
+                network:
+                  request.network,
+                method:
+                  "eth_getCode",
+                params: [
+                  normalizedAddress,
+                  toEvmBlockTag(
+                    blockNumber
+                  ),
+                ],
+                signal:
+                  request.signal,
+              });
+
+            if (!result.ok) {
+              throw new DeploymentProbeFailure(
+                result
+              );
+            }
+
+            return hasEvmRuntimeCode(
+              result.data
+            );
+          }
+        );
+    } catch (error) {
+      if (
+        error instanceof
+          DeploymentProbeFailure
+      ) {
+        return error.failure;
+      }
+
+      return {
+        ok: false,
+        providerId:
+          this.id,
+        latencyMs:
+          elapsedMs(startedAt),
+        code:
+          "UPSTREAM_ERROR",
+        error:
+          "Historical contract-code search failed.",
+      };
+    }
+
+    if (
+      firstObservedCodeBlock ===
+        null
+    ) {
+      return {
+        ok: false,
+        providerId:
+          this.id,
+        latencyMs:
+          elapsedMs(startedAt),
+        code:
+          "UPSTREAM_ERROR",
+        error:
+          "Contract code exists at latest block but no historical code block was found.",
+      };
+    }
+
+    const blockResult =
+      await this.rpcRequest({
+        network:
+          request.network,
+        method:
+          "eth_getBlockByNumber",
+        params: [
+          toEvmBlockTag(
+            firstObservedCodeBlock
+          ),
+          true,
+        ],
+        signal:
+          request.signal,
+      });
+
+    if (!blockResult.ok) {
+      return blockResult;
+    }
+
+    const block =
+      asObject(
+        blockResult.data
+      );
+
+    if (
+      !block ||
+      !Array.isArray(
+        block.transactions
+      )
+    ) {
+      return {
+        ok: false,
+        providerId:
+          this.id,
+        latencyMs:
+          elapsedMs(startedAt),
+        code:
+          "UPSTREAM_ERROR",
+        error:
+          "Alchemy returned an invalid deployment block.",
+      };
+    }
+
+    const timestamp =
+      blockTimestampToIso(
+        block.timestamp
+      );
+
+    for (
+      const transactionValue of
+        block.transactions
+    ) {
+      const transaction =
+        asObject(
+          transactionValue
+        );
+
+      if (
+        !transaction ||
+        transaction.to !== null
+      ) {
+        continue;
+      }
+
+      const hash =
+        parseRpcHash(
+          transaction.hash
+        );
+
+      const deployerAddress =
+        parseRpcAddress(
+          transaction.from
+        );
+
+      if (
+        !hash ||
+        !deployerAddress
+      ) {
+        continue;
+      }
+
+      const receiptResult =
+        await this.rpcRequest({
+          network:
+            request.network,
+          method:
+            "eth_getTransactionReceipt",
+          params: [
+            hash,
+          ],
+          signal:
+            request.signal,
+        });
+
+      if (!receiptResult.ok) {
+        return receiptResult;
+      }
+
+      const receipt =
+        asObject(
+          receiptResult.data
+        );
+
+      const contractAddress =
+        parseRpcAddress(
+          receipt
+            ?.contractAddress
+        );
+
+      if (
+        contractAddress !==
+          normalizedAddress
+      ) {
+        continue;
+      }
+
+      return {
+        ok: true,
+        providerId:
+          this.id,
+        latencyMs:
+          elapsedMs(startedAt),
+        data: {
+          contractAddress:
+            normalizedAddress,
+          isContract:
+            true,
+
+          firstObservedCodeBlock,
+
+          deployment: {
+            contractAddress:
+              normalizedAddress,
+
+            deployerAddress,
+
+            transactionHash:
+              hash,
+
+            blockNumber:
+              firstObservedCodeBlock,
+
+            timestamp,
+
+            creationKind:
+              "top_level_create",
+
+            evidenceKind:
+              "transaction_receipt",
+          },
+
+          coverage: {
+            ...baseCoverage,
+
+            limitation:
+              "Top-level CREATE deployment evidence is covered. Internal CREATE and CREATE2 deployments require trace evidence and are not yet included.",
+          },
+        },
+      };
+    }
+
+    return {
+      ok: true,
+      providerId:
+        this.id,
+      latencyMs:
+        elapsedMs(startedAt),
+
+      data: {
+        contractAddress:
+          normalizedAddress,
+
+        isContract:
+          true,
+
+        firstObservedCodeBlock,
+
+        deployment:
+          null,
+
+        coverage: {
+          ...baseCoverage,
+
+          limitation:
+            "Runtime code was located historically, but no matching top-level creation receipt was found. Internal CREATE/CREATE2 deployment evidence is not yet covered.",
+        },
+      },
+    };
+
 }
+}
+
 
 export const alchemyEvmProvider =
   new AlchemyEvmProvider();

@@ -103,6 +103,42 @@ export type EvmContractVerification = {
   latencyMs: number;
 };
 
+export type EvmContractDeploymentEvidence = {
+  contractAddress: string;
+  deployerAddress: string;
+  transactionHash: string;
+  blockNumber: number;
+  timestamp: string | null;
+
+  creationKind:
+    "top_level_create";
+
+  evidenceKind:
+    "transaction_receipt";
+};
+
+export type EvmContractDeploymentCoverage = {
+  historicalCodeSearch: boolean;
+  topLevelCreateReceipts: boolean;
+  internalCreate: boolean;
+  create2: boolean;
+  limitation: string | null;
+};
+
+export type EvmContractDeploymentLookup = {
+  contractAddress: string;
+  isContract: boolean;
+
+  firstObservedCodeBlock:
+    number | null;
+
+  deployment:
+    EvmContractDeploymentEvidence | null;
+
+  coverage:
+    EvmContractDeploymentCoverage;
+};
+
 export type EvmContractCall = {
   address: string;
   data: string;

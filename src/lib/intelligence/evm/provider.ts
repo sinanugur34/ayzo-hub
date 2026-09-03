@@ -6,6 +6,7 @@ import type {
 import type {
   EvmContractCall,
   EvmContractCode,
+  EvmContractDeploymentLookup,
   EvmNetworkContext,
   EvmProviderResult,
   EvmTokenHolders,
@@ -78,6 +79,17 @@ export interface EvmContractCallProvider
     request: EvmContractCallRequest
   ): Promise<
     EvmProviderResult<EvmContractCall>
+  >;
+}
+
+export interface EvmContractDeploymentProvider
+  extends EvmProviderBase {
+  getContractDeployment(
+    request: EvmAddressRequest
+  ): Promise<
+    EvmProviderResult<
+      EvmContractDeploymentLookup
+    >
   >;
 }
 
