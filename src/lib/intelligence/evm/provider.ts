@@ -10,9 +10,8 @@ import type {
   EvmProviderResult,
   EvmTokenHolders,
   EvmTokenMetadata,
-  EvmTransaction,
   EvmTransactionsPage,
-  EvmTransfer,
+  EvmTransfersPage,
 } from "./types";
 
 export type EvmAddressRequest = {
@@ -25,6 +24,11 @@ export type EvmPaginatedAddressRequest =
   EvmAddressRequest & {
     limit?: number;
     cursor?: string | null;
+  };
+
+export type EvmTokenTransfersRequest =
+  EvmPaginatedAddressRequest & {
+    tokenAddress: string;
   };
 
 export type EvmContractCallRequest =
@@ -109,10 +113,10 @@ export interface EvmTransactionsProvider
 export interface EvmTransfersProvider
   extends EvmProviderBase {
   getTokenTransfers(
-    request: EvmPaginatedAddressRequest
+    request: EvmTokenTransfersRequest
   ): Promise<
     EvmProviderResult<
-      readonly EvmTransfer[]
+      EvmTransfersPage
     >
   >;
 }

@@ -12,6 +12,7 @@ export type EvmProviderErrorCode =
   | "UNSUPPORTED_NETWORK"
   | "UNSUPPORTED_CAPABILITY"
   | "INVALID_ADDRESS"
+  | "INVALID_TOKEN_ADDRESS"
   | "CALL_REVERTED"
   | "RATE_LIMITED"
   | "TIMEOUT"
@@ -76,10 +77,16 @@ export type EvmTransactionsPage = {
 export type EvmTransfer = {
   transactionHash: string;
   blockNumber: number | null;
-  from: string | null;
-  to: string | null;
-  tokenAddress: string | null;
-  value: string | null;
+  timestamp: string | null;
+  from: string;
+  to: string;
+  tokenAddress: string;
+  value: string;
+};
+
+export type EvmTransfersPage = {
+  transfers: readonly EvmTransfer[];
+  nextCursor: string | null;
 };
 
 export type EvmContractCode = {
