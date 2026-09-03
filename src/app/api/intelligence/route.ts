@@ -10,6 +10,9 @@ import {
   resolveIntelligenceNetwork,
 } from "@/lib/intelligence/router";
 import {
+  runEvmUnifiedIntelligence,
+} from "@/lib/intelligence/evm/unifiedOrchestrator";
+import {
   runSolanaIntelligence,
 } from "@/lib/intelligence/solana/engine";
 import {
@@ -17,6 +20,9 @@ import {
   getClientIp,
 } from "@/lib/rateLimit";
 import { readJsonObjectBody } from "@/lib/requestBody";
+
+const EVM_ADDRESS =
+  /^0x[0-9a-fA-F]{40}$/;
 
 export async function POST(request: Request) {
   const isDevelopmentTestRequest =
@@ -116,6 +122,21 @@ export async function POST(request: Request) {
       );
     }
 
+    if (
+      resolution.engine === "evm" &&
+      !EVM_ADDRESS.test(address)
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          code: "INVALID_ADDRESS",
+          error: "Invalid EVM address.",
+          network: resolution.networkId,
+        },
+        { status: 400 }
+      );
+    }
+
     const testFailure =
       process.env.NODE_ENV !== "production" &&
       (body.__testFailure === "relationships" ||
@@ -197,7 +218,23 @@ export async function POST(request: Request) {
         );
       }
 
-      case "evm":
+      case "evm": {
+        const result =
+          await runEvmUnifiedIntelligence({
+            networkId:
+              resolution.networkId,
+            address,
+          });
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
       case "bitcoin":
         return Response.json(
           {

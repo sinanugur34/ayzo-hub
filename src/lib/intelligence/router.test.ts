@@ -1,0 +1,204 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import {
+  resolveIntelligenceNetwork,
+} from "./router";
+
+test(
+  "resolves Solana and Ethereum as live intelligence networks",
+  () => {
+    const solana =
+      resolveIntelligenceNetwork(
+        "solana"
+      );
+
+    assert.equal(
+      solana.ok,
+      true
+    );
+
+    if (!solana.ok) {
+      throw new Error(
+        "Expected Solana to resolve."
+      );
+    }
+
+    assert.equal(
+      solana.engine,
+      "solana"
+    );
+
+    const ethereum =
+      resolveIntelligenceNetwork(
+        "ethereum"
+      );
+
+    assert.equal(
+      ethereum.ok,
+      true
+    );
+
+    if (!ethereum.ok) {
+      throw new Error(
+        "Expected Ethereum to resolve."
+      );
+    }
+
+    assert.equal(
+      ethereum.engine,
+      "evm"
+    );
+
+    assert.equal(
+      ethereum.networkId,
+      "ethereum"
+    );
+
+    assert.equal(
+      ethereum.network.status,
+      "live"
+    );
+  }
+);
+
+test(
+  "keeps planned EVM networks unavailable",
+  () => {
+    for (
+      const network of [
+        "base",
+        "bnb",
+        "arbitrum",
+        "polygon",
+        "optimism",
+        "avalanche",
+        "linea",
+        "scroll",
+        "mantle",
+        "sonic",
+        "monad",
+      ]
+    ) {
+      const result =
+        resolveIntelligenceNetwork(
+          network
+        );
+
+      assert.equal(
+        result.ok,
+        false
+      );
+
+      if (result.ok) {
+        throw new Error(
+          `${network} unexpectedly resolved as live.`
+        );
+      }
+
+      assert.equal(
+        result.code,
+        "NETWORK_NOT_AVAILABLE"
+      );
+    }
+  }
+);
+
+test(
+  "keeps Bitcoin unavailable until its engine is live",
+  () => {
+    const result =
+      resolveIntelligenceNetwork(
+        "bitcoin"
+      );
+
+    assert.equal(
+      result.ok,
+      false
+    );
+
+    if (result.ok) {
+      throw new Error(
+        "Bitcoin unexpectedly resolved as live."
+      );
+    }
+
+    assert.equal(
+      result.code,
+      "NETWORK_NOT_AVAILABLE"
+    );
+  }
+);
+
+test(
+  "rejects unsupported and missing networks",
+  () => {
+    const unsupported =
+      resolveIntelligenceNetwork(
+        "not-a-network"
+      );
+
+    assert.equal(
+      unsupported.ok,
+      false
+    );
+
+    if (unsupported.ok) {
+      throw new Error(
+        "Unsupported network unexpectedly resolved."
+      );
+    }
+
+    assert.equal(
+      unsupported.code,
+      "INVALID_NETWORK"
+    );
+
+    const missing =
+      resolveIntelligenceNetwork(
+        undefined
+      );
+
+    assert.equal(
+      missing.ok,
+      false
+    );
+
+    if (missing.ok) {
+      throw new Error(
+        "Missing network unexpectedly resolved."
+      );
+    }
+
+    assert.equal(
+      missing.code,
+      "INVALID_NETWORK"
+    );
+  }
+);
+
+test(
+  "normalizes network identifiers before resolution",
+  () => {
+    const result =
+      resolveIntelligenceNetwork(
+        "  ETHEREUM  "
+      );
+
+    assert.equal(
+      result.ok,
+      true
+    );
+
+    if (!result.ok) {
+      throw new Error(
+        "Normalized Ethereum identifier did not resolve."
+      );
+    }
+
+    assert.equal(
+      result.networkId,
+      "ethereum"
+    );
+  }
+);

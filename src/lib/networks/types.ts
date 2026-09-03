@@ -14,7 +14,9 @@ export type NetworkCapability =
   | "walletRelationships"
   | "fundingIntelligence"
   | "fundingProvenance"
+  | "deploymentIntelligence"
   | "developerHistory"
+  | "coordinatedWalletBehavior"
   | "walletGraph"
   | "historicalChanges"
   | "addressFlows";

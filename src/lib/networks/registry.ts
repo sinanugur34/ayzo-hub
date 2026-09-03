@@ -14,7 +14,11 @@ const EVM_CAPABILITIES = [
   "assetVerification",
   "holderIntelligence",
   "walletRelationships",
-  "fundingIntelligence",
+  "fundingProvenance",
+  "deploymentIntelligence",
+  "developerHistory",
+  "coordinatedWalletBehavior",
+  "walletGraph",
 ] as const satisfies readonly NetworkCapability[];
 
 const BITCOIN_CAPABILITIES = [
@@ -42,7 +46,7 @@ export const NETWORKS = {
     name: "Ethereum",
     shortName: "ETH",
     family: "evm",
-    status: "development",
+    status: "live",
     chainId: 1,
     nativeCurrency: "ETH",
     explorerUrl: "https://etherscan.io",
