@@ -8,9 +8,14 @@ import {
 export default function WaitlistForm({
   source,
   compact = false,
+  buttonLabel,
 }: {
-  source: "pro-card" | "free-limit";
+  source:
+    | "pro-card"
+    | "advanced-card"
+    | "free-limit";
   compact?: boolean;
+  buttonLabel?: string;
 }) {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -96,8 +101,8 @@ export default function WaitlistForm({
         </div>
 
         <div className="mt-1 text-xs text-zinc-500">
-          We&apos;ll email you when AYZO Pro
-          launches.
+          We&apos;ll email you when AYZO paid plans
+          launch.
         </div>
       </div>
     );
@@ -147,13 +152,19 @@ export default function WaitlistForm({
         >
           {loading
             ? "Joining..."
-            : "Join Pro Waitlist"}
+            : buttonLabel ??
+              (
+                source ===
+                  "advanced-card"
+                  ? "Join Advanced Waitlist"
+                  : "Join Pro Waitlist"
+              )}
         </button>
       </div>
 
       <p className="mt-2 text-[10px] leading-4 text-zinc-600">
         By joining, you agree to receive AYZO
-        Pro launch and early-access emails.
+        paid-plan launch and early-access emails.
         Unsubscribe anytime.
       </p>
 

@@ -60,14 +60,24 @@ export async function POST(request: Request) {
     const source =
       body?.source === "free-limit"
         ? "free-limit"
-        : "pro-card";
+        : body?.source ===
+            "advanced-card"
+          ? "advanced-card"
+          : "pro-card";
+
+    const waitlistName =
+      source === "advanced-card"
+        ? "AYZO Advanced"
+        : source === "pro-card"
+          ? "AYZO Pro"
+          : "AYZO";
 
     // Silently accept obvious bot submissions.
     if (honeypot) {
       return Response.json({
         ok: true,
         message:
-          "You're on the AYZO Pro waitlist.",
+          `You're on the ${waitlistName} waitlist.`,
       });
     }
 
@@ -125,8 +135,8 @@ export async function POST(request: Request) {
       source,
       createdAt: new Date().toISOString(),
       consent:
-        "ayzo-pro-launch-and-early-access",
-      consentVersion: "2026-08-23",
+        "ayzo-paid-plans-launch-and-early-access",
+      consentVersion: "2026-09-04",
     };
 
     const created = await redis.set(
@@ -152,7 +162,7 @@ export async function POST(request: Request) {
     return Response.json({
       ok: true,
       message:
-        "You're on the AYZO Pro waitlist.",
+        `You're on the ${waitlistName} waitlist.`,
     });
   } catch {
     return Response.json(

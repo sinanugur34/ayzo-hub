@@ -9,10 +9,11 @@ import {
   isAddress,
 } from "@solana/kit";
 
+import BitcoinIntelligenceReport from "@/components/BitcoinIntelligenceReport";
 import EvmIntelligenceReport from "@/components/EvmIntelligenceReport";
 import FreePlanStatus from "@/components/FreePlanStatus";
 import IntelligenceReport from "@/components/IntelligenceReport";
-import ProComingSoon from "@/components/ProComingSoon";
+import PricingPlans from "@/components/PricingPlans";
 import {
   resolveSelectedNetworkForAddress,
   type LiveAnalysisNetworkId,
@@ -35,6 +36,9 @@ const LIVE_NETWORKS =
 
 const EVM_ADDRESS =
   /^0x[0-9a-fA-F]{40}$/;
+
+const BITCOIN_MAINNET_SHAPE =
+  /^(?:[13][1-9A-HJ-NP-Za-km-z]{25,34}|bc1[ac-hj-np-z02-9]{6,87})$/i;
 
 type MintInfo = {
   supply: string;
@@ -203,12 +207,27 @@ export default function Home() {
         string;
     } | null>(null);
 
+  const [
+    bitcoinAnalysis,
+    setBitcoinAnalysis,
+  ] =
+    useState<{
+      address:
+        string;
+    } | null>(
+      null
+    );
+
   function resetResult() {
     setSolanaResult(
       null
     );
 
     setEvmAnalysis(
+      null
+    );
+
+    setBitcoinAnalysis(
       null
     );
   }
@@ -240,8 +259,56 @@ export default function Home() {
       setIsValid(false);
 
       setMessage(
-        "Enter a Solana or EVM address."
+        "Enter an address for the selected network."
       );
+
+      return;
+    }
+
+    const isBitcoinAddressShape =
+      BITCOIN_MAINNET_SHAPE.test(
+        value
+      );
+
+    if (
+      network ===
+        "bitcoin" ||
+      isBitcoinAddressShape
+    ) {
+      if (
+        !isBitcoinAddressShape
+      ) {
+        setIsValid(false);
+
+        setMessage(
+          "This does not look like a valid Bitcoin mainnet address."
+        );
+
+        return;
+      }
+
+      if (
+        network !==
+        "bitcoin"
+      ) {
+        setNetwork(
+          "bitcoin"
+        );
+      }
+
+      setIsValid(true);
+
+      setMessage(
+        network ===
+          "bitcoin"
+          ? "Bitcoin address accepted. AYZO intelligence is running."
+          : "Bitcoin address detected automatically. AYZO intelligence is running."
+      );
+
+      setBitcoinAnalysis({
+        address:
+          value,
+      });
 
       return;
     }
@@ -263,7 +330,7 @@ export default function Home() {
       setIsValid(false);
 
       setMessage(
-        "This is not a valid Solana or EVM address."
+        "This is not a valid address for the selected network."
       );
 
       return;
@@ -280,7 +347,7 @@ export default function Home() {
     if (!detectedNetwork) {
       setIsValid(false);
       setMessage(
-        "This is not a valid Solana or EVM address."
+        "This is not a valid address for the selected network."
       );
       return;
     }
@@ -416,6 +483,8 @@ export default function Home() {
     solanaResult !==
       null ||
     evmAnalysis !==
+      null ||
+    bitcoinAnalysis !==
       null;
 
   return (
@@ -467,13 +536,67 @@ export default function Home() {
         </p>
 
         <form
+          id="analyzer"
           onSubmit={
             handleAnalyze
           }
           className="mt-12 w-full max-w-3xl"
         >
-          <div className="mb-3 flex justify-center">
-            <div className="inline-flex rounded-xl border border-zinc-800 bg-zinc-950/80 p-1">
+          <div className="mb-4 w-full">
+            {/* Mobile: all 14 networks remain reachable
+                without overflowing the viewport. */}
+            <div className="sm:hidden">
+              <label
+                htmlFor="ayzo-network"
+                className="mb-2 block text-left text-[10px] font-medium tracking-[0.16em] text-zinc-600"
+              >
+                NETWORK
+              </label>
+
+              <div className="relative">
+                <select
+                  id="ayzo-network"
+                  value={network}
+                  onChange={event =>
+                    selectNetwork(
+                      event.target
+                        .value as
+                        LiveAnalysisNetworkId
+                    )
+                  }
+                  className="h-14 w-full appearance-none rounded-2xl border border-zinc-700 bg-zinc-950 px-4 pr-12 text-sm font-medium text-white outline-none transition focus:border-violet-500"
+                >
+                  {LIVE_NETWORKS.map(
+                    id => {
+                      const definition =
+                        NETWORKS[id];
+
+                      return (
+                        <option
+                          key={id}
+                          value={id}
+                        >
+                          {definition.name}
+                          {" · "}
+                          {definition.shortName}
+                        </option>
+                      );
+                    }
+                  )}
+                </select>
+
+                <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm text-zinc-500">
+                  ↓
+                </div>
+              </div>
+
+              <div className="mt-2 text-left text-[10px] text-zinc-600">
+                14 live networks available
+              </div>
+            </div>
+
+            {/* Tablet / desktop: wrap instead of clipping. */}
+            <div className="hidden w-full flex-wrap justify-center gap-1 rounded-2xl border border-zinc-800 bg-zinc-950/80 p-1.5 sm:flex">
               {LIVE_NETWORKS.map(
                 id => {
                   const definition =
@@ -485,19 +608,17 @@ export default function Home() {
 
                   return (
                     <button
-                      key={
-                        id
-                      }
+                      key={id}
                       type="button"
                       onClick={() =>
                         selectNetwork(
                           id
                         )
                       }
-                      className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-medium transition ${
+                      className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-medium transition ${
                         active
                           ? "bg-white text-black shadow-lg"
-                          : "text-zinc-500 hover:text-zinc-300"
+                          : "text-zinc-500 hover:bg-zinc-900 hover:text-zinc-300"
                       }`}
                     >
                       <span>
@@ -521,7 +642,6 @@ export default function Home() {
               )}
             </div>
           </div>
-
           <div
             className={`rounded-2xl border bg-zinc-950/80 p-3 shadow-2xl backdrop-blur-xl sm:p-2 ${
               isValid ===
@@ -561,7 +681,10 @@ export default function Home() {
                   network ===
                   "solana"
                     ? "Paste a Solana token address"
-                    : `Paste a ${networkName(network)} token, contract or wallet address`
+                    : network ===
+                        "bitcoin"
+                      ? "Paste a Bitcoin address"
+                      : `Paste a ${networkName(network)} token, contract or wallet address`
                 }
                 spellCheck={
                   false
@@ -731,6 +854,19 @@ export default function Home() {
           </section>
         )}
 
+        {bitcoinAnalysis && (
+          <section className="mt-12 w-full max-w-4xl">
+            <BitcoinIntelligenceReport
+              key={
+                bitcoinAnalysis.address
+              }
+              address={
+                bitcoinAnalysis.address
+              }
+            />
+          </section>
+        )}
+
         {!hasResult && (
           <div className="mt-16 grid w-full max-w-3xl grid-cols-1 gap-3 text-left sm:grid-cols-3">
             {[
@@ -776,7 +912,7 @@ export default function Home() {
           </div>
         )}
 
-        <ProComingSoon />
+        <PricingPlans />
       </section>
     </main>
   );
