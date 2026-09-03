@@ -276,7 +276,7 @@ test(
 );
 
 test(
-  "keeps Bitcoin blocked on the public route while the network is in development",
+  "rejects an invalid Bitcoin address on the live public route before provider work",
   async () => {
     const response =
       await POST(
@@ -300,7 +300,7 @@ test(
                   "bitcoin",
 
                 address:
-                  "34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo",
+                  "not-bitcoin",
               }),
           }
         )
@@ -308,7 +308,7 @@ test(
 
     assert.equal(
       response.status,
-      503
+      400
     );
 
     assert.deepEqual(
@@ -318,10 +318,10 @@ test(
           false,
 
         code:
-          "NETWORK_NOT_AVAILABLE",
+          "INVALID_ADDRESS",
 
         error:
-          "Bitcoin intelligence is not live yet.",
+          "Invalid Bitcoin address.",
 
         network:
           "bitcoin",

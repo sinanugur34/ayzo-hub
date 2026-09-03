@@ -190,7 +190,7 @@ export const NETWORKS = {
     name: "Bitcoin",
     shortName: "BTC",
     family: "bitcoin",
-    status: "development",
+    status: "live",
     chainId: null,
     nativeCurrency: "BTC",
     explorerUrl: "https://mempool.space",

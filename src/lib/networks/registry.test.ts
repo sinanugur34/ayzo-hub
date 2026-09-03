@@ -42,11 +42,11 @@ test(
 );
 
 test(
-  "keeps Bitcoin in development until its engine is live",
+  "keeps Bitcoin live after intelligence quality gates",
   () => {
     assert.equal(
       NETWORKS.bitcoin.status,
-      "development"
+      "live"
     );
 
     assert.equal(
@@ -57,6 +57,16 @@ test(
     assert.equal(
       NETWORKS.bitcoin.chainId,
       null
+    );
+
+    assert.equal(
+      NETWORKS.bitcoin.nativeCurrency,
+      "BTC"
+    );
+
+    assert.ok(
+      NETWORKS.bitcoin
+        .capabilities.length > 0
     );
   }
 );

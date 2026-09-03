@@ -95,7 +95,7 @@ test(
 );
 
 test(
-  "keeps Bitcoin unavailable until its engine is live",
+  "resolves Bitcoin through the live Bitcoin intelligence engine",
   () => {
     const result =
       resolveIntelligenceNetwork(
@@ -104,18 +104,38 @@ test(
 
     assert.equal(
       result.ok,
-      false
+      true
     );
 
-    if (result.ok) {
+    if (!result.ok) {
       throw new Error(
-        "Bitcoin unexpectedly resolved as live."
+        "Expected Bitcoin to resolve as live."
       );
     }
 
     assert.equal(
-      result.code,
-      "NETWORK_NOT_AVAILABLE"
+      result.engine,
+      "bitcoin"
+    );
+
+    assert.equal(
+      result.networkId,
+      "bitcoin"
+    );
+
+    assert.equal(
+      result.network.status,
+      "live"
+    );
+
+    assert.equal(
+      result.network.chainId,
+      null
+    );
+
+    assert.equal(
+      result.network.nativeCurrency,
+      "BTC"
     );
   }
 );
