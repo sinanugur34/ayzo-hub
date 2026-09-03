@@ -28,9 +28,6 @@ const BITCOIN_CAPABILITIES = [
   "addressFlows",
 ] as const satisfies readonly NetworkCapability[];
 
-const NO_CAPABILITIES =
-  [] as const satisfies readonly NetworkCapability[];
-
 export const NETWORKS = {
   solana: {
     id: "solana",
