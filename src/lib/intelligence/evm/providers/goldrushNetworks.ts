@@ -26,6 +26,19 @@ const GOLDRUSH_EVM_NETWORKS:
     chainId: 8453,
     chainName: "base-mainnet",
   },
+
+  bnb: {
+    networkId: "bnb",
+    chainId: 56,
+    chainName: "bsc-mainnet",
+  },
+
+  arbitrum: {
+    networkId: "arbitrum",
+    chainId: 42161,
+    chainName: "arbitrum-mainnet",
+  },
+
 };
 
 export function getGoldRushEvmNetwork(

@@ -73,11 +73,11 @@ export const NETWORKS = {
     name: "BNB Chain",
     shortName: "BNB",
     family: "evm",
-    status: "planned",
+    status: "live",
     chainId: 56,
     nativeCurrency: "BNB",
     explorerUrl: "https://bscscan.com",
-    capabilities: NO_CAPABILITIES,
+    capabilities: EVM_CAPABILITIES,
   },
 
   arbitrum: {
@@ -85,11 +85,11 @@ export const NETWORKS = {
     name: "Arbitrum",
     shortName: "ARB",
     family: "evm",
-    status: "planned",
+    status: "live",
     chainId: 42161,
     nativeCurrency: "ETH",
     explorerUrl: "https://arbiscan.io",
-    capabilities: NO_CAPABILITIES,
+    capabilities: EVM_CAPABILITIES,
   },
 
   polygon: {

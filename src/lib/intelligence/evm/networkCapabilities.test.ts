@@ -7,12 +7,15 @@ import {
 } from "./networkCapabilities";
 
 test(
-  "maps Ethereum and Base to the complete shared EVM capability surface",
+  "maps live EVM networks to the shared capability surface",
   () => {
     for (
       const networkId of [
+
         "ethereum",
         "base",
+        "bnb",
+        "arbitrum",
       ] as const
     ) {
       const capabilities =
@@ -89,8 +92,7 @@ test(
   () => {
     for (
       const networkId of [
-        "bnb",
-        "arbitrum",
+
         "polygon",
         "optimism",
         "avalanche",

@@ -52,3 +52,62 @@ test(
     );
   }
 );
+
+
+test(
+  "rejects invalid BNB and Arbitrum addresses on the public route",
+  async () => {
+    for (
+      const network of [
+        "bnb",
+        "arbitrum",
+      ] as const
+    ) {
+      const response =
+        await POST(
+          new Request(
+            "http://localhost/api/intelligence",
+            {
+              method:
+                "POST",
+              headers: {
+                "Content-Type":
+                  "application/json",
+                "x-ayzo-test-request":
+                  "smoke",
+              },
+              body:
+                JSON.stringify({
+                  network,
+                  address:
+                    "0x123",
+                }),
+            }
+          )
+        );
+
+      assert.equal(
+        response.status,
+        400
+      );
+
+      const data =
+        await response.json();
+
+      assert.equal(
+        data.ok,
+        false
+      );
+
+      assert.equal(
+        data.code,
+        "INVALID_ADDRESS"
+      );
+
+      assert.equal(
+        data.network,
+        network
+      );
+    }
+  }
+);

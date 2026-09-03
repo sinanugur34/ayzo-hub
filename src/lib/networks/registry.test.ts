@@ -46,8 +46,6 @@ test(
   () => {
     for (
       const networkId of [
-        "bnb",
-        "arbitrum",
         "polygon",
         "optimism",
         "avalanche",
@@ -79,5 +77,41 @@ test(
         );
       }
     }
+  }
+);
+
+
+test(
+  "keeps BNB and Arbitrum live after provider quality gates",
+  () => {
+    assert.equal(
+      NETWORKS.bnb.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.bnb.chainId,
+      56
+    );
+
+    assert.equal(
+      NETWORKS.bnb.nativeCurrency,
+      "BNB"
+    );
+
+    assert.equal(
+      NETWORKS.arbitrum.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.arbitrum.chainId,
+      42161
+    );
+
+    assert.equal(
+      NETWORKS.arbitrum.nativeCurrency,
+      "ETH"
+    );
   }
 );

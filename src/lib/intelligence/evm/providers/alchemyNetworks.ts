@@ -19,6 +19,19 @@ export const ALCHEMY_EVM_NETWORKS = {
     httpHost:
       "base-mainnet.g.alchemy.com",
   },
+
+  bnb: {
+    chainId: 56,
+    httpHost:
+      "bnb-mainnet.g.alchemy.com",
+  },
+
+  arbitrum: {
+    chainId: 42161,
+    httpHost:
+      "arb-mainnet.g.alchemy.com",
+  },
+
 } as const satisfies Partial<
   Record<
     NetworkId,

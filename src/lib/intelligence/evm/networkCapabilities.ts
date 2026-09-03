@@ -130,6 +130,13 @@ const EVM_NETWORK_CAPABILITIES = {
 
   base:
     supportedEvmCapabilities(),
+
+  bnb:
+    supportedEvmCapabilities(),
+
+  arbitrum:
+    supportedEvmCapabilities(),
+
 } as const satisfies Partial<
   Record<
     NetworkId,

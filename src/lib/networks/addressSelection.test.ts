@@ -59,3 +59,25 @@ test(
     );
   }
 );
+
+
+test(
+  "keeps BNB and Arbitrum selected for ambiguous EVM addresses",
+  () => {
+    assert.equal(
+      resolveSelectedNetworkForAddress(
+        "bnb",
+        "evm"
+      ),
+      "bnb"
+    );
+
+    assert.equal(
+      resolveSelectedNetworkForAddress(
+        "arbitrum",
+        "evm"
+      ),
+      "arbitrum"
+    );
+  }
+);
