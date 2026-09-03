@@ -17,9 +17,27 @@ type FreeStatus = {
 
 export default function FreePlanStatus() {
   const [status, setStatus] =
-    useState<FreeStatus | null>(null);
+    useState<FreeStatus | null>(() =>
+      process.env.NODE_ENV !== "production"
+        ? {
+            ok: true,
+            plan: "free",
+            available: true,
+            limit: 3,
+            remaining: 3,
+            resetAt: null,
+          }
+        : null
+    );
 
   const loadStatus = useCallback(async () => {
+    if (
+      process.env.NODE_ENV !==
+      "production"
+    ) {
+      return;
+    }
+
     try {
       const response = await fetch(
         "/api/free/status",
@@ -42,10 +60,23 @@ export default function FreePlanStatus() {
   }, []);
 
   useEffect(() => {
-    loadStatus();
+    if (
+      process.env.NODE_ENV !==
+      "production"
+    ) {
+      return;
+    }
+
+    const initialLoad =
+      window.setTimeout(
+        () => {
+          void loadStatus();
+        },
+        0
+      );
 
     const refresh = () => {
-      loadStatus();
+      void loadStatus();
     };
 
     window.addEventListener(
@@ -54,6 +85,10 @@ export default function FreePlanStatus() {
     );
 
     return () => {
+      window.clearTimeout(
+        initialLoad
+      );
+
       window.removeEventListener(
         "ayzo:quota-updated",
         refresh

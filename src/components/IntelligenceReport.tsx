@@ -133,6 +133,12 @@ export default function IntelligenceReport({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+
+            ...(process.env.NODE_ENV !== "production"
+              ? {
+                  "x-ayzo-test-request": "smoke",
+                }
+              : {}),
           },
           body: JSON.stringify({ address }),
         });
@@ -202,8 +208,6 @@ export default function IntelligenceReport({
     if (!loading) {
       return;
     }
-
-    setElapsedSeconds(0);
 
     const timer = window.setInterval(() => {
       setElapsedSeconds((value) => value + 1);

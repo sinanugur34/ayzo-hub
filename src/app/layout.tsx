@@ -19,10 +19,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://app.ayzo.io"),
 
-  title: "AYZO Hub | AI + Web3 on Solana",
+  title: "AYZO | On-chain Intelligence",
 
   description:
-    "AYZO Hub brings AI research, wallet intelligence and Web3 tools together in one simple product experience on Solana.",
+    "AYZO turns on-chain data into evidence-first intelligence across Solana and Ethereum.",
 
   alternates: {
     canonical: "/",
@@ -34,9 +34,9 @@ export const metadata: Metadata = {
   },
 
   openGraph: {
-    title: "AYZO Hub | AI + Web3 on Solana",
+    title: "AYZO | On-chain Intelligence",
     description:
-      "AI research, wallet intelligence and Web3 tools in one AYZO experience.",
+      "Evidence-first token and wallet intelligence across Solana and Ethereum.",
     url: "/",
     siteName: "AYZO",
     type: "website",
@@ -44,9 +44,9 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "AYZO Hub | AI + Web3 on Solana",
+    title: "AYZO | On-chain Intelligence",
     description:
-      "AI research, wallet intelligence and Web3 tools in one AYZO experience.",
+      "Evidence-first token and wallet intelligence across Solana and Ethereum.",
   },
 };
 
