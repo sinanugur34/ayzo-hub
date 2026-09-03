@@ -6,6 +6,12 @@ import {
 } from "react";
 
 import WaitlistForm from "@/components/WaitlistForm";
+import type {
+  LiveEvmNetworkId,
+} from "@/lib/networks/addressSelection";
+import {
+  NETWORKS,
+} from "@/lib/networks/registry";
 
 type AnalyticsWindow =
   Window & {
@@ -274,7 +280,7 @@ type EvmSuccess = {
 
   network: {
     id:
-      "ethereum";
+      LiveEvmNetworkId;
 
     name:
       string;
@@ -559,9 +565,15 @@ function coverageLabel(
 
 export default function EvmIntelligenceReport({
   address,
+  network,
 }: {
   address: string;
+  network:
+    LiveEvmNetworkId;
 }) {
+  const networkDefinition =
+    NETWORKS[network];
+
   const [
     data,
     setData,
@@ -611,9 +623,9 @@ export default function EvmIntelligenceReport({
           "analysis_started",
           {
             feature:
-              "ethereum_intelligence",
+              `${network}_intelligence`,
             network:
-              "ethereum",
+              network,
           }
         );
 
@@ -640,7 +652,7 @@ export default function EvmIntelligenceReport({
               body:
                 JSON.stringify({
                   network:
-                    "ethereum",
+                    network,
 
                   address,
                 }),
@@ -676,7 +688,7 @@ export default function EvmIntelligenceReport({
 
           throw new Error(
             result.error ??
-              "Ethereum intelligence analysis failed."
+              `${networkDefinition.name} intelligence analysis failed.`
           );
         }
 
@@ -684,9 +696,9 @@ export default function EvmIntelligenceReport({
           "intelligence_completed",
           {
             feature:
-              "ethereum_intelligence",
+              `${network}_intelligence`,
             network:
-              "ethereum",
+              network,
           }
         );
 
@@ -697,7 +709,7 @@ export default function EvmIntelligenceReport({
             caught instanceof
               Error
               ? caught.message
-              : "AYZO Ethereum intelligence is temporarily unavailable."
+              : `AYZO ${networkDefinition.name} intelligence is temporarily unavailable.`
           );
         }
       } finally {
@@ -715,7 +727,11 @@ export default function EvmIntelligenceReport({
       cancelled =
         true;
     };
-  }, [address]);
+  }, [
+    address,
+    network,
+    networkDefinition.name,
+  ]);
 
   useEffect(() => {
     if (!loading) {
@@ -750,7 +766,7 @@ export default function EvmIntelligenceReport({
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="text-xs font-medium tracking-[0.18em] text-violet-400">
-                AYZO ETHEREUM INTELLIGENCE
+                AYZO {networkDefinition.name.toUpperCase()} INTELLIGENCE
               </div>
 
               <h3 className="mt-2 text-xl font-semibold text-zinc-100">
@@ -803,7 +819,7 @@ export default function EvmIntelligenceReport({
           </div>
 
           <p className="mt-4 text-[10px] leading-5 text-zinc-700">
-            Ethereum analysis can take longer because AYZO verifies
+            {networkDefinition.name} analysis can take longer because AYZO verifies
             multiple independent evidence modules.
           </p>
         </div>
@@ -848,7 +864,7 @@ export default function EvmIntelligenceReport({
     return (
       <div className="mt-6 rounded-3xl border border-amber-500/20 bg-amber-500/5 p-8 text-left">
         <div className="text-sm font-medium text-amber-300">
-          Ethereum intelligence unavailable
+          {networkDefinition.name} intelligence unavailable
         </div>
 
         <div className="mt-2 text-xs leading-5 text-zinc-500">
@@ -925,7 +941,7 @@ export default function EvmIntelligenceReport({
 
             <div className="flex flex-wrap gap-2">
               <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-medium tracking-wide text-emerald-300">
-                ETHEREUM
+                {data.network.name.toUpperCase()}
               </span>
 
               <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-[10px] font-medium tracking-wide text-violet-300">
@@ -1571,14 +1587,14 @@ export default function EvmIntelligenceReport({
             </h3>
 
             <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-500">
-              Evidence-first Ethereum intelligence without wallet
+              Evidence-first {data.network.name} intelligence without wallet
               connection or trading recommendations.
             </p>
           </div>
 
           <a
             href={`https://x.com/intent/post?text=${encodeURIComponent(
-              "I investigated an Ethereum address with @IOAYZO.\n\nHolder intelligence • Funding provenance • Wallet relationships • Deployment history • Wallet graph\n\nTry AYZO Alpha → https://app.ayzo.io"
+              `I investigated a ${data.network.name} address with @IOAYZO.\n\nHolder intelligence • Funding provenance • Wallet relationships • Deployment history • Wallet graph\n\nTry AYZO Alpha → https://app.ayzo.io`
             )}`}
             target="_blank"
             rel="noreferrer"
@@ -1587,7 +1603,7 @@ export default function EvmIntelligenceReport({
                 "share_x_clicked",
                 {
                   feature:
-                    "ethereum_intelligence",
+                    `${network}_intelligence`,
                 }
               )
             }

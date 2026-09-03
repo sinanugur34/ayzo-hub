@@ -20,6 +20,12 @@ const GOLDRUSH_EVM_NETWORKS:
     chainId: 1,
     chainName: "eth-mainnet",
   },
+
+  base: {
+    networkId: "base",
+    chainId: 8453,
+    chainName: "base-mainnet",
+  },
 };
 
 export function getGoldRushEvmNetwork(

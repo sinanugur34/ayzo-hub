@@ -59,6 +59,7 @@ test(
       ethereum.network.status,
       "live"
     );
+
   }
 );
 
@@ -67,7 +68,6 @@ test(
   () => {
     for (
       const network of [
-        "base",
         "bnb",
         "arbitrum",
         "polygon",
@@ -199,6 +199,43 @@ test(
     assert.equal(
       result.networkId,
       "ethereum"
+    );
+  }
+);
+
+
+test(
+  "resolves Base through the shared EVM engine",
+  () => {
+    const result =
+      resolveIntelligenceNetwork(
+        "base"
+      );
+
+    assert.equal(
+      result.ok,
+      true
+    );
+
+    if (!result.ok) {
+      throw new Error(
+        "Expected Base to resolve."
+      );
+    }
+
+    assert.equal(
+      result.engine,
+      "evm"
+    );
+
+    assert.equal(
+      result.network.chainId,
+      8453
+    );
+
+    assert.equal(
+      result.network.status,
+      "live"
     );
   }
 );

@@ -7,6 +7,10 @@ import type {
   EvmNetworkContext,
 } from "./types";
 
+import {
+  getEvmNetworkCapabilities,
+} from "./networkCapabilities";
+
 export const EVM_ENGINE_MODULES = [
   "assetVerification",
   "holderIntelligence",
@@ -28,7 +32,10 @@ export function getEvmNetworkContext(
 
   if (
     network.family !== "evm" ||
-    typeof network.chainId !== "number"
+    typeof network.chainId !== "number" ||
+    getEvmNetworkCapabilities(
+      networkId
+    ) === null
   ) {
     return null;
   }

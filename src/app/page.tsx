@@ -13,10 +13,25 @@ import EvmIntelligenceReport from "@/components/EvmIntelligenceReport";
 import FreePlanStatus from "@/components/FreePlanStatus";
 import IntelligenceReport from "@/components/IntelligenceReport";
 import ProComingSoon from "@/components/ProComingSoon";
+import {
+  resolveSelectedNetworkForAddress,
+  type LiveAnalysisNetworkId,
+  type LiveEvmNetworkId,
+} from "@/lib/networks/addressSelection";
+import {
+  NETWORKS,
+  NETWORK_IDS,
+} from "@/lib/networks/registry";
 
-type LiveNetwork =
-  | "solana"
-  | "ethereum";
+const LIVE_NETWORKS =
+  NETWORK_IDS.filter(
+    (
+      networkId
+    ): networkId is LiveAnalysisNetworkId =>
+      NETWORKS[
+        networkId
+      ].status === "live"
+  );
 
 const EVM_ADDRESS =
   /^0x[0-9a-fA-F]{40}$/;
@@ -127,12 +142,11 @@ function formatSupply(
 
 function networkName(
   network:
-    LiveNetwork
+    LiveAnalysisNetworkId
 ) {
-  return network ===
-    "solana"
-    ? "Solana"
-    : "Ethereum";
+  return NETWORKS[
+    network
+  ].name;
 }
 
 export default function Home() {
@@ -141,7 +155,7 @@ export default function Home() {
     setNetwork,
   ] =
     useState<
-      LiveNetwork
+      LiveAnalysisNetworkId
     >("solana");
 
   const [
@@ -179,26 +193,29 @@ export default function Home() {
     >(null);
 
   const [
-    ethereumAddress,
-    setEthereumAddress,
+    evmAnalysis,
+    setEvmAnalysis,
   ] =
-    useState<
-      string | null
-    >(null);
+    useState<{
+      network:
+        LiveEvmNetworkId;
+      address:
+        string;
+    } | null>(null);
 
   function resetResult() {
     setSolanaResult(
       null
     );
 
-    setEthereumAddress(
+    setEvmAnalysis(
       null
     );
   }
 
   function selectNetwork(
     value:
-      LiveNetwork
+      LiveAnalysisNetworkId
   ) {
     setNetwork(value);
     setTokenAddress("");
@@ -223,13 +240,13 @@ export default function Home() {
       setIsValid(false);
 
       setMessage(
-        "Enter a Solana or Ethereum address."
+        "Enter a Solana or EVM address."
       );
 
       return;
     }
 
-    const isEthereumAddress =
+    const isEvmAddress =
       EVM_ADDRESS.test(
         value
       );
@@ -240,23 +257,33 @@ export default function Home() {
       );
 
     if (
-      !isEthereumAddress &&
+      !isEvmAddress &&
       !isSolanaAddress
     ) {
       setIsValid(false);
 
       setMessage(
-        "This is not a valid Solana or Ethereum address."
+        "This is not a valid Solana or EVM address."
       );
 
       return;
     }
 
-    const detectedNetwork:
-      LiveNetwork =
-        isEthereumAddress
-          ? "ethereum"
-          : "solana";
+    const detectedNetwork =
+      resolveSelectedNetworkForAddress(
+        network,
+        isEvmAddress
+          ? "evm"
+          : "solana"
+      );
+
+    if (!detectedNetwork) {
+      setIsValid(false);
+      setMessage(
+        "This is not a valid Solana or EVM address."
+      );
+      return;
+    }
 
     if (
       detectedNetwork !==
@@ -284,20 +311,29 @@ export default function Home() {
     }
 
     if (
-      detectedNetwork ===
-      "ethereum"
+      NETWORKS[
+        detectedNetwork
+      ].family === "evm"
     ) {
+      const evmNetwork =
+        detectedNetwork as
+          LiveEvmNetworkId;
+
       setIsValid(true);
 
       setMessage(
-        network === "ethereum"
-          ? "Ethereum address accepted. AYZO intelligence is running."
-          : "Ethereum address detected automatically. AYZO intelligence is running."
+        network ===
+          evmNetwork
+          ? `${networkName(evmNetwork)} address accepted. AYZO intelligence is running.`
+          : `${networkName(evmNetwork)} selected for this EVM address. AYZO intelligence is running.`
       );
 
-      setEthereumAddress(
-        value.toLowerCase()
-      );
+      setEvmAnalysis({
+        network:
+          evmNetwork,
+        address:
+          value.toLowerCase(),
+      });
 
       return;
     }
@@ -379,7 +415,7 @@ export default function Home() {
   const hasResult =
     solanaResult !==
       null ||
-    ethereumAddress !==
+    evmAnalysis !==
       null;
 
   return (
@@ -438,26 +474,11 @@ export default function Home() {
         >
           <div className="mb-3 flex justify-center">
             <div className="inline-flex rounded-xl border border-zinc-800 bg-zinc-950/80 p-1">
-              {(
-                [
-                  [
-                    "solana",
-                    "Solana",
-                    "SOL",
-                  ],
+              {LIVE_NETWORKS.map(
+                id => {
+                  const definition =
+                    NETWORKS[id];
 
-                  [
-                    "ethereum",
-                    "Ethereum",
-                    "ETH",
-                  ],
-                ] as const
-              ).map(
-                ([
-                  id,
-                  label,
-                  shortName,
-                ]) => {
                   const active =
                     network ===
                     id;
@@ -480,9 +501,7 @@ export default function Home() {
                       }`}
                     >
                       <span>
-                        {
-                          label
-                        }
+                        {definition.name}
                       </span>
 
                       <span
@@ -493,7 +512,7 @@ export default function Home() {
                         }
                       >
                         {
-                          shortName
+                          definition.shortName
                         }
                       </span>
                     </button>
@@ -542,7 +561,7 @@ export default function Home() {
                   network ===
                   "solana"
                     ? "Paste a Solana token address"
-                    : "Paste an Ethereum token, contract or wallet address"
+                    : `Paste a ${networkName(network)} token, contract or wallet address`
                 }
                 spellCheck={
                   false
@@ -698,14 +717,15 @@ export default function Home() {
           </section>
         )}
 
-        {ethereumAddress && (
+        {evmAnalysis && (
           <section className="mt-12 w-full max-w-4xl">
             <EvmIntelligenceReport
-              key={
-                ethereumAddress
-              }
+              key={`${evmAnalysis.network}:${evmAnalysis.address}`}
               address={
-                ethereumAddress
+                evmAnalysis.address
+              }
+              network={
+                evmAnalysis.network
               }
             />
           </section>
@@ -726,7 +746,7 @@ export default function Home() {
 
               [
                 "Multichain",
-                "Solana and Ethereum live",
+                "Solana, Ethereum and Base live",
               ],
             ].map(
               ([

@@ -28,6 +28,9 @@ const BITCOIN_CAPABILITIES = [
   "addressFlows",
 ] as const satisfies readonly NetworkCapability[];
 
+const NO_CAPABILITIES =
+  [] as const satisfies readonly NetworkCapability[];
+
 export const NETWORKS = {
   solana: {
     id: "solana",
@@ -58,7 +61,7 @@ export const NETWORKS = {
     name: "Base",
     shortName: "BASE",
     family: "evm",
-    status: "planned",
+    status: "live",
     chainId: 8453,
     nativeCurrency: "ETH",
     explorerUrl: "https://basescan.org",
@@ -74,7 +77,7 @@ export const NETWORKS = {
     chainId: 56,
     nativeCurrency: "BNB",
     explorerUrl: "https://bscscan.com",
-    capabilities: EVM_CAPABILITIES,
+    capabilities: NO_CAPABILITIES,
   },
 
   arbitrum: {
@@ -86,7 +89,7 @@ export const NETWORKS = {
     chainId: 42161,
     nativeCurrency: "ETH",
     explorerUrl: "https://arbiscan.io",
-    capabilities: EVM_CAPABILITIES,
+    capabilities: NO_CAPABILITIES,
   },
 
   polygon: {
@@ -98,7 +101,7 @@ export const NETWORKS = {
     chainId: 137,
     nativeCurrency: "POL",
     explorerUrl: "https://polygonscan.com",
-    capabilities: EVM_CAPABILITIES,
+    capabilities: NO_CAPABILITIES,
   },
 
   optimism: {
@@ -110,7 +113,7 @@ export const NETWORKS = {
     chainId: 10,
     nativeCurrency: "ETH",
     explorerUrl: "https://optimistic.etherscan.io",
-    capabilities: EVM_CAPABILITIES,
+    capabilities: NO_CAPABILITIES,
   },
 
   avalanche: {
@@ -122,7 +125,7 @@ export const NETWORKS = {
     chainId: 43114,
     nativeCurrency: "AVAX",
     explorerUrl: "https://snowtrace.io",
-    capabilities: EVM_CAPABILITIES,
+    capabilities: NO_CAPABILITIES,
   },
 
   linea: {
@@ -134,7 +137,7 @@ export const NETWORKS = {
     chainId: 59144,
     nativeCurrency: "ETH",
     explorerUrl: "https://lineascan.build",
-    capabilities: EVM_CAPABILITIES,
+    capabilities: NO_CAPABILITIES,
   },
 
   scroll: {
@@ -146,7 +149,7 @@ export const NETWORKS = {
     chainId: 534352,
     nativeCurrency: "ETH",
     explorerUrl: "https://scrollscan.com",
-    capabilities: EVM_CAPABILITIES,
+    capabilities: NO_CAPABILITIES,
   },
 
   mantle: {
@@ -158,7 +161,7 @@ export const NETWORKS = {
     chainId: 5000,
     nativeCurrency: "MNT",
     explorerUrl: "https://mantlescan.xyz",
-    capabilities: EVM_CAPABILITIES,
+    capabilities: NO_CAPABILITIES,
   },
 
   sonic: {
@@ -170,7 +173,7 @@ export const NETWORKS = {
     chainId: 146,
     nativeCurrency: "S",
     explorerUrl: "https://sonicscan.org",
-    capabilities: EVM_CAPABILITIES,
+    capabilities: NO_CAPABILITIES,
   },
 
   monad: {
@@ -182,7 +185,7 @@ export const NETWORKS = {
     chainId: 143,
     nativeCurrency: "MON",
     explorerUrl: "https://monadscan.com",
-    capabilities: EVM_CAPABILITIES,
+    capabilities: NO_CAPABILITIES,
   },
 
   bitcoin: {

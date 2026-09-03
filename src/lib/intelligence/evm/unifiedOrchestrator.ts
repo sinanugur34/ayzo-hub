@@ -636,7 +636,7 @@ async function buildDeveloperHistory(
 
     if (!result.ok) {
       return unavailable(
-        result.error,
+        "Developer history evidence was unavailable.",
         "Developer transaction history could not be completed."
       );
     }
@@ -997,7 +997,7 @@ export async function runEvmUnifiedIntelligence(
             metadataResult.code
           ),
         error:
-          metadataResult.error,
+          "EVM asset verification is temporarily unavailable.",
         network:
           request.networkId,
       },
@@ -1200,8 +1200,7 @@ export async function runEvmUnifiedIntelligence(
       modules
         .holderIntelligence =
         unavailable(
-          holdersResult?.error ??
-            "Holder intelligence was unavailable."
+          "Holder intelligence was unavailable."
         );
     }
   } else {
@@ -1279,14 +1278,7 @@ export async function runEvmUnifiedIntelligence(
     modules
       .walletRelationships =
       unavailable(
-        rootTransactionResult.ok
-          ? (
-              transferResult?.ok ===
-              false
-                ? transferResult.error
-                : "Relationship evidence was unavailable."
-            )
-          : rootTransactionResult.error
+        "Relationship evidence was unavailable."
       );
   }
 
@@ -1447,7 +1439,7 @@ export async function runEvmUnifiedIntelligence(
       modules
         .deploymentIntelligence =
         unavailable(
-          result.error
+          "Contract deployment evidence was unavailable."
         );
     }
   } else {

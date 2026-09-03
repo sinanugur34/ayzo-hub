@@ -13,6 +13,12 @@ export const ALCHEMY_EVM_NETWORKS = {
     httpHost:
       "eth-mainnet.g.alchemy.com",
   },
+
+  base: {
+    chainId: 8453,
+    httpHost:
+      "base-mainnet.g.alchemy.com",
+  },
 } as const satisfies Partial<
   Record<
     NetworkId,

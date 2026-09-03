@@ -418,3 +418,261 @@ test(
     );
   }
 );
+
+test(
+  "routes Base through the shared unified EVM orchestrator",
+  async () => {
+    const observedNetworks:
+      string[] = [];
+
+    const deps:
+      EvmUnifiedOrchestratorDependencies = {
+      readTokenMetadata:
+        async request => {
+          observedNetworks.push(
+            request.network
+              .networkId
+          );
+
+          return success(
+            {
+              address:
+                walletA,
+              name:
+                null,
+              symbol:
+                null,
+              decimals:
+                null,
+              totalSupply:
+                null,
+              isContract:
+                false,
+              isErc20:
+                false,
+            },
+            "alchemy"
+          );
+        },
+
+      getTokenHolders:
+        async () => {
+          throw new Error(
+            "Holder provider should not run for a wallet."
+          );
+        },
+
+      getTransactions:
+        async request => {
+          observedNetworks.push(
+            request.network
+              .networkId
+          );
+
+          return success({
+            transactions: [],
+            nextCursor:
+              null,
+          });
+        },
+
+      getTokenTransfers:
+        async () => {
+          throw new Error(
+            "Transfer provider should not run for a wallet."
+          );
+        },
+
+      getContractDeployment:
+        async () => {
+          throw new Error(
+            "Deployment provider should not run for a wallet."
+          );
+        },
+
+      getTransactionReceipt:
+        async () => {
+          throw new Error(
+            "Receipt provider should not run for a wallet."
+          );
+        },
+    };
+
+    const result =
+      await runEvmUnifiedIntelligence(
+        {
+          networkId:
+            "base",
+          address:
+            walletA,
+        },
+        deps
+      );
+
+    assert.equal(
+      result.status,
+      200
+    );
+
+    assert.equal(
+      result.data.ok,
+      true
+    );
+
+    if (!result.data.ok) {
+      throw new Error(
+        "Expected Base unified success."
+      );
+    }
+
+    assert.deepEqual(
+      result.data.network,
+      {
+        id:
+          "base",
+        name:
+          "Base",
+        family:
+          "evm",
+        chainId:
+          8453,
+        nativeCurrency:
+          "ETH",
+      }
+    );
+
+    assert.deepEqual(
+      observedNetworks,
+      [
+        "base",
+        "base",
+      ]
+    );
+  }
+);
+
+test(
+  "rejects an invalid Base address before the shared providers run",
+  async () => {
+    let providerCalled =
+      false;
+
+    const fail = async () => {
+      providerCalled =
+        true;
+      throw new Error(
+        "Provider should not run."
+      );
+    };
+
+    const result =
+      await runEvmUnifiedIntelligence(
+        {
+          networkId:
+            "base",
+          address:
+            "0x-invalid",
+        },
+        {
+          readTokenMetadata:
+            fail,
+          getTokenHolders:
+            fail,
+          getTransactions:
+            fail,
+          getTokenTransfers:
+            fail,
+          getContractDeployment:
+            fail,
+          getTransactionReceipt:
+            fail,
+        }
+      );
+
+    assert.equal(
+      result.status,
+      400
+    );
+
+    assert.equal(
+      result.data.ok,
+      false
+    );
+
+    assert.equal(
+      providerCalled,
+      false
+    );
+  }
+);
+
+test(
+  "keeps provider details out of unified Base failures",
+  async () => {
+    const never = async () => {
+      throw new Error(
+        "Unexpected provider call."
+      );
+    };
+
+    const result =
+      await runEvmUnifiedIntelligence(
+        {
+          networkId:
+            "base",
+          address:
+            walletA,
+        },
+        {
+          readTokenMetadata:
+            async () => ({
+              ok: false,
+              providerId:
+                "alchemy",
+              latencyMs:
+                1,
+              code:
+                "UPSTREAM_ERROR",
+              error:
+                "Alchemy and GoldRush internal failure",
+            }),
+          getTokenHolders:
+            never,
+          getTransactions:
+            never,
+          getTokenTransfers:
+            never,
+          getContractDeployment:
+            never,
+          getTransactionReceipt:
+            never,
+        }
+      );
+
+    const serialized =
+      JSON.stringify(
+        result.data
+      ).toLowerCase();
+
+    assert.equal(
+      serialized.includes(
+        "alchemy"
+      ),
+      false
+    );
+
+    assert.equal(
+      serialized.includes(
+        "goldrush"
+      ),
+      false
+    );
+
+    assert.equal(
+      serialized.includes(
+        "providerid"
+      ),
+      false
+    );
+  }
+);
