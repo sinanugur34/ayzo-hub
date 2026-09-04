@@ -107,14 +107,10 @@ export const PLANS = {
     checkoutEnabled:
       false,
 
-    /*
-     * Do not encode "unlimited"
-     * until the paid usage policy
-     * is intentionally decided.
-     */
     analysisQuota: {
-      kind:
-        "not-configured",
+      kind: "fixed",
+      period: "24h",
+      count: 30,
     },
 
     features: {

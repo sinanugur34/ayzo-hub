@@ -17,6 +17,9 @@ export type ServerEntitlementResult = {
 
   billingAvailable:
     boolean;
+
+  userId:
+    string | null;
 };
 
 function isSubscriptionEntitlementRow(
@@ -104,6 +107,9 @@ export async function getServerEntitlement():
 
       billingAvailable:
         true,
+
+      userId:
+        null,
     };
   }
 
@@ -131,6 +137,8 @@ export async function getServerEntitlement():
 
       billingAvailable:
         false,
+
+      userId,
     };
   }
 
@@ -149,5 +157,7 @@ export async function getServerEntitlement():
 
     billingAvailable:
       true,
+
+    userId,
   };
 }

@@ -18,6 +18,7 @@ export type IntelligenceErrorCode =
   | "INVALID_ADDRESS"
   | "RATE_LIMITED"
   | "DAILY_FREE_LIMIT"
+  | "DAILY_PRO_LIMIT"
   | "UPSTREAM_ERROR";
 
 export type IntelligenceRequest = {

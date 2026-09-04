@@ -6,67 +6,78 @@ import {
   useState,
 } from "react";
 
-type FreeStatus = {
+type PlanStatus = {
   ok: true;
-  plan: "free";
-  available: boolean;
-  limit: number;
-  remaining: number | null;
-  resetAt: number | null;
+
+  plan:
+    | "free"
+    | "pro";
+
+  available:
+    boolean;
+
+  limit:
+    number;
+
+  remaining:
+    number | null;
+
+  resetAt:
+    number | null;
 };
 
 export default function FreePlanStatus() {
-  const [status, setStatus] =
-    useState<FreeStatus | null>(() =>
-      process.env.NODE_ENV !== "production"
-        ? {
-            ok: true,
-            plan: "free",
-            available: true,
-            limit: 3,
-            remaining: 3,
-            resetAt: null,
-          }
-        : null
+  const [
+    status,
+    setStatus,
+  ] =
+    useState<
+      PlanStatus |
+      null
+    >(
+      null
     );
 
-  const loadStatus = useCallback(async () => {
-    if (
-      process.env.NODE_ENV !==
-      "production"
-    ) {
-      return;
-    }
+  const loadStatus =
+    useCallback(
+      async () => {
+        try {
+          const response =
+            await fetch(
+              "/api/free/status",
+              {
+                cache:
+                  "no-store",
 
-    try {
-      const response = await fetch(
-        "/api/free/status",
-        {
-          cache: "no-store",
-          credentials: "same-origin",
+                credentials:
+                  "same-origin",
+              }
+            );
+
+          const data =
+            (
+              await response.json()
+            ) as PlanStatus;
+
+          if (
+            data.ok
+          ) {
+            setStatus(
+              data
+            );
+          }
+        } catch {
+          /*
+           * Product remains usable
+           * when quota status cannot
+           * be displayed.
+           */
         }
-      );
-
-      const data =
-        (await response.json()) as FreeStatus;
-
-      if (data.ok) {
-        setStatus(data);
-      }
-    } catch {
-      // The product remains usable if quota status
-      // cannot be displayed temporarily.
-    }
-  }, []);
+      },
+      []
+    );
 
   useEffect(() => {
-    if (
-      process.env.NODE_ENV !==
-      "production"
-    ) {
-      return;
-    }
-
     const initialLoad =
       window.setTimeout(
         () => {
@@ -75,9 +86,10 @@ export default function FreePlanStatus() {
         0
       );
 
-    const refresh = () => {
-      void loadStatus();
-    };
+    const refresh =
+      () => {
+        void loadStatus();
+      };
 
     window.addEventListener(
       "ayzo:quota-updated",
@@ -94,10 +106,23 @@ export default function FreePlanStatus() {
         refresh
       );
     };
-  }, [loadStatus]);
+  }, [
+    loadStatus,
+  ]);
+
+  const plan =
+    status?.plan ??
+    "free";
 
   const exhausted =
-    status?.remaining === 0;
+    status?.remaining ===
+    0;
+
+  const fallbackLimit =
+    plan ===
+    "pro"
+      ? 30
+      : 3;
 
   return (
     <div
@@ -111,16 +136,24 @@ export default function FreePlanStatus() {
         className={`rounded-full border px-2.5 py-1 text-[9px] font-medium tracking-[0.14em] ${
           exhausted
             ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
-            : "border-violet-500/20 bg-violet-500/5 text-violet-300"
+            : plan ===
+                "pro"
+              ? "border-violet-400/30 bg-violet-500/10 text-violet-200"
+              : "border-violet-500/20 bg-violet-500/5 text-violet-300"
         }`}
       >
-        FREE PLAN
+        {plan ===
+        "pro"
+          ? "PRO PLAN"
+          : "FREE PLAN"}
       </span>
 
       <span>
-        {status?.remaining === null ||
-        status === null
-          ? "3 analyses per 24 hours"
+        {status ===
+          null ||
+        status.remaining ===
+          null
+          ? `${fallbackLimit} analyses per 24 hours`
           : `${status.remaining} of ${status.limit} analyses remaining`}
       </span>
     </div>

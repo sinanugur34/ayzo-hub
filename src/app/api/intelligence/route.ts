@@ -2,7 +2,10 @@ import { isAddress } from "@solana/kit";
 import { cookies } from "next/headers";
 
 import {
-  consumeFreeAnalysis,
+  consumeAnalysisQuota,
+} from "@/lib/analysisQuota";
+
+import {
   FREE_DEVICE_COOKIE,
   FREE_DEVICE_COOKIE_MAX_AGE,
 } from "@/lib/freeQuota";
@@ -169,7 +172,7 @@ export async function POST(request: Request) {
 
     if (!isDevelopmentTestRequest) {
       const quota =
-        await consumeFreeAnalysis(request);
+        await consumeAnalysisQuota(request);
 
       if (quota.deviceCookie) {
         const cookieStore = await cookies();
@@ -203,10 +206,15 @@ export async function POST(request: Request) {
         return Response.json(
           {
             ok: false,
-            code: "DAILY_FREE_LIMIT",
+            code:
+              quota.plan === "pro"
+                ? "DAILY_PRO_LIMIT"
+                : "DAILY_FREE_LIMIT",
             error:
-              "Daily free analysis limit reached.",
-            plan: "free",
+              quota.plan === "pro"
+                ? "Daily Pro analysis limit reached."
+                : "Daily free analysis limit reached.",
+            plan: quota.plan,
             quota: {
               limit: quota.limit,
               remaining: 0,

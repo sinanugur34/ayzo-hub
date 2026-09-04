@@ -153,7 +153,10 @@ export default function IntelligenceReport({
         if (cancelled) return;
 
         if (!result.ok) {
-          if (result.code === "DAILY_FREE_LIMIT") {
+          if ((
+            result.code === "DAILY_FREE_LIMIT" ||
+            result.code === "DAILY_PRO_LIMIT"
+          )) {
             setDailyLimitReached(true);
             setData(null);
             setError("");
@@ -311,11 +314,11 @@ export default function IntelligenceReport({
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="text-xs font-medium tracking-[0.18em] text-violet-300">
-                FREE PLAN
+                USAGE LIMIT
               </div>
 
               <h3 className="mt-2 text-2xl font-semibold text-zinc-100">
-                Daily Free Limit Reached
+                Daily Analysis Limit Reached
               </h3>
 
               <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-400">

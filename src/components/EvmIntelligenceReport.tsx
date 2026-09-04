@@ -677,8 +677,12 @@ export default function EvmIntelligenceReport({
 
         if (!result.ok) {
           if (
+            (
             result.code ===
-            "DAILY_FREE_LIMIT"
+              "DAILY_FREE_LIMIT" ||
+            result.code ===
+              "DAILY_PRO_LIMIT"
+          )
           ) {
             setDailyLimitReached(
               true
@@ -835,16 +839,15 @@ export default function EvmIntelligenceReport({
       <div className="mt-6 overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-b from-violet-500/10 to-zinc-950/80 text-left">
         <div className="p-6 sm:p-8">
           <div className="text-xs font-medium tracking-[0.18em] text-violet-300">
-            FREE PLAN
+            USAGE LIMIT
           </div>
 
           <h3 className="mt-2 text-2xl font-semibold text-zinc-100">
-            Daily Free Limit Reached
+            Daily Analysis Limit Reached
           </h3>
 
           <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-400">
-            You&apos;ve used your 3 free analyses for the current
-            24-hour window.
+            You&apos;ve reached the analysis allowance for the current 24-hour window.
           </p>
 
           <div className="mt-6">
