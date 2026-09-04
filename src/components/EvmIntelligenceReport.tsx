@@ -1,5 +1,10 @@
 "use client";
 
+import ActivityTimelinePanel from "@/components/ActivityTimeline";
+import type {
+  ActivityTimeline as ActivityTimelineData,
+} from "@/lib/intelligence/activityTimeline";
+
 import {
   useEffect,
   useState,
@@ -299,6 +304,9 @@ type EvmSuccess = {
   address:
     string;
 
+
+  activityTimeline:
+    ActivityTimelineData;
   assetKind:
     | "wallet"
     | "contract"
@@ -1578,6 +1586,12 @@ export default function EvmIntelligenceReport({
           <Unavailable />
         )}
       </EvidenceSection>
+
+      <ActivityTimelinePanel
+        timeline={
+          data.activityTimeline
+        }
+      />
 
       <AnalysisActions
         network={network}

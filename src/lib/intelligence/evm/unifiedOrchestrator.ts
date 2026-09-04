@@ -1,3 +1,8 @@
+import {
+  buildEvmActivityTimeline,
+  type ActivityTimeline,
+} from "@/lib/intelligence/activityTimeline";
+
 import type {
   IntelligenceEngineResult,
   IntelligenceErrorResponse,
@@ -207,9 +212,15 @@ export type RunEvmUnifiedIntelligenceRequest = {
   address: string;
 };
 
+export type EvmUnifiedIntelligenceWithActivity =
+  EvmUnifiedIntelligence & {
+    activityTimeline:
+      ActivityTimeline;
+  };
+
 export type RunEvmUnifiedIntelligenceResult =
   IntelligenceEngineResult<
-    | EvmUnifiedIntelligence
+    | EvmUnifiedIntelligenceWithActivity
     | IntelligenceErrorResponse
   >;
 
@@ -1783,11 +1794,48 @@ export async function runEvmUnifiedIntelligence(
       );
   }
 
+
+  const activityTimeline =
+    buildEvmActivityTimeline({
+      analyzedAddress:
+        address,
+
+      nativeCurrency:
+        network.nativeCurrency,
+
+      tokenSymbol:
+        metadata.symbol,
+
+      tokenDecimals:
+        metadata.decimals,
+
+      transactions:
+        rootTransactions,
+
+      transfers:
+        rootTransfers,
+
+      transactionsAvailable:
+        rootTransactionResult.ok,
+
+      transfersRequested:
+        assetKind ===
+        "erc20_contract",
+
+      transfersAvailable:
+        transferResult?.ok ===
+        true,
+
+      transactionExhausted,
+
+      transferExhausted,
+    });
+
   return {
     status: 200,
 
-    data:
-      buildEvmUnifiedIntelligence({
+    data: {
+      ...buildEvmUnifiedIntelligence({
         network,
         address,
         assetKind,
@@ -1795,5 +1843,8 @@ export async function runEvmUnifiedIntelligence(
         findings,
         caveats,
       }),
+
+      activityTimeline,
+    },
   };
 }
