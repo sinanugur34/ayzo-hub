@@ -1,3 +1,4 @@
+import AccountPlanCard from "@/components/account/AccountPlanCard";
 import Link from "next/link";
 
 import {
@@ -142,19 +143,7 @@ export default async function AccountPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-zinc-900 bg-black/30 p-5">
-              <div className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
-                Plan
-              </div>
-
-              <div className="mt-2 text-sm text-zinc-300">
-                Free
-              </div>
-
-              <div className="mt-1 text-[10px] text-zinc-600">
-                Billing is not connected yet.
-              </div>
-            </div>
+            <AccountPlanCard />
           </div>
         </section>
 
