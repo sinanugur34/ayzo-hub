@@ -360,70 +360,10 @@ async function consumePro(
   }
 }
 
-function getPreviewQuotaBypass():
-  AnalysisQuotaState |
-  null {
-  /*
-   * Temporary smoke-test bypass.
-   *
-   * Defense in depth:
-   * - requires an explicit env flag
-   * - only works in Vercel Preview
-   * - cannot activate in Production
-   *
-   * Remove after retention-wave smoke tests.
-   */
-  if (
-    process.env
-      .AYZO_PREVIEW_QUOTA_BYPASS !==
-      "1" ||
-    process.env
-      .VERCEL_ENV !==
-      "preview"
-  ) {
-    return null;
-  }
-
-  const policy =
-    getAnalysisQuotaPolicy(
-      "free"
-    );
-
-  return {
-    plan:
-      "free",
-
-    allowed:
-      true,
-
-    available:
-      false,
-
-    limit:
-      policy.limit,
-
-    remaining:
-      null,
-
-    resetAt:
-      null,
-
-    deviceCookie:
-      null,
-  };
-}
-
 export async function getAnalysisQuotaStatus(
   request:
     Request
 ): Promise<AnalysisQuotaState> {
-  const previewBypass =
-    getPreviewQuotaBypass();
-
-  if (previewBypass) {
-    return previewBypass;
-  }
-
   const {
     entitlement,
     userId,
@@ -457,13 +397,6 @@ export async function consumeAnalysisQuota(
   request:
     Request
 ): Promise<AnalysisQuotaState> {
-  const previewBypass =
-    getPreviewQuotaBypass();
-
-  if (previewBypass) {
-    return previewBypass;
-  }
-
   const {
     entitlement,
     userId,
