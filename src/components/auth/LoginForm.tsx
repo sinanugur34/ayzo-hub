@@ -58,7 +58,7 @@ export default function LoginForm() {
 
       const redirectTo =
         `${window.location.origin}` +
-        "/auth/callback?next=/account";
+        "/auth/callback";
 
       const {
         error:
