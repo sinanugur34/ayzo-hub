@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import AnalysisActions from "@/components/AnalysisActions";
 import WaitlistForm from "@/components/WaitlistForm";
 
 type AnalyticsWindow = Window & {
@@ -465,6 +466,13 @@ export default function IntelligenceReport({
             </p>
           </div>
         </section>
+
+        <AnalysisActions
+          network="solana"
+          subjectType="token"
+          subjectValue={address}
+          title="Solana Token Analysis"
+        />
       </div>
     );
   }
@@ -753,6 +761,13 @@ export default function IntelligenceReport({
           )}
         </div>
       </details>
+
+      <AnalysisActions
+        network="solana"
+        subjectType="token"
+        subjectValue={address}
+        title="Solana Token Analysis"
+      />
 
       <section className="rounded-3xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 to-zinc-950/70 p-6 sm:p-7">
         <div className="flex flex-wrap items-center justify-between gap-5">

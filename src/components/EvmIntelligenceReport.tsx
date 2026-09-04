@@ -5,6 +5,7 @@ import {
   useState,
 } from "react";
 
+import AnalysisActions from "@/components/AnalysisActions";
 import WaitlistForm from "@/components/WaitlistForm";
 import type {
   LiveEvmNetworkId,
@@ -1574,6 +1575,13 @@ export default function EvmIntelligenceReport({
           <Unavailable />
         )}
       </EvidenceSection>
+
+      <AnalysisActions
+        network={network}
+        subjectType="entity"
+        subjectValue={address}
+        title={`${networkDefinition.name} Address Analysis`}
+      />
 
       <section className="rounded-3xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 to-zinc-950/70 p-6 sm:p-7">
         <div className="flex flex-wrap items-center justify-between gap-5">

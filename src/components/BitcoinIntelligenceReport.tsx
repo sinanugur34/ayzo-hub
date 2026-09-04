@@ -5,6 +5,7 @@ import {
   useState,
 } from "react";
 
+import AnalysisActions from "@/components/AnalysisActions";
 import WaitlistForm from "@/components/WaitlistForm";
 
 type Finding = {
@@ -686,6 +687,13 @@ export default function BitcoinIntelligenceReport({
           </div>
         </section>
       )}
+
+      <AnalysisActions
+        network="bitcoin"
+        subjectType="wallet"
+        subjectValue={address}
+        title="Bitcoin Address Analysis"
+      />
 
       <section className="rounded-3xl border border-zinc-900 bg-black/20 p-5">
         <div className="text-[10px] font-medium tracking-[0.14em] text-zinc-600">

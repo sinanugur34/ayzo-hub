@@ -280,10 +280,7 @@ export default async function AccountPage() {
         </div>
 
         <div className="mt-5 rounded-2xl border border-violet-500/10 bg-violet-500/5 px-5 py-4 text-xs leading-5 text-zinc-500">
-          Saved research and watchlists are backed by
-          authenticated AYZO account storage.
-          Analysis-side save controls and monitoring actions
-          are the next integration step.
+          Saved research and watchlists are backed by authenticated AYZO account storage. Save analyses and organize monitored entities directly from AYZO intelligence reports.
         </div>
       </div>
     </main>
