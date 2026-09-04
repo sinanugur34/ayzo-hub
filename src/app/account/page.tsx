@@ -1,4 +1,5 @@
 import AccountPlanCard from "@/components/account/AccountPlanCard";
+import AlertRulesPanel from "@/components/account/AlertRulesPanel";
 import Link from "next/link";
 
 import {
@@ -267,6 +268,8 @@ export default async function AccountPage() {
             )}
           </section>
         </div>
+
+        <AlertRulesPanel />
 
         <div className="mt-5 rounded-2xl border border-violet-500/10 bg-violet-500/5 px-5 py-4 text-xs leading-5 text-zinc-500">
           Saved research and watchlists are backed by authenticated AYZO account storage. Save analyses and organize monitored entities directly from AYZO intelligence reports.
