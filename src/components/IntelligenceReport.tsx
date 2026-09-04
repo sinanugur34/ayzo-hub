@@ -1,5 +1,10 @@
 "use client";
 
+import WalletTrackRecordPanel from "@/components/WalletTrackRecord";
+import {
+  buildSolanaWalletTrackRecord,
+} from "@/lib/intelligence/walletTrackRecord";
+
 import { useEffect, useState } from "react";
 import AnalysisActions from "@/components/AnalysisActions";
 import ActivityTimelinePanel from "@/components/ActivityTimeline";
@@ -772,6 +777,25 @@ export default function IntelligenceReport({
           )}
         </div>
       </details>
+
+      <WalletTrackRecordPanel
+        record={
+          buildSolanaWalletTrackRecord({
+            timeline:
+              buildSolanaFundingActivityTimeline({
+                funding:
+                  data.funding,
+              }),
+
+            relationships:
+              data.relationships,
+
+            funding:
+              data.funding,
+          })
+        }
+        subjectLabel="Analyzed holder-wallet set"
+      />
 
       <VisualEvidenceGraphPanel
         graph={

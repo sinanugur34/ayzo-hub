@@ -1,5 +1,10 @@
 "use client";
 
+import WalletTrackRecordPanel from "@/components/WalletTrackRecord";
+import {
+  buildEvmWalletTrackRecord,
+} from "@/lib/intelligence/walletTrackRecord";
+
 import ActivityTimelinePanel from "@/components/ActivityTimeline";
 import VisualEvidenceGraphPanel from "@/components/VisualEvidenceGraph";
 import {
@@ -1590,6 +1595,20 @@ export default function EvmIntelligenceReport({
           <Unavailable />
         )}
       </EvidenceSection>
+
+      <WalletTrackRecordPanel
+        record={
+          buildEvmWalletTrackRecord({
+            timeline:
+              data.activityTimeline,
+
+            relationships,
+
+            funding,
+          })
+        }
+        subjectLabel="Analyzed EVM address"
+      />
 
       <VisualEvidenceGraphPanel
         graph={

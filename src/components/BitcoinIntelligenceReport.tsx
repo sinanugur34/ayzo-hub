@@ -1,5 +1,10 @@
 "use client";
 
+import WalletTrackRecordPanel from "@/components/WalletTrackRecord";
+import {
+  buildBitcoinWalletTrackRecord,
+} from "@/lib/intelligence/walletTrackRecord";
+
 import {
   useEffect,
   useState,
@@ -698,6 +703,33 @@ export default function BitcoinIntelligenceReport({
           </div>
         </section>
       )}
+
+      <WalletTrackRecordPanel
+        record={
+          buildBitcoinWalletTrackRecord({
+            timeline:
+              buildBitcoinActivityTimeline({
+                transactions:
+                  data.history.transactions,
+
+                nextCursor:
+                  data.history.nextCursor,
+              }),
+
+            historyTransactionCount:
+              data.history.transactions.length,
+
+            hasNextCursor:
+              Boolean(
+                data.history.nextCursor
+              ),
+
+            canonicalTransaction:
+              data.canonicalTransaction,
+          })
+        }
+        subjectLabel="Analyzed Bitcoin address"
+      />
 
       <VisualEvidenceGraphPanel
         graph={
