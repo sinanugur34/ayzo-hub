@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 
+import EntityAnnotationPanel from "@/components/EntityAnnotationPanel";
+
 import {
   useEffect,
   useState,
@@ -651,6 +653,12 @@ export default function AnalysisActions({
           </button>
         </div>
       </div>
+
+      <EntityAnnotationPanel
+        network={network}
+        subjectType={subjectType}
+        subjectValue={subjectValue}
+      />
 
       {panelOpen && (
         <div className="mt-5 rounded-2xl border border-zinc-800 bg-black/30 p-4">
