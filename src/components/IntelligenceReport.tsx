@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import AnalysisActions from "@/components/AnalysisActions";
+import ActivityTimelinePanel from "@/components/ActivityTimeline";
+import {
+  buildSolanaFundingActivityTimeline,
+} from "@/lib/intelligence/activityTimeline";
 import WaitlistForm from "@/components/WaitlistForm";
 
 type AnalyticsWindow = Window & {
@@ -764,6 +768,15 @@ export default function IntelligenceReport({
           )}
         </div>
       </details>
+
+      <ActivityTimelinePanel
+        timeline={
+          buildSolanaFundingActivityTimeline({
+            funding:
+              data.funding,
+          })
+        }
+      />
 
       <AnalysisActions
         network="solana"

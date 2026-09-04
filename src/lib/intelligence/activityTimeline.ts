@@ -17,7 +17,8 @@ export type ActivityTimelineDirection =
 export type ActivityTimelineEventKind =
   | "native_transfer"
   | "transaction"
-  | "token_transfer";
+  | "token_transfer"
+  | "funding_transfer";
 
 export type ActivityTimelineEvidenceState =
   "SUPPORTED";
@@ -700,6 +701,390 @@ export function buildEvmActivityTimeline(
 
       transferCount:
         input.transfers.length,
+
+      maxEvents,
+    },
+  };
+}
+
+
+type BuildBitcoinActivityTimelineInput = {
+  transactions:
+    readonly {
+      transactionHash:
+        string;
+
+      blockHeight:
+        number | null;
+
+      timestamp:
+        string | null;
+    }[];
+
+  nextCursor:
+    string | null;
+
+  maxEvents?:
+    number;
+};
+
+export function buildBitcoinActivityTimeline(
+  input:
+    BuildBitcoinActivityTimelineInput
+): ActivityTimeline {
+  const maxEvents =
+    Math.min(
+      25,
+      Math.max(
+        1,
+        input.maxEvents ??
+          12
+      )
+    );
+
+  const events =
+    input.transactions
+      .map(
+        (
+          transaction,
+          index
+        ): ActivityTimelineEvent => ({
+          id:
+            `bitcoin-tx:${transaction.transactionHash}:${index}`,
+
+          timestamp:
+            transaction.timestamp,
+
+          blockNumber:
+            transaction.blockHeight,
+
+          kind:
+            "transaction",
+
+          direction:
+            "observed",
+
+          from:
+            null,
+
+          to:
+            null,
+
+          counterparty:
+            null,
+
+          asset:
+            null,
+
+          assetAddress:
+            null,
+
+          rawValue:
+            null,
+
+          formattedValue:
+            null,
+
+          transactionHash:
+            transaction.transactionHash,
+
+          evidenceState:
+            "SUPPORTED",
+
+          whyItMatters:
+            "This transaction was observed in the bounded Bitcoin address-history evidence.",
+        })
+      )
+      .sort(
+        (
+          left,
+          right
+        ) => {
+          const timeDelta =
+            eventTime(
+              right.timestamp
+            ) -
+            eventTime(
+              left.timestamp
+            );
+
+          if (
+            timeDelta !==
+            0
+          ) {
+            return timeDelta;
+          }
+
+          return (
+            (
+              right.blockNumber ??
+              -1
+            ) -
+            (
+              left.blockNumber ??
+              -1
+            )
+          );
+        }
+      )
+      .slice(
+        0,
+        maxEvents
+      );
+
+  const paginationNote =
+    input.nextCursor !==
+      null
+      ? " Additional provider pages are available."
+      : "";
+
+  return {
+    status:
+      "limited",
+
+    limitation:
+      "Bitcoin activity is bounded to the address-history provider page collected by AYZO and is not exhaustive." +
+      paginationNote,
+
+    events,
+
+    evidenceWindow: {
+      transactionCount:
+        input.transactions.length,
+
+      transferCount:
+        0,
+
+      maxEvents,
+    },
+  };
+}
+
+
+type BuildSolanaFundingActivityTimelineInput = {
+  funding:
+    | {
+        ok:
+          true;
+
+        walletsAnalyzed:
+          number;
+
+        incomingTransfersDetected:
+          number;
+
+        sharedFundingSourcesDetected:
+          number;
+
+        perWallet:
+          readonly {
+            wallet:
+              string;
+
+            recentIncomingTransfers:
+              readonly {
+                source:
+                  string;
+
+                sol:
+                  number;
+
+                signature:
+                  string;
+
+                destination?:
+                  string;
+
+                blockTime?:
+                  number | null;
+
+                lamports?:
+                  string;
+              }[];
+          }[];
+      }
+    | null;
+
+  maxEvents?:
+    number;
+};
+
+function solanaTimestamp(
+  blockTime:
+    number | null | undefined
+) {
+  if (
+    typeof blockTime !==
+      "number" ||
+    !Number.isFinite(
+      blockTime
+    ) ||
+    blockTime <=
+      0
+  ) {
+    return null;
+  }
+
+  return new Date(
+    blockTime *
+      1000
+  ).toISOString();
+}
+
+export function buildSolanaFundingActivityTimeline(
+  input:
+    BuildSolanaFundingActivityTimelineInput
+): ActivityTimeline {
+  const maxEvents =
+    Math.min(
+      25,
+      Math.max(
+        1,
+        input.maxEvents ??
+          12
+      )
+    );
+
+  if (!input.funding) {
+    return {
+      status:
+        "unavailable",
+
+      limitation:
+        "Recent Solana funding evidence was unavailable for this analysis.",
+
+      events: [],
+
+      evidenceWindow: {
+        transactionCount:
+          0,
+
+        transferCount:
+          0,
+
+        maxEvents,
+      },
+    };
+  }
+
+  const events:
+    ActivityTimelineEvent[] = [];
+
+  for (
+    const wallet of
+    input.funding.perWallet
+  ) {
+    for (
+      let index = 0;
+      index <
+      wallet
+        .recentIncomingTransfers
+        .length;
+      index += 1
+    ) {
+      const transfer =
+        wallet
+          .recentIncomingTransfers[
+            index
+          ];
+
+      const destination =
+        transfer.destination ??
+        wallet.wallet;
+
+      events.push({
+        id:
+          `solana-funding:${transfer.signature}:${destination}:${index}`,
+
+        timestamp:
+          solanaTimestamp(
+            transfer.blockTime
+          ),
+
+        blockNumber:
+          null,
+
+        kind:
+          "funding_transfer",
+
+        direction:
+          "incoming",
+
+        from:
+          transfer.source,
+
+        to:
+          destination,
+
+        counterparty:
+          transfer.source,
+
+        asset:
+          "SOL",
+
+        assetAddress:
+          null,
+
+        rawValue:
+          transfer.lamports ??
+          String(
+            transfer.sol
+          ),
+
+        formattedValue:
+          Number.isFinite(
+            transfer.sol
+          )
+            ? String(
+                transfer.sol
+              )
+            : null,
+
+        transactionHash:
+          transfer.signature,
+
+        evidenceState:
+          "SUPPORTED",
+
+        whyItMatters:
+          "An analyzed holder wallet recently received direct SOL funding from this source.",
+      });
+    }
+  }
+
+  events.sort(
+    (
+      left,
+      right
+    ) =>
+      eventTime(
+        right.timestamp
+      ) -
+      eventTime(
+        left.timestamp
+      )
+  );
+
+  return {
+    status:
+      "limited",
+
+    limitation:
+      "Solana timeline evidence is limited to recent direct SOL funding transfers observed for the analyzed holder-wallet set. It does not represent exhaustive token or wallet activity and does not establish common ownership.",
+
+    events:
+      events.slice(
+        0,
+        maxEvents
+      ),
+
+    evidenceWindow: {
+      transactionCount:
+        input.funding
+          .incomingTransfersDetected,
+
+      transferCount:
+        0,
 
       maxEvents,
     },

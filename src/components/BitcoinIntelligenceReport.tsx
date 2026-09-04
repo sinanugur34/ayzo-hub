@@ -6,6 +6,10 @@ import {
 } from "react";
 
 import AnalysisActions from "@/components/AnalysisActions";
+import ActivityTimelinePanel from "@/components/ActivityTimeline";
+import {
+  buildBitcoinActivityTimeline,
+} from "@/lib/intelligence/activityTimeline";
 import WaitlistForm from "@/components/WaitlistForm";
 
 type Finding = {
@@ -690,6 +694,20 @@ export default function BitcoinIntelligenceReport({
           </div>
         </section>
       )}
+
+      <ActivityTimelinePanel
+        timeline={
+          buildBitcoinActivityTimeline({
+            transactions:
+              data.history
+                .transactions,
+
+            nextCursor:
+              data.history
+                .nextCursor,
+          })
+        }
+      />
 
       <AnalysisActions
         network="bitcoin"

@@ -133,6 +133,9 @@ function eventTitle(
     case "token_transfer":
       return `${prefix} token transfer`;
 
+    case "funding_transfer":
+      return `${prefix} funding transfer`;
+
     case "transaction":
       return `${prefix} transaction`;
   }
