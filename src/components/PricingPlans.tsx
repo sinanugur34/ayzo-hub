@@ -1,4 +1,5 @@
 import WaitlistForm from "@/components/WaitlistForm";
+import { PLANS } from "@/lib/plans/registry";
 
 type Feature = {
   label: string;
@@ -31,6 +32,10 @@ const freeFeatures: Feature[] = [
     label:
       "Evidence-backed summaries",
   },
+  {
+    label:
+      "Saved analyses & watchlists",
+  },
 ];
 
 const proFeatures: Feature[] = [
@@ -43,46 +48,78 @@ const proFeatures: Feature[] = [
   {
     label:
       "Higher analysis limits",
-  },
-  {
-    label:
-      "Deeper wallet relationships",
-  },
-  {
-    label:
-      "Funding provenance",
-  },
-  {
-    label:
-      "Developer history",
-  },
-  {
-    label:
-      "Deployment intelligence",
-  },
-  {
-    label:
-      "Longer activity history",
-  },
-  {
-    label:
-      "Advanced evidence explanations",
-  },
-  {
-    label:
-      "Saved analyses",
     roadmap:
       true,
   },
   {
     label:
-      "Smart alerts",
+      "Expanded wallet relationships",
     roadmap:
       true,
   },
   {
     label:
-      "PDF / CSV export",
+      "Expanded funding provenance",
+    roadmap:
+      true,
+  },
+  {
+    label:
+      "Extended developer / deployer history",
+    roadmap:
+      true,
+  },
+  {
+    label:
+      "Visual Evidence Graph",
+    roadmap:
+      true,
+  },
+  {
+    label:
+      "Wallet Performance Intelligence",
+    roadmap:
+      true,
+  },
+  {
+    label:
+      "Entity & Wallet Labels",
+    roadmap:
+      true,
+  },
+  {
+    label:
+      "Market & Flow Intelligence",
+    roadmap:
+      true,
+  },
+  {
+    label:
+      "Investigation Timeline",
+    roadmap:
+      true,
+  },
+  {
+    label:
+      "Smart Alerts & Monitoring",
+    roadmap:
+      true,
+  },
+  {
+    label:
+      "AYZO Investigator",
+    roadmap:
+      true,
+  },
+  {
+    label:
+      "PDF / CSV Reports",
+    roadmap:
+      true,
+  },
+  {
+    label:
+      "AYZO Mobile App",
     roadmap:
       true,
   },
@@ -97,43 +134,31 @@ const advancedFeatures: Feature[] = [
   },
   {
     label:
-      "Full multi-hop wallet graph",
-  },
-  {
-    label:
-      "Coordinated-wallet intelligence",
-  },
-  {
-    label:
-      "Deep funding tracing",
-  },
-  {
-    label:
-      "Deep developer / deployer investigation",
-  },
-  {
-    label:
-      "Professional investigation reports",
-  },
-  {
-    label:
-      "Maximum investigation depth",
-  },
-  {
-    label:
-      "Batch wallet analysis",
+      "Multi-hop Evidence Graph",
     roadmap:
       true,
   },
   {
     label:
-      "AYZO API access",
+      "Behavioral wallet clustering",
     roadmap:
       true,
   },
   {
     label:
-      "Saved investigations & watchlists",
+      "Batch wallet / token analysis",
+    roadmap:
+      true,
+  },
+  {
+    label:
+      "Compare investigations",
+    roadmap:
+      true,
+  },
+  {
+    label:
+      "Cases & Evidence Locker",
     roadmap:
       true,
   },
@@ -145,7 +170,25 @@ const advancedFeatures: Feature[] = [
   },
   {
     label:
-      "PDF / CSV / JSON export",
+      "Advanced watchlists",
+    roadmap:
+      true,
+  },
+  {
+    label:
+      "Custom alert rules",
+    roadmap:
+      true,
+  },
+  {
+    label:
+      "Professional reports & exports",
+    roadmap:
+      true,
+  },
+  {
+    label:
+      "AYZO API access",
     roadmap:
       true,
   },
@@ -157,7 +200,19 @@ const advancedFeatures: Feature[] = [
   },
   {
     label:
+      "No-Code Intelligence Dashboards",
+    roadmap:
+      true,
+  },
+  {
+    label:
       "Priority processing",
+    roadmap:
+      true,
+  },
+  {
+    label:
+      "AYZO Mobile App",
     roadmap:
       true,
   },
@@ -195,7 +250,7 @@ function FeatureList({
 
               {feature.roadmap && (
                 <span className="mt-1 inline-block rounded-full border border-zinc-700 bg-zinc-900 px-2 py-0.5 text-[8px] font-semibold tracking-[0.12em] text-zinc-500">
-                  ROADMAP
+                  COMING SOON
                 </span>
               )}
             </div>
@@ -287,8 +342,37 @@ export default function PricingPlans() {
               For active traders, investors and on-chain researchers.
             </p>
 
-            <div className="mt-6 text-lg font-semibold text-zinc-200">
-              Pricing coming soon
+            <div className="mt-6">
+              <div className="flex flex-wrap items-end gap-x-2 gap-y-1">
+                <span className="text-3xl font-semibold text-white">
+                  ${PLANS.pro.monthlyPriceUsd?.toFixed(0)}
+                </span>
+
+                <span className="pb-1 text-xs text-zinc-500">
+                  / month
+                </span>
+              </div>
+
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-violet-400/20 bg-violet-400/10 px-2.5 py-1 text-[9px] font-semibold tracking-[0.12em] text-violet-300">
+                  FOUNDING PRICE
+                </span>
+
+                <span className="text-xs text-zinc-500">
+                  ${PLANS.pro.annualPriceUsd?.toFixed(2)} / year · Save {PLANS.pro.annualDiscountPercent}%
+                </span>
+              </div>
+
+              <div className="mt-2 text-[11px] leading-5 text-zinc-600">
+                Annual effective price: $
+                {PLANS.pro.annualPriceUsd
+                  ? (
+                      PLANS.pro.annualPriceUsd /
+                      12
+                    ).toFixed(2)
+                  : "—"}
+                / month. Monthly and annual plans will have the same Pro access.
+              </div>
             </div>
           </div>
 
@@ -355,8 +439,8 @@ export default function PricingPlans() {
       </div>
 
       <div className="mt-5 text-center text-[11px] leading-5 text-zinc-600">
-        Roadmap features are planned for the paid launch and
-        are not represented as available today.
+        Features marked COMING SOON are not represented as
+        available today. Pro checkout remains disabled until billing is connected.
       </div>
     </section>
   );
