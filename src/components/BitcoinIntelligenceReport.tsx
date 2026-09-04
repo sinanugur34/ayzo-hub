@@ -7,6 +7,10 @@ import {
 
 import AnalysisActions from "@/components/AnalysisActions";
 import ActivityTimelinePanel from "@/components/ActivityTimeline";
+import VisualEvidenceGraphPanel from "@/components/VisualEvidenceGraph";
+import {
+  buildBitcoinVisualEvidenceGraph,
+} from "@/lib/intelligence/visualEvidenceGraph";
 import {
   buildBitcoinActivityTimeline,
 } from "@/lib/intelligence/activityTimeline";
@@ -694,6 +698,21 @@ export default function BitcoinIntelligenceReport({
           </div>
         </section>
       )}
+
+      <VisualEvidenceGraphPanel
+        graph={
+          buildBitcoinVisualEvidenceGraph({
+            address:
+              data.address,
+
+            history:
+              data.history,
+
+            canonicalTransaction:
+              data.canonicalTransaction,
+          })
+        }
+      />
 
       <ActivityTimelinePanel
         timeline={

@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import AnalysisActions from "@/components/AnalysisActions";
 import ActivityTimelinePanel from "@/components/ActivityTimeline";
+import VisualEvidenceGraphPanel from "@/components/VisualEvidenceGraph";
+import {
+  buildSolanaVisualEvidenceGraph,
+} from "@/lib/intelligence/visualEvidenceGraph";
 import {
   buildSolanaFundingActivityTimeline,
 } from "@/lib/intelligence/activityTimeline";
@@ -768,6 +772,24 @@ export default function IntelligenceReport({
           )}
         </div>
       </details>
+
+      <VisualEvidenceGraphPanel
+        graph={
+          buildSolanaVisualEvidenceGraph({
+            tokenAddress:
+              address,
+
+            holders:
+              data.holders,
+
+            relationships:
+              data.relationships,
+
+            funding:
+              data.funding,
+          })
+        }
+      />
 
       <ActivityTimelinePanel
         timeline={

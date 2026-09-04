@@ -1,6 +1,10 @@
 "use client";
 
 import ActivityTimelinePanel from "@/components/ActivityTimeline";
+import VisualEvidenceGraphPanel from "@/components/VisualEvidenceGraph";
+import {
+  buildEvmVisualEvidenceGraph,
+} from "@/lib/intelligence/visualEvidenceGraph";
 import type {
   ActivityTimeline as ActivityTimelineData,
 } from "@/lib/intelligence/activityTimeline";
@@ -1586,6 +1590,19 @@ export default function EvmIntelligenceReport({
           <Unavailable />
         )}
       </EvidenceSection>
+
+      <VisualEvidenceGraphPanel
+        graph={
+          buildEvmVisualEvidenceGraph({
+            rootAddress:
+              data.address,
+
+            graph,
+
+            funding,
+          })
+        }
+      />
 
       <ActivityTimelinePanel
         timeline={
