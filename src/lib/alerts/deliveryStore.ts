@@ -384,3 +384,85 @@ export async function markAlertDeliveryFailed(
     );
   }
 }
+
+export async function markAlertDeliveryTerminalFailed(
+  row: AlertDeliveryRow,
+  claimToken: string,
+  errorCode: string
+) {
+  const normalizedErrorCode =
+    errorCode
+      .trim()
+      .slice(
+        0,
+        120
+      );
+
+  if (!normalizedErrorCode) {
+    throw new Error(
+      "Alert delivery terminal failure code required."
+    );
+  }
+
+  const now =
+    new Date();
+
+  const admin =
+    createAdminClient();
+
+  const {
+    data,
+    error,
+  } =
+    await admin
+      .from(
+        "alert_deliveries"
+      )
+      .update({
+        status:
+          "failed",
+
+        claim_token:
+          null,
+
+        claimed_at:
+          null,
+
+        next_attempt_at:
+          null,
+
+        last_error_code:
+          normalizedErrorCode,
+
+        last_error_at:
+          now.toISOString(),
+
+        delivered_at:
+          null,
+      })
+      .eq(
+        "id",
+        row.id
+      )
+      .eq(
+        "status",
+        "processing"
+      )
+      .eq(
+        "claim_token",
+        claimToken
+      )
+      .select(
+        "id"
+      )
+      .maybeSingle();
+
+  if (
+    error ||
+    !data
+  ) {
+    throw new Error(
+      "Unable to record terminal alert delivery failure."
+    );
+  }
+}
