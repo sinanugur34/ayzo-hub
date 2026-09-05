@@ -21,6 +21,11 @@ import {
   runAlertDeliveryWorker,
 } from "@/lib/alerts/deliveryWorker";
 
+import {
+  isResendAlertProviderReady,
+  sendResendAlertEmail,
+} from "@/lib/alerts/resendProvider";
+
 type ExecuteRequestBody = {
   execute?: unknown;
 };
@@ -141,23 +146,52 @@ export async function POST(
   }
 
   /*
-   * FOUNDATION SAFETY:
+   * PROVIDER SAFETY:
    *
-   * There is intentionally no production
-   * mail provider adapter yet.
-   *
-   * runAlertDeliveryWorker checks
-   * provider readiness BEFORE calling
-   * claimAlertDeliveries().
-   *
-   * Therefore even if the env gate is
-   * temporarily enabled, this route
-   * performs zero delivery claims.
+   * Provider readiness is checked before
+   * any delivery rows may be claimed.
    */
+  const providerConfigured =
+    isResendAlertProviderReady();
+
+  if (
+    !providerConfigured
+  ) {
+    return NextResponse.json(
+      {
+        ok: false,
+
+        code:
+          "ALERT_DELIVERY_PROVIDER_NOT_CONFIGURED",
+
+        error:
+          "AYZO alert delivery provider is not configured.",
+
+        deliveryExecutionEnabled:
+          true,
+
+        deliveryLive:
+          false,
+
+        providerConfigured:
+          false,
+
+        providerCalls:
+          0,
+
+        deliveryClaims:
+          0,
+      },
+      {
+        status: 503,
+      }
+    );
+  }
+
   const summary =
     await runAlertDeliveryWorker({
       isProviderReady:
-        () => false,
+        isResendAlertProviderReady,
 
       claim:
         claimAlertDeliveries,
@@ -166,11 +200,7 @@ export async function POST(
         loadAlertDeliveryContext,
 
       sendEmail:
-        async () => {
-          throw new Error(
-            "Alert delivery provider is not configured."
-          );
-        },
+        sendResendAlertEmail,
 
       markDelivered:
         markAlertDeliveryDelivered,
@@ -183,20 +213,19 @@ export async function POST(
     });
 
   return NextResponse.json({
-    ok:
-      true,
+    ok: true,
 
     mode:
-      "delivery-foundation-v1",
+      "delivery-resend-v1",
 
     deliveryExecutionEnabled:
       true,
 
     deliveryLive:
-      false,
+      true,
 
     providerConfigured:
-      false,
+      true,
 
     providerCalls:
       summary.providerCalls,
