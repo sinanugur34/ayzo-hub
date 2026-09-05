@@ -111,6 +111,17 @@ export async function POST(
     );
   }
 
+  /*
+   * Provider readiness is safe to evaluate
+   * even while execution is disabled.
+   *
+   * This lets internal operators verify
+   * runtime provider configuration without
+   * claiming rows or sending email.
+   */
+  const providerConfigured =
+    isResendAlertProviderReady();
+
   if (
     !isDeliveryExecutionEnabled()
   ) {
@@ -130,8 +141,7 @@ export async function POST(
         deliveryLive:
           false,
 
-        providerConfigured:
-          false,
+        providerConfigured,
 
         providerCalls:
           0,
@@ -151,8 +161,6 @@ export async function POST(
    * Provider readiness is checked before
    * any delivery rows may be claimed.
    */
-  const providerConfigured =
-    isResendAlertProviderReady();
 
   if (
     !providerConfigured
