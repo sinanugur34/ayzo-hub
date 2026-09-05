@@ -1,4 +1,8 @@
 import {
+  NextResponse,
+} from "next/server";
+
+import {
   isInternalApiRequest,
 } from "@/lib/apiSecurity";
 
@@ -7,137 +11,188 @@ import {
 } from "@/lib/alerts/evaluationBatch";
 
 import {
-  readJsonObjectBody,
-} from "@/lib/requestBody";
+  AlertRunnerLockUnavailableError,
+  createAlertRunnerLeaseProvider,
+} from "@/lib/alerts/runnerLock";
 
+import {
+  runWithAlertRunnerLease,
+} from "@/lib/alerts/runnerSafety";
 
-export const dynamic =
-  "force-dynamic";
-
+type ExecuteRequestBody = {
+  execute?: unknown;
+};
 
 export async function POST(
-  request:
-    Request
+  request: Request
 ) {
   if (
     !isInternalApiRequest(
       request
     )
   ) {
-    return Response.json(
+    return NextResponse.json(
       {
-        ok:
-          false,
-
+        ok: false,
         error:
           "Forbidden.",
       },
       {
-        status:
-          403,
-
-        headers: {
-          "Cache-Control":
-            "no-store",
-        },
+        status: 403,
       }
     );
   }
 
-  const parsed =
-    await readJsonObjectBody(
-      request
-    );
+  let body:
+    ExecuteRequestBody =
+    {};
 
-  if (!parsed.ok) {
-    return parsed.response;
+  try {
+    const parsed:
+      unknown =
+      await request.json();
+
+    if (
+      parsed &&
+      typeof parsed ===
+        "object"
+    ) {
+      body =
+        parsed as
+          ExecuteRequestBody;
+    }
+  } catch {
+    body = {};
   }
 
-  /*
-   * Prevent accidental execution during
-   * endpoint/security probing.
-   */
   if (
-    parsed.body.execute !==
+    body.execute !==
     true
   ) {
-    return Response.json(
+    return NextResponse.json(
       {
-        ok:
-          false,
-
+        ok: false,
         code:
           "EXECUTION_NOT_CONFIRMED",
-
         error:
-          "Bounded evaluation requires execute=true.",
+          "Explicit execute=true required.",
       },
       {
-        status:
-          400,
-
-        headers: {
-          "Cache-Control":
-            "no-store",
-        },
+        status: 400,
       }
     );
   }
 
   try {
-    const summary =
-      await runAlertEvaluationBatch();
+    const outcome =
+      await runWithAlertRunnerLease(
+        createAlertRunnerLeaseProvider(),
+        () =>
+          runAlertEvaluationBatch()
+      );
 
-    return Response.json(
-      {
-        ok:
-          true,
-
+    if (
+      outcome.status ===
+      "skipped"
+    ) {
+      return NextResponse.json({
+        ok: true,
         mode:
           "bounded-v1",
-
+        skipped:
+          true,
+        skipReason:
+          outcome.reason,
+        lockAcquired:
+          false,
+        lockReleased:
+          null,
         schedulerLive:
           false,
-
         deliveryLive:
           false,
-
         userAnalysisQuotaConsumed:
           false,
+      });
+    }
 
-        summary,
-      },
-      {
-        status:
-          200,
-
-        headers: {
-          "Cache-Control":
-            "no-store",
+    if (
+      !outcome.released
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code:
+            "ALERT_RUNNER_LOCK_RELEASE_FAILED",
+          error:
+            "AYZO alert runner lock release failed.",
+          schedulerLive:
+            false,
+          deliveryLive:
+            false,
+          userAnalysisQuotaConsumed:
+            false,
         },
-      }
-    );
+        {
+          status: 503,
+        }
+      );
+    }
 
-  } catch {
-    return Response.json(
+    return NextResponse.json({
+      ok: true,
+      mode:
+        "bounded-v1",
+      skipped:
+        false,
+      lockAcquired:
+        true,
+      lockReleased:
+        true,
+      schedulerLive:
+        false,
+      deliveryLive:
+        false,
+      userAnalysisQuotaConsumed:
+        false,
+      summary:
+        outcome.value,
+    });
+  } catch (error) {
+    if (
+      error instanceof
+      AlertRunnerLockUnavailableError
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code:
+            "ALERT_RUNNER_LOCK_UNAVAILABLE",
+          error:
+            "AYZO alert runner lock unavailable.",
+          schedulerLive:
+            false,
+          deliveryLive:
+            false,
+          userAnalysisQuotaConsumed:
+            false,
+        },
+        {
+          status: 503,
+        }
+      );
+    }
+
+    return NextResponse.json(
       {
-        ok:
-          false,
-
+        ok: false,
         code:
           "ALERT_EVALUATION_FAILED",
-
         error:
           "AYZO alert evaluation failed.",
       },
       {
-        status:
-          500,
-
-        headers: {
-          "Cache-Control":
-            "no-store",
-        },
+        status: 500,
       }
     );
   }
