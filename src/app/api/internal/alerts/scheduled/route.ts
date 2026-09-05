@@ -20,6 +20,17 @@ import {
   isValidAlertCronAuthorization,
 } from "@/lib/alerts/schedulerPolicy";
 
+import {
+  AlertSchedulerCadenceUnavailableError,
+  claimAlertSchedulerCadence,
+} from "@/lib/alerts/schedulerCadence";
+
+import {
+  ALERT_SCHEDULER_MAX_RULE_EVALUATIONS_PER_DAY,
+  ALERT_SCHEDULER_MAX_RULES_PER_RUN,
+  ALERT_SCHEDULER_MIN_INTERVAL_SECONDS,
+} from "@/lib/alerts/schedulerCostPolicy";
+
 export async function GET(
   request: Request
 ) {
@@ -97,6 +108,39 @@ export async function GET(
   }
 
   try {
+    const cadenceClaimed =
+      await claimAlertSchedulerCadence();
+
+    if (!cadenceClaimed) {
+      return NextResponse.json({
+        ok: true,
+        mode:
+          "scheduled-bounded-v1",
+        skipped:
+          true,
+        skipReason:
+          "cadence_guard",
+        cadenceClaimed:
+          false,
+        schedulerExecutionEnabled:
+          true,
+        schedulerLive:
+          false,
+        deliveryLive:
+          false,
+        userAnalysisQuotaConsumed:
+          false,
+        policy: {
+          minimumIntervalSeconds:
+            ALERT_SCHEDULER_MIN_INTERVAL_SECONDS,
+          maxRulesPerRun:
+            ALERT_SCHEDULER_MAX_RULES_PER_RUN,
+          maxRuleEvaluationsPerDay:
+            ALERT_SCHEDULER_MAX_RULE_EVALUATIONS_PER_DAY,
+        },
+      });
+    }
+
     const outcome =
       await runWithAlertRunnerLease(
         createAlertRunnerLeaseProvider(),
@@ -178,6 +222,32 @@ export async function GET(
         outcome.value,
     });
   } catch (error) {
+    if (
+      error instanceof
+      AlertSchedulerCadenceUnavailableError
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code:
+            "ALERT_SCHEDULER_CADENCE_UNAVAILABLE",
+          error:
+            "AYZO alert scheduler cadence guard unavailable.",
+          schedulerExecutionEnabled:
+            true,
+          schedulerLive:
+            false,
+          deliveryLive:
+            false,
+          userAnalysisQuotaConsumed:
+            false,
+        },
+        {
+          status: 503,
+        }
+      );
+    }
+
     if (
       error instanceof
       AlertRunnerLockUnavailableError
