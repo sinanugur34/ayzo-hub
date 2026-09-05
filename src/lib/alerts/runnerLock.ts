@@ -40,10 +40,30 @@ export function createAlertRunnerLeaseProvider():
     | undefined;
 
   function getRedis() {
-    if (!redis) {
-      redis =
-        Redis.fromEnv();
+    if (redis) {
+      return redis;
     }
+
+    const url =
+      process.env.KV_REST_API_URL
+        ?.trim();
+
+    const token =
+      process.env.KV_REST_API_TOKEN
+        ?.trim();
+
+    if (
+      !url ||
+      !token
+    ) {
+      throw new AlertRunnerLockUnavailableError();
+    }
+
+    redis =
+      new Redis({
+        url,
+        token,
+      });
 
     return redis;
   }
