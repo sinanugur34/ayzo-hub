@@ -20,6 +20,9 @@ export type ServerEntitlementResult = {
 
   userId:
     string | null;
+
+  userEmail:
+    string | null;
 };
 
 function isSubscriptionEntitlementRow(
@@ -96,6 +99,7 @@ export async function getServerEntitlement():
   const {
     supabase,
     userId,
+    userEmail,
   } =
     await getAuthenticatedAccountContext();
 
@@ -109,6 +113,9 @@ export async function getServerEntitlement():
         true,
 
       userId:
+        null,
+
+      userEmail:
         null,
     };
   }
@@ -139,6 +146,8 @@ export async function getServerEntitlement():
         false,
 
       userId,
+
+      userEmail,
     };
   }
 
@@ -159,5 +168,7 @@ export async function getServerEntitlement():
       true,
 
     userId,
+
+    userEmail,
   };
 }

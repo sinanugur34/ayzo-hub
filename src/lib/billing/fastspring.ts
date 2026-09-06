@@ -213,28 +213,535 @@ type CreateSessionResponse = {
 export type FastSpringCheckoutResult =
   | {
       ok: true;
+
       sessionId:
         string;
+
       checkoutUrl:
         string;
+
       productPath:
         string;
     }
   | {
       ok: false;
+
       providerStatus:
         number;
+
       stage:
         | "create-session"
-          | "session-not-ready";
+        | "session-not-ready"
+        | "legacy-account-lookup"
+        | "legacy-session"
+        | "legacy-session-not-ready";
     };
+
+function orderTags({
+  userId,
+  interval,
+  expectedPriceCents,
+}: {
+  userId:
+    string;
+
+  interval:
+    ProBillingInterval;
+
+  expectedPriceCents:
+    number;
+}) {
+  return {
+    ayzoUserId:
+      userId,
+
+    ayzoPlan:
+      "pro",
+
+    ayzoBillingInterval:
+      interval,
+
+    ayzoExpectedPriceCents:
+      String(
+        expectedPriceCents
+      ),
+
+    ayzoContractVersion:
+      "founding-v1",
+  };
+}
+
+function accountIdsFromResponse(
+  value: unknown
+) {
+  const found =
+    new Set<string>();
+
+  const add = (
+    candidate: unknown
+  ) => {
+    if (
+      typeof candidate ===
+        "string" &&
+      candidate.trim()
+    ) {
+      found.add(
+        candidate.trim()
+      );
+    }
+  };
+
+  const inspect = (
+    candidate: unknown
+  ) => {
+    if (
+      typeof candidate ===
+        "string"
+    ) {
+      add(
+        candidate
+      );
+
+      return;
+    }
+
+    if (
+      typeof candidate !==
+        "object" ||
+      candidate ===
+        null
+    ) {
+      return;
+    }
+
+    const record =
+      candidate as Record<
+        string,
+        unknown
+      >;
+
+    add(
+      record.account
+    );
+
+    add(
+      record.id
+    );
+  };
+
+  if (
+    Array.isArray(
+      value
+    )
+  ) {
+    value.forEach(
+      inspect
+    );
+  }
+
+  if (
+    typeof value ===
+      "object" &&
+    value !==
+      null
+  ) {
+    const record =
+      value as Record<
+        string,
+        unknown
+      >;
+
+    add(
+      record.account
+    );
+
+    if (
+      Array.isArray(
+        record.accounts
+      )
+    ) {
+      record.accounts
+        .forEach(
+          inspect
+        );
+    }
+  }
+
+  return [
+    ...found,
+  ];
+}
+
+function legacySessionProductPaths(
+  value: unknown
+) {
+  if (
+    typeof value !==
+      "object" ||
+    value ===
+      null
+  ) {
+    return [];
+  }
+
+  const record =
+    value as Record<
+      string,
+      unknown
+    >;
+
+  if (
+    !Array.isArray(
+      record.items
+    )
+  ) {
+    return [];
+  }
+
+  return record.items
+    .map(item => {
+      if (
+        typeof item !==
+          "object" ||
+        item ===
+          null
+      ) {
+        return null;
+      }
+
+      const itemRecord =
+        item as Record<
+          string,
+          unknown
+        >;
+
+      return typeof itemRecord
+        .product ===
+        "string"
+        ? itemRecord.product
+        : null;
+    })
+    .filter(
+      (
+        value
+      ): value is string =>
+        value !==
+        null
+    );
+}
+
+function checkoutStoreId(
+  value: string
+) {
+  const parts =
+    value
+      .split("/")
+      .map(
+        part =>
+          part.trim()
+      )
+      .filter(Boolean);
+
+  if (
+    parts.length !==
+      2 ||
+    !parts[0]
+  ) {
+    throw new Error(
+      "Invalid FastSpring checkout path."
+    );
+  }
+
+  return parts[0];
+}
+
+async function createLegacyTestCheckout({
+  config,
+  userId,
+  userEmail,
+  interval,
+  productPath,
+  expectedPriceCents,
+}: {
+  config:
+    FastSpringConfig;
+
+  userId:
+    string;
+
+  userEmail:
+    string | null;
+
+  interval:
+    ProBillingInterval;
+
+  productPath:
+    string;
+
+  expectedPriceCents:
+    number;
+}): Promise<FastSpringCheckoutResult> {
+  /*
+   * Sessions v1 is a temporary
+   * Preview/Test compatibility
+   * path only.
+   *
+   * Never invent purchaser contact
+   * data. Require an existing
+   * FastSpring customer account
+   * matching the authenticated
+   * AYZO email.
+   */
+  if (
+    config.mode !==
+      "test" ||
+    !userEmail
+  ) {
+    return {
+      ok:
+        false,
+
+      providerStatus:
+        422,
+
+      stage:
+        "legacy-account-lookup",
+    };
+  }
+
+  const accountQuery =
+    new URLSearchParams({
+      email:
+        userEmail,
+    });
+
+  const accountResponse =
+    await fastSpringFetch(
+      `/accounts?${accountQuery.toString()}`,
+      {
+        method:
+          "GET",
+      }
+    );
+
+  if (
+    accountResponse.status !==
+      200
+  ) {
+    return {
+      ok:
+        false,
+
+      providerStatus:
+        accountResponse.status,
+
+      stage:
+        "legacy-account-lookup",
+    };
+  }
+
+  let accountPayload:
+    unknown;
+
+  try {
+    accountPayload =
+      await accountResponse
+        .json();
+  } catch {
+    return {
+      ok:
+        false,
+
+      providerStatus:
+        502,
+
+      stage:
+        "legacy-account-lookup",
+    };
+  }
+
+  const accountIds =
+    accountIdsFromResponse(
+      accountPayload
+    );
+
+  /*
+   * Fail closed on both:
+   * - no matching provider account
+   * - ambiguous provider accounts
+   */
+  if (
+    accountIds.length !==
+      1
+  ) {
+    return {
+      ok:
+        false,
+
+      providerStatus:
+        accountIds.length ===
+          0
+          ? 404
+          : 409,
+
+      stage:
+        "legacy-account-lookup",
+    };
+  }
+
+  const response =
+    await fastSpringFetch(
+      "/sessions",
+      {
+        method:
+          "POST",
+
+        body:
+          JSON.stringify({
+            account:
+              accountIds[0],
+
+            tags:
+              orderTags({
+                userId,
+                interval,
+                expectedPriceCents,
+              }),
+
+            items: [
+              {
+                product:
+                  productPath,
+
+                quantity:
+                  1,
+              },
+            ],
+          }),
+      }
+    );
+
+  if (
+    response.status !==
+      200
+  ) {
+    return {
+      ok:
+        false,
+
+      providerStatus:
+        response.status,
+
+      stage:
+        "legacy-session",
+    };
+  }
+
+  let session:
+    unknown;
+
+  try {
+    session =
+      await response.json();
+  } catch {
+    return {
+      ok:
+        false,
+
+      providerStatus:
+        502,
+
+      stage:
+        "legacy-session-not-ready",
+    };
+  }
+
+  if (
+    typeof session !==
+      "object" ||
+    session ===
+      null
+  ) {
+    return {
+      ok:
+        false,
+
+      providerStatus:
+        502,
+
+      stage:
+        "legacy-session-not-ready",
+    };
+  }
+
+  const record =
+    session as Record<
+      string,
+      unknown
+    >;
+
+  const sessionId =
+    typeof record.id ===
+      "string"
+      ? record.id
+      : null;
+
+  const products =
+    legacySessionProductPaths(
+      session
+    );
+
+  if (
+    !sessionId ||
+    !products.includes(
+      productPath
+    )
+  ) {
+    return {
+      ok:
+        false,
+
+      providerStatus:
+        502,
+
+      stage:
+        "legacy-session-not-ready",
+    };
+  }
+
+  const storeId =
+    checkoutStoreId(
+      config.checkoutPath
+    );
+
+  const checkoutUrl =
+    `https://${storeId}.test.onfastspring.com/session/${encodeURIComponent(
+      sessionId
+    )}`;
+
+  return {
+    ok:
+      true,
+
+    sessionId,
+
+    checkoutUrl,
+
+    productPath,
+  };
+}
 
 export async function createProCheckoutSession({
   userId,
+  userEmail,
   interval,
 }: {
   userId:
     string;
+
+  userEmail:
+    string | null;
+
   interval:
     ProBillingInterval;
 }): Promise<FastSpringCheckoutResult> {
@@ -255,17 +762,18 @@ export async function createProCheckoutSession({
           .monthlyProductPath;
 
   const expectedPriceCents =
-      proPriceCents(
-        interval
-      );
+    proPriceCents(
+      interval
+    );
 
   /*
-   * Create the complete session
-   * in one provider request.
+   * Primary path:
+   * FastSpring Sessions v2.
    *
-   * Avoid the separate cart-item
-   * POST which currently returns
-   * an internal FastSpring 500.
+   * AYZO only accepts the V2
+   * session if FastSpring proves
+   * the expected product is
+   * actually present in the cart.
    */
   const response =
     await fastSpringFetch(
@@ -279,29 +787,18 @@ export async function createProCheckoutSession({
             live:
               false,
 
-            orderTags: {
-              ayzoUserId:
+            orderTags:
+              orderTags({
                 userId,
-
-              ayzoPlan:
-                "pro",
-
-              ayzoBillingInterval:
                 interval,
-
-              ayzoExpectedPriceCents:
-                String(
-                  expectedPriceCents
-                ),
-
-              ayzoContractVersion:
-                "founding-v1",
-            },
+                expectedPriceCents,
+              }),
 
             cart: {
               items: [
                 {
                   productPath,
+
                   quantity:
                     1,
                 },
@@ -313,7 +810,7 @@ export async function createProCheckoutSession({
 
   if (
     response.status !==
-    201
+      201
   ) {
     return {
       ok:
@@ -327,10 +824,26 @@ export async function createProCheckoutSession({
     };
   }
 
-  const session =
-    (
-      await response.json()
-    ) as CreateSessionResponse;
+  let session:
+    CreateSessionResponse;
+
+  try {
+    session =
+      (
+        await response.json()
+      ) as CreateSessionResponse;
+  } catch {
+    return {
+      ok:
+        false,
+
+      providerStatus:
+        502,
+
+      stage:
+        "create-session",
+    };
+  }
 
   const cartItems =
     Array.isArray(
@@ -345,7 +858,8 @@ export async function createProCheckoutSession({
         if (
           typeof item !==
             "object" ||
-          item === null
+          item ===
+            null
         ) {
           return null;
         }
@@ -357,17 +871,21 @@ export async function createProCheckoutSession({
           >;
 
         if (
-          typeof record.productPath ===
-          "string"
+          typeof record
+            .productPath ===
+            "string"
         ) {
-          return record.productPath;
+          return record
+            .productPath;
         }
 
         if (
-          typeof record.product ===
-          "string"
+          typeof record
+            .product ===
+            "string"
         ) {
-          return record.product;
+          return record
+            .product;
         }
 
         return null;
@@ -376,9 +894,11 @@ export async function createProCheckoutSession({
         (
           value
         ): value is string =>
-          value !== null
+          value !==
+          null
       );
-const sessionId =
+
+  const sessionId =
     typeof session.id ===
       "string"
       ? session.id
@@ -394,82 +914,114 @@ const sessionId =
           .webcheckoutUrl
       : null;
 
-    const checkoutStatuses =
-      Array.isArray(
-        session.checkoutStatus
-      )
-        ? session.checkoutStatus.filter(
-            (
-              value
-            ): value is string =>
-              typeof value ===
+  const checkoutStatuses =
+    Array.isArray(
+      session.checkoutStatus
+    )
+      ? session.checkoutStatus.filter(
+          (
+            value
+          ): value is string =>
+            typeof value ===
               "string"
-          )
-        : typeof session.checkoutStatus ===
-            "string"
-          ? [
-              session.checkoutStatus,
-            ]
-          : [];
+        )
+      : typeof session
+          .checkoutStatus ===
+          "string"
+        ? [
+            session
+              .checkoutStatus,
+          ]
+        : [];
 
-    const requiresProducts =
-      checkoutStatuses.includes(
-        "PRODUCTS_REQUIRED"
-      );
+  const requiresProducts =
+    checkoutStatuses.includes(
+      "PRODUCTS_REQUIRED"
+    );
 
-    const containsExpectedProduct =
-      products.includes(
-        productPath
-      );
+  const containsExpectedProduct =
+    products.includes(
+      productPath
+    );
 
-    /*
-     * FastSpring can return HTTP 201
-     * and a checkout URL for a session
-     * whose cart is not actually ready.
-     * AYZO must fail closed.
-     */
+  const v2Ready =
+    !requiresProducts &&
+    cartItems.length >
+      0 &&
+    containsExpectedProduct;
+
+  if (
+    v2Ready
+  ) {
     if (
-      requiresProducts ||
-      cartItems.length ===
-        0 ||
-      !containsExpectedProduct
+      !sessionId ||
+      !checkoutUrl
     ) {
       return {
         ok:
           false,
 
         providerStatus:
-          response.status,
+          502,
 
         stage:
-          "session-not-ready",
+          "create-session",
       };
     }
 
+    return {
+      ok:
+        true,
+
+      sessionId,
+
+      checkoutUrl,
+
+      productPath,
+    };
+  }
+
+  /*
+   * Current FastSpring test-store
+   * behavior has been runtime
+   * verified:
+   *
+   * - V2 returns HTTP 201
+   * - checkoutStatus contains
+   *   PRODUCTS_REQUIRED
+   * - returned cart is empty
+   * - V2 add-item returns provider
+   *   HTTP 500
+   *
+   * Keep V2 fail-closed.
+   *
+   * Only in explicit test mode,
+   * attempt the separately verified
+   * legacy session compatibility
+   * path.
+   */
   if (
-    !sessionId ||
-    !checkoutUrl
+    config.mode !==
+      "test"
   ) {
     return {
       ok:
         false,
 
       providerStatus:
-        502,
+        response.status,
 
       stage:
-        "create-session",
+        "session-not-ready",
     };
   }
 
-  return {
-    ok:
-      true,
-
-    sessionId,
-
-    checkoutUrl,
-
+  return createLegacyTestCheckout({
+    config,
+    userId,
+    userEmail,
+    interval,
     productPath,
-  };
+    expectedPriceCents,
+  });
 }

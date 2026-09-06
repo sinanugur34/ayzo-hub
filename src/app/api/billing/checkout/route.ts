@@ -28,6 +28,7 @@ export async function POST(
     entitlement,
     billingAvailable,
     userId,
+    userEmail,
   } =
     await getServerEntitlement();
 
@@ -144,6 +145,7 @@ export async function POST(
     const result =
       await createProCheckoutSession({
         userId,
+        userEmail,
         interval,
       });
 

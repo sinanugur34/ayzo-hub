@@ -19,13 +19,25 @@ export async function getAuthenticatedAccountContext() {
       ? data.claims.sub
       : null;
 
+  const userEmail =
+    typeof data?.claims?.email ===
+      "string"
+      ? data.claims.email
+          .trim()
+          .toLowerCase()
+      : null;
+
   if (
     error ||
     !userId
   ) {
     return {
       supabase,
+
       userId:
+        null,
+
+      userEmail:
         null,
     };
   }
@@ -33,5 +45,6 @@ export async function getAuthenticatedAccountContext() {
   return {
     supabase,
     userId,
+    userEmail,
   };
 }
