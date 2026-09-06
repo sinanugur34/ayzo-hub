@@ -242,6 +242,175 @@ function extractSubscriptionId(
   );
 }
 
+export type FastSpringExistingSubscriptionContext = {
+  userId:
+    string;
+
+  billingInterval:
+    "monthly" |
+    "annual";
+
+  lockedPriceUsdCents:
+    number;
+
+  monthlyProductPath:
+    string;
+
+  annualProductPath:
+    string;
+};
+
+export function getFastSpringProviderSubscriptionId(
+  event:
+    FastSpringWebhookEvent
+) {
+  return extractSubscriptionId(
+    event.data
+  );
+}
+
+export function normalizeFastSpringExistingSubscriptionEvent({
+  event,
+  existing,
+}: {
+  event:
+    FastSpringWebhookEvent;
+
+  existing:
+    FastSpringExistingSubscriptionContext;
+}): FastSpringWebhookEvent {
+  const canonicalProductPath =
+    existing.billingInterval ===
+      "annual"
+      ? existing
+          .annualProductPath
+      : existing
+          .monthlyProductPath;
+
+  const incomingTags =
+    extractTags(
+      event.data
+    );
+
+  if (incomingTags) {
+    const incomingUserId =
+      stringValue(
+        incomingTags
+          .ayzoUserId
+      );
+
+    const incomingPlan =
+      stringValue(
+        incomingTags
+          .ayzoPlan
+      );
+
+    const incomingInterval =
+      stringValue(
+        incomingTags
+          .ayzoBillingInterval
+      );
+
+    const incomingPrice =
+      stringValue(
+        incomingTags
+          .ayzoExpectedPriceCents
+      );
+
+    const incomingContract =
+      stringValue(
+        incomingTags
+          .ayzoContractVersion
+      );
+
+    if (
+      (
+        incomingUserId &&
+        incomingUserId !==
+          existing.userId
+      ) ||
+      (
+        incomingPlan &&
+        incomingPlan !==
+          "pro"
+      ) ||
+      (
+        incomingInterval &&
+        incomingInterval !==
+          existing.billingInterval
+      ) ||
+      (
+        incomingPrice &&
+        incomingPrice !==
+          String(
+            existing
+              .lockedPriceUsdCents
+          )
+      ) ||
+      (
+        incomingContract &&
+        incomingContract !==
+          "founding-v1"
+      )
+    ) {
+      throw new Error(
+        "FastSpring lifecycle tag conflict."
+      );
+    }
+  }
+
+  const incomingProductPath =
+    extractProductPath(
+      event.data
+    );
+
+  if (
+    incomingProductPath &&
+    incomingProductPath !==
+      canonicalProductPath
+  ) {
+    throw new Error(
+      "FastSpring lifecycle product conflict."
+    );
+  }
+
+  return {
+    ...event,
+
+    data: {
+      ...event.data,
+
+      /*
+       * For an already-bound FastSpring
+       * subscription, AYZO's ledger is the
+       * canonical ownership / price source.
+       */
+      productPath:
+        canonicalProductPath,
+
+      tags: {
+        ayzoUserId:
+          existing.userId,
+
+        ayzoPlan:
+          "pro",
+
+        ayzoBillingInterval:
+          existing.billingInterval,
+
+        ayzoExpectedPriceCents:
+          String(
+            existing
+              .lockedPriceUsdCents
+          ),
+
+        ayzoContractVersion:
+          "founding-v1",
+      },
+    },
+  };
+}
+
 function periodEndForEvent(
   type:
     string,

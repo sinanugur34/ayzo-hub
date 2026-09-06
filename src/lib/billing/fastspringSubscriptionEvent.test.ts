@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   interpretFastSpringSubscriptionEvent,
+  normalizeFastSpringExistingSubscriptionEvent,
 } from "@/lib/billing/fastspringSubscriptionEvent";
 
 import type {
@@ -275,6 +276,229 @@ test(
     assert.equal(
       result.action,
       "ignore"
+    );
+  }
+);
+
+
+test(
+  "charge completed restores existing subscription metadata",
+  () => {
+    const input =
+      event(
+        "subscription.charge.completed",
+        {
+          tags:
+            undefined,
+        }
+      );
+
+    const normalized =
+      normalizeFastSpringExistingSubscriptionEvent({
+        event:
+          input,
+
+        existing: {
+          userId:
+            "123e4567-e89b-42d3-a456-426614174000",
+
+          billingInterval:
+            "monthly",
+
+          lockedPriceUsdCents:
+            1900,
+
+          monthlyProductPath:
+            "ayzo-pro-founding-monthly",
+
+          annualProductPath:
+            "ayzo-pro-founding-annual",
+        },
+      });
+
+    const result =
+      interpretFastSpringSubscriptionEvent(
+        normalized,
+        contract
+      );
+
+    assert.equal(
+      result.action,
+      "apply"
+    );
+
+    if (
+      result.action !==
+        "apply"
+    ) {
+      return;
+    }
+
+    assert.equal(
+      result.mutation.status,
+      "active"
+    );
+
+    assert.equal(
+      result.mutation
+        .lockedPriceUsdCents,
+      1900
+    );
+  }
+);
+
+test(
+  "uncanceled restores active Pro from existing subscription metadata",
+  () => {
+    const normalized =
+      normalizeFastSpringExistingSubscriptionEvent({
+        event:
+          event(
+            "subscription.uncanceled",
+            {
+              tags:
+                undefined,
+
+              product:
+                undefined,
+            }
+          ),
+
+        existing: {
+          userId:
+            "123e4567-e89b-42d3-a456-426614174000",
+
+          billingInterval:
+            "monthly",
+
+          lockedPriceUsdCents:
+            1900,
+
+          monthlyProductPath:
+            "ayzo-pro-founding-monthly",
+
+          annualProductPath:
+            "ayzo-pro-founding-annual",
+        },
+      });
+
+    const result =
+      interpretFastSpringSubscriptionEvent(
+        normalized,
+        contract
+      );
+
+    assert.equal(
+      result.action,
+      "apply"
+    );
+
+    if (
+      result.action !==
+        "apply"
+    ) {
+      return;
+    }
+
+    assert.equal(
+      result.mutation.status,
+      "active"
+    );
+
+    assert.equal(
+      result.mutation
+        .cancelAtPeriodEnd,
+      false
+    );
+  }
+);
+
+test(
+  "existing subscription rejects conflicting AYZO ownership metadata",
+  () => {
+    assert.throws(
+      () =>
+        normalizeFastSpringExistingSubscriptionEvent({
+          event:
+            event(
+              "subscription.charge.completed",
+              {
+                tags: {
+                  ayzoUserId:
+                    "223e4567-e89b-42d3-a456-426614174000",
+
+                  ayzoPlan:
+                    "pro",
+
+                  ayzoBillingInterval:
+                    "monthly",
+
+                  ayzoExpectedPriceCents:
+                    "1900",
+
+                  ayzoContractVersion:
+                    "founding-v1",
+                },
+              }
+            ),
+
+          existing: {
+            userId:
+              "123e4567-e89b-42d3-a456-426614174000",
+
+            billingInterval:
+              "monthly",
+
+            lockedPriceUsdCents:
+              1900,
+
+            monthlyProductPath:
+              "ayzo-pro-founding-monthly",
+
+            annualProductPath:
+              "ayzo-pro-founding-annual",
+          },
+        }),
+      /lifecycle tag conflict/
+    );
+  }
+);
+
+test(
+  "existing subscription rejects conflicting FastSpring product metadata",
+  () => {
+    assert.throws(
+      () =>
+        normalizeFastSpringExistingSubscriptionEvent({
+          event:
+            event(
+              "subscription.charge.completed",
+              {
+                product: {
+                  product:
+                    "wrong-product",
+                },
+              }
+            ),
+
+          existing: {
+            userId:
+              "123e4567-e89b-42d3-a456-426614174000",
+
+            billingInterval:
+              "monthly",
+
+            lockedPriceUsdCents:
+              1900,
+
+            monthlyProductPath:
+              "ayzo-pro-founding-monthly",
+
+            annualProductPath:
+              "ayzo-pro-founding-annual",
+          },
+        }),
+      /lifecycle product conflict/
     );
   }
 );
