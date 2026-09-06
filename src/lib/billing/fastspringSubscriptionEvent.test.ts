@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  canonicalizeFastSpringExistingSubscriptionPeriod,
   interpretFastSpringSubscriptionEvent,
   normalizeFastSpringExistingSubscriptionEvent,
 } from "@/lib/billing/fastspringSubscriptionEvent";
@@ -194,6 +195,74 @@ test(
       result.mutation
         .status,
       "inactive"
+    );
+  }
+);
+
+test(
+  "deactivated preserves existing period when provider end predates start",
+  () => {
+    const result =
+      canonicalizeFastSpringExistingSubscriptionPeriod({
+        eventType:
+          "subscription.deactivated",
+
+        incomingStart:
+          "2026-09-06T20:27:51.299Z",
+
+        incomingEnd:
+          "2026-09-06T00:00:00.000Z",
+
+        existingStart:
+          "2026-09-06T20:27:51.299Z",
+
+        existingEnd:
+          "2026-10-06T00:00:00.000Z",
+      });
+
+    assert.deepEqual(
+      result,
+      {
+        currentPeriodStart:
+          "2026-09-06T20:27:51.299Z",
+
+        currentPeriodEnd:
+          "2026-10-06T00:00:00.000Z",
+      }
+    );
+  }
+);
+
+test(
+  "deactivated accepts a valid provider terminal period",
+  () => {
+    const result =
+      canonicalizeFastSpringExistingSubscriptionPeriod({
+        eventType:
+          "subscription.deactivated",
+
+        incomingStart:
+          "2026-09-06T20:27:51.299Z",
+
+        incomingEnd:
+          "2026-09-07T20:27:51.299Z",
+
+        existingStart:
+          "2026-09-06T20:27:51.299Z",
+
+        existingEnd:
+          "2026-10-06T00:00:00.000Z",
+      });
+
+    assert.deepEqual(
+      result,
+      {
+        currentPeriodStart:
+          "2026-09-06T20:27:51.299Z",
+
+        currentPeriodEnd:
+          "2026-09-07T20:27:51.299Z",
+      }
     );
   }
 );

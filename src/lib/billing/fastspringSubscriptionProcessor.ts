@@ -13,6 +13,7 @@ import type {
 } from "@/lib/billing/fastspringWebhookPayload";
 
 import {
+  canonicalizeFastSpringExistingSubscriptionPeriod,
   getFastSpringProviderSubscriptionId,
   interpretFastSpringSubscriptionEvent,
   normalizeFastSpringExistingSubscriptionEvent,
@@ -41,6 +42,12 @@ type ExistingSubscription = {
 
   founding_customer:
     boolean;
+
+  current_period_start:
+    string | null;
+
+  current_period_end:
+    string | null;
 };
 
 const SUPPORTED_EVENT_TYPES =
@@ -134,7 +141,19 @@ function isExistingSubscription(
     row.locked_price_usd_cents >=
       0 &&
     row.founding_customer ===
-      true
+      true &&
+    (
+      row.current_period_start ===
+        null ||
+      typeof row.current_period_start ===
+        "string"
+    ) &&
+    (
+      row.current_period_end ===
+        null ||
+      typeof row.current_period_end ===
+        "string"
+    )
   );
 }
 
@@ -193,7 +212,7 @@ export async function processFastSpringSubscriptionEvent(
           "subscriptions"
         )
         .select(
-          "id,user_id,plan_id,billing_interval,locked_price_usd_cents,founding_customer"
+          "id,user_id,plan_id,billing_interval,locked_price_usd_cents,founding_customer,current_period_start,current_period_end"
         )
         .eq(
           "provider",
@@ -308,6 +327,38 @@ export async function processFastSpringSubscriptionEvent(
     interpretation
       .mutation;
 
+  const canonicalPeriod =
+    existing
+      ? canonicalizeFastSpringExistingSubscriptionPeriod({
+          eventType:
+            event.type,
+
+          incomingStart:
+            mutation
+              .currentPeriodStart,
+
+          incomingEnd:
+            mutation
+              .currentPeriodEnd,
+
+          existingStart:
+            existing
+              .current_period_start,
+
+          existingEnd:
+            existing
+              .current_period_end,
+        })
+      : {
+          currentPeriodStart:
+            mutation
+              .currentPeriodStart,
+
+          currentPeriodEnd:
+            mutation
+              .currentPeriodEnd,
+        };
+
   const values = {
     user_id:
       mutation.userId,
@@ -334,11 +385,11 @@ export async function processFastSpringSubscriptionEvent(
         .lockedPriceUsdCents,
 
     current_period_start:
-      mutation
+      canonicalPeriod
         .currentPeriodStart,
 
     current_period_end:
-      mutation
+      canonicalPeriod
         .currentPeriodEnd,
 
     cancel_at_period_end:

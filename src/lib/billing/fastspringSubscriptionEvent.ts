@@ -411,6 +411,107 @@ export function normalizeFastSpringExistingSubscriptionEvent({
   };
 }
 
+export function canonicalizeFastSpringExistingSubscriptionPeriod({
+  eventType,
+  incomingStart,
+  incomingEnd,
+  existingStart,
+  existingEnd,
+}: {
+  eventType:
+    string;
+
+  incomingStart:
+    string | null;
+
+  incomingEnd:
+    string | null;
+
+  existingStart:
+    string | null;
+
+  existingEnd:
+    string | null;
+}) {
+  /*
+   * FastSpring immediate deactivation
+   * can return a deactivationDate rounded
+   * to the beginning of the calendar day.
+   *
+   * Example:
+   *   begin            20:27 UTC
+   *   deactivationDate 00:00 UTC
+   *
+   * That would make:
+   *   period_end <= period_start
+   *
+   * and violate AYZO's subscription
+   * ledger integrity constraint.
+   *
+   * Paid access is controlled by status.
+   * For an already-bound subscription,
+   * preserve the last valid period when
+   * the provider sends an invalid terminal
+   * period.
+   */
+  if (
+    eventType !==
+      "subscription.deactivated"
+  ) {
+    return {
+      currentPeriodStart:
+        incomingStart,
+
+      currentPeriodEnd:
+        incomingEnd,
+    };
+  }
+
+  const startMs =
+    incomingStart
+      ? Date.parse(
+          incomingStart
+        )
+      : Number.NaN;
+
+  const endMs =
+    incomingEnd
+      ? Date.parse(
+          incomingEnd
+        )
+      : Number.NaN;
+
+  const incomingPeriodValid =
+    Number.isFinite(
+      startMs
+    ) &&
+    Number.isFinite(
+      endMs
+    ) &&
+    endMs >
+      startMs;
+
+  if (
+    incomingPeriodValid
+  ) {
+    return {
+      currentPeriodStart:
+        incomingStart,
+
+      currentPeriodEnd:
+        incomingEnd,
+    };
+  }
+
+  return {
+    currentPeriodStart:
+      existingStart,
+
+    currentPeriodEnd:
+      existingEnd,
+  };
+}
+
 function periodEndForEvent(
   type:
     string,
