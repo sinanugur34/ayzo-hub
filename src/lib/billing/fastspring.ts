@@ -1,8 +1,43 @@
 import "server-only";
 
+
+import {
+  PLANS,
+} from "@/lib/plans/registry";
+
 export type ProBillingInterval =
   | "monthly"
   | "annual";
+
+function proPriceCents(
+  interval:
+    ProBillingInterval
+) {
+  const price =
+    interval ===
+    "annual"
+      ? PLANS.pro
+          .annualPriceUsd
+      : PLANS.pro
+          .monthlyPriceUsd;
+
+  if (
+    typeof price !==
+      "number" ||
+    !Number.isFinite(
+      price
+    )
+  ) {
+    throw new Error(
+      "AYZO Pro price contract is unavailable."
+    );
+  }
+
+  return Math.round(
+    price * 100
+  );
+}
+
 
 type FastSpringConfig = {
   username: string;
@@ -220,10 +255,9 @@ export async function createProCheckoutSession({
           .monthlyProductPath;
 
   const expectedPriceCents =
-    interval ===
-    "annual"
-      ? 19380
-      : 1900;
+      proPriceCents(
+        interval
+      );
 
   /*
    * Create the complete session
