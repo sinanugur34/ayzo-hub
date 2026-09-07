@@ -11,6 +11,11 @@ import {
 } from "@/lib/alerts/deliveryPolicy";
 
 import {
+  MANUAL_ALERT_DELIVERY_CLAIM_LIMIT,
+  isValidManualAlertDeliveryClaimLimit,
+} from "@/lib/alerts/manualDeliveryPolicy";
+
+import {
   loadAlertDeliveryContext,
 } from "@/lib/alerts/deliveryContext";
 
@@ -32,6 +37,7 @@ import {
 
 type ExecuteRequestBody = {
   execute?: unknown;
+  claimLimit?: unknown;
 };
 
 export async function POST(
@@ -89,6 +95,36 @@ export async function POST(
 
         error:
           "Explicit execute=true required.",
+
+        deliveryLive:
+          false,
+
+        providerCalls:
+          0,
+
+        deliveryClaims:
+          0,
+      },
+      {
+        status: 400,
+      }
+    );
+  }
+
+  if (
+    !isValidManualAlertDeliveryClaimLimit(
+      body.claimLimit
+    )
+  ) {
+    return NextResponse.json(
+      {
+        ok: false,
+
+        code:
+          "SINGLE_DELIVERY_LIMIT_REQUIRED",
+
+        error:
+          "Explicit claimLimit=1 required for manual delivery execution.",
 
         deliveryLive:
           false,
@@ -199,7 +235,10 @@ export async function POST(
         isResendAlertProviderReady,
 
       claim:
-        claimAlertDeliveries,
+        () =>
+          claimAlertDeliveries(
+            MANUAL_ALERT_DELIVERY_CLAIM_LIMIT
+          ),
 
       loadContext:
         loadAlertDeliveryContext,
