@@ -14,6 +14,10 @@ import type {
 } from "@/lib/alerts/deliveryWorker";
 
 import {
+  selectEligibleProUserIds,
+} from "@/lib/alerts/evaluator";
+
+import {
   createAdminClient,
 } from "@/lib/supabase/admin";
 
@@ -46,6 +50,7 @@ export async function loadAlertDeliveryContext(
   const [
     eventResult,
     ruleResult,
+      subscriptionResult,
     recipientEmail,
   ] =
     await Promise.all([
@@ -87,6 +92,18 @@ export async function loadAlertDeliveryContext(
         )
         .maybeSingle(),
 
+        admin
+          .from(
+            "subscriptions"
+          )
+          .select(
+            "user_id,plan_id,billing_interval,status,locked_price_usd_cents,current_period_end,cancel_at_period_end,founding_customer"
+          )
+          .eq(
+            "user_id",
+            row.user_id
+          ),
+
       resolveAlertDeliveryEmail(
         row.user_id
       ),
@@ -109,6 +126,24 @@ export async function loadAlertDeliveryContext(
       "Alert delivery rule context unavailable."
     );
   }
+
+    if (
+      subscriptionResult.error ||
+      !Array.isArray(
+        subscriptionResult.data
+      )
+    ) {
+      throw new Error(
+        "Alert delivery entitlement context unavailable."
+      );
+    }
+
+    const proEntitled =
+      selectEligibleProUserIds(
+        subscriptionResult.data
+      ).has(
+        row.user_id
+      );
 
   const event =
     eventResult.data;
@@ -212,6 +247,8 @@ export async function loadAlertDeliveryContext(
       enabled:
         rule.enabled,
     },
+
+      proEntitled,
 
     recipientEmail,
   };

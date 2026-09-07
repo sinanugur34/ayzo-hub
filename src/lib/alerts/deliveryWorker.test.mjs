@@ -130,6 +130,9 @@ function context(
         true,
     },
 
+      proEntitled:
+        true,
+
     recipientEmail:
       "USER@EXAMPLE.COM",
 
@@ -568,6 +571,63 @@ test(
     );
   }
 );
+
+test(
+  "inactive Pro entitlement is terminal without provider call",
+  async () => {
+    const {
+      deps,
+      calls,
+    } =
+      dependencies({
+        rows: [
+          row(),
+        ],
+
+        loadContext:
+          async delivery =>
+            context(
+              delivery,
+              {
+                proEntitled:
+                  false,
+              }
+            ),
+      });
+
+    const result =
+      await runAlertDeliveryWorker(
+        deps
+      );
+
+    assert.equal(
+      result.providerCalls,
+      0
+    );
+
+    assert.equal(
+      result.terminalFailed,
+      1
+    );
+
+    assert.equal(
+      calls.send,
+      0
+    );
+
+    assert.equal(
+      calls.terminal.length,
+      1
+    );
+
+    assert.equal(
+      calls.terminal[0]
+        .errorCode,
+      "ALERT_ENTITLEMENT_INACTIVE"
+    );
+  }
+);
+
 
 test(
   "unsupported channel is terminal without provider call",

@@ -64,6 +64,9 @@ export type AlertDeliveryContext = {
   rule:
     AlertDeliveryRuleContext;
 
+    proEntitled:
+      boolean;
+
   recipientEmail:
     string;
 };
@@ -509,6 +512,22 @@ export async function runAlertDeliveryWorker(
 
       continue;
     }
+
+      if (
+        !context.proEntitled
+      ) {
+        await dependencies
+          .markTerminalFailed(
+            row,
+            claimToken,
+            "ALERT_ENTITLEMENT_INACTIVE"
+          );
+
+        summary.terminalFailed +=
+          1;
+
+        continue;
+      }
 
     if (
       row.delivery_channel !==
