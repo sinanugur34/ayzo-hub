@@ -7,6 +7,10 @@ import {
 } from "@/lib/apiSecurity";
 
 import {
+  isAlertDeliveryEnabled,
+} from "@/lib/alerts/deliveryPolicy";
+
+import {
   loadAlertDeliveryContext,
 } from "@/lib/alerts/deliveryContext";
 
@@ -29,16 +33,6 @@ import {
 type ExecuteRequestBody = {
   execute?: unknown;
 };
-
-function isDeliveryExecutionEnabled() {
-  return (
-    process.env
-      .AYZO_ALERT_DELIVERY_ENABLED
-      ?.trim()
-      .toLowerCase() ===
-    "true"
-  );
-}
 
 export async function POST(
   request: Request
@@ -123,7 +117,10 @@ export async function POST(
     isResendAlertProviderReady();
 
   if (
-    !isDeliveryExecutionEnabled()
+    !isAlertDeliveryEnabled(
+      process.env
+        .AYZO_ALERT_DELIVERY_ENABLED
+    )
   ) {
     return NextResponse.json(
       {

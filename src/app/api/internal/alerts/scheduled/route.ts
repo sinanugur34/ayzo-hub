@@ -7,6 +7,34 @@ import {
 } from "@/lib/alerts/evaluationBatch";
 
 import {
+  loadAlertDeliveryContext,
+} from "@/lib/alerts/deliveryContext";
+
+import {
+  isAlertDeliveryEnabled,
+} from "@/lib/alerts/deliveryPolicy";
+
+import {
+  claimAlertDeliveries,
+  markAlertDeliveryDelivered,
+  markAlertDeliveryFailed,
+  markAlertDeliveryTerminalFailed,
+} from "@/lib/alerts/deliveryStore";
+
+import {
+  runAlertDeliveryWorker,
+} from "@/lib/alerts/deliveryWorker";
+
+import {
+  isResendAlertProviderReady,
+  sendResendAlertEmail,
+} from "@/lib/alerts/resendProvider";
+
+import {
+  runAlertScheduledExecution,
+} from "@/lib/alerts/scheduledExecution";
+
+import {
   AlertRunnerLockUnavailableError,
   createAlertRunnerLeaseProvider,
 } from "@/lib/alerts/runnerLock";
@@ -34,6 +62,12 @@ import {
 export async function GET(
   request: Request
 ) {
+  const deliveryExecutionEnabled =
+    isAlertDeliveryEnabled(
+      process.env
+        .AYZO_ALERT_DELIVERY_ENABLED
+    );
+
   const cronSecret =
     process.env.CRON_SECRET
       ?.trim();
@@ -115,7 +149,7 @@ export async function GET(
       return NextResponse.json({
         ok: true,
         mode:
-          "scheduled-bounded-v1",
+          "scheduled-bounded-v2",
         skipped:
           true,
         skipReason:
@@ -145,7 +179,41 @@ export async function GET(
       await runWithAlertRunnerLease(
         createAlertRunnerLeaseProvider(),
         () =>
-          runAlertEvaluationBatch()
+          runAlertScheduledExecution({
+            runEvaluation:
+              () =>
+                runAlertEvaluationBatch(),
+
+            deliveryExecutionEnabled,
+
+            isDeliveryProviderReady:
+              isResendAlertProviderReady,
+
+            runDelivery:
+              () =>
+                runAlertDeliveryWorker({
+                  isProviderReady:
+                    isResendAlertProviderReady,
+
+                  claim:
+                    claimAlertDeliveries,
+
+                  loadContext:
+                    loadAlertDeliveryContext,
+
+                  sendEmail:
+                    sendResendAlertEmail,
+
+                  markDelivered:
+                    markAlertDeliveryDelivered,
+
+                  markRetryableFailed:
+                    markAlertDeliveryFailed,
+
+                  markTerminalFailed:
+                    markAlertDeliveryTerminalFailed,
+                }),
+          })
       );
 
     if (
@@ -155,7 +223,7 @@ export async function GET(
       return NextResponse.json({
         ok: true,
         mode:
-          "scheduled-bounded-v1",
+          "scheduled-bounded-v2",
         skipped:
           true,
         skipReason:
@@ -200,10 +268,58 @@ export async function GET(
       );
     }
 
+    if (
+      outcome.value
+        .delivery
+        .executionEnabled &&
+      outcome.value
+        .delivery
+        .providerConfigured ===
+        false
+    ) {
+      return NextResponse.json(
+        {
+          ok:
+            false,
+
+          code:
+            "ALERT_DELIVERY_PROVIDER_NOT_CONFIGURED",
+
+          error:
+            "AYZO alert delivery provider is not configured.",
+
+          schedulerExecutionEnabled:
+            true,
+
+          schedulerLive:
+            false,
+
+          deliveryExecutionEnabled:
+            true,
+
+          deliveryLive:
+            false,
+
+          providerConfigured:
+            false,
+
+          userAnalysisQuotaConsumed:
+            false,
+
+          summary:
+            outcome.value,
+        },
+        {
+          status:
+            503,
+        }
+      );
+    }
+
     return NextResponse.json({
       ok: true,
       mode:
-        "scheduled-bounded-v1",
+        "scheduled-bounded-v2",
       skipped:
         false,
       lockAcquired:
@@ -214,8 +330,18 @@ export async function GET(
         true,
       schedulerLive:
         false,
+      deliveryExecutionEnabled:
+        outcome.value
+          .delivery
+          .executionEnabled,
       deliveryLive:
-        false,
+        outcome.value
+          .delivery
+          .executed,
+      providerConfigured:
+        outcome.value
+          .delivery
+          .providerConfigured,
       userAnalysisQuotaConsumed:
         false,
       summary:
@@ -278,9 +404,9 @@ export async function GET(
       {
         ok: false,
         code:
-          "ALERT_SCHEDULED_EVALUATION_FAILED",
+          "ALERT_SCHEDULED_EXECUTION_FAILED",
         error:
-          "AYZO scheduled alert evaluation failed.",
+          "AYZO scheduled alert execution failed.",
         schedulerExecutionEnabled:
           true,
         schedulerLive:
