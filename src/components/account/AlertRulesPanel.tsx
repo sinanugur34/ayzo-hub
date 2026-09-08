@@ -470,18 +470,18 @@ export default function AlertRulesPanel() {
           </p>
         </div>
 
-        <span className="rounded-full border border-amber-500/20 bg-amber-500/5 px-3 py-1 text-[9px] font-medium tracking-[0.12em] text-amber-300">
-          FOUNDATION
+        <span className="rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1 text-[9px] font-medium tracking-[0.12em] text-emerald-300">
+          LIVE
         </span>
       </div>
 
-      <div className="mt-5 rounded-2xl border border-amber-500/15 bg-amber-500/5 p-4">
-        <div className="text-xs font-medium text-amber-300">
-          Detection & delivery not active yet
+      <div className="mt-5 rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-4">
+        <div className="text-xs font-medium text-emerald-300">
+          Monitoring & email delivery active
         </div>
 
         <p className="mt-2 text-[10px] leading-5 text-zinc-600">
-          This foundation stores and manages monitoring rules. AYZO is not yet polling chains or sending email, browser or Telegram notifications from these rules.
+          AYZO checks enabled monitoring rules on a scheduled basis and sends email notifications when supported alert conditions are detected. Browser and Telegram notifications are not enabled yet.
         </p>
       </div>
 
@@ -688,7 +688,7 @@ export default function AlertRulesPanel() {
                     </div>
 
                     <p className="mt-3 text-[10px] leading-5 text-zinc-700">
-                      Rule definition only · notification delivery pending.
+                      Email notifications enabled for supported detections.
                     </p>
                   </div>
                 )
