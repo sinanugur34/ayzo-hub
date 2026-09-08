@@ -2,6 +2,16 @@ import {
   getServerEntitlement,
 } from "@/lib/billing/entitlement";
 
+import {
+  isProCheckoutEnabled,
+} from "@/lib/billing/checkoutLaunchPolicy";
+
+import ProCheckoutButton from "@/components/billing/ProCheckoutButton";
+
+import {
+  PLANS,
+} from "@/lib/plans/registry";
+
 function formatPeriodEnd(
   value:
     string | null
@@ -46,6 +56,9 @@ export default async function AccountPlanCard() {
       entitlement
         .currentPeriodEnd
     );
+
+  const proCheckoutEnabled =
+    isProCheckoutEnabled();
 
   if (
     entitlement.planId ===
@@ -104,6 +117,30 @@ export default async function AccountPlanCard() {
           ? "No active paid subscription."
           : "Billing state is temporarily unavailable."}
       </div>
+
+      {billingAvailable &&
+        proCheckoutEnabled && (
+          <div className="mt-4 border-t border-zinc-900 pt-4">
+            <div className="mb-3 text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-500">
+              Upgrade to Pro
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-2">
+              <ProCheckoutButton
+                interval="monthly"
+                compact
+                label={`Monthly · $${PLANS.pro.monthlyPriceUsd?.toFixed(0)}/mo`}
+              />
+
+              <ProCheckoutButton
+                interval="annual"
+                compact
+                variant="secondary"
+                label={`Annual · $${PLANS.pro.annualPriceUsd?.toFixed(2)}/yr`}
+              />
+            </div>
+          </div>
+        )}
     </div>
   );
 }

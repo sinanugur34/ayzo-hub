@@ -1,4 +1,6 @@
 import WaitlistForm from "@/components/WaitlistForm";
+import ProCheckoutButton from "@/components/billing/ProCheckoutButton";
+
 import { PLANS } from "@/lib/plans/registry";
 
 type Feature = {
@@ -262,6 +264,12 @@ function FeatureList({
 }
 
 export default function PricingPlans() {
+  const proCheckoutEnabled =
+    process.env
+      .NEXT_PUBLIC_AYZO_PRO_CHECKOUT_ENABLED
+      ?.trim() ===
+    "true";
+
   return (
     <section
       id="plans"
@@ -326,7 +334,9 @@ export default function PricingPlans() {
         {/* PRO */}
         <div className="relative flex flex-col rounded-3xl border border-violet-500/30 bg-gradient-to-b from-violet-500/10 to-zinc-950/70 p-6 shadow-xl shadow-purple-950/10 sm:p-7">
           <div className="absolute right-5 top-5 rounded-full border border-violet-400/20 bg-violet-400/10 px-2.5 py-1 text-[9px] font-semibold tracking-[0.12em] text-violet-300">
-            COMING SOON
+            {proCheckoutEnabled
+              ? "FOUNDING ACCESS"
+              : "COMING SOON"}
           </div>
 
           <div>
@@ -383,11 +393,30 @@ export default function PricingPlans() {
           />
 
           <div className="mt-auto pt-8">
-            <WaitlistForm
-              source="pro-card"
-              compact
-              buttonLabel="Join Pro Waitlist"
-            />
+            {proCheckoutEnabled ? (
+              <div className="space-y-2">
+                <ProCheckoutButton
+                  interval="monthly"
+                  label={`Start Monthly · $${PLANS.pro.monthlyPriceUsd?.toFixed(0)}/mo`}
+                />
+
+                <ProCheckoutButton
+                  interval="annual"
+                  variant="secondary"
+                  label={`Start Annual · $${PLANS.pro.annualPriceUsd?.toFixed(2)}/yr`}
+                />
+
+                <p className="pt-1 text-center text-[10px] leading-5 text-zinc-600">
+                  Secure checkout powered by FastSpring.
+                </p>
+              </div>
+            ) : (
+              <WaitlistForm
+                source="pro-card"
+                compact
+                buttonLabel="Join Pro Waitlist"
+              />
+            )}
           </div>
         </div>
 
@@ -440,7 +469,10 @@ export default function PricingPlans() {
 
       <div className="mt-5 text-center text-[11px] leading-5 text-zinc-600">
         Features marked COMING SOON are not represented as
-        available today. Pro checkout remains disabled until billing is connected.
+        available today.{" "}
+        {proCheckoutEnabled
+          ? "Pro checkout is available for authenticated customers."
+          : "Pro checkout remains disabled until billing is connected."}
       </div>
     </section>
   );
