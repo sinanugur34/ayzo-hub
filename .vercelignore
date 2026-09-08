@@ -1,0 +1,18 @@
+# AYZO — local secrets and environment files
+.env*
+*.pem
+
+# Local backups / temporary development state
+.local-backups
+*.before-*
+*.bak
+
+# Local agent / development metadata
+.agents
+.claude
+skills-lock.json
+AGENTS.md
+CLAUDE.md
+
+# TypeScript local build state
+*.tsbuildinfo
