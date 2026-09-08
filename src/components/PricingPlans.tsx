@@ -49,9 +49,7 @@ const proFeatures: Feature[] = [
   },
   {
     label:
-      "Higher analysis limits",
-    roadmap:
-      true,
+      "30 analyses per 24 hours",
   },
   {
     label:
@@ -68,12 +66,6 @@ const proFeatures: Feature[] = [
   {
     label:
       "Extended developer / deployer history",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Visual Evidence Graph",
     roadmap:
       true,
   },
@@ -104,8 +96,6 @@ const proFeatures: Feature[] = [
   {
     label:
       "Smart Alerts & Monitoring",
-    roadmap:
-      true,
   },
   {
     label:
