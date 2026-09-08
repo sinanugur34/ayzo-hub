@@ -170,9 +170,16 @@ export async function POST(request: Request) {
         ? body.__testFailure
         : null;
 
+    let analysisPlan:
+      "free" | "pro" =
+        "free";
+
     if (!isDevelopmentTestRequest) {
       const quota =
         await consumeAnalysisQuota(request);
+
+      analysisPlan =
+        quota.plan;
 
       if (quota.deviceCookie) {
         const cookieStore = await cookies();
@@ -255,6 +262,7 @@ export async function POST(request: Request) {
             networkId:
               resolution.networkId,
             address,
+            analysisPlan,
           });
 
         return Response.json(

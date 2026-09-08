@@ -1,0 +1,32 @@
+import {
+  getServerEntitlement,
+} from "@/lib/billing/entitlement";
+
+export const dynamic =
+  "force-dynamic";
+
+export async function GET() {
+  const {
+    entitlement,
+    userId,
+  } =
+    await getServerEntitlement();
+
+  return Response.json(
+    {
+      ok: true,
+      authenticated:
+        userId !==
+        null,
+
+      plan:
+        entitlement.planId,
+    },
+    {
+      headers: {
+        "Cache-Control":
+          "no-store",
+      },
+    }
+  );
+}

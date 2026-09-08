@@ -15,6 +15,9 @@ const LIVE_PLATFORM_FEATURES = {
   walletGraph: true,
   savedAnalyses: true,
   watchlists: true,
+  activityTimeline: true,
+  walletTrackRecord: true,
+  visualEvidenceGraph: true,
 } as const satisfies Partial<
   Record<
     FeatureId,
@@ -24,12 +27,8 @@ const LIVE_PLATFORM_FEATURES = {
 
 const PRO_ROADMAP_FEATURES = [
   "historicalChanges",
-  "alerts",
-  "activityTimeline",
   "entityLabels",
-  "walletTrackRecord",
   "askAyzo",
-  "visualEvidenceGraph",
   "marketFlowIntelligence",
   "investigationTimeline",
   "advancedReports",
@@ -115,6 +114,7 @@ export const PLANS = {
 
     features: {
       ...LIVE_PLATFORM_FEATURES,
+      alerts: true,
     },
 
     roadmapFeatures:

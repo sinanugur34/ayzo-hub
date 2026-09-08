@@ -656,7 +656,7 @@ export function buildEvmActivityTimeline(
     !input.transactionExhausted
   ) {
     limitations.push(
-      "Transaction history was bounded to the current provider page."
+      "Transaction history was bounded to the provider pages collected for this analysis."
     );
   }
 
@@ -673,7 +673,7 @@ export function buildEvmActivityTimeline(
       !input.transferExhausted
     ) {
       limitations.push(
-        "ERC-20 transfer history was bounded to the current provider page."
+        "ERC-20 transfer history was bounded to the provider pages collected for this analysis."
       );
     }
   }

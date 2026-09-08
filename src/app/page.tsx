@@ -14,6 +14,7 @@ import EvmIntelligenceReport from "@/components/EvmIntelligenceReport";
 import FreePlanStatus from "@/components/FreePlanStatus";
 import IntelligenceReport from "@/components/IntelligenceReport";
 import PricingPlans from "@/components/PricingPlans";
+import HeaderAuthControls from "@/components/auth/HeaderAuthControls";
 import {
   resolveSelectedNetworkForAddress,
   type LiveAnalysisNetworkId,
@@ -493,7 +494,7 @@ export default function Home() {
 
       <div className="pointer-events-none absolute bottom-[-350px] right-[-200px] h-[600px] w-[600px] rounded-full bg-purple-800/10 blur-[160px]" />
 
-      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-7 lg:px-8">
+      <header className="relative z-10 mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-7 lg:px-8">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-violet-400/20 bg-violet-500/10">
             <span className="text-sm font-semibold text-violet-300">
@@ -512,8 +513,12 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="rounded-full border border-zinc-800 bg-zinc-950/80 px-4 py-2 text-xs text-zinc-400">
-          Early Access
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="rounded-full border border-zinc-800 bg-zinc-950/80 px-4 py-2 text-xs text-zinc-400">
+            Early Access
+          </div>
+
+          <HeaderAuthControls />
         </div>
       </header>
 

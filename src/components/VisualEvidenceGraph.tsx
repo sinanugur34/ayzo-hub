@@ -265,7 +265,7 @@ export default function VisualEvidenceGraph({
           </h3>
 
           <p className="mt-2 max-w-2xl text-xs leading-5 text-zinc-500">
-            Only relationships supported by evidence already collected by AYZO are shown.
+            Only relationships supported by evidence already collected by AYZO are shown. This is a curated subset for readability; the Wallet Graph may contain additional bounded nodes and edges.
           </p>
         </div>
 

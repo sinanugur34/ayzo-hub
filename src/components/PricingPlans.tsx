@@ -1,7 +1,13 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 import WaitlistForm from "@/components/WaitlistForm";
 import ProCheckoutButton from "@/components/billing/ProCheckoutButton";
 
 import { PLANS } from "@/lib/plans/registry";
+import { getUpgradePlanVisibility } from "@/lib/plans/visibility";
+import type { PlanId } from "@/lib/plans/types";
 
 type Feature = {
   label: string;
@@ -49,9 +55,7 @@ const proFeatures: Feature[] = [
   },
   {
     label:
-      "Higher analysis limits",
-    roadmap:
-      true,
+      "30 analyses per 24 hours",
   },
   {
     label:
@@ -68,12 +72,6 @@ const proFeatures: Feature[] = [
   {
     label:
       "Extended developer / deployer history",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Visual Evidence Graph",
     roadmap:
       true,
   },
@@ -104,8 +102,6 @@ const proFeatures: Feature[] = [
   {
     label:
       "Smart Alerts & Monitoring",
-    roadmap:
-      true,
   },
   {
     label:
@@ -264,6 +260,121 @@ function FeatureList({
 }
 
 export default function PricingPlans() {
+  const [
+    activePlan,
+    setActivePlan,
+  ] =
+    useState<
+      PlanId | null
+    >(null);
+
+  useEffect(() => {
+    let cancelled =
+      false;
+
+    async function loadActivePlan() {
+      try {
+        const response =
+          await fetch(
+            "/api/account/plan",
+            {
+              cache:
+                "no-store",
+            }
+          );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const body:
+          unknown =
+            await response.json();
+
+        if (
+          !body ||
+          typeof body !==
+            "object" ||
+          !(
+            "plan" in
+            body
+          )
+        ) {
+          return;
+        }
+
+        const plan =
+          (
+            body as {
+              plan?:
+                unknown;
+            }
+          ).plan;
+
+        if (
+          !cancelled &&
+          (
+            plan ===
+              "free" ||
+            plan ===
+              "pro" ||
+            plan ===
+              "advanced"
+          )
+        ) {
+          setActivePlan(
+            plan
+          );
+        }
+      } catch {
+        /*
+         * Fail closed:
+         * do not show upgrade
+         * cards until the
+         * active plan is known.
+         */
+      }
+    }
+
+    void loadActivePlan();
+
+    return () => {
+      cancelled =
+        true;
+    };
+  }, []);
+
+  const planVisibility =
+    activePlan ===
+    null
+      ? {
+          free:
+            false,
+          pro:
+            false,
+          advanced:
+            false,
+        }
+      : getUpgradePlanVisibility(
+          activePlan
+        );
+
+  const visiblePlanCount =
+    Object.values(
+      planVisibility
+    ).filter(
+      Boolean
+    ).length;
+
+  const plansGridClass =
+    visiblePlanCount <=
+    1
+      ? "mt-10 mx-auto grid w-full max-w-xl gap-4"
+      : visiblePlanCount ===
+          2
+        ? "mt-10 mx-auto grid w-full max-w-4xl gap-4 lg:grid-cols-2"
+        : "mt-10 grid gap-4 lg:grid-cols-3";
+
   const proCheckoutEnabled =
     process.env
       .NEXT_PUBLIC_AYZO_PRO_CHECKOUT_ENABLED
@@ -290,9 +401,11 @@ export default function PricingPlans() {
         </p>
       </div>
 
-      <div className="mt-10 grid gap-4 lg:grid-cols-3">
+      <div className={plansGridClass}>
         {/* FREE */}
-        <div className="flex flex-col rounded-3xl border border-zinc-800 bg-zinc-950/60 p-6 sm:p-7">
+        <div
+          hidden={!planVisibility.free}
+          className="flex flex-col rounded-3xl border border-zinc-800 bg-zinc-950/60 p-6 sm:p-7">
           <div>
             <div className="text-xs font-semibold tracking-[0.18em] text-zinc-500">
               FREE
@@ -332,7 +445,9 @@ export default function PricingPlans() {
         </div>
 
         {/* PRO */}
-        <div className="relative flex flex-col rounded-3xl border border-violet-500/30 bg-gradient-to-b from-violet-500/10 to-zinc-950/70 p-6 shadow-xl shadow-purple-950/10 sm:p-7">
+        <div
+          hidden={!planVisibility.pro}
+          className="relative flex flex-col rounded-3xl border border-violet-500/30 bg-gradient-to-b from-violet-500/10 to-zinc-950/70 p-6 shadow-xl shadow-purple-950/10 sm:p-7">
           <div className="absolute right-5 top-5 rounded-full border border-violet-400/20 bg-violet-400/10 px-2.5 py-1 text-[9px] font-semibold tracking-[0.12em] text-violet-300">
             {proCheckoutEnabled
               ? "FOUNDING ACCESS"
@@ -421,7 +536,9 @@ export default function PricingPlans() {
         </div>
 
         {/* ADVANCED */}
-        <div className="relative flex flex-col overflow-hidden rounded-3xl border border-purple-400/40 bg-gradient-to-b from-purple-500/15 via-violet-500/5 to-zinc-950/80 p-6 shadow-2xl shadow-purple-950/20 sm:p-7">
+        <div
+          hidden={!planVisibility.advanced}
+          className="relative flex flex-col overflow-hidden rounded-3xl border border-purple-400/40 bg-gradient-to-b from-purple-500/15 via-violet-500/5 to-zinc-950/80 p-6 shadow-2xl shadow-purple-950/20 sm:p-7">
           <div className="pointer-events-none absolute right-[-70px] top-[-70px] h-48 w-48 rounded-full bg-purple-500/10 blur-3xl" />
 
           <div className="relative">

@@ -111,14 +111,13 @@ import type {
   NetworkId,
 } from "@/lib/networks/registry";
 
+import {
+  getAnalysisDepthPolicy,
+  type AnalysisDepthPlan,
+} from "@/lib/analysisDepthPolicy";
+
 const EVM_ADDRESS =
   /^0x[0-9a-fA-F]{40}$/;
-
-const EXPANSION_WALLET_LIMIT = 2;
-
-const GRAPH_MAX_HOPS = 2;
-const GRAPH_MAX_NODES = 8;
-const GRAPH_MAX_EDGES = 12;
 
 const DEVELOPER_MAX_PAGES = 2;
 const DEVELOPER_RECEIPT_LIMIT = 8;
@@ -210,6 +209,7 @@ const DEFAULT_DEPENDENCIES:
 export type RunEvmUnifiedIntelligenceRequest = {
   networkId: NetworkId;
   address: string;
+  analysisPlan?: AnalysisDepthPlan;
 };
 
 export type EvmUnifiedIntelligenceWithActivity =
@@ -948,6 +948,12 @@ export async function runEvmUnifiedIntelligence(
       .trim()
       .toLowerCase();
 
+  const depthPolicy =
+    getAnalysisDepthPolicy(
+      request.analysisPlan ??
+        "free"
+    );
+
   if (
     !EVM_ADDRESS.test(
       address
@@ -1100,11 +1106,53 @@ export async function runEvmUnifiedIntelligence(
           ]
         : [];
 
+  let rootTransactionCursor =
+    rootTransactionResult.ok
+      ? rootTransactionResult
+          .data
+          .nextCursor
+      : null;
+
+  let rootTransactionPagesScanned =
+    rootTransactionResult.ok
+      ? 1
+      : 0;
+
+  while (
+    rootTransactionResult.ok &&
+    rootTransactionCursor !==
+      null &&
+    rootTransactionPagesScanned <
+      depthPolicy
+        .rootTransactionPages
+  ) {
+    const nextResult =
+      await getTransactions(
+        address,
+        rootTransactionCursor
+      );
+
+    if (!nextResult.ok) {
+      break;
+    }
+
+    rootTransactions.push(
+      ...nextResult.data
+        .transactions
+    );
+
+    rootTransactionPagesScanned +=
+      1;
+
+    rootTransactionCursor =
+      nextResult.data
+        .nextCursor;
+  }
+
   const transactionExhausted =
     rootTransactionResult.ok &&
-    rootTransactionResult
-      .data
-      .nextCursor === null;
+    rootTransactionCursor ===
+      null;
 
   let holdersResult:
     EvmProviderResult<EvmTokenHolders> | null =
@@ -1150,11 +1198,61 @@ export async function runEvmUnifiedIntelligence(
           ]
         : [];
 
+  let rootTransferCursor =
+    transferResult?.ok ===
+      true
+      ? transferResult.data
+          .nextCursor
+      : null;
+
+  let rootTransferPagesScanned =
+    transferResult?.ok ===
+      true
+      ? 1
+      : 0;
+
+  while (
+    transferResult?.ok ===
+      true &&
+    rootTransferCursor !==
+      null &&
+    rootTransferPagesScanned <
+      depthPolicy
+        .rootTransferPages
+  ) {
+    const nextResult =
+      await deps.getTokenTransfers({
+        network,
+        address,
+        tokenAddress:
+          address,
+        limit: 100,
+        cursor:
+          rootTransferCursor,
+      });
+
+    if (!nextResult.ok) {
+      break;
+    }
+
+    rootTransfers.push(
+      ...nextResult.data
+        .transfers
+    );
+
+    rootTransferPagesScanned +=
+      1;
+
+    rootTransferCursor =
+      nextResult.data
+        .nextCursor;
+  }
+
   const transferExhausted =
     transferResult?.ok ===
       true &&
-    transferResult.data
-      .nextCursor === null;
+    rootTransferCursor ===
+      null;
 
   if (
     assetKind ===
@@ -1555,7 +1653,8 @@ export async function runEvmUnifiedIntelligence(
       rootGraphObservations
     ).slice(
       0,
-      EXPANSION_WALLET_LIMIT
+      depthPolicy
+        .expansionWalletLimit
     );
 
   const expansionTransactions:
@@ -1565,16 +1664,39 @@ export async function runEvmUnifiedIntelligence(
     const neighbor of
       strongestNeighbors
   ) {
-    const result =
-      await getTransactions(
-        neighbor.address
-      );
+    let cursor:
+      string | null =
+        null;
 
-    if (result.ok) {
+    for (
+      let page = 0;
+      page <
+        depthPolicy
+          .expansionTransactionPages;
+      page += 1
+    ) {
+      const result =
+        await getTransactions(
+          neighbor.address,
+          cursor
+        );
+
+      if (!result.ok) {
+        break;
+      }
+
       expansionTransactions.push(
         ...result.data
           .transactions
       );
+
+      cursor =
+        result.data
+          .nextCursor;
+
+      if (cursor === null) {
+        break;
+      }
     }
   }
 
@@ -1652,7 +1774,7 @@ export async function runEvmUnifiedIntelligence(
         false,
 
       limitation:
-        "Coordination analysis is bounded to the analyzed address and up to two strongest observed counterparties. Secondary wallet expansion uses one transaction page. Temporal-correlation scoring and ownership inference are not included.",
+        `Coordination analysis is bounded to the analyzed address and up to ${depthPolicy.expansionWalletLimit} strongest observed counterparties. Secondary wallet expansion uses up to ${depthPolicy.expansionTransactionPages} transaction page(s). Temporal-correlation scoring and ownership inference are not included.`,
     };
 
     const intelligence =
@@ -1732,7 +1854,7 @@ export async function runEvmUnifiedIntelligence(
         false,
 
       limitation:
-        "Unified analysis uses a bounded graph expansion: the root address plus up to two strongest observed counterparties, with one transaction page per expanded address. This is not an exhaustive recursive graph.",
+        `Unified analysis uses a bounded graph expansion: the root address plus up to ${depthPolicy.expansionWalletLimit} strongest observed counterparties, with up to ${depthPolicy.expansionTransactionPages} transaction page(s) per expanded address. This is not an exhaustive recursive graph.`,
     };
 
     const graph =
@@ -1744,13 +1866,13 @@ export async function runEvmUnifiedIntelligence(
           graphObservations,
 
         maxHops:
-          GRAPH_MAX_HOPS,
+          depthPolicy.graphMaxHops,
 
         maxNodes:
-          GRAPH_MAX_NODES,
+          depthPolicy.graphMaxNodes,
 
         maxEdges:
-          GRAPH_MAX_EDGES,
+          depthPolicy.graphMaxEdges,
 
         evidenceCoverage:
           graphCoverage,
