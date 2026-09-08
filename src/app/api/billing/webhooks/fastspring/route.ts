@@ -15,6 +15,11 @@ import {
   processFastSpringSubscriptionEvent,
 } from "@/lib/billing/fastspringSubscriptionProcessor";
 
+import {
+  fastSpringEventMatchesMode,
+  parseFastSpringMode,
+} from "@/lib/billing/fastspringMode";
+
 export const dynamic =
   "force-dynamic";
 
@@ -131,16 +136,15 @@ export async function POST(
     );
   }
 
-  /*
-   * AYZO billing integration is
-   * test-only until deliberate
-   * production activation.
-   */
-  if (
-    process.env
-      .FASTSPRING_MODE !==
-      "test"
-  ) {
+  let mode;
+
+  try {
+    mode =
+      parseFastSpringMode(
+        process.env
+          .FASTSPRING_MODE
+      );
+  } catch {
     return Response.json(
       {
         ok:
@@ -158,7 +162,10 @@ export async function POST(
   if (
     parsed.payload.events.some(
       event =>
-        event.live
+        !fastSpringEventMatchesMode(
+          event.live,
+          mode
+        )
     )
   ) {
     return Response.json(
@@ -166,7 +173,7 @@ export async function POST(
         ok:
           false,
         error:
-          "Live FastSpring events are not accepted in test mode.",
+          "FastSpring event mode does not match configured mode.",
       },
       {
         status:

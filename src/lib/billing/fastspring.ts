@@ -5,6 +5,13 @@ import {
   PLANS,
 } from "@/lib/plans/registry";
 
+import {
+  fastSpringCheckoutHost,
+  fastSpringModeIsLive,
+  parseFastSpringMode,
+  type FastSpringMode,
+} from "@/lib/billing/fastspringMode";
+
 export type ProBillingInterval =
   | "monthly"
   | "annual";
@@ -45,7 +52,8 @@ type FastSpringConfig = {
   checkoutPath: string;
   monthlyProductPath: string;
   annualProductPath: string;
-  mode: "test";
+  mode:
+    FastSpringMode;
 };
 
 function requiredEnv(
@@ -68,18 +76,11 @@ function requiredEnv(
 export function getFastSpringConfig():
   FastSpringConfig {
   const mode =
-    requiredEnv(
-      "FASTSPRING_MODE"
+    parseFastSpringMode(
+      requiredEnv(
+        "FASTSPRING_MODE"
+      )
     );
-
-  if (
-    mode !==
-    "test"
-  ) {
-    throw new Error(
-      "FastSpring live mode is not enabled."
-    );
-  }
 
   return {
     username:
@@ -107,8 +108,7 @@ export function getFastSpringConfig():
         "FASTSPRING_PRO_ANNUAL_PATH"
       ),
 
-    mode:
-      "test",
+    mode,
   };
 }
 
@@ -715,7 +715,10 @@ async function createLegacyTestCheckout({
     );
 
   const checkoutUrl =
-    `https://${storeId}.test.onfastspring.com/session/${encodeURIComponent(
+    `https://${fastSpringCheckoutHost(
+      storeId,
+      config.mode
+    )}/session/${encodeURIComponent(
       sessionId
     )}`;
 
@@ -785,7 +788,9 @@ export async function createProCheckoutSession({
         body:
           JSON.stringify({
             live:
-              false,
+              fastSpringModeIsLive(
+                config.mode
+              ),
 
             orderTags:
               orderTags({
