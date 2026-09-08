@@ -1,4 +1,5 @@
 import {
+  after,
   NextResponse,
   type NextRequest,
 } from "next/server";
@@ -6,6 +7,10 @@ import {
 import {
   createClient,
 } from "@/lib/supabase/server";
+
+import {
+  deliverWelcomeEmailIfEligible,
+} from "@/lib/account/welcomeEmail";
 
 function safeNext(
   value: string | null
@@ -62,6 +67,40 @@ export async function GET(
         "/login?error=auth_callback",
         request.url
       )
+    );
+  }
+
+  const {
+    data:
+      claimsData,
+  } =
+    await supabase.auth
+      .getClaims();
+
+  const userId =
+    typeof claimsData
+      ?.claims
+      ?.sub ===
+      "string"
+      ? claimsData
+          .claims
+          .sub
+      : null;
+
+  if (userId) {
+    after(
+      async () => {
+        try {
+          await deliverWelcomeEmailIfEligible(
+            userId
+          );
+        } catch {
+          /*
+           * Welcome-email delivery must
+           * never break authentication.
+           */
+        }
+      }
     );
   }
 
