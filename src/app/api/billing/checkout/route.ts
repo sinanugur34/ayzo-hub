@@ -3,6 +3,10 @@ import {
 } from "@/lib/billing/entitlement";
 
 import {
+  isProCheckoutEnabled,
+} from "@/lib/billing/checkoutLaunchPolicy";
+
+import {
   createProCheckoutSession,
   type ProBillingInterval,
 } from "@/lib/billing/fastspring";
@@ -82,6 +86,23 @@ export async function POST(
       {
         status:
           409,
+      }
+    );
+  }
+
+  if (
+    !isProCheckoutEnabled()
+  ) {
+    return Response.json(
+      {
+        ok:
+          false,
+        error:
+          "Pro checkout is temporarily unavailable.",
+      },
+      {
+        status:
+          503,
       }
     );
   }
