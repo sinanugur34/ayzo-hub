@@ -205,7 +205,7 @@ type CreateSessionResponse = {
     unknown;
 
   cart?: {
-    items?:
+    lineItems?:
       unknown;
   };
 };
@@ -800,7 +800,7 @@ export async function createProCheckoutSession({
               }),
 
             cart: {
-              items: [
+              lineItems: [
                 {
                   productPath,
 
@@ -852,9 +852,9 @@ export async function createProCheckoutSession({
 
   const cartItems =
     Array.isArray(
-      session.cart?.items
+      session.cart?.lineItems
     )
-      ? session.cart.items
+      ? session.cart.lineItems
       : [];
 
   const products =
@@ -987,18 +987,11 @@ export async function createProCheckoutSession({
   }
 
   /*
-   * Current FastSpring test-store
-   * behavior has been runtime
-   * verified:
-   *
-   * - V2 returns HTTP 201
-   * - checkoutStatus contains
-   *   PRODUCTS_REQUIRED
-   * - returned cart is empty
-   * - V2 add-item returns provider
-   *   HTTP 500
-   *
-   * Keep V2 fail-closed.
+   * Keep V2 fail-closed if the
+   * provider does not return the
+   * expected product in cart.lineItems
+   * or otherwise reports the session
+   * as not ready for checkout.
    *
    * Only in explicit test mode,
    * attempt the separately verified
