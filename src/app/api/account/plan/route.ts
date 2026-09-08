@@ -8,12 +8,17 @@ export const dynamic =
 export async function GET() {
   const {
     entitlement,
+    userId,
   } =
     await getServerEntitlement();
 
   return Response.json(
     {
       ok: true,
+      authenticated:
+        userId !==
+        null,
+
       plan:
         entitlement.planId,
     },
