@@ -103,6 +103,33 @@ function errorName(
     : null;
 }
 
+function errorMessage(
+  body:
+    unknown
+) {
+  if (
+    !body ||
+    typeof body !==
+      "object" ||
+    Array.isArray(body)
+  ) {
+    return null;
+  }
+
+  const value =
+    (
+      body as {
+        message?:
+          unknown;
+      }
+    ).message;
+
+  return typeof value ===
+    "string"
+    ? value.trim()
+    : null;
+}
+
 function classifyFailure(
   status:
     number,
@@ -272,6 +299,24 @@ export async function sendWelcomeEmail(
     );
 
   if (!response.ok) {
+    console.error(
+      "welcome_resend_rejected",
+      {
+        httpStatus:
+          response.status,
+
+        errorName:
+          errorName(
+            body
+          ),
+
+        errorMessage:
+          errorMessage(
+            body
+          ),
+      }
+    );
+
     return classifyFailure(
       response.status,
       body
