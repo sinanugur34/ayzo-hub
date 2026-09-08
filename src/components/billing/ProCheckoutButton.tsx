@@ -8,6 +8,10 @@ import {
   useRouter,
 } from "next/navigation";
 
+import {
+  trackEvent,
+} from "@/lib/analytics/client";
+
 type BillingInterval =
   | "monthly"
   | "annual";
@@ -64,6 +68,13 @@ export default function ProCheckoutButton({
     setLoading(true);
     setError("");
 
+    trackEvent(
+      "checkout_started",
+      {
+        interval,
+      }
+    );
+
     try {
       const response =
         await fetch(
@@ -103,6 +114,13 @@ export default function ProCheckoutButton({
         response.status ===
         401
       ) {
+        trackEvent(
+          "checkout_auth_required",
+          {
+            interval,
+          }
+        );
+
         router.push(
           "/login"
         );
@@ -118,6 +136,15 @@ export default function ProCheckoutButton({
           .checkoutUrl !==
           "string"
       ) {
+        trackEvent(
+          "checkout_failed",
+          {
+            interval,
+            status:
+              response.status,
+          }
+        );
+
         setError(
           typeof payload
             .error ===
@@ -157,10 +184,26 @@ export default function ProCheckoutButton({
         return;
       }
 
+      trackEvent(
+        "checkout_created",
+        {
+          interval,
+        }
+      );
+
       window.location.assign(
         checkoutUrl.toString()
       );
     } catch {
+      trackEvent(
+        "checkout_failed",
+        {
+          interval,
+          status:
+            0,
+        }
+      );
+
       setError(
         "Unable to start checkout."
       );

@@ -9,6 +9,10 @@ import {
   createClient,
 } from "@/lib/supabase/client";
 
+import {
+  trackEvent,
+} from "@/lib/analytics/client";
+
 export default function LoginForm() {
   const [
     email,
@@ -52,6 +56,14 @@ export default function LoginForm() {
     setLoading(true);
     setError("");
 
+    trackEvent(
+      "login_started",
+      {
+        method:
+          "email_otp",
+      }
+    );
+
     try {
       const supabase =
         createClient();
@@ -79,14 +91,38 @@ export default function LoginForm() {
           });
 
       if (authError) {
+        trackEvent(
+          "login_failed",
+          {
+            method:
+              "email_otp",
+          }
+        );
+
         setError(
           "We couldn't send the sign-in link. Please try again."
         );
         return;
       }
 
+      trackEvent(
+        "login_link_sent",
+        {
+          method:
+            "email_otp",
+        }
+      );
+
       setSent(true);
     } catch {
+      trackEvent(
+        "login_failed",
+        {
+          method:
+            "email_otp",
+        }
+      );
+
       setError(
         "We couldn't send the sign-in link. Please try again."
       );

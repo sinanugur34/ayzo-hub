@@ -5,6 +5,10 @@ import {
   useState,
 } from "react";
 
+import {
+  trackEvent,
+} from "@/lib/analytics/client";
+
 export default function WaitlistForm({
   source,
   compact = false,
@@ -51,6 +55,13 @@ export default function WaitlistForm({
     setLoading(true);
     setMessage("");
 
+    trackEvent(
+      "waitlist_started",
+      {
+        source,
+      }
+    );
+
     try {
       const form = new FormData(
         event.currentTarget
@@ -76,6 +87,15 @@ export default function WaitlistForm({
       const data = await response.json();
 
       if (!response.ok || !data.ok) {
+        trackEvent(
+          "waitlist_failed",
+          {
+            source,
+            status:
+              response.status,
+          }
+        );
+
         setSuccess(false);
         setMessage(
           data.error ??
@@ -84,6 +104,13 @@ export default function WaitlistForm({
         return;
       }
 
+      trackEvent(
+        "waitlist_submitted",
+        {
+          source,
+        }
+      );
+
       setSuccess(true);
       setMessage(
         data.message ??
@@ -91,6 +118,15 @@ export default function WaitlistForm({
       );
       setEmail("");
     } catch {
+      trackEvent(
+        "waitlist_failed",
+        {
+          source,
+          status:
+            0,
+        }
+      );
+
       setSuccess(false);
       setMessage(
         "Unable to join the waitlist."
