@@ -85,6 +85,11 @@ export default function LoginForm({
 
             options: {
               redirectTo,
+
+              queryParams: {
+                prompt:
+                  "select_account",
+              },
             },
           });
 

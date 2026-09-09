@@ -9,6 +9,7 @@ export async function GET() {
   const {
     entitlement,
     userId,
+    userEmail,
   } =
     await getServerEntitlement();
 
@@ -18,6 +19,9 @@ export async function GET() {
       authenticated:
         userId !==
         null,
+
+      email:
+        userEmail,
 
       plan:
         entitlement.planId,
