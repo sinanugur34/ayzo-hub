@@ -15,6 +15,9 @@ type HeaderAccountState = {
   authenticated:
     boolean;
 
+  email:
+    string | null;
+
   plan:
     | "free"
     | "pro"
@@ -43,6 +46,12 @@ function isHeaderAccountState(
     typeof record
       .authenticated ===
       "boolean" &&
+    (
+      record.email ===
+        null ||
+      typeof record.email ===
+        "string"
+    ) &&
     (
       record.plan ===
         "free" ||
@@ -180,19 +189,38 @@ export default function HeaderAuthControls() {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {account.plan ===
-        "pro" && (
-        <span className="rounded-full border border-violet-400/20 bg-violet-400/10 px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.12em] text-violet-300">
-          PRO
-        </span>
-      )}
+      <div className="group relative">
+        <button
+          type="button"
+          aria-label={`Current plan: ${account.plan}. Signed in as ${account.email ?? "unknown email"}`}
+          className={
+            account.plan ===
+            "advanced"
+              ? "rounded-full border border-purple-400/20 bg-purple-400/10 px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.12em] text-purple-300 outline-none"
+              : account.plan ===
+                  "pro"
+                ? "rounded-full border border-violet-400/20 bg-violet-400/10 px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.12em] text-violet-300 outline-none"
+                : "rounded-full border border-zinc-700 bg-zinc-900/80 px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.12em] text-zinc-400 outline-none"
+          }
+        >
+          {account.plan
+            .toUpperCase()}
+        </button>
 
-      {account.plan ===
-        "advanced" && (
-        <span className="rounded-full border border-purple-400/20 bg-purple-400/10 px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.12em] text-purple-300">
-          ADVANCED
-        </span>
-      )}
+        <div
+          role="tooltip"
+          className="pointer-events-none absolute right-0 top-full z-50 mt-2 hidden min-w-[220px] rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-left shadow-xl group-hover:block group-focus-within:block"
+        >
+          <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-500">
+            Signed in as
+          </div>
+
+          <div className="mt-1 break-all text-xs font-medium text-zinc-200">
+            {account.email ??
+              "Email unavailable"}
+          </div>
+        </div>
+      </div>
 
       <Link
         href="/account"
