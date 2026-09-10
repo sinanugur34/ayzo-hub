@@ -25,6 +25,9 @@ import {
   runDogecoinIntelligence,
 } from "@/lib/intelligence/dogecoin/engine";
 import {
+  runTronIntelligence,
+} from "@/lib/intelligence/tron/engine";
+import {
   runEvmUnifiedIntelligence,
 } from "@/lib/intelligence/evm/unifiedOrchestrator";
 import {
@@ -328,29 +331,16 @@ export async function POST(request: Request) {
       }
 
       case "tron": {
-        /*
-         * Fail closed until the TRON
-         * intelligence engine and real
-         * mainnet acceptance are complete.
-         *
-         * The registry currently keeps
-         * TRON in development status, so
-         * this branch is a second safety
-         * boundary against premature live
-         * activation.
-         */
+        const result =
+          await runTronIntelligence({
+            address,
+          });
+
         return Response.json(
+          result.data,
           {
-            ok: false,
-            code:
-              "NETWORK_NOT_AVAILABLE",
-            error:
-              "TRON intelligence is not live yet.",
-            network:
-              "tron",
-          },
-          {
-            status: 503,
+            status:
+              result.status,
           }
         );
       }

@@ -222,7 +222,7 @@ export const NETWORKS = {
     name: "TRON",
     shortName: "TRX",
     family: "tron",
-    status: "development",
+    status: "live",
     chainId: null,
     nativeCurrency: "TRX",
     explorerUrl: "https://tronscan.org",

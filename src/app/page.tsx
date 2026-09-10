@@ -12,6 +12,7 @@ import {
 
 import BitcoinIntelligenceReport from "@/components/BitcoinIntelligenceReport";
 import DogecoinIntelligenceReport from "@/components/DogecoinIntelligenceReport";
+import TronIntelligenceReport from "@/components/TronIntelligenceReport";
 import EvmIntelligenceReport from "@/components/EvmIntelligenceReport";
 import FreePlanStatus from "@/components/FreePlanStatus";
 import IntelligenceReport from "@/components/IntelligenceReport";
@@ -46,6 +47,9 @@ const BITCOIN_MAINNET_SHAPE =
 
 const DOGECOIN_MAINNET_SHAPE =
   /^(?:D|9|A)[1-9A-HJ-NP-Za-km-z]{25,34}$/;
+
+const TRON_ADDRESS_SHAPE =
+  /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
 
 type MintInfo = {
   supply: string;
@@ -253,6 +257,17 @@ export default function Home() {
       null
     );
 
+  const [
+    tronAnalysis,
+    setTronAnalysis,
+  ] =
+    useState<{
+      address:
+        string;
+    } | null>(
+      null
+    );
+
   function resetResult() {
     setSolanaResult(
       null
@@ -267,6 +282,10 @@ export default function Home() {
     );
 
     setDogecoinAnalysis(
+      null
+    );
+
+    setTronAnalysis(
       null
     );
   }
@@ -340,37 +359,6 @@ export default function Home() {
               return;
             }
 
-            if (
-              result.network ===
-                "tron"
-            ) {
-              setSolanaResult(
-                null
-              );
-
-              setEvmAnalysis(
-                null
-              );
-
-              setBitcoinAnalysis(
-                null
-              );
-
-              setDogecoinAnalysis(
-                null
-              );
-
-              setIsValid(
-                false
-              );
-
-              setMessage(
-                "TRON address detected. Live intelligence is not available yet."
-              );
-
-              return;
-            }
-
             let detectedNetwork:
               LiveAnalysisNetworkId | null =
                 null;
@@ -423,6 +411,10 @@ export default function Home() {
               null
             );
 
+            setTronAnalysis(
+              null
+            );
+
             setIsValid(
               null
             );
@@ -471,87 +463,6 @@ export default function Home() {
       );
 
       return;
-    }
-
-    /*
-     * TRON uses Base58Check and can overlap
-     * generic Base58 address families.
-     *
-     * Validate likely TRON candidates through
-     * the server-side checksum validator before
-     * Solana or any quota-consuming analysis.
-     */
-    const isTronCandidate =
-      value.length ===
-        34 &&
-      value.startsWith(
-        "T"
-      );
-
-    if (isTronCandidate) {
-      try {
-        const response =
-          await fetch(
-            "/api/address-detect",
-            {
-              method:
-                "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
-
-              body:
-                JSON.stringify({
-                  address:
-                    value,
-                }),
-            }
-          );
-
-        if (!response.ok) {
-          setIsValid(false);
-
-          setMessage(
-            "Unable to verify this T-prefixed address. Please try again."
-          );
-
-          return;
-        }
-
-        const result =
-          (
-            await response.json()
-          ) as AddressDetectionResponse;
-
-        if (
-          result.ok &&
-          result.network ===
-            "tron"
-        ) {
-          setIsValid(false);
-
-          setMessage(
-            "TRON address detected. Live intelligence is not available yet."
-          );
-
-          return;
-        }
-      } catch {
-        /*
-         * Fail closed for a likely TRON
-         * address rather than allowing it
-         * to fall through to Solana.
-         */
-        setIsValid(false);
-
-        setMessage(
-          "Unable to verify this T-prefixed address. Please try again."
-        );
-
-        return;
-      }
     }
 
     const isDogecoinAddressShape =
@@ -639,6 +550,91 @@ export default function Home() {
       );
 
       setBitcoinAnalysis({
+        address:
+          value,
+      });
+
+      return;
+    }
+
+    const isTronAddressShape =
+      TRON_ADDRESS_SHAPE.test(
+        value
+      );
+
+    if (
+      network ===
+        "tron" ||
+      isTronAddressShape
+    ) {
+      const detectionResponse =
+        await fetch(
+          "/api/address-detect",
+          {
+            method:
+              "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify({
+                address:
+                  value,
+              }),
+          }
+        );
+
+      if (!detectionResponse.ok) {
+        setIsValid(false);
+
+        setMessage(
+          "Unable to verify this TRON address."
+        );
+
+        return;
+      }
+
+      const detection =
+        (
+          await detectionResponse.json()
+        ) as AddressDetectionResponse;
+
+      if (
+        !detection.ok ||
+        detection.network !==
+          "tron"
+      ) {
+        setIsValid(false);
+
+        setMessage(
+          "This does not look like a valid TRON address."
+        );
+
+        return;
+      }
+
+      if (
+        network !==
+          "tron"
+      ) {
+        setNetwork(
+          "tron"
+        );
+      }
+
+      setIsValid(true);
+
+      setMessage(
+        network ===
+          "tron"
+          ? "TRON address accepted. AYZO intelligence is running."
+          : "TRON address detected automatically. AYZO intelligence is running."
+      );
+
+      setTronAnalysis({
         address:
           value,
       });
@@ -832,6 +828,8 @@ export default function Home() {
     bitcoinAnalysis !==
       null ||
     dogecoinAnalysis !==
+      null ||
+    tronAnalysis !==
       null;
 
   return (
@@ -894,7 +892,7 @@ export default function Home() {
           className="mt-12 w-full max-w-3xl"
         >
           <div className="mb-4 w-full">
-            {/* Mobile: all 15 networks remain reachable
+            {/* Mobile: all 16 networks remain reachable
                 without overflowing the viewport. */}
             <div className="sm:hidden">
               <label
@@ -942,7 +940,7 @@ export default function Home() {
               </div>
 
               <div className="mt-2 text-left text-[10px] text-zinc-600">
-                15 live networks available
+                16 live networks available
               </div>
             </div>
 
@@ -1038,7 +1036,10 @@ export default function Home() {
                       : network ===
                           "dogecoin"
                         ? "Paste a Dogecoin address"
-                        : `Paste a ${networkName(network)} token, contract or wallet address`
+                        : network ===
+                            "tron"
+                          ? "Paste a TRON address"
+                          : `Paste a ${networkName(network)} token, contract or wallet address`
                 }
                 spellCheck={
                   false
@@ -1234,6 +1235,19 @@ export default function Home() {
           </section>
         )}
 
+        {tronAnalysis && (
+          <section className="mt-12 w-full max-w-4xl">
+            <TronIntelligenceReport
+              key={
+                tronAnalysis.address
+              }
+              address={
+                tronAnalysis.address
+              }
+            />
+          </section>
+        )}
+
         {!hasResult && (
           <div className="mt-16 grid w-full max-w-3xl grid-cols-1 gap-3 text-left sm:grid-cols-3">
             {[
@@ -1249,7 +1263,7 @@ export default function Home() {
 
               [
                 "Multichain",
-                "Solana, 12 EVM networks, Bitcoin and Dogecoin live",
+                "Solana, 12 EVM networks, Bitcoin, Dogecoin and TRON live",
               ],
             ].map(
               ([

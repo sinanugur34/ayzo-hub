@@ -7,7 +7,7 @@ import {
 } from "./registry";
 
 test(
-  "keeps sixteen registered networks with fifteen live",
+  "keeps sixteen registered networks live",
   () => {
     assert.equal(
       NETWORK_IDS.length,
@@ -24,7 +24,7 @@ test(
 
     assert.equal(
       liveNetworkCount,
-      15
+      16
     );
 
     assert.equal(

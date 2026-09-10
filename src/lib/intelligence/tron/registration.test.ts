@@ -2,15 +2,15 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  NETWORKS,
-} from "@/lib/networks/registry";
-
-import {
   resolveIntelligenceNetwork,
 } from "@/lib/intelligence/router";
 
+import {
+  NETWORKS,
+} from "@/lib/networks/registry";
+
 test(
-  "registers TRON as development-only",
+  "registers TRON as live after mainnet acceptance",
   () => {
     assert.equal(
       NETWORKS.tron.family,
@@ -19,7 +19,7 @@ test(
 
     assert.equal(
       NETWORKS.tron.status,
-      "development"
+      "live"
     );
 
     assert.equal(
@@ -29,13 +29,15 @@ test(
 
     assert.deepEqual(
       NETWORKS.tron.capabilities,
-      ["addressFlows"]
+      [
+        "addressFlows",
+      ]
     );
   }
 );
 
 test(
-  "TRON remains unavailable through the live router",
+  "routes live TRON through the TRON intelligence engine",
   () => {
     const result =
       resolveIntelligenceNetwork(
@@ -44,22 +46,22 @@ test(
 
     assert.equal(
       result.ok,
-      false
+      true
     );
 
-    if (result.ok) {
-      throw new Error(
-        "TRON unexpectedly resolved as live."
+    if (!result.ok) {
+      assert.fail(
+        "Live TRON unexpectedly failed router resolution."
       );
     }
 
     assert.equal(
-      result.code,
-      "NETWORK_NOT_AVAILABLE"
+      result.networkId,
+      "tron"
     );
 
     assert.equal(
-      result.networkId,
+      result.engine,
       "tron"
     );
   }

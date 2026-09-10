@@ -189,7 +189,7 @@ test(
 );
 
 test(
-  "selects TRON for a detected TRON address but keeps it non-live",
+  "selects TRON for a detected TRON address and recognizes it as live",
   async () => {
     assert.equal(
       resolveSelectedNetworkForAddress(
@@ -217,7 +217,7 @@ test(
       isLiveAnalysisNetworkId(
         "tron"
       ),
-      false
+      true
     );
   }
 );
