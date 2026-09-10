@@ -18,7 +18,7 @@ type Feature = {
 const freeFeatures: Feature[] = [
   {
     label:
-      "14 live networks",
+      "16 live networks",
   },
   {
     label:
