@@ -438,3 +438,40 @@ test(
     }
   }
 );
+
+
+test(
+  "resolves Dogecoin through the live native intelligence engine",
+  () => {
+    const result =
+      resolveIntelligenceNetwork(
+        "dogecoin"
+      );
+
+    assert.equal(
+      result.ok,
+      true
+    );
+
+    if (!result.ok) {
+      throw new Error(
+        "Dogecoin did not resolve after its mainnet acceptance gate."
+      );
+    }
+
+    assert.equal(
+      result.network.id,
+      "dogecoin"
+    );
+
+    assert.equal(
+      result.network.family,
+      "dogecoin"
+    );
+
+    assert.equal(
+      result.network.status,
+      "live"
+    );
+  }
+);

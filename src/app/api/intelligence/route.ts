@@ -19,6 +19,12 @@ import {
   runBitcoinIntelligence,
 } from "@/lib/intelligence/bitcoin/engine";
 import {
+  isDogecoinMainnetAddress,
+} from "@/lib/intelligence/dogecoin/address";
+import {
+  runDogecoinIntelligence,
+} from "@/lib/intelligence/dogecoin/engine";
+import {
   runEvmUnifiedIntelligence,
 } from "@/lib/intelligence/evm/unifiedOrchestrator";
 import {
@@ -163,6 +169,23 @@ export async function POST(request: Request) {
       );
     }
 
+    if (
+      resolution.engine === "dogecoin" &&
+      !isDogecoinMainnetAddress(
+        address
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          code: "INVALID_ADDRESS",
+          error: "Invalid Dogecoin address.",
+          network: resolution.networkId,
+        },
+        { status: 400 }
+      );
+    }
+
     const testFailure =
       process.env.NODE_ENV !== "production" &&
       (body.__testFailure === "relationships" ||
@@ -277,6 +300,21 @@ export async function POST(request: Request) {
       case "bitcoin": {
         const result =
           await runBitcoinIntelligence({
+            address,
+          });
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "dogecoin": {
+        const result =
+          await runDogecoinIntelligence({
             address,
           });
 

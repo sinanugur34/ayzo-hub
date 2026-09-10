@@ -2,6 +2,7 @@
 
 import {
   FormEvent,
+  useEffect,
   useState,
 } from "react";
 
@@ -10,12 +11,14 @@ import {
 } from "@solana/kit";
 
 import BitcoinIntelligenceReport from "@/components/BitcoinIntelligenceReport";
+import DogecoinIntelligenceReport from "@/components/DogecoinIntelligenceReport";
 import EvmIntelligenceReport from "@/components/EvmIntelligenceReport";
 import FreePlanStatus from "@/components/FreePlanStatus";
 import IntelligenceReport from "@/components/IntelligenceReport";
 import PricingPlans from "@/components/PricingPlans";
 import HeaderAuthControls from "@/components/auth/HeaderAuthControls";
 import {
+  isLiveAnalysisNetworkId,
   resolveSelectedNetworkForAddress,
   type LiveAnalysisNetworkId,
   type LiveEvmNetworkId,
@@ -40,6 +43,9 @@ const EVM_ADDRESS =
 
 const BITCOIN_MAINNET_SHAPE =
   /^(?:[13][1-9A-HJ-NP-Za-km-z]{25,34}|bc1[ac-hj-np-z02-9]{6,87})$/i;
+
+const DOGECOIN_MAINNET_SHAPE =
+  /^(?:D|9|A)[1-9A-HJ-NP-Za-km-z]{25,34}$/;
 
 type MintInfo = {
   supply: string;
@@ -75,6 +81,22 @@ type TokenFailure = {
 type TokenResponse =
   | TokenSuccess
   | TokenFailure;
+
+
+type AddressDetectionResponse =
+  | {
+      ok: true;
+      network:
+        | "bitcoin"
+        | "dogecoin"
+        | "solana"
+        | "evm"
+        | null;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
 
 function shortAddress(
   address:
@@ -219,6 +241,17 @@ export default function Home() {
       null
     );
 
+  const [
+    dogecoinAnalysis,
+    setDogecoinAnalysis,
+  ] =
+    useState<{
+      address:
+        string;
+    } | null>(
+      null
+    );
+
   function resetResult() {
     setSolanaResult(
       null
@@ -229,6 +262,10 @@ export default function Home() {
     );
 
     setBitcoinAnalysis(
+      null
+    );
+
+    setDogecoinAnalysis(
       null
     );
   }
@@ -244,6 +281,144 @@ export default function Home() {
     setLoading(false);
     resetResult();
   }
+
+  useEffect(() => {
+    const value =
+      tokenAddress.trim();
+
+    if (
+      !value ||
+      value.length < 20
+    ) {
+      return;
+    }
+
+    const controller =
+      new AbortController();
+
+    const timer =
+      window.setTimeout(
+        async () => {
+          try {
+            const response =
+              await fetch(
+                "/api/address-detect",
+                {
+                  method:
+                    "POST",
+
+                  headers: {
+                    "Content-Type":
+                      "application/json",
+                  },
+
+                  body:
+                    JSON.stringify({
+                      address:
+                        value,
+                    }),
+
+                  signal:
+                    controller.signal,
+                }
+              );
+
+            if (!response.ok) {
+              return;
+            }
+
+            const result =
+              (
+                await response.json()
+              ) as AddressDetectionResponse;
+
+            if (
+              !result.ok ||
+              !result.network
+            ) {
+              return;
+            }
+
+            let detectedNetwork:
+              LiveAnalysisNetworkId | null =
+                null;
+
+            if (
+              result.network ===
+                "evm"
+            ) {
+              detectedNetwork =
+                NETWORKS[
+                  network
+                ].family ===
+                  "evm"
+                  ? network
+                  : "ethereum";
+            } else if (
+              isLiveAnalysisNetworkId(
+                result.network
+              )
+            ) {
+              detectedNetwork =
+                result.network;
+            }
+
+            if (
+              !detectedNetwork ||
+              detectedNetwork ===
+                network
+            ) {
+              return;
+            }
+
+            setNetwork(
+              detectedNetwork
+            );
+
+            setSolanaResult(
+              null
+            );
+
+            setEvmAnalysis(
+              null
+            );
+
+            setBitcoinAnalysis(
+              null
+            );
+
+            setDogecoinAnalysis(
+              null
+            );
+
+            setIsValid(
+              null
+            );
+
+            setMessage(
+              `${networkName(
+                detectedNetwork
+              )} detected automatically.`
+            );
+          } catch {
+            // Detection is a UX enhancement.
+            // Analysis remains authoritative.
+          }
+        },
+        250
+      );
+
+    return () => {
+      window.clearTimeout(
+        timer
+      );
+
+      controller.abort();
+    };
+  }, [
+    tokenAddress,
+    network,
+  ]);
 
   async function handleAnalyze(
     event:
@@ -262,6 +437,50 @@ export default function Home() {
       setMessage(
         "Enter an address for the selected network."
       );
+
+      return;
+    }
+
+    const isDogecoinAddressShape =
+      DOGECOIN_MAINNET_SHAPE.test(
+        value
+      );
+
+    if (
+      network ===
+        "dogecoin"
+    ) {
+      if (
+        !isDogecoinAddressShape
+      ) {
+        setIsValid(false);
+
+        setMessage(
+          "This does not look like a valid Dogecoin mainnet address."
+        );
+
+        return;
+      }
+
+      if (
+        network !==
+        "dogecoin"
+      ) {
+        setNetwork(
+          "dogecoin"
+        );
+      }
+
+      setIsValid(true);
+
+      setMessage(
+        "Dogecoin address accepted. AYZO intelligence is running."
+      );
+
+      setDogecoinAnalysis({
+        address:
+          value,
+      });
 
       return;
     }
@@ -349,6 +568,18 @@ export default function Home() {
       setIsValid(false);
       setMessage(
         "This is not a valid address for the selected network."
+      );
+      return;
+    }
+
+    if (
+      !isLiveAnalysisNetworkId(
+        detectedNetwork
+      )
+    ) {
+      setIsValid(false);
+      setMessage(
+        "This network is not available for live analysis yet."
       );
       return;
     }
@@ -486,6 +717,8 @@ export default function Home() {
     evmAnalysis !==
       null ||
     bitcoinAnalysis !==
+      null ||
+    dogecoinAnalysis !==
       null;
 
   return (
@@ -548,7 +781,7 @@ export default function Home() {
           className="mt-12 w-full max-w-3xl"
         >
           <div className="mb-4 w-full">
-            {/* Mobile: all 14 networks remain reachable
+            {/* Mobile: all 15 networks remain reachable
                 without overflowing the viewport. */}
             <div className="sm:hidden">
               <label
@@ -596,7 +829,7 @@ export default function Home() {
               </div>
 
               <div className="mt-2 text-left text-[10px] text-zinc-600">
-                14 live networks available
+                15 live networks available
               </div>
             </div>
 
@@ -689,7 +922,10 @@ export default function Home() {
                     : network ===
                         "bitcoin"
                       ? "Paste a Bitcoin address"
-                      : `Paste a ${networkName(network)} token, contract or wallet address`
+                      : network ===
+                          "dogecoin"
+                        ? "Paste a Dogecoin address"
+                        : `Paste a ${networkName(network)} token, contract or wallet address`
                 }
                 spellCheck={
                   false
@@ -872,6 +1108,19 @@ export default function Home() {
           </section>
         )}
 
+        {dogecoinAnalysis && (
+          <section className="mt-12 w-full max-w-4xl">
+            <DogecoinIntelligenceReport
+              key={
+                dogecoinAnalysis.address
+              }
+              address={
+                dogecoinAnalysis.address
+              }
+            />
+          </section>
+        )}
+
         {!hasResult && (
           <div className="mt-16 grid w-full max-w-3xl grid-cols-1 gap-3 text-left sm:grid-cols-3">
             {[
@@ -887,7 +1136,7 @@ export default function Home() {
 
               [
                 "Multichain",
-                "Solana, 12 EVM networks and Bitcoin live",
+                "Solana, 12 EVM networks, Bitcoin and Dogecoin live",
               ],
             ].map(
               ([

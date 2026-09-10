@@ -1,7 +1,8 @@
 export type NetworkFamily =
   | "solana"
   | "evm"
-  | "bitcoin";
+  | "bitcoin"
+  | "dogecoin";
 
 export type NetworkStatus =
   | "live"

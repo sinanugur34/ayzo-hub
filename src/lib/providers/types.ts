@@ -2,7 +2,10 @@ import type { NetworkId } from "@/lib/networks/registry";
 
 export type ProviderId =
   | "goldrush"
-  | "alchemy";
+  | "alchemy"
+  | "blockchair"
+  | "mempool"
+  | "blockcypher";
 
 export type ProviderKind =
   | "indexed-data"

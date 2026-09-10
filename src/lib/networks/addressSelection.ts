@@ -24,9 +24,19 @@ export type EvmNetworkId = {
       : never;
 }[NetworkId];
 
+export function isLiveAnalysisNetworkId(
+  networkId: NetworkId
+): networkId is LiveAnalysisNetworkId {
+  return NETWORKS[
+    networkId
+  ].status === "live";
+}
+
 export type AddressKind =
   | "evm"
   | "solana"
+  | "bitcoin"
+  | "dogecoin"
   | "invalid";
 
 export function resolveSelectedNetworkForAddress<
@@ -40,6 +50,8 @@ export function resolveSelectedNetworkForAddress<
   | TNetwork
   | "solana"
   | "ethereum"
+  | "bitcoin"
+  | "dogecoin"
   | null {
   if (
     addressKind ===
@@ -53,6 +65,20 @@ export function resolveSelectedNetworkForAddress<
     "solana"
   ) {
     return "solana";
+  }
+
+  if (
+    addressKind ===
+    "bitcoin"
+  ) {
+    return "bitcoin";
+  }
+
+  if (
+    addressKind ===
+    "dogecoin"
+  ) {
+    return "dogecoin";
   }
 
   return NETWORKS[

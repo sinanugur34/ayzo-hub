@@ -7,11 +7,11 @@ import {
 } from "./registry";
 
 test(
-  "keeps the fourteen-network registry authoritative",
+  "keeps the fifteen-network registry authoritative",
   () => {
     assert.equal(
       NETWORK_IDS.length,
-      14
+      15
     );
 
     assert.equal(
@@ -216,5 +216,39 @@ test(
           .length > 0
       );
     }
+  }
+);
+
+
+test(
+  "keeps Dogecoin live after mainnet acceptance passes",
+  () => {
+    assert.equal(
+      NETWORKS.dogecoin.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.dogecoin.family,
+      "dogecoin"
+    );
+
+    assert.equal(
+      NETWORKS.dogecoin.nativeCurrency,
+      "DOGE"
+    );
+
+    assert.equal(
+      NETWORKS.dogecoin.chainId,
+      null
+    );
+
+    assert.ok(
+      NETWORKS.dogecoin
+        .capabilities
+        .includes(
+          "addressFlows"
+        )
+    );
   }
 );

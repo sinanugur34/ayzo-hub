@@ -17,6 +17,27 @@ export const PROVIDERS = {
     kind: "rpc",
     role: "fallback",
   },
+
+  blockchair: {
+    id: "blockchair",
+    name: "Blockchair",
+    kind: "indexed-data",
+    role: "primary",
+  },
+
+  mempool: {
+    id: "mempool",
+    name: "Mempool.space",
+    kind: "indexed-data",
+    role: "fallback",
+  },
+
+  blockcypher: {
+    id: "blockcypher",
+    name: "BlockCypher",
+    kind: "indexed-data",
+    role: "fallback",
+  },
 } as const satisfies Record<
   ProviderId,
   ProviderDefinition

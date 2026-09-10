@@ -28,6 +28,10 @@ const BITCOIN_CAPABILITIES = [
   "addressFlows",
 ] as const satisfies readonly NetworkCapability[];
 
+const DOGECOIN_CAPABILITIES = [
+  "addressFlows",
+] as const satisfies readonly NetworkCapability[];
+
 export const NETWORKS = {
   solana: {
     id: "solana",
@@ -183,6 +187,18 @@ export const NETWORKS = {
     nativeCurrency: "MON",
     explorerUrl: "https://monadscan.com",
     capabilities: EVM_CAPABILITIES,
+  },
+
+  dogecoin: {
+    id: "dogecoin",
+    name: "Dogecoin",
+    shortName: "DOGE",
+    family: "dogecoin",
+    status: "live",
+    chainId: null,
+    nativeCurrency: "DOGE",
+    explorerUrl: "https://blockchair.com/dogecoin",
+    capabilities: DOGECOIN_CAPABILITIES,
   },
 
   bitcoin: {

@@ -145,3 +145,77 @@ test(
     }
   }
 );
+
+test(
+  "selects Bitcoin for a detected Bitcoin address regardless of prior selection",
+  () => {
+    assert.equal(
+      resolveSelectedNetworkForAddress(
+        "solana",
+        "bitcoin"
+      ),
+      "bitcoin"
+    );
+
+    assert.equal(
+      resolveSelectedNetworkForAddress(
+        "base",
+        "bitcoin"
+      ),
+      "bitcoin"
+    );
+  }
+);
+
+test(
+  "selects Dogecoin for a detected Dogecoin address regardless of prior selection",
+  () => {
+    assert.equal(
+      resolveSelectedNetworkForAddress(
+        "solana",
+        "dogecoin"
+      ),
+      "dogecoin"
+    );
+
+    assert.equal(
+      resolveSelectedNetworkForAddress(
+        "ethereum",
+        "dogecoin"
+      ),
+      "dogecoin"
+    );
+  }
+);
+
+test(
+  "recognizes Bitcoin, Ethereum, and Dogecoin as live networks",
+  async () => {
+    const {
+      isLiveAnalysisNetworkId,
+    } = await import(
+      "./addressSelection"
+    );
+
+    assert.equal(
+      isLiveAnalysisNetworkId(
+        "bitcoin"
+      ),
+      true
+    );
+
+    assert.equal(
+      isLiveAnalysisNetworkId(
+        "ethereum"
+      ),
+      true
+    );
+
+    assert.equal(
+      isLiveAnalysisNetworkId(
+        "dogecoin"
+      ),
+      true
+    );
+  }
+);

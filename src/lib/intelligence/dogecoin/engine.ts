@@ -4,40 +4,44 @@ import type {
 } from "@/lib/intelligence/types";
 
 import {
-  isBitcoinMainnetAddress,
+  isDogecoinMainnetAddress,
 } from "./address";
 
-import type {
-  BitcoinAddressHistoryPage,
-  BitcoinNetworkContext,
-  BitcoinProviderErrorCode,
-  BitcoinProviderResult,
-  BitcoinTransactionEvidence,
-} from "./types";
-
-import type {
-  BitcoinPaginatedAddressRequest,
-  BitcoinTransactionRequest,
-} from "./provider";
-
 import {
-  getBitcoinAddressHistoryWithFallback,
+  getDogecoinAddressHistoryWithFallback,
 } from "./historyFallback";
 
 import {
-  alchemyBitcoinProvider,
-} from "./providers/alchemy";
+  alchemyDogecoinRpcProvider,
+} from "./providers/alchemyRpc";
 
-const BITCOIN_NETWORK:
-  BitcoinNetworkContext = {
-    networkId: "bitcoin",
-    name: "Bitcoin",
-    nativeCurrency: "BTC",
+import type {
+  DogecoinPaginatedAddressRequest,
+  DogecoinTransactionRequest,
+} from "./provider";
+
+import type {
+  DogecoinAddressHistoryPage,
+  DogecoinNetworkContext,
+  DogecoinProviderErrorCode,
+  DogecoinProviderResult,
+  DogecoinTransactionEvidence,
+} from "./types";
+
+const DOGECOIN_NETWORK:
+  DogecoinNetworkContext = {
+    networkId:
+      "dogecoin",
+    name:
+      "Dogecoin",
+    nativeCurrency:
+      "DOGE",
   };
 
-const HISTORY_LIMIT = 5;
+const HISTORY_LIMIT =
+  5;
 
-export type BitcoinIntelligenceModuleState = {
+export type DogecoinIntelligenceModuleState = {
   status:
     | "complete"
     | "limited"
@@ -47,27 +51,31 @@ export type BitcoinIntelligenceModuleState = {
     string | null;
 };
 
-export type BitcoinIntelligence = {
+export type DogecoinIntelligence = {
   ok: true;
-  network: "bitcoin";
-  address: string;
+
+  network:
+    "dogecoin";
+
+  address:
+    string;
 
   coverage:
     | "partial"
     | "limited";
 
   history:
-    BitcoinAddressHistoryPage;
+    DogecoinAddressHistoryPage;
 
   canonicalTransaction:
-    BitcoinTransactionEvidence | null;
+    DogecoinTransactionEvidence | null;
 
   modules: {
     addressHistory:
-      BitcoinIntelligenceModuleState;
+      DogecoinIntelligenceModuleState;
 
     canonicalTransactionEvidence:
-      BitcoinIntelligenceModuleState;
+      DogecoinIntelligenceModuleState;
   };
 
   findings:
@@ -77,37 +85,37 @@ export type BitcoinIntelligence = {
     readonly string[];
 };
 
-export type BitcoinEngineDependencies = {
+export type DogecoinEngineDependencies = {
   getAddressTransactions(
     request:
-      BitcoinPaginatedAddressRequest
+      DogecoinPaginatedAddressRequest
   ): Promise<
-    BitcoinProviderResult<
-      BitcoinAddressHistoryPage
+    DogecoinProviderResult<
+      DogecoinAddressHistoryPage
     >
   >;
 
   getTransactionEvidence(
     request:
-      BitcoinTransactionRequest
+      DogecoinTransactionRequest
   ): Promise<
-    BitcoinProviderResult<
-      BitcoinTransactionEvidence
+    DogecoinProviderResult<
+      DogecoinTransactionEvidence
     >
   >;
 };
 
 const DEFAULT_DEPENDENCIES:
-  BitcoinEngineDependencies = {
+  DogecoinEngineDependencies = {
     getAddressTransactions:
-      (request) =>
-        getBitcoinAddressHistoryWithFallback(
+      request =>
+        getDogecoinAddressHistoryWithFallback(
           request
         ),
 
     getTransactionEvidence:
-      (request) =>
-        alchemyBitcoinProvider
+      request =>
+        alchemyDogecoinRpcProvider
           .getTransactionEvidence(
             request
           ),
@@ -115,7 +123,7 @@ const DEFAULT_DEPENDENCIES:
 
 function providerFailureStatus(
   code:
-    BitcoinProviderErrorCode
+    DogecoinProviderErrorCode
 ): number {
   switch (code) {
     case "INVALID_ADDRESS":
@@ -139,7 +147,7 @@ function providerFailureStatus(
 
 function intelligenceErrorCode(
   code:
-    BitcoinProviderErrorCode
+    DogecoinProviderErrorCode
 ):
   | "INVALID_ADDRESS"
   | "NETWORK_NOT_AVAILABLE"
@@ -165,7 +173,7 @@ function intelligenceErrorCode(
   }
 }
 
-export async function runBitcoinIntelligence(
+export async function runDogecoinIntelligence(
   {
     address,
   }: {
@@ -173,11 +181,11 @@ export async function runBitcoinIntelligence(
   },
 
   deps:
-    BitcoinEngineDependencies =
+    DogecoinEngineDependencies =
       DEFAULT_DEPENDENCIES
 ): Promise<
   IntelligenceEngineResult<
-    | BitcoinIntelligence
+    | DogecoinIntelligence
     | {
         ok: false;
         code:
@@ -186,7 +194,7 @@ export async function runBitcoinIntelligence(
           | "RATE_LIMITED"
           | "UPSTREAM_ERROR";
         error: string;
-        network: "bitcoin";
+        network: "dogecoin";
       }
   >
 > {
@@ -194,7 +202,7 @@ export async function runBitcoinIntelligence(
     address.trim();
 
   if (
-    !isBitcoinMainnetAddress(
+    !isDogecoinMainnetAddress(
       normalizedAddress
     )
   ) {
@@ -210,10 +218,10 @@ export async function runBitcoinIntelligence(
           "INVALID_ADDRESS",
 
         error:
-          "Invalid Bitcoin address.",
+          "Invalid Dogecoin address.",
 
         network:
-          "bitcoin",
+          "dogecoin",
       },
     };
   }
@@ -222,7 +230,7 @@ export async function runBitcoinIntelligence(
     await deps
       .getAddressTransactions({
         network:
-          BITCOIN_NETWORK,
+          DOGECOIN_NETWORK,
 
         address:
           normalizedAddress,
@@ -239,7 +247,8 @@ export async function runBitcoinIntelligence(
         ),
 
       data: {
-        ok: false,
+        ok:
+          false,
 
         code:
           intelligenceErrorCode(
@@ -249,11 +258,11 @@ export async function runBitcoinIntelligence(
         error:
           historyResult.code ===
             "INVALID_ADDRESS"
-            ? "Invalid Bitcoin address."
-            : "Bitcoin address history is temporarily unavailable.",
+            ? "Invalid Dogecoin address."
+            : "Dogecoin address history is temporarily unavailable.",
 
         network:
-          "bitcoin",
+          "dogecoin",
       },
     };
   }
@@ -265,23 +274,24 @@ export async function runBitcoinIntelligence(
     history.transactions[0];
 
   const findings:
-    IntelligenceFinding[] = [];
+    IntelligenceFinding[] =
+      [];
 
   const caveats = [
-    "AYZO reports observed Bitcoin on-chain evidence and does not establish ownership, identity, intent, or control.",
-    "Bitcoin transaction history is bounded to the requested provider page and must not be interpreted as exhaustive address history.",
+    "AYZO reports observed Dogecoin on-chain evidence and does not establish ownership, identity, intent, or control.",
+    "Dogecoin transaction history is bounded to the requested provider page and must not be interpreted as exhaustive address history.",
   ];
 
   if (!firstTransaction) {
     findings.push({
       id:
-        "bitcoin-no-history-observed",
+        "dogecoin-no-history-observed",
 
       category:
         "coverage",
 
       title:
-        "No Bitcoin transaction history observed",
+        "No Dogecoin transaction history observed",
 
       severity:
         "informational",
@@ -290,7 +300,7 @@ export async function runBitcoinIntelligence(
         "high",
 
       summary:
-        "The current bounded provider query returned no Bitcoin transactions for this address.",
+        "The current bounded provider query returned no Dogecoin transactions for this address.",
 
       caveat:
         "A bounded query returning no transactions does not prove that the address has never had activity.",
@@ -305,7 +315,7 @@ export async function runBitcoinIntelligence(
           true,
 
         network:
-          "bitcoin",
+          "dogecoin",
 
         address:
           normalizedAddress,
@@ -347,7 +357,7 @@ export async function runBitcoinIntelligence(
     await deps
       .getTransactionEvidence({
         network:
-          BITCOIN_NETWORK,
+          DOGECOIN_NETWORK,
 
         transactionHash:
           firstTransaction
@@ -357,13 +367,13 @@ export async function runBitcoinIntelligence(
   if (!evidenceResult.ok) {
     findings.push({
       id:
-        "bitcoin-canonical-evidence-unavailable",
+        "dogecoin-canonical-evidence-unavailable",
 
       category:
         "coverage",
 
       title:
-        "Canonical Bitcoin transaction evidence unavailable",
+        "Canonical Dogecoin transaction evidence unavailable",
 
       severity:
         "informational",
@@ -387,7 +397,7 @@ export async function runBitcoinIntelligence(
           true,
 
         network:
-          "bitcoin",
+          "dogecoin",
 
         address:
           normalizedAddress,
@@ -428,13 +438,12 @@ export async function runBitcoinIntelligence(
   const evidence =
     evidenceResult.data;
 
-  const canonicalMatch =
-    evidence.transactionHash ===
+  if (
+    evidence.transactionHash !==
       firstTransaction
         .transactionHash
-        .toLowerCase();
-
-  if (!canonicalMatch) {
+        .toLowerCase()
+  ) {
     return {
       status:
         502,
@@ -447,42 +456,36 @@ export async function runBitcoinIntelligence(
           "UPSTREAM_ERROR",
 
         error:
-          "Bitcoin provider evidence did not match the discovered transaction.",
+          "Dogecoin provider evidence did not match the discovered transaction.",
 
         network:
-          "bitcoin",
+          "dogecoin",
       },
     };
   }
 
-  if (
-    !evidence
-      .prevoutCoverage
-      .complete
-  ) {
-    findings.push({
-      id:
-        "bitcoin-prevout-coverage-limited",
+  findings.push({
+    id:
+      "dogecoin-bounded-history",
 
-      category:
-        "coverage",
+    category:
+      "coverage",
 
-      title:
-        "Bitcoin prevout coverage is bounded",
+    title:
+      "Dogecoin history sampled",
 
-      severity:
-        "informational",
+    severity:
+      "informational",
 
-      confidence:
-        "high",
+    confidence:
+      "high",
 
-      summary:
-        `Canonical evidence resolved ${evidence.prevoutCoverage.resolved} prevout(s), while ${evidence.prevoutCoverage.unavailable} were unavailable and ${evidence.prevoutCoverage.omitted} were intentionally omitted.`,
+    summary:
+      `AYZO sampled ${history.transactions.length} recent Dogecoin transaction(s) and verified canonical evidence for the newest transaction.`,
 
-      caveat:
-        "AYZO bounds prevout RPC fanout to protect reliability and provider usage.",
-    });
-  }
+    caveat:
+      "The current analysis intentionally bounds transaction history to protect latency and provider reliability.",
+  });
 
   return {
     status:
@@ -493,7 +496,7 @@ export async function runBitcoinIntelligence(
         true,
 
       network:
-        "bitcoin",
+        "dogecoin",
 
       address:
         normalizedAddress,
@@ -517,11 +520,7 @@ export async function runBitcoinIntelligence(
 
         canonicalTransactionEvidence: {
           status:
-            evidence
-              .prevoutCoverage
-              .complete
-              ? "complete"
-              : "limited",
+            "complete",
 
           error:
             null,
