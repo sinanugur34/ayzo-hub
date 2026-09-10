@@ -7,6 +7,7 @@ import type {
   TronAddressHistoryPage,
   TronNetworkContext,
   TronProviderResult,
+  TronTransactionEvidence,
 } from "./types";
 
 export type TronAddressRequest = {
@@ -49,6 +50,29 @@ export interface TronAddressTransactionsProvider
   ): Promise<
     TronProviderResult<
       TronAddressHistoryPage
+    >
+  >;
+}
+
+export type TronTransactionRequest = {
+  network:
+    TronNetworkContext;
+
+  transactionHash:
+    string;
+
+  signal?:
+    AbortSignal;
+};
+
+export interface TronTransactionEvidenceProvider
+  extends TronProviderBase {
+  getTransactionEvidence(
+    request:
+      TronTransactionRequest
+  ): Promise<
+    TronProviderResult<
+      TronTransactionEvidence
     >
   >;
 }

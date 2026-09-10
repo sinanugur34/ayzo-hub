@@ -50,3 +50,66 @@ export type TronAddressHistoryPage = {
     readonly TronAddressTransaction[];
   nextCursor: string | null;
 };
+
+export type TronTransactionContractEvidence = {
+  type: string | null;
+
+  ownerAddressHex:
+    string | null;
+
+  toAddressHex:
+    string | null;
+
+  contractAddressHex:
+    string | null;
+
+  amountSun:
+    string | null;
+
+  callValueSun:
+    string | null;
+
+  dataHex:
+    string | null;
+};
+
+export type TronTransactionEvidence = {
+  transactionHash: string;
+
+  blockHeight:
+    number | null;
+
+  timestamp:
+    string | null;
+
+  confirmed: boolean;
+
+  executionResult:
+    string | null;
+
+  feeSun:
+    string | null;
+
+  energyUsage:
+    number | null;
+
+  energyUsageTotal:
+    number | null;
+
+  energyFeeSun:
+    string | null;
+
+  netUsage:
+    number | null;
+
+  netFeeSun:
+    string | null;
+
+  contract:
+    TronTransactionContractEvidence | null;
+
+  rawDataHex:
+    string | null;
+
+  signatureCount: number;
+};
