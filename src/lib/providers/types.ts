@@ -5,7 +5,8 @@ export type ProviderId =
   | "alchemy"
   | "blockchair"
   | "mempool"
-  | "blockcypher";
+  | "blockcypher"
+  | "trongrid";
 
 export type ProviderKind =
   | "indexed-data"

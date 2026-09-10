@@ -38,6 +38,13 @@ export const PROVIDERS = {
     kind: "indexed-data",
     role: "fallback",
   },
+
+  trongrid: {
+    id: "trongrid",
+    name: "TronGrid",
+    kind: "indexed-data",
+    role: "primary",
+  },
 } as const satisfies Record<
   ProviderId,
   ProviderDefinition
