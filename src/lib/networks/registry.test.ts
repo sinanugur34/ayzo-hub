@@ -7,10 +7,23 @@ import {
 } from "./registry";
 
 test(
-  "keeps the fifteen-network registry authoritative",
+  "keeps sixteen registered networks with fifteen live",
   () => {
     assert.equal(
       NETWORK_IDS.length,
+      16
+    );
+
+    const liveNetworkCount =
+      NETWORK_IDS.filter(
+        networkId =>
+          NETWORKS[
+            networkId
+          ].status === "live"
+      ).length;
+
+    assert.equal(
+      liveNetworkCount,
       15
     );
 

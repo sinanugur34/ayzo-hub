@@ -32,6 +32,10 @@ const DOGECOIN_CAPABILITIES = [
   "addressFlows",
 ] as const satisfies readonly NetworkCapability[];
 
+const TRON_CAPABILITIES = [
+  "addressFlows",
+] as const satisfies readonly NetworkCapability[];
+
 export const NETWORKS = {
   solana: {
     id: "solana",
@@ -211,6 +215,18 @@ export const NETWORKS = {
     nativeCurrency: "BTC",
     explorerUrl: "https://mempool.space",
     capabilities: BITCOIN_CAPABILITIES,
+  },
+
+  tron: {
+    id: "tron",
+    name: "TRON",
+    shortName: "TRX",
+    family: "tron",
+    status: "development",
+    chainId: null,
+    nativeCurrency: "TRX",
+    explorerUrl: "https://tronscan.org",
+    capabilities: TRON_CAPABILITIES,
   },
 } as const satisfies Record<string, NetworkDefinition>;
 
