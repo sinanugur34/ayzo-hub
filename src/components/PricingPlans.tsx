@@ -1,385 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
+import PlanComparisonMatrix from "@/components/PlanComparisonMatrix";
 import WaitlistForm from "@/components/WaitlistForm";
 import ProCheckoutButton from "@/components/billing/ProCheckoutButton";
 
 import { PLANS } from "@/lib/plans/registry";
-import { getUpgradePlanVisibility } from "@/lib/plans/visibility";
-import type { PlanId } from "@/lib/plans/types";
-
-type Feature = {
-  label: string;
-  roadmap?: boolean;
-  emphasis?: boolean;
-};
-
-const freeFeatures: Feature[] = [
-  {
-    label:
-      "14 live networks",
-  },
-  {
-    label:
-      "3 analyses per 24 hours",
-  },
-  {
-    label:
-      "Basic token and wallet intelligence",
-  },
-  {
-    label:
-      "Basic wallet relationships",
-  },
-  {
-    label:
-      "Basic funding insight",
-  },
-  {
-    label:
-      "Evidence-backed summaries",
-  },
-  {
-    label:
-      "Saved analyses & watchlists",
-  },
-];
-
-const proFeatures: Feature[] = [
-  {
-    label:
-      "Everything in Free",
-    emphasis:
-      true,
-  },
-  {
-    label:
-      "30 analyses per 24 hours",
-  },
-  {
-    label:
-      "Expanded wallet relationships",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Expanded funding provenance",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Extended developer / deployer history",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Wallet Performance Intelligence",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Entity & Wallet Labels",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Market & Flow Intelligence",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Investigation Timeline",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Smart Alerts & Monitoring",
-  },
-  {
-    label:
-      "AYZO Investigator",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "PDF / CSV Reports",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "AYZO Mobile App",
-    roadmap:
-      true,
-  },
-];
-
-const advancedFeatures: Feature[] = [
-  {
-    label:
-      "Everything in Pro",
-    emphasis:
-      true,
-  },
-  {
-    label:
-      "Multi-hop Evidence Graph",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Behavioral wallet clustering",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Batch wallet / token analysis",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Compare investigations",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Cases & Evidence Locker",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Custom labels & notes",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Advanced watchlists",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Custom alert rules",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Professional reports & exports",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "AYZO API access",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Team workspace",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "No-Code Intelligence Dashboards",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "Priority processing",
-    roadmap:
-      true,
-  },
-  {
-    label:
-      "AYZO Mobile App",
-    roadmap:
-      true,
-  },
-];
-
-function FeatureList({
-  features,
-}: {
-  features: Feature[];
-}) {
-  return (
-    <div className="mt-7 space-y-3">
-      {features.map(
-        feature => (
-          <div
-            key={
-              feature.label
-            }
-            className="flex items-start gap-3"
-          >
-            <div className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-violet-500/30 bg-violet-500/10 text-[9px] text-violet-300">
-              ✓
-            </div>
-
-            <div className="min-w-0">
-              <div
-                className={`text-sm leading-5 ${
-                  feature.emphasis
-                    ? "font-medium text-white"
-                    : "text-zinc-400"
-                }`}
-              >
-                {feature.label}
-              </div>
-
-              {feature.roadmap && (
-                <span className="mt-1 inline-block rounded-full border border-zinc-700 bg-zinc-900 px-2 py-0.5 text-[8px] font-semibold tracking-[0.12em] text-zinc-500">
-                  COMING SOON
-                </span>
-              )}
-            </div>
-          </div>
-        )
-      )}
-    </div>
-  );
-}
 
 export default function PricingPlans() {
-  const [
-    activePlan,
-    setActivePlan,
-  ] =
-    useState<
-      PlanId | null
-    >(null);
-
-  useEffect(() => {
-    let cancelled =
-      false;
-
-    async function loadActivePlan() {
-      try {
-        const response =
-          await fetch(
-            "/api/account/plan",
-            {
-              cache:
-                "no-store",
-            }
-          );
-
-        if (!response.ok) {
-          return;
-        }
-
-        const body:
-          unknown =
-            await response.json();
-
-        if (
-          !body ||
-          typeof body !==
-            "object" ||
-          !(
-            "plan" in
-            body
-          )
-        ) {
-          return;
-        }
-
-        const plan =
-          (
-            body as {
-              plan?:
-                unknown;
-            }
-          ).plan;
-
-        if (
-          !cancelled &&
-          (
-            plan ===
-              "free" ||
-            plan ===
-              "pro" ||
-            plan ===
-              "advanced"
-          )
-        ) {
-          setActivePlan(
-            plan
-          );
-        }
-      } catch {
-        /*
-         * Fail closed:
-         * do not show upgrade
-         * cards until the
-         * active plan is known.
-         */
-      }
-    }
-
-    void loadActivePlan();
-
-    return () => {
-      cancelled =
-        true;
-    };
-  }, []);
-
-  const planVisibility =
-    activePlan ===
-    null
-      ? {
-          free:
-            false,
-          pro:
-            false,
-          advanced:
-            false,
-        }
-      : getUpgradePlanVisibility(
-          activePlan
-        );
-
-  const visiblePlanCount =
-    Object.values(
-      planVisibility
-    ).filter(
-      Boolean
-    ).length;
-
-  const plansGridClass =
-    visiblePlanCount <=
-    1
-      ? "mt-10 mx-auto grid w-full max-w-xl gap-4"
-      : visiblePlanCount ===
-          2
-        ? "mt-10 mx-auto grid w-full max-w-4xl gap-4 lg:grid-cols-2"
-        : "mt-10 grid gap-4 lg:grid-cols-3";
-
   const proCheckoutEnabled =
     process.env
       .NEXT_PUBLIC_AYZO_PRO_CHECKOUT_ENABLED
-      ?.trim() ===
-    "true";
+      ?.trim() === "true";
 
   return (
     <section
@@ -396,197 +27,111 @@ export default function PricingPlans() {
         </h2>
 
         <p className="mt-4 text-sm leading-6 text-zinc-500 sm:text-base">
-          Free for exploration. Pro for deeper analysis.
-          Advanced for professional investigations at scale.
+          Compare Free, Pro and Advanced access in one place.
         </p>
       </div>
 
-      <div className={plansGridClass}>
-        {/* FREE */}
-        <div
-          hidden={!planVisibility.free}
-          className="flex flex-col rounded-3xl border border-zinc-800 bg-zinc-950/60 p-6 sm:p-7">
-          <div>
-            <div className="text-xs font-semibold tracking-[0.18em] text-zinc-500">
-              FREE
-            </div>
+      <PlanComparisonMatrix />
 
-            <h3 className="mt-3 text-2xl font-semibold text-white">
-              Explore
-            </h3>
+      <div className="mx-auto mt-8 grid w-full max-w-4xl gap-4 md:grid-cols-2">
+        {/* PRO ACCESS */}
+        <div className="rounded-2xl border border-violet-500/25 bg-violet-500/[0.05] p-5">
+          <div className="mb-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-[10px] font-semibold tracking-[0.16em] text-violet-300">
+                  PRO ACCESS
+                </div>
 
-            <p className="mt-3 text-sm leading-6 text-zinc-500">
-              Understand the basics before going deeper.
-            </p>
+                <div className="mt-1 text-lg font-semibold text-white">
+                  AYZO Pro
+                </div>
+              </div>
 
-            <div className="mt-6 text-3xl font-semibold text-white">
-              $0
-            </div>
-
-            <div className="mt-1 text-xs text-zinc-600">
-              No wallet connection required
-            </div>
-          </div>
-
-          <FeatureList
-            features={
-              freeFeatures
-            }
-          />
-
-          <div className="mt-auto pt-8">
-            <a
-              href="#analyzer"
-              className="flex h-12 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-900 text-sm font-semibold text-white transition hover:border-zinc-600 hover:bg-zinc-800"
-            >
-              Use Free
-            </a>
-          </div>
-        </div>
-
-        {/* PRO */}
-        <div
-          hidden={!planVisibility.pro}
-          className="relative flex flex-col rounded-3xl border border-violet-500/30 bg-gradient-to-b from-violet-500/10 to-zinc-950/70 p-6 shadow-xl shadow-purple-950/10 sm:p-7">
-          <div className="absolute right-5 top-5 rounded-full border border-violet-400/20 bg-violet-400/10 px-2.5 py-1 text-[9px] font-semibold tracking-[0.12em] text-violet-300">
-            {proCheckoutEnabled
-              ? "FOUNDING ACCESS"
-              : "COMING SOON"}
-          </div>
-
-          <div>
-            <div className="text-xs font-semibold tracking-[0.18em] text-violet-300">
-              PRO
-            </div>
-
-            <h3 className="mt-3 text-2xl font-semibold text-white">
-              Analyze Deeper
-            </h3>
-
-            <p className="mt-3 pr-20 text-sm leading-6 text-zinc-400">
-              For active traders, investors and on-chain researchers.
-            </p>
-
-            <div className="mt-6">
-              <div className="flex flex-wrap items-end gap-x-2 gap-y-1">
-                <span className="text-3xl font-semibold text-white">
+              <div className="text-right">
+                <div className="text-lg font-semibold text-white">
                   ${PLANS.pro.monthlyPriceUsd?.toFixed(0)}
-                </span>
+                  <span className="ml-1 text-[10px] font-normal text-zinc-500">
+                    /mo
+                  </span>
+                </div>
 
-                <span className="pb-1 text-xs text-zinc-500">
-                  / month
-                </span>
-              </div>
-
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-violet-400/20 bg-violet-400/10 px-2.5 py-1 text-[9px] font-semibold tracking-[0.12em] text-violet-300">
-                  FOUNDING PRICE
-                </span>
-
-                <span className="text-xs text-zinc-500">
-                  ${PLANS.pro.annualPriceUsd?.toFixed(2)} / year · Save {PLANS.pro.annualDiscountPercent}%
-                </span>
-              </div>
-
-              <div className="mt-2 text-[11px] leading-5 text-zinc-600">
-                Annual effective price: $
-                {PLANS.pro.annualPriceUsd
-                  ? (
-                      PLANS.pro.annualPriceUsd /
-                      12
-                    ).toFixed(2)
-                  : "—"}
-                / month. Monthly and annual plans will have the same Pro access.
+                <div className="mt-1 text-[9px] text-zinc-600">
+                  Founding price
+                </div>
               </div>
             </div>
-          </div>
 
-          <FeatureList
-            features={
-              proFeatures
-            }
-          />
-
-          <div className="mt-auto pt-8">
-            {proCheckoutEnabled ? (
-              <div className="space-y-2">
-                <ProCheckoutButton
-                  interval="monthly"
-                  label={`Start Monthly · $${PLANS.pro.monthlyPriceUsd?.toFixed(0)}/mo`}
-                />
-
-                <ProCheckoutButton
-                  interval="annual"
-                  variant="secondary"
-                  label={`Start Annual · $${PLANS.pro.annualPriceUsd?.toFixed(2)}/yr`}
-                />
-
-                <p className="pt-1 text-center text-[10px] leading-5 text-zinc-600">
-                  Secure checkout powered by FastSpring.
-                </p>
-              </div>
-            ) : (
-              <WaitlistForm
-                source="pro-card"
-                compact
-                buttonLabel="Join Pro Waitlist"
-              />
+            {!proCheckoutEnabled && (
+              <p className="mt-3 text-xs leading-5 text-zinc-500">
+                Join the waitlist for Pro access and launch updates.
+              </p>
             )}
           </div>
+
+          {proCheckoutEnabled ? (
+            <div className="space-y-2">
+              <ProCheckoutButton
+                interval="monthly"
+                label={`Start Monthly · $${PLANS.pro.monthlyPriceUsd?.toFixed(0)}/mo`}
+              />
+
+              <ProCheckoutButton
+                interval="annual"
+                variant="secondary"
+                label={`Start Annual · $${PLANS.pro.annualPriceUsd?.toFixed(2)}/yr`}
+              />
+
+              <p className="pt-1 text-center text-[10px] leading-5 text-zinc-600">
+                Secure checkout powered by FastSpring.
+              </p>
+            </div>
+          ) : (
+            <WaitlistForm
+              source="pro-card"
+              compact
+              buttonLabel="Join Pro Waitlist"
+            />
+          )}
         </div>
 
-        {/* ADVANCED */}
-        <div
-          hidden={!planVisibility.advanced}
-          className="relative flex flex-col overflow-hidden rounded-3xl border border-purple-400/40 bg-gradient-to-b from-purple-500/15 via-violet-500/5 to-zinc-950/80 p-6 shadow-2xl shadow-purple-950/20 sm:p-7">
-          <div className="pointer-events-none absolute right-[-70px] top-[-70px] h-48 w-48 rounded-full bg-purple-500/10 blur-3xl" />
+        {/* ADVANCED ACCESS */}
+        <div className="rounded-2xl border border-purple-400/25 bg-purple-500/[0.05] p-5">
+          <div className="mb-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-[10px] font-semibold tracking-[0.16em] text-purple-300">
+                  ADVANCED ACCESS
+                </div>
 
-          <div className="relative">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="text-xs font-semibold tracking-[0.18em] text-purple-300">
-                ADVANCED
+                <div className="mt-1 text-lg font-semibold text-white">
+                  AYZO Advanced
+                </div>
               </div>
 
-              <span className="rounded-full border border-purple-400/30 bg-purple-400/10 px-2.5 py-1 text-[9px] font-semibold tracking-[0.12em] text-purple-200">
-                MOST POWERFUL
-              </span>
+              <div className="text-right text-[10px] font-medium text-zinc-500">
+                Pricing
+                <br />
+                coming soon
+              </div>
             </div>
 
-            <h3 className="mt-3 text-2xl font-semibold text-white">
-              Investigate at Scale
-            </h3>
-
-            <p className="mt-3 text-sm leading-6 text-zinc-400">
-              Professional investigation workflows for analysts,
-              funds, teams and high-volume users.
+            <p className="mt-3 text-xs leading-5 text-zinc-500">
+              Join the waitlist for Advanced investigation workflows,
+              API access and team-scale features.
             </p>
-
-            <div className="mt-6 text-lg font-semibold text-zinc-200">
-              Pricing coming soon
-            </div>
           </div>
 
-          <div className="relative">
-            <FeatureList
-              features={
-                advancedFeatures
-              }
-            />
-          </div>
-
-          <div className="relative mt-auto pt-8">
-            <WaitlistForm
-              source="advanced-card"
-              compact
-              buttonLabel="Join Advanced Waitlist"
-            />
-          </div>
+          <WaitlistForm
+            source="advanced-card"
+            compact
+            buttonLabel="Join Advanced Waitlist"
+          />
         </div>
       </div>
 
-      <div className="mt-5 text-center text-[11px] leading-5 text-zinc-600">
-        Features marked COMING SOON are not represented as
-        available today.{" "}
+      <div className="mt-5 text-center text-[10px] leading-5 text-zinc-600">
+        Roadmap features are not represented as available today.{" "}
         {proCheckoutEnabled
           ? "Pro checkout is available for authenticated customers."
           : "Pro checkout remains disabled until billing is connected."}
