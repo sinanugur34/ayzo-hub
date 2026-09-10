@@ -20,6 +20,7 @@ import {
 import {
   consumeFreeAnalysis,
   getFreeQuotaStatus,
+  refundFreeAnalysis,
   type FreeQuotaState,
 } from "@/lib/freeQuota";
 
@@ -306,6 +307,21 @@ async function consumePro(
       );
     }
 
+    if (
+      count >
+      policy.limit
+    ) {
+      await redis.decr(
+        key
+      );
+    }
+
+    const effectiveCount =
+      Math.min(
+        count,
+        policy.limit
+      );
+
     const ttl =
       await redis.ttl(
         key
@@ -329,7 +345,7 @@ async function consumePro(
         Math.max(
           0,
           policy.limit -
-            count
+            effectiveCount
         ),
 
       resetAt:
@@ -424,4 +440,93 @@ export async function consumeAnalysisQuota(
     plan:
       "free",
   };
+}
+
+export async function refundAnalysisQuota(
+  request: Request,
+  quota: AnalysisQuotaState
+): Promise<void> {
+  if (
+    !quota.available
+  ) {
+    return;
+  }
+
+  if (
+    quota.plan ===
+    "pro"
+  ) {
+    const {
+      entitlement,
+      userId,
+    } =
+      await getServerEntitlement();
+
+    if (
+      entitlement.planId !==
+        "pro" ||
+      !userId
+    ) {
+      return;
+    }
+
+    const redis =
+      getRedis();
+
+    if (!redis) {
+      return;
+    }
+
+    const key =
+      proQuotaKey(
+        userId
+      );
+
+    try {
+      const raw =
+        await redis.get(
+          key
+        );
+
+      if (
+        countValue(raw) >
+        0
+      ) {
+        await redis.decr(
+          key
+        );
+      }
+    } catch {
+      /*
+       * Refund failure must not
+       * replace the original
+       * analysis response.
+       */
+    }
+
+    return;
+  }
+
+  await refundFreeAnalysis(
+    request,
+    quota.deviceCookie
+  );
+}
+
+export async function refundAnalysisQuotaOnFailure(
+  request: Request,
+  quota: AnalysisQuotaState | null,
+  status: number
+): Promise<void> {
+  if (
+    !quota ||
+    status < 400
+  ) {
+    return;
+  }
+
+  await refundAnalysisQuota(
+    request,
+    quota
+  );
 }

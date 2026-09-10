@@ -6,6 +6,8 @@ import {
 } from "@/lib/rateLimit";
 import {
   consumeAnalysisQuota,
+  refundAnalysisQuota,
+  refundAnalysisQuotaOnFailure,
 } from "@/lib/analysisQuota";
 
 import {
@@ -16,6 +18,13 @@ import { readJsonObjectBody } from "@/lib/requestBody";
 import { runSolanaIntelligence } from "@/lib/intelligence/solana/engine";
 
 export async function POST(request: Request) {
+  let quota:
+    Awaited<
+      ReturnType<
+        typeof consumeAnalysisQuota
+      >
+    > | null = null;
+
   const isDevelopmentTestRequest =
     process.env.NODE_ENV !== "production" &&
     request.headers.get("x-ayzo-test-request") === "smoke";
@@ -92,7 +101,7 @@ export async function POST(request: Request) {
     }
 
     if (!isDevelopmentTestRequest) {
-      const quota =
+      quota =
         await consumeAnalysisQuota(request);
 
       if (quota.deviceCookie) {
@@ -161,12 +170,28 @@ export async function POST(request: Request) {
       testFailure,
     });
 
+    await refundAnalysisQuotaOnFailure(
+      request,
+      quota,
+      result.status
+    );
+
     return Response.json(
       result.data,
       { status: result.status }
     );
 
   } catch {
+    if (
+      !isDevelopmentTestRequest &&
+      quota
+    ) {
+      await refundAnalysisQuota(
+        request,
+        quota
+      );
+    }
+
     return Response.json(
       {
         ok: false,

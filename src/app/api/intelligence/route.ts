@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 
 import {
   consumeAnalysisQuota,
+  refundAnalysisQuota,
+  refundAnalysisQuotaOnFailure,
 } from "@/lib/analysisQuota";
 
 import {
@@ -43,6 +45,13 @@ const EVM_ADDRESS =
   /^0x[0-9a-fA-F]{40}$/;
 
 export async function POST(request: Request) {
+  let quota:
+    Awaited<
+      ReturnType<
+        typeof consumeAnalysisQuota
+      >
+    > | null = null;
+
   const isDevelopmentTestRequest =
     process.env.NODE_ENV !== "production" &&
     request.headers.get("x-ayzo-test-request") === "smoke";
@@ -201,7 +210,7 @@ export async function POST(request: Request) {
         "free";
 
     if (!isDevelopmentTestRequest) {
-      const quota =
+      quota =
         await consumeAnalysisQuota(request);
 
       analysisPlan =
@@ -276,6 +285,12 @@ export async function POST(request: Request) {
             testFailure,
           });
 
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
         return Response.json(
           result.data,
           { status: result.status }
@@ -290,6 +305,12 @@ export async function POST(request: Request) {
             address,
             analysisPlan,
           });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
 
         return Response.json(
           result.data,
@@ -306,6 +327,12 @@ export async function POST(request: Request) {
             address,
           });
 
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
         return Response.json(
           result.data,
           {
@@ -320,6 +347,12 @@ export async function POST(request: Request) {
           await runDogecoinIntelligence({
             address,
           });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
 
         return Response.json(
           result.data,
@@ -336,6 +369,12 @@ export async function POST(request: Request) {
             address,
           });
 
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
         return Response.json(
           result.data,
           {
@@ -346,6 +385,16 @@ export async function POST(request: Request) {
       }
     }
   } catch {
+    if (
+      !isDevelopmentTestRequest &&
+      quota
+    ) {
+      await refundAnalysisQuota(
+        request,
+        quota
+      );
+    }
+
     return Response.json(
       {
         ok: false,

@@ -328,6 +328,22 @@ export async function consumeFreeAnalysis(
       newDevice
     );
 
+    if (
+      highestCount >
+      FREE_ANALYSIS_LIMIT
+    ) {
+      await Promise.all([
+        redis.decr(ipKey),
+        redis.decr(deviceKey),
+      ]);
+    }
+
+    const effectiveCount =
+      Math.min(
+        highestCount,
+        FREE_ANALYSIS_LIMIT
+      );
+
     return {
       allowed:
         highestCount <= FREE_ANALYSIS_LIMIT,
@@ -335,7 +351,7 @@ export async function consumeFreeAnalysis(
       limit: FREE_ANALYSIS_LIMIT,
       remaining: Math.max(
         0,
-        FREE_ANALYSIS_LIMIT - highestCount
+        FREE_ANALYSIS_LIMIT - effectiveCount
       ),
       resetAt: resetAtFromTtls(
         ipTtl,
@@ -352,5 +368,85 @@ export async function consumeFreeAnalysis(
       resetAt: null,
       deviceCookie: identity.deviceCookie,
     };
+  }
+}
+
+export async function refundFreeAnalysis(
+  request: Request,
+  deviceCookie: string | null
+): Promise<void> {
+  const redis = getRedis();
+
+  if (!redis) {
+    return;
+  }
+
+  let deviceId: string | null = null;
+
+  if (deviceCookie) {
+    const separator =
+      deviceCookie.lastIndexOf(".");
+
+    if (separator > 0) {
+      deviceId =
+        deviceCookie.slice(
+          0,
+          separator
+        );
+    }
+  }
+
+  if (!deviceId) {
+    const identity =
+      getDeviceIdentity(
+        request
+      );
+
+    deviceId =
+      identity.deviceId;
+  }
+
+  const {
+    ipKey,
+    deviceKey,
+  } =
+    getKeys(
+      request,
+      deviceId
+    );
+
+  try {
+    const [
+      ipRaw,
+      deviceRaw,
+    ] =
+      await Promise.all([
+        redis.get(ipKey),
+        redis.get(deviceKey),
+      ]);
+
+    const ipCount =
+      countValue(ipRaw);
+
+    const deviceCount =
+      countValue(
+        deviceRaw
+      );
+
+    await Promise.all([
+      ipCount > 0
+        ? redis.decr(ipKey)
+        : Promise.resolve(0),
+
+      deviceCount > 0
+        ? redis.decr(deviceKey)
+        : Promise.resolve(0),
+    ]);
+  } catch {
+    /*
+     * Refund failure must not
+     * replace the original
+     * analysis response.
+     */
   }
 }
