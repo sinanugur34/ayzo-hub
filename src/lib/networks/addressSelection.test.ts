@@ -189,6 +189,40 @@ test(
 );
 
 test(
+  "selects TRON for a detected TRON address but keeps it non-live",
+  async () => {
+    assert.equal(
+      resolveSelectedNetworkForAddress(
+        "solana",
+        "tron"
+      ),
+      "tron"
+    );
+
+    assert.equal(
+      resolveSelectedNetworkForAddress(
+        "ethereum",
+        "tron"
+      ),
+      "tron"
+    );
+
+    const {
+      isLiveAnalysisNetworkId,
+    } = await import(
+      "./addressSelection"
+    );
+
+    assert.equal(
+      isLiveAnalysisNetworkId(
+        "tron"
+      ),
+      false
+    );
+  }
+);
+
+test(
   "recognizes Bitcoin, Ethereum, and Dogecoin as live networks",
   async () => {
     const {

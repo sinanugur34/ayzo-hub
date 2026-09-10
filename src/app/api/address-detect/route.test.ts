@@ -55,6 +55,41 @@ test(
 );
 
 test(
+  "detects TRON before generic Base58 families",
+  async () => {
+    const result =
+      await detect(
+        "TJRabPrwbZy45sbavfcjinPJC18kjpRTv8"
+      );
+
+    assert.equal(
+      result.status,
+      200
+    );
+
+    assert.equal(
+      result.body.network,
+      "tron"
+    );
+  }
+);
+
+test(
+  "does not classify an invalid TRON checksum as TRON",
+  async () => {
+    const result =
+      await detect(
+        "TJRabPrwbZy45sbavfcjinPJC18kjpRTv9"
+      );
+
+    assert.notEqual(
+      result.body.network,
+      "tron"
+    );
+  }
+);
+
+test(
   "detects Bitcoin mainnet",
   async () => {
     const result =

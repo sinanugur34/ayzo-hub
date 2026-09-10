@@ -37,6 +37,7 @@ export type AddressKind =
   | "solana"
   | "bitcoin"
   | "dogecoin"
+  | "tron"
   | "invalid";
 
 export function resolveSelectedNetworkForAddress<
@@ -52,6 +53,7 @@ export function resolveSelectedNetworkForAddress<
   | "ethereum"
   | "bitcoin"
   | "dogecoin"
+  | "tron"
   | null {
   if (
     addressKind ===
@@ -79,6 +81,13 @@ export function resolveSelectedNetworkForAddress<
     "dogecoin"
   ) {
     return "dogecoin";
+  }
+
+  if (
+    addressKind ===
+    "tron"
+  ) {
+    return "tron";
   }
 
   return NETWORKS[

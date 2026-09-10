@@ -14,12 +14,17 @@ import {
   isDogecoinMainnetAddress,
 } from "@/lib/intelligence/dogecoin/address";
 
+import {
+  isTronAddress,
+} from "@/lib/intelligence/tron/address";
+
 const EVM_ADDRESS =
   /^0x[0-9a-fA-F]{40}$/;
 
 type DetectedNetwork =
   | "bitcoin"
   | "dogecoin"
+  | "tron"
   | "solana"
   | "evm"
   | null;
@@ -109,6 +114,13 @@ export async function POST(
   ) {
     network =
       "dogecoin";
+  } else if (
+    isTronAddress(
+      address
+    )
+  ) {
+    network =
+      "tron";
   } else if (
     EVM_ADDRESS.test(
       address

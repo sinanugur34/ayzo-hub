@@ -89,6 +89,7 @@ type AddressDetectionResponse =
       network:
         | "bitcoin"
         | "dogecoin"
+        | "tron"
         | "solana"
         | "evm"
         | null;
@@ -339,6 +340,37 @@ export default function Home() {
               return;
             }
 
+            if (
+              result.network ===
+                "tron"
+            ) {
+              setSolanaResult(
+                null
+              );
+
+              setEvmAnalysis(
+                null
+              );
+
+              setBitcoinAnalysis(
+                null
+              );
+
+              setDogecoinAnalysis(
+                null
+              );
+
+              setIsValid(
+                false
+              );
+
+              setMessage(
+                "TRON address detected. Live intelligence is not available yet."
+              );
+
+              return;
+            }
+
             let detectedNetwork:
               LiveAnalysisNetworkId | null =
                 null;
@@ -439,6 +471,87 @@ export default function Home() {
       );
 
       return;
+    }
+
+    /*
+     * TRON uses Base58Check and can overlap
+     * generic Base58 address families.
+     *
+     * Validate likely TRON candidates through
+     * the server-side checksum validator before
+     * Solana or any quota-consuming analysis.
+     */
+    const isTronCandidate =
+      value.length ===
+        34 &&
+      value.startsWith(
+        "T"
+      );
+
+    if (isTronCandidate) {
+      try {
+        const response =
+          await fetch(
+            "/api/address-detect",
+            {
+              method:
+                "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body:
+                JSON.stringify({
+                  address:
+                    value,
+                }),
+            }
+          );
+
+        if (!response.ok) {
+          setIsValid(false);
+
+          setMessage(
+            "Unable to verify this T-prefixed address. Please try again."
+          );
+
+          return;
+        }
+
+        const result =
+          (
+            await response.json()
+          ) as AddressDetectionResponse;
+
+        if (
+          result.ok &&
+          result.network ===
+            "tron"
+        ) {
+          setIsValid(false);
+
+          setMessage(
+            "TRON address detected. Live intelligence is not available yet."
+          );
+
+          return;
+        }
+      } catch {
+        /*
+         * Fail closed for a likely TRON
+         * address rather than allowing it
+         * to fall through to Solana.
+         */
+        setIsValid(false);
+
+        setMessage(
+          "Unable to verify this T-prefixed address. Please try again."
+        );
+
+        return;
+      }
     }
 
     const isDogecoinAddressShape =
