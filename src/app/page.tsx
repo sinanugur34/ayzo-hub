@@ -857,7 +857,9 @@ export default function Home() {
             Early Access
           </div>
 
-          <HeaderAuthControls />
+          <div className="min-h-9 min-w-[9.75rem]">
+            <HeaderAuthControls />
+          </div>
         </div>
       </header>
 
