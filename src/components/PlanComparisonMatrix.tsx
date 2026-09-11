@@ -182,6 +182,25 @@ const sections:
 
         {
           label:
+            "Live network coverage",
+          detail:
+            "AYZO currently supports 16 live networks.",
+          free: {
+            kind: "value",
+            label: "16 networks",
+          },
+          pro: {
+            kind: "value",
+            label: "16 networks",
+          },
+          advanced: {
+            kind: "value",
+            label: "16 networks",
+          },
+        },
+
+        {
+          label:
             "No wallet connection required",
           free: AVAILABLE,
           pro: AVAILABLE,
@@ -348,6 +367,26 @@ const sections:
         {
           label:
             "Dogecoin canonical transaction evidence",
+          free: AVAILABLE,
+          pro: AVAILABLE,
+          advanced: AVAILABLE,
+        },
+
+        {
+          label:
+            "TRON bounded address history",
+          detail:
+            "Recent confirmed TRON transaction history within AYZO's bounded analysis window.",
+          free: AVAILABLE,
+          pro: AVAILABLE,
+          advanced: AVAILABLE,
+        },
+
+        {
+          label:
+            "TRON canonical transaction evidence",
+          detail:
+            "Solidified canonical transaction evidence is verified for sampled TRON activity where available.",
           free: AVAILABLE,
           pro: AVAILABLE,
           advanced: AVAILABLE,
