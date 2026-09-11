@@ -77,6 +77,9 @@ export default function RootLayout({
             <a className="transition hover:text-zinc-300" href="/refund-policy">
               Refund Policy
             </a>
+            <a className="transition hover:text-zinc-300" href="/acceptable-use">
+              Acceptable Use Policy
+            </a>
           </nav>
         </footer>
 
