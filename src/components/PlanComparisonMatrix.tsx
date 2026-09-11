@@ -689,6 +689,54 @@ function StatusCell({
   );
 }
 
+
+function MobileStatusCell({
+  cell,
+}: {
+  cell: Cell;
+}) {
+  if (cell.kind === "available") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-300">
+        <span className="flex h-5 w-5 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-[10px] font-bold">
+          ✓
+        </span>
+        Available
+      </span>
+    );
+  }
+
+  if (cell.kind === "account") {
+    return (
+      <span className="inline-flex rounded-full border border-cyan-500/20 bg-cyan-500/[0.07] px-2.5 py-1 text-[9px] font-semibold tracking-[0.08em] text-cyan-300">
+        ACCOUNT
+      </span>
+    );
+  }
+
+  if (cell.kind === "soon") {
+    return (
+      <span className="inline-flex rounded-full border border-violet-500/25 bg-violet-500/[0.08] px-2.5 py-1 text-[9px] font-semibold tracking-[0.08em] text-violet-300">
+        SOON
+      </span>
+    );
+  }
+
+  if (cell.kind === "value") {
+    return (
+      <span className="text-[11px] font-semibold text-zinc-200">
+        {cell.label}
+      </span>
+    );
+  }
+
+  return (
+    <span className="text-[10px] font-medium text-zinc-600">
+      Not included
+    </span>
+  );
+}
+
 export default function PlanComparisonMatrix() {
   return (
     <div className="mt-12">
@@ -725,7 +773,104 @@ export default function PlanComparisonMatrix() {
         </div>
       </div>
 
-      <div className="mt-8 overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950/60 shadow-2xl shadow-black/20">
+      {/* Mobile comparison */}
+      <div className="mt-8 space-y-6 md:hidden">
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 px-3 py-3 text-center">
+            <div className="text-[9px] font-semibold tracking-[0.12em] text-zinc-400">
+              FREE
+            </div>
+            <div className="mt-1 text-sm font-semibold text-white">
+              $0
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-violet-500/20 bg-violet-500/[0.05] px-3 py-3 text-center">
+            <div className="text-[9px] font-semibold tracking-[0.12em] text-violet-300">
+              PRO
+            </div>
+            <div className="mt-1 text-sm font-semibold text-white">
+              ${PLANS.pro.monthlyPriceUsd?.toFixed(0)}
+              <span className="ml-0.5 text-[9px] font-normal text-zinc-500">
+                /mo
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-purple-500/15 bg-purple-500/[0.03] px-2 py-3 text-center">
+            <div className="text-[9px] font-semibold tracking-[0.1em] text-purple-300">
+              ADVANCED
+            </div>
+            <div className="mt-1 text-[9px] leading-4 text-zinc-500">
+              Coming soon
+            </div>
+          </div>
+        </div>
+
+        {sections.map(section => (
+          <section
+            key={section.title}
+            className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950/60"
+          >
+            <div className="border-b border-zinc-800 bg-zinc-900/40 px-5 py-4">
+              <div className="text-[10px] font-semibold tracking-[0.18em] text-violet-300">
+                {section.title}
+              </div>
+
+              {section.description && (
+                <div className="mt-1 text-[10px] leading-4 text-zinc-600">
+                  {section.description}
+                </div>
+              )}
+            </div>
+
+            <div className="divide-y divide-zinc-900">
+              {section.rows.map(row => (
+                <div
+                  key={`${section.title}-${row.label}`}
+                  className="px-5 py-5"
+                >
+                  <div className="text-sm font-medium text-zinc-200">
+                    {row.label}
+                  </div>
+
+                  {row.detail && (
+                    <div className="mt-1 text-[10px] leading-4 text-zinc-600">
+                      {row.detail}
+                    </div>
+                  )}
+
+                  <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-900 bg-black/20">
+                    <div className="flex min-h-11 items-center justify-between gap-4 border-b border-zinc-900 px-3.5 py-2.5">
+                      <span className="text-[10px] font-semibold tracking-[0.1em] text-zinc-500">
+                        FREE
+                      </span>
+                      <MobileStatusCell cell={row.free} />
+                    </div>
+
+                    <div className="flex min-h-11 items-center justify-between gap-4 border-b border-violet-500/[0.08] bg-violet-500/[0.018] px-3.5 py-2.5">
+                      <span className="text-[10px] font-semibold tracking-[0.1em] text-violet-400">
+                        PRO
+                      </span>
+                      <MobileStatusCell cell={row.pro} />
+                    </div>
+
+                    <div className="flex min-h-11 items-center justify-between gap-4 px-3.5 py-2.5">
+                      <span className="text-[10px] font-semibold tracking-[0.1em] text-purple-400">
+                        ADVANCED
+                      </span>
+                      <MobileStatusCell cell={row.advanced} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+
+      {/* Desktop / tablet comparison table */}
+      <div className="mt-8 hidden overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950/60 shadow-2xl shadow-black/20 md:block">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] border-collapse">
             <thead>
