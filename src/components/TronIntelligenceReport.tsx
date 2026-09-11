@@ -1,5 +1,7 @@
 "use client";
 
+import AnalysisLimitCard from "@/components/AnalysisLimitCard";
+
 import {
   useEffect,
   useState,
@@ -420,21 +422,7 @@ export default function TronIntelligenceReport({
   if (
     dailyLimitReached
   ) {
-    return (
-      <div className="mt-6 rounded-3xl border border-violet-500/20 bg-violet-500/5 p-6 text-left sm:p-8">
-        <div className="text-xs font-medium tracking-[0.18em] text-violet-300">
-          USAGE LIMIT
-        </div>
-
-        <h3 className="mt-2 text-xl font-semibold text-white">
-          Daily analysis limit reached
-        </h3>
-
-        <p className="mt-2 text-sm leading-6 text-zinc-500">
-          Your current AYZO analysis allowance has been used.
-        </p>
-      </div>
-    );
+    return <AnalysisLimitCard />;
   }
 
   if (

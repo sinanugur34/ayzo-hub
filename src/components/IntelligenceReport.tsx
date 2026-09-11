@@ -1,5 +1,7 @@
 "use client";
 
+import AnalysisLimitCard from "@/components/AnalysisLimitCard";
+
 import WalletTrackRecordPanel from "@/components/WalletTrackRecord";
 import {
   buildSolanaWalletTrackRecord,
@@ -15,8 +17,6 @@ import {
 import {
   buildSolanaFundingActivityTimeline,
 } from "@/lib/intelligence/activityTimeline";
-import WaitlistForm from "@/components/WaitlistForm";
-import { PLANS } from "@/lib/plans/registry";
 
 type AnalyticsWindow = Window & {
   gtag?: (...args: unknown[]) => void;
@@ -321,77 +321,10 @@ export default function IntelligenceReport({
     );
   }
 
-  if (dailyLimitReached) {
-    return (
-      <div className="mt-6 overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-b from-violet-500/10 to-zinc-950/80">
-        <div className="p-6 sm:p-8">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="text-xs font-medium tracking-[0.18em] text-violet-300">
-                USAGE LIMIT
-              </div>
-
-              <h3 className="mt-2 text-2xl font-semibold text-zinc-100">
-                Daily Analysis Limit Reached
-              </h3>
-
-              <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-400">
-                You&apos;ve used your{" "}
-                {PLANS.free.analysisQuota.kind === "fixed"
-                  ? PLANS.free.analysisQuota.count
-                  : "—"}{" "}
-                free analyses for the current 24-hour window.
-              </p>
-            </div>
-
-            <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-[10px] font-medium tracking-wide text-violet-300">
-              AYZO PRO · COMING SOON
-            </span>
-          </div>
-
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            {[
-              `Up to ${
-                PLANS.pro.analysisQuota.kind === "fixed"
-                  ? PLANS.pro.analysisQuota.count
-                  : "—"
-              } analyses / 24h`,
-              "Smart Alerts & Monitoring",
-              "Pro alert-rule management",
-            ].map((feature) => (
-              <div
-                key={feature}
-                className="rounded-2xl border border-zinc-800 bg-black/30 p-4"
-              >
-                <div className="text-[9px] font-medium tracking-[0.12em] text-violet-400">
-                  PRO
-                </div>
-
-                <div className="mt-2 text-sm text-zinc-300">
-                  {feature}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-6">
-            <WaitlistForm
-              source="free-limit"
-              compact
-            />
-          </div>
-
-          <a
-            href="https://t.me/ayzo_io"
-            target="_blank"
-            rel="noreferrer"
-            className="mt-4 inline-flex text-xs text-violet-300 transition hover:text-violet-200"
-          >
-            Or join the AYZO Telegram community
-          </a>
-        </div>
-      </div>
-    );
+  if (
+    dailyLimitReached
+  ) {
+    return <AnalysisLimitCard />;
   }
 
   if (error || !data) {
@@ -857,7 +790,7 @@ export default function IntelligenceReport({
 
           <a
             href={`https://x.com/intent/post?text=${encodeURIComponent(
-              "I investigated a Solana token with @IOAYZO.\n\nHolder intelligence • Wallet relationships • Funding signals\n\nTry AYZO Alpha → https://app.ayzo.io"
+              "I investigated a Solana token with @IOAYZO.\n\nHolder intelligence • Wallet relationships • Funding signals\n\nExplore AYZO → https://app.ayzo.io"
             )}`}
             target="_blank"
             rel="noreferrer"
