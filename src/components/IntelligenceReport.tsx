@@ -16,6 +16,7 @@ import {
   buildSolanaFundingActivityTimeline,
 } from "@/lib/intelligence/activityTimeline";
 import WaitlistForm from "@/components/WaitlistForm";
+import { PLANS } from "@/lib/plans/registry";
 
 type AnalyticsWindow = Window & {
   gtag?: (...args: unknown[]) => void;
@@ -335,8 +336,11 @@ export default function IntelligenceReport({
               </h3>
 
               <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-400">
-                You&apos;ve used your 3 free analyses for
-                the current 24-hour window.
+                You&apos;ve used your{" "}
+                {PLANS.free.analysisQuota.kind === "fixed"
+                  ? PLANS.free.analysisQuota.count
+                  : "—"}{" "}
+                free analyses for the current 24-hour window.
               </p>
             </div>
 
@@ -347,9 +351,13 @@ export default function IntelligenceReport({
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
             {[
-              "Deeper wallet intelligence",
-              "Funding provenance",
-              "Monitoring & alerts",
+              `Up to ${
+                PLANS.pro.analysisQuota.kind === "fixed"
+                  ? PLANS.pro.analysisQuota.count
+                  : "—"
+              } analyses / 24h`,
+              "Smart Alerts & Monitoring",
+              "Pro alert-rule management",
             ].map((feature) => (
               <div
                 key={feature}

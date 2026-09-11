@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   title: "AYZO | On-chain Intelligence",
 
   description:
-    "AYZO turns on-chain data into evidence-first intelligence across Solana and Ethereum.",
+    "AYZO turns on-chain data into evidence-first intelligence across 16 live networks.",
 
   alternates: {
     canonical: "/",
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "AYZO | On-chain Intelligence",
     description:
-      "Evidence-first token and wallet intelligence across Solana and Ethereum.",
+      "Evidence-first token and wallet intelligence across 16 live networks.",
     url: "/",
     siteName: "AYZO",
     type: "website",
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "AYZO | On-chain Intelligence",
     description:
-      "Evidence-first token and wallet intelligence across Solana and Ethereum.",
+      "Evidence-first token and wallet intelligence across 16 live networks.",
   },
 };
 
