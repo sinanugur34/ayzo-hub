@@ -80,6 +80,12 @@ export default function RootLayout({
             <a className="transition hover:text-zinc-300" href="/acceptable-use">
               Acceptable Use Policy
             </a>
+            <a
+              className="transition hover:text-zinc-300"
+              href="mailto:contact@ayzo.io"
+            >
+              Support · contact@ayzo.io
+            </a>
           </nav>
         </footer>
 

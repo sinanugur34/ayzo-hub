@@ -274,6 +274,17 @@ export default async function AccountPage() {
         <div className="mt-5 rounded-2xl border border-violet-500/10 bg-violet-500/5 px-5 py-4 text-xs leading-5 text-zinc-500">
           Saved research and watchlists are backed by authenticated AYZO account storage. Save analyses and organize monitored entities directly from AYZO intelligence reports.
         </div>
+
+        <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-950/60 px-5 py-4 text-xs leading-5 text-zinc-500">
+          Need help? Contact AYZO Support at{" "}
+          <a
+            href="mailto:contact@ayzo.io"
+            className="font-medium text-zinc-300 transition hover:text-white"
+          >
+            contact@ayzo.io
+          </a>
+          .
+        </div>
       </div>
     </main>
   );
