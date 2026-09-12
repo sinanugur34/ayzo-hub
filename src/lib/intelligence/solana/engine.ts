@@ -48,16 +48,35 @@ async function postInternal(
 
     const data = await response.json();
 
+    const errorText =
+      [
+        typeof data?.error === "string"
+          ? data.error
+          : "",
+        typeof data?.details === "string"
+          ? data.details
+          : "",
+        typeof data?.message === "string"
+          ? data.message
+          : "",
+      ]
+        .join(" ")
+        .toLowerCase();
+
     const rateLimited =
-      JSON.stringify(data).includes("429") ||
-      JSON.stringify(data).toLowerCase().includes("rate limit");
+      response.status === 429 ||
+      /rate[ -]?limit|too many requests/.test(
+        errorText
+      );
 
     if (!rateLimited) {
       return data;
     }
 
     if (attempt < retries - 1) {
-      await sleep(1000 * 2 ** attempt);
+      await sleep(
+        1000 * 2 ** attempt
+      );
     }
   }
 
