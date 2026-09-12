@@ -1,3 +1,4 @@
+import { getVercelOidcToken } from "@vercel/oidc";
 import { getInternalApiKey } from "@/lib/apiSecurity";
 import type { IntelligenceEngineResult } from "@/lib/intelligence/types";
 
@@ -22,12 +23,24 @@ async function postInternal(
   retries = 3
 ) {
   for (let attempt = 0; attempt < retries; attempt++) {
+    const oidcToken =
+      process.env.VERCEL
+        ? await getVercelOidcToken()
+        : null;
+
     const response = await fetch(`${origin}${path}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "x-ayzo-internal-key":
           getInternalApiKey(),
+
+        ...(oidcToken
+          ? {
+              "x-vercel-trusted-oidc-idp-token":
+                oidcToken,
+            }
+          : {}),
       },
       body: JSON.stringify(body),
       cache: "no-store",
@@ -35,16 +48,35 @@ async function postInternal(
 
     const data = await response.json();
 
+    const errorText =
+      [
+        typeof data?.error === "string"
+          ? data.error
+          : "",
+        typeof data?.details === "string"
+          ? data.details
+          : "",
+        typeof data?.message === "string"
+          ? data.message
+          : "",
+      ]
+        .join(" ")
+        .toLowerCase();
+
     const rateLimited =
-      JSON.stringify(data).includes("429") ||
-      JSON.stringify(data).toLowerCase().includes("rate limit");
+      response.status === 429 ||
+      /rate[ -]?limit|too many requests/.test(
+        errorText
+      );
 
     if (!rateLimited) {
       return data;
     }
 
     if (attempt < retries - 1) {
-      await sleep(1000 * 2 ** attempt);
+      await sleep(
+        1000 * 2 ** attempt
+      );
     }
   }
 

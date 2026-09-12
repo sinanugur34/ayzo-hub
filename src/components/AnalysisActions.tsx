@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import EntityAnnotationPanel from "@/components/EntityAnnotationPanel";
 import HistoricalChangesPanel from "@/components/HistoricalChangesPanel";
+import InvestigationTimelinePanel from "@/components/InvestigationTimelinePanel";
 
 import {
   useEffect,
@@ -665,6 +666,13 @@ export default function AnalysisActions({
       />
 
       <HistoricalChangesPanel
+        network={network}
+        subjectType={subjectType}
+        subjectValue={subjectValue}
+        currentSnapshot={analysisPayload}
+      />
+
+      <InvestigationTimelinePanel
         network={network}
         subjectType={subjectType}
         subjectValue={subjectValue}
