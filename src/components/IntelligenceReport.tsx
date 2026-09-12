@@ -121,10 +121,28 @@ function pct(value: number | null | undefined) {
   return `${value.toFixed(2)}%`;
 }
 
+type SolanaTokenSnapshot = {
+  tokenProgram: string;
+
+  mint: {
+    supply: string;
+    decimals: number;
+
+    mintAuthority:
+      string | null;
+
+    freezeAuthority:
+      string | null;
+  };
+};
+
 export default function IntelligenceReport({
   address,
+  tokenSnapshot,
 }: {
   address: string;
+  tokenSnapshot:
+    SolanaTokenSnapshot;
 }) {
   const [data, setData] = useState<IntelligenceData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -243,10 +261,41 @@ export default function IntelligenceReport({
         data
           ? buildHistoricalSnapshot(
               "solana",
-              data
+              {
+                ...data,
+
+                tokenVerification: {
+                  tokenProgram:
+                    tokenSnapshot
+                      .tokenProgram,
+
+                  supply:
+                    tokenSnapshot
+                      .mint
+                      .supply,
+
+                  decimals:
+                    tokenSnapshot
+                      .mint
+                      .decimals,
+
+                  mintAuthority:
+                    tokenSnapshot
+                      .mint
+                      .mintAuthority,
+
+                  freezeAuthority:
+                    tokenSnapshot
+                      .mint
+                      .freezeAuthority,
+                },
+              }
             )
           : null,
-      [data]
+      [
+        data,
+        tokenSnapshot,
+      ]
     );
 
   if (loading) {

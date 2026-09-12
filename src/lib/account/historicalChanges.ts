@@ -73,6 +73,21 @@ const METRIC_LABELS:
     uniqueOwners:
       "Unique owners",
 
+    tokenSupplyRaw:
+      "Token supply",
+
+    tokenDecimals:
+      "Token decimals",
+
+    tokenProgram:
+      "Token program",
+
+    mintAuthority:
+      "Mint authority",
+
+    freezeAuthority:
+      "Freeze authority",
+
     walletsAnalyzed:
       "Wallets analyzed",
 
@@ -340,6 +355,29 @@ export function parseHistoricalSnapshot(
   };
 }
 
+function integerString(
+  value:
+    Primitive | undefined
+): bigint | null {
+  if (
+    typeof value !==
+      "string" ||
+    !/^-?\d+$/.test(
+      value
+    )
+  ) {
+    return null;
+  }
+
+  try {
+    return BigInt(
+      value
+    );
+  } catch {
+    return null;
+  }
+}
+
 function changeDirection(
   before:
     Primitive | undefined,
@@ -378,6 +416,37 @@ function changeDirection(
     if (
       after <
       before
+    ) {
+      return "decreased";
+    }
+  }
+
+  const beforeInteger =
+    integerString(
+      before
+    );
+
+  const afterInteger =
+    integerString(
+      after
+    );
+
+  if (
+    beforeInteger !==
+      null &&
+    afterInteger !==
+      null
+  ) {
+    if (
+      afterInteger >
+      beforeInteger
+    ) {
+      return "increased";
+    }
+
+    if (
+      afterInteger <
+      beforeInteger
     ) {
       return "decreased";
     }
@@ -437,6 +506,34 @@ export function compareHistoricalSnapshots(
   const changes:
     HistoricalChange[] =
       [];
+
+  if (
+    previous.coverage !==
+    current.coverage
+  ) {
+    changes.push({
+      category:
+        "module",
+
+      key:
+        "coverage",
+
+      label:
+        "Analysis coverage",
+
+      direction:
+        changeDirection(
+          previous.coverage,
+          current.coverage
+        ),
+
+      before:
+        previous.coverage,
+
+      after:
+        current.coverage,
+    });
+  }
 
   const previousMetrics =
     previous.metrics as Record<

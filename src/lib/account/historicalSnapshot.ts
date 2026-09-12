@@ -16,6 +16,12 @@ export type HistoricalSnapshotV1 = {
     tokenAccountsAnalyzed?: number | null;
     uniqueOwners?: number | null;
 
+    tokenSupplyRaw?: string | null;
+    tokenDecimals?: number | null;
+    tokenProgram?: string | null;
+    mintAuthority?: string | null;
+    freezeAuthority?: string | null;
+
     walletsAnalyzed?: number | null;
     relationshipsDetected?: number | null;
     sharedTransactionsDetected?: number | null;
@@ -170,6 +176,11 @@ function solanaSnapshot(
       root.funding
     );
 
+  const tokenVerification =
+    record(
+      root.tokenVerification
+    );
+
   return {
     version: 1,
     capturedAt:
@@ -212,6 +223,31 @@ function solanaSnapshot(
           holders?.uniqueOwners
         ),
 
+      tokenSupplyRaw:
+        text(
+          tokenVerification?.supply
+        ),
+
+      tokenDecimals:
+        numberValue(
+          tokenVerification?.decimals
+        ),
+
+      tokenProgram:
+        text(
+          tokenVerification?.tokenProgram
+        ),
+
+      mintAuthority:
+        text(
+          tokenVerification?.mintAuthority
+        ),
+
+      freezeAuthority:
+        text(
+          tokenVerification?.freezeAuthority
+        ),
+
       walletsAnalyzed:
         numberValue(
           relationships
@@ -245,7 +281,10 @@ function solanaSnapshot(
         ),
     },
 
-    modules: {},
+    modules:
+      moduleSnapshot(
+        root.modules
+      ),
 
     findings:
       findingSnapshot(
