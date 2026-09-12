@@ -799,6 +799,28 @@ export default function EvmIntelligenceReport({
       ]
     );
 
+  const entityEvidencePayload =
+    useMemo(
+      () =>
+        data
+          ? {
+              modules: {
+                deploymentIntelligence:
+                  data.modules.deploymentIntelligence,
+
+                holderIntelligence:
+                  data.modules.holderIntelligence,
+
+                fundingProvenance:
+                  data.modules.fundingProvenance,
+              },
+            }
+          : undefined,
+      [
+        data,
+      ]
+    );
+
   if (loading) {
     return (
       <div className="mt-6 overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-b from-violet-500/5 to-zinc-950/70 text-left">
@@ -1630,6 +1652,7 @@ export default function EvmIntelligenceReport({
         subjectValue={address}
         title={`${networkDefinition.name} Address Analysis`}
         analysisPayload={historicalSnapshot}
+        entityEvidencePayload={entityEvidencePayload}
       />
 
       <section className="rounded-3xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 to-zinc-950/70 p-6 sm:p-7">
