@@ -1,3 +1,4 @@
+import { getVercelOidcToken } from "@vercel/oidc";
 import { getInternalApiKey } from "@/lib/apiSecurity";
 import type { IntelligenceEngineResult } from "@/lib/intelligence/types";
 
@@ -22,12 +23,24 @@ async function postInternal(
   retries = 3
 ) {
   for (let attempt = 0; attempt < retries; attempt++) {
+    const oidcToken =
+      process.env.VERCEL
+        ? await getVercelOidcToken()
+        : null;
+
     const response = await fetch(`${origin}${path}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "x-ayzo-internal-key":
           getInternalApiKey(),
+
+        ...(oidcToken
+          ? {
+              "x-vercel-trusted-oidc-idp-token":
+                oidcToken,
+            }
+          : {}),
       },
       body: JSON.stringify(body),
       cache: "no-store",
@@ -68,14 +81,6 @@ export async function runSolanaIntelligence({
   testFailure,
 }: RunSolanaIntelligenceInput): Promise<IntelligenceEngineResult> {
   const origin = new URL(requestUrl).origin;
-
-  if (process.env.VERCEL_ENV === "preview") {
-    console.info(
-      "[AYZO preview internal origin]",
-      origin
-    );
-  }
-
   const pipelineStartedAt = performance.now();
 
   const cached = testFailure
