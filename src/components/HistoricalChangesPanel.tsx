@@ -98,6 +98,135 @@ type Props = {
     unknown;
 };
 
+function tokenDecimalsFromSnapshot(
+  snapshot: unknown
+) {
+  if (
+    typeof snapshot !==
+      "object" ||
+    snapshot === null
+  ) {
+    return null;
+  }
+
+  const root =
+    snapshot as Record<
+      string,
+      unknown
+    >;
+
+  if (
+    typeof root.metrics !==
+      "object" ||
+    root.metrics === null
+  ) {
+    return null;
+  }
+
+  const metrics =
+    root.metrics as Record<
+      string,
+      unknown
+    >;
+
+  const decimals =
+    metrics.tokenDecimals;
+
+  if (
+    typeof decimals !==
+      "number" ||
+    !Number.isInteger(
+      decimals
+    ) ||
+    decimals < 0 ||
+    decimals > 255
+  ) {
+    return null;
+  }
+
+  return decimals;
+}
+
+function formatRawTokenAmount(
+  value: Primitive,
+  decimals: number | null
+) {
+  if (
+    decimals === null ||
+    typeof value !==
+      "string" ||
+    !/^-?\d+$/.test(
+      value
+    )
+  ) {
+    return null;
+  }
+
+  const negative =
+    value.startsWith(
+      "-"
+    );
+
+  const unsigned =
+    negative
+      ? value.slice(1)
+      : value;
+
+  if (
+    decimals === 0
+  ) {
+    const integer =
+      BigInt(
+        unsigned || "0"
+      ).toLocaleString(
+        "en-US"
+      );
+
+    return negative
+      ? `-${integer}`
+      : integer;
+  }
+
+  const padded =
+    unsigned.padStart(
+      decimals + 1,
+      "0"
+    );
+
+  const integerRaw =
+    padded.slice(
+      0,
+      -decimals
+    );
+
+  const fractionRaw =
+    padded.slice(
+      -decimals
+    );
+
+  const integer =
+    BigInt(
+      integerRaw || "0"
+    ).toLocaleString(
+      "en-US"
+    );
+
+  const fraction =
+    fractionRaw.replace(
+      /0+$/,
+      ""
+    );
+
+  const formatted =
+    fraction
+      ? `${integer}.${fraction}`
+      : integer;
+
+  return negative
+    ? `-${formatted}`
+    : formatted;
+}
+
 function formatValue(
   value: Primitive
 ) {
@@ -142,6 +271,32 @@ function formatValue(
   }
 
   return value;
+}
+
+function formatChangeValue(
+  change: HistoricalChange,
+  value: Primitive,
+  tokenDecimals:
+    number | null
+) {
+  if (
+    change.key ===
+    "tokenSupplyRaw"
+  ) {
+    const formatted =
+      formatRawTokenAmount(
+        value,
+        tokenDecimals
+      );
+
+    if (formatted) {
+      return formatted;
+    }
+  }
+
+  return formatValue(
+    value
+  );
 }
 
 function directionLabel(
@@ -423,6 +578,11 @@ export default function HistoricalChangesPanel({
     );
   }
 
+  const tokenDecimals =
+    tokenDecimalsFromSnapshot(
+      currentSnapshot
+    );
+
   const visibleChanges =
     comparison.changes.slice(
       0,
@@ -490,8 +650,10 @@ export default function HistoricalChangesPanel({
 
                 <div className="mt-2 flex min-w-0 items-center gap-2 font-mono text-[10px] text-zinc-600">
                   <span className="truncate">
-                    {formatValue(
-                      change.before
+                    {formatChangeValue(
+                      change,
+                      change.before,
+                      tokenDecimals
                     )}
                   </span>
 
@@ -500,8 +662,10 @@ export default function HistoricalChangesPanel({
                   </span>
 
                   <span className="truncate text-zinc-400">
-                    {formatValue(
-                      change.after
+                    {formatChangeValue(
+                      change,
+                      change.after,
+                      tokenDecimals
                     )}
                   </span>
                 </div>
