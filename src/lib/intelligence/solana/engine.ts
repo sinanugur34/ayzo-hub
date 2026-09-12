@@ -68,6 +68,14 @@ export async function runSolanaIntelligence({
   testFailure,
 }: RunSolanaIntelligenceInput): Promise<IntelligenceEngineResult> {
   const origin = new URL(requestUrl).origin;
+
+  if (process.env.VERCEL_ENV === "preview") {
+    console.info(
+      "[AYZO preview internal origin]",
+      origin
+    );
+  }
+
   const pipelineStartedAt = performance.now();
 
   const cached = testFailure
