@@ -33,6 +33,7 @@ type Props = {
     SubjectType;
   subjectValue: string;
   title: string;
+  analysisPayload?: unknown;
 };
 
 export default function AnalysisActions({
@@ -40,6 +41,7 @@ export default function AnalysisActions({
   subjectType,
   subjectValue,
   title,
+  analysisPayload,
 }: Props) {
   const [
     authState,
@@ -268,6 +270,7 @@ export default function AnalysisActions({
                 subjectType,
                 subjectValue,
                 title,
+                analysisPayload,
               }),
           }
         );

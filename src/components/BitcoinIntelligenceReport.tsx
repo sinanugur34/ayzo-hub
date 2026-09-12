@@ -13,6 +13,7 @@ import {
 } from "react";
 
 import AnalysisActions from "@/components/AnalysisActions";
+import { buildHistoricalSnapshot } from "@/lib/account/historicalSnapshot";
 import ActivityTimelinePanel from "@/components/ActivityTimeline";
 import VisualEvidenceGraphPanel from "@/components/VisualEvidenceGraph";
 import {
@@ -743,6 +744,7 @@ export default function BitcoinIntelligenceReport({
         subjectType="wallet"
         subjectValue={address}
         title="Bitcoin Address Analysis"
+        analysisPayload={buildHistoricalSnapshot("bitcoin", data)}
       />
 
       <section className="rounded-3xl border border-zinc-900 bg-black/20 p-5">

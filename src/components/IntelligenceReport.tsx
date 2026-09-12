@@ -9,6 +9,7 @@ import {
 
 import { useEffect, useState } from "react";
 import AnalysisActions from "@/components/AnalysisActions";
+import { buildHistoricalSnapshot } from "@/lib/account/historicalSnapshot";
 import ActivityTimelinePanel from "@/components/ActivityTimeline";
 import VisualEvidenceGraphPanel from "@/components/VisualEvidenceGraph";
 import {
@@ -429,6 +430,7 @@ export default function IntelligenceReport({
           subjectType="token"
           subjectValue={address}
           title="Solana Token Analysis"
+          analysisPayload={buildHistoricalSnapshot("solana", data)}
         />
       </div>
     );
@@ -770,6 +772,7 @@ export default function IntelligenceReport({
         subjectType="token"
         subjectValue={address}
         title="Solana Token Analysis"
+        analysisPayload={buildHistoricalSnapshot("solana", data)}
       />
 
       <section className="rounded-3xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 to-zinc-950/70 p-6 sm:p-7">

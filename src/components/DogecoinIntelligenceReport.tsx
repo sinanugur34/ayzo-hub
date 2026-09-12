@@ -8,6 +8,7 @@ import {
 } from "react";
 
 import AnalysisActions from "@/components/AnalysisActions";
+import { buildHistoricalSnapshot } from "@/lib/account/historicalSnapshot";
 
 import type {
   DogecoinTransactionEvidence,
@@ -669,6 +670,7 @@ export default function DogecoinIntelligenceReport({
         subjectType="wallet"
         subjectValue={address}
         title="Dogecoin Address Analysis"
+        analysisPayload={buildHistoricalSnapshot("dogecoin", data)}
       />
 
       <section className="rounded-3xl border border-zinc-900 bg-black/20 p-5">
