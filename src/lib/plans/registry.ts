@@ -25,8 +25,18 @@ const LIVE_PLATFORM_FEATURES = {
   >
 >;
 
+const PRO_PLATFORM_FEATURES = {
+  ...LIVE_PLATFORM_FEATURES,
+  alerts: true,
+  historicalChanges: true,
+} as const satisfies Partial<
+  Record<
+    FeatureId,
+    boolean
+  >
+>;
+
 const PRO_ROADMAP_FEATURES = [
-  "historicalChanges",
   "entityLabels",
   "askAyzo",
   "marketFlowIntelligence",
@@ -113,8 +123,7 @@ export const PLANS = {
     },
 
     features: {
-      ...LIVE_PLATFORM_FEATURES,
-      alerts: true,
+      ...PRO_PLATFORM_FEATURES,
     },
 
     roadmapFeatures:
@@ -152,7 +161,7 @@ export const PLANS = {
     },
 
     features: {
-      ...LIVE_PLATFORM_FEATURES,
+      ...PRO_PLATFORM_FEATURES,
     },
 
     roadmapFeatures:

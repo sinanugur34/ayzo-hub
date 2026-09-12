@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import EntityAnnotationPanel from "@/components/EntityAnnotationPanel";
+import HistoricalChangesPanel from "@/components/HistoricalChangesPanel";
 
 import {
   useEffect,
@@ -661,6 +662,13 @@ export default function AnalysisActions({
         network={network}
         subjectType={subjectType}
         subjectValue={subjectValue}
+      />
+
+      <HistoricalChangesPanel
+        network={network}
+        subjectType={subjectType}
+        subjectValue={subjectValue}
+        currentSnapshot={analysisPayload}
       />
 
       {panelOpen && (
