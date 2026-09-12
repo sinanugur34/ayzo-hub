@@ -107,20 +107,20 @@ export function resolveAccountEntitlement(
     now.getTime();
 
   /*
-   * Advanced checkout and paid
-   * entitlement are intentionally
-   * not enabled yet.
+   * Checkout availability and
+   * entitlement resolution are
+   * intentionally separate.
    *
-   * Only verified Pro subscription
-   * records may currently grant
-   * paid access.
+   * A verified Pro or Advanced
+   * subscription record may grant
+   * access. Plan checkout remains
+   * controlled independently by
+   * the plan/billing launch policy.
    */
   const candidates =
     rows
       .filter(
         row =>
-          row.plan_id ===
-            "pro" &&
           (
             row.status ===
               "active" ||
@@ -136,15 +136,35 @@ export function resolveAccountEntitlement(
         (
           left,
           right
-        ) =>
-          Date.parse(
-            right.current_period_end ??
-              ""
-          ) -
-          Date.parse(
-            left.current_period_end ??
-              ""
-          )
+        ) => {
+          const planPriority =
+            Number(
+              right.plan_id ===
+                "advanced"
+            ) -
+            Number(
+              left.plan_id ===
+                "advanced"
+            );
+
+          if (
+            planPriority !==
+            0
+          ) {
+            return planPriority;
+          }
+
+          return (
+            Date.parse(
+              right.current_period_end ??
+                ""
+            ) -
+            Date.parse(
+              left.current_period_end ??
+                ""
+            )
+          );
+        }
       );
 
   const subscription =
@@ -158,7 +178,7 @@ export function resolveAccountEntitlement(
 
   return {
     planId:
-      "pro",
+      subscription.plan_id,
 
     source:
       "subscription",

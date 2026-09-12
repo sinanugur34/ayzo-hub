@@ -7,8 +7,9 @@ import {
   buildSolanaWalletTrackRecord,
 } from "@/lib/intelligence/walletTrackRecord";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AnalysisActions from "@/components/AnalysisActions";
+import { buildHistoricalSnapshot } from "@/lib/account/historicalSnapshot";
 import ActivityTimelinePanel from "@/components/ActivityTimeline";
 import VisualEvidenceGraphPanel from "@/components/VisualEvidenceGraph";
 import {
@@ -120,10 +121,28 @@ function pct(value: number | null | undefined) {
   return `${value.toFixed(2)}%`;
 }
 
+type SolanaTokenSnapshot = {
+  tokenProgram: string;
+
+  mint: {
+    supply: string;
+    decimals: number;
+
+    mintAuthority:
+      string | null;
+
+    freezeAuthority:
+      string | null;
+  };
+};
+
 export default function IntelligenceReport({
   address,
+  tokenSnapshot,
 }: {
   address: string;
+  tokenSnapshot:
+    SolanaTokenSnapshot;
 }) {
   const [data, setData] = useState<IntelligenceData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -235,6 +254,49 @@ export default function IntelligenceReport({
       window.clearInterval(timer);
     };
   }, [loading, address]);
+
+  const historicalSnapshot =
+    useMemo(
+      () =>
+        data
+          ? buildHistoricalSnapshot(
+              "solana",
+              {
+                ...data,
+
+                tokenVerification: {
+                  tokenProgram:
+                    tokenSnapshot
+                      .tokenProgram,
+
+                  supply:
+                    tokenSnapshot
+                      .mint
+                      .supply,
+
+                  decimals:
+                    tokenSnapshot
+                      .mint
+                      .decimals,
+
+                  mintAuthority:
+                    tokenSnapshot
+                      .mint
+                      .mintAuthority,
+
+                  freezeAuthority:
+                    tokenSnapshot
+                      .mint
+                      .freezeAuthority,
+                },
+              }
+            )
+          : null,
+      [
+        data,
+        tokenSnapshot,
+      ]
+    );
 
   if (loading) {
     return (
@@ -429,6 +491,7 @@ export default function IntelligenceReport({
           subjectType="token"
           subjectValue={address}
           title="Solana Token Analysis"
+          analysisPayload={historicalSnapshot}
         />
       </div>
     );
@@ -770,6 +833,7 @@ export default function IntelligenceReport({
         subjectType="token"
         subjectValue={address}
         title="Solana Token Analysis"
+        analysisPayload={historicalSnapshot}
       />
 
       <section className="rounded-3xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 to-zinc-950/70 p-6 sm:p-7">

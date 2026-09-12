@@ -1245,6 +1245,9 @@ export default function Home() {
               address={
                 solanaResult.address
               }
+              tokenSnapshot={
+                solanaResult
+              }
             />
           </section>
         )}

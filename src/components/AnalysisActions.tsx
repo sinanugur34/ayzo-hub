@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import EntityAnnotationPanel from "@/components/EntityAnnotationPanel";
+import HistoricalChangesPanel from "@/components/HistoricalChangesPanel";
 
 import {
   useEffect,
@@ -33,6 +34,7 @@ type Props = {
     SubjectType;
   subjectValue: string;
   title: string;
+  analysisPayload?: unknown;
 };
 
 export default function AnalysisActions({
@@ -40,6 +42,7 @@ export default function AnalysisActions({
   subjectType,
   subjectValue,
   title,
+  analysisPayload,
 }: Props) {
   const [
     authState,
@@ -268,6 +271,7 @@ export default function AnalysisActions({
                 subjectType,
                 subjectValue,
                 title,
+                analysisPayload,
               }),
           }
         );
@@ -658,6 +662,13 @@ export default function AnalysisActions({
         network={network}
         subjectType={subjectType}
         subjectValue={subjectValue}
+      />
+
+      <HistoricalChangesPanel
+        network={network}
+        subjectType={subjectType}
+        subjectValue={subjectValue}
+        currentSnapshot={analysisPayload}
       />
 
       {panelOpen && (

@@ -776,7 +776,100 @@ function MobileStatusCell({
   );
 }
 
-export default function PlanComparisonMatrix() {
+export default function PlanComparisonMatrix({
+  visiblePlans,
+  currentPlan,
+}: {
+  visiblePlans:
+    readonly PlanId[];
+
+  currentPlan:
+    PlanId | null;
+}) {
+  const planCount =
+    Math.max(
+      1,
+      visiblePlans.length
+    );
+
+  function planName(
+    plan:
+      PlanId
+  ) {
+    if (
+      plan ===
+      "free"
+    ) {
+      return "FREE";
+    }
+
+    if (
+      plan ===
+      "pro"
+    ) {
+      return "PRO";
+    }
+
+    return "ADVANCED";
+  }
+
+  function planPrice(
+    plan:
+      PlanId
+  ) {
+    if (
+      plan ===
+      "free"
+    ) {
+      return "$0";
+    }
+
+    if (
+      plan ===
+      "pro"
+    ) {
+      return (
+        <>
+          $
+          {PLANS.pro.monthlyPriceUsd?.toFixed(
+            0
+          )}
+
+          <span className="ml-1 text-[9px] font-normal text-zinc-500">
+            /mo
+          </span>
+        </>
+      );
+    }
+
+    return (
+      <span className="text-[9px] leading-4 text-zinc-500">
+        Pricing coming soon
+      </span>
+    );
+  }
+
+  function planColor(
+    plan:
+      PlanId
+  ) {
+    if (
+      plan ===
+      "pro"
+    ) {
+      return "text-violet-300";
+    }
+
+    if (
+      plan ===
+      "advanced"
+    ) {
+      return "text-purple-300";
+    }
+
+    return "text-zinc-400";
+  }
+
   return (
     <div className="mt-12">
       <div className="mx-auto max-w-3xl text-center">
@@ -785,12 +878,17 @@ export default function PlanComparisonMatrix() {
         </div>
 
         <h3 className="mt-3 text-2xl font-semibold tracking-[-0.025em] text-white sm:text-3xl">
-          Compare every AYZO feature.
+          {visiblePlans.length >
+          1
+            ? "Compare every AYZO feature."
+            : "Your AYZO feature access."}
         </h3>
 
         <p className="mt-3 text-sm leading-6 text-zinc-500">
-          Live capabilities, account features and roadmap items
-          are separated so you can see exactly what each plan includes.
+          {visiblePlans.length >
+          1
+            ? "Your current tier and higher upgrade paths are shown."
+            : "Only your current tier is shown because there is no higher AYZO plan."}
         </p>
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-[9px]">
@@ -814,219 +912,287 @@ export default function PlanComparisonMatrix() {
 
       {/* Mobile comparison */}
       <div className="mt-8 space-y-6 md:hidden">
-        <div className="grid grid-cols-3 gap-2">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 px-3 py-3 text-center">
-            <div className="text-[9px] font-semibold tracking-[0.12em] text-zinc-400">
-              FREE
-            </div>
-            <div className="mt-1 text-sm font-semibold text-white">
-              $0
-            </div>
-          </div>
+        <div
+          className="grid gap-2"
+          style={{
+            gridTemplateColumns:
+              `repeat(${planCount}, minmax(0, 1fr))`,
+          }}
+        >
+          {visiblePlans.map(
+            plan => (
+              <div
+                key={plan}
+                className={`rounded-2xl border px-3 py-3 text-center ${
+                  plan ===
+                  "pro"
+                    ? "border-violet-500/20 bg-violet-500/[0.05]"
+                    : plan ===
+                        "advanced"
+                      ? "border-purple-500/15 bg-purple-500/[0.03]"
+                      : "border-zinc-800 bg-zinc-950/70"
+                }`}
+              >
+                <div
+                  className={`text-[9px] font-semibold tracking-[0.12em] ${planColor(
+                    plan
+                  )}`}
+                >
+                  {planName(
+                    plan
+                  )}
+                </div>
 
-          <div className="rounded-2xl border border-violet-500/20 bg-violet-500/[0.05] px-3 py-3 text-center">
-            <div className="text-[9px] font-semibold tracking-[0.12em] text-violet-300">
-              PRO
-            </div>
-            <div className="mt-1 text-sm font-semibold text-white">
-              ${PLANS.pro.monthlyPriceUsd?.toFixed(0)}
-              <span className="ml-0.5 text-[9px] font-normal text-zinc-500">
-                /mo
-              </span>
-            </div>
-          </div>
+                <div className="mt-1 text-sm font-semibold text-white">
+                  {planPrice(
+                    plan
+                  )}
+                </div>
 
-          <div className="rounded-2xl border border-purple-500/15 bg-purple-500/[0.03] px-2 py-3 text-center">
-            <div className="text-[9px] font-semibold tracking-[0.1em] text-purple-300">
-              ADVANCED
-            </div>
-            <div className="mt-1 text-[9px] leading-4 text-zinc-500">
-              Coming soon
-            </div>
-          </div>
+                {currentPlan ===
+                  plan && (
+                  <div className="mt-2 text-[8px] font-semibold tracking-[0.1em] text-emerald-400">
+                    CURRENT PLAN
+                  </div>
+                )}
+              </div>
+            )
+          )}
         </div>
 
-        {sections.map(section => (
-          <section
-            key={section.title}
-            className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950/60"
-          >
-            <div className="border-b border-zinc-800 bg-zinc-900/40 px-5 py-4">
-              <div className="text-[10px] font-semibold tracking-[0.18em] text-violet-300">
-                {section.title}
+        {sections.map(
+          section => (
+            <section
+              key={
+                section.title
+              }
+              className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950/60"
+            >
+              <div className="border-b border-zinc-800 bg-zinc-900/40 px-5 py-4">
+                <div className="text-[10px] font-semibold tracking-[0.18em] text-violet-300">
+                  {
+                    section.title
+                  }
+                </div>
+
+                {section.description && (
+                  <div className="mt-1 text-[10px] leading-4 text-zinc-600">
+                    {
+                      section.description
+                    }
+                  </div>
+                )}
               </div>
 
-              {section.description && (
-                <div className="mt-1 text-[10px] leading-4 text-zinc-600">
-                  {section.description}
-                </div>
-              )}
-            </div>
+              <div className="divide-y divide-zinc-900">
+                {section.rows.map(
+                  row => (
+                    <div
+                      key={`${section.title}-${row.label}`}
+                      className="px-5 py-5"
+                    >
+                      <div className="text-sm font-medium text-zinc-200">
+                        {
+                          row.label
+                        }
+                      </div>
 
-            <div className="divide-y divide-zinc-900">
-              {section.rows.map(row => (
-                <div
-                  key={`${section.title}-${row.label}`}
-                  className="px-5 py-5"
-                >
-                  <div className="text-sm font-medium text-zinc-200">
-                    {row.label}
-                  </div>
+                      {row.detail && (
+                        <div className="mt-1 text-[10px] leading-4 text-zinc-600">
+                          {
+                            row.detail
+                          }
+                        </div>
+                      )}
 
-                  {row.detail && (
-                    <div className="mt-1 text-[10px] leading-4 text-zinc-600">
-                      {row.detail}
+                      <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-900 bg-black/20">
+                        {visiblePlans.map(
+                          (
+                            plan,
+                            index
+                          ) => (
+                            <div
+                              key={plan}
+                              className={`flex min-h-11 items-center justify-between gap-4 px-3.5 py-2.5 ${
+                                index <
+                                visiblePlans.length -
+                                  1
+                                  ? "border-b border-zinc-900"
+                                  : ""
+                              } ${
+                                plan ===
+                                "pro"
+                                  ? "bg-violet-500/[0.018]"
+                                  : ""
+                              }`}
+                            >
+                              <span
+                                className={`text-[10px] font-semibold tracking-[0.1em] ${planColor(
+                                  plan
+                                )}`}
+                              >
+                                {planName(
+                                  plan
+                                )}
+
+                                {currentPlan ===
+                                  plan &&
+                                  " · CURRENT"}
+                              </span>
+
+                              <MobileStatusCell
+                                cell={
+                                  row[
+                                    plan
+                                  ]
+                                }
+                              />
+                            </div>
+                          )
+                        )}
+                      </div>
                     </div>
-                  )}
-
-                  <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-900 bg-black/20">
-                    <div className="flex min-h-11 items-center justify-between gap-4 border-b border-zinc-900 px-3.5 py-2.5">
-                      <span className="text-[10px] font-semibold tracking-[0.1em] text-zinc-500">
-                        FREE
-                      </span>
-                      <MobileStatusCell cell={row.free} />
-                    </div>
-
-                    <div className="flex min-h-11 items-center justify-between gap-4 border-b border-violet-500/[0.08] bg-violet-500/[0.018] px-3.5 py-2.5">
-                      <span className="text-[10px] font-semibold tracking-[0.1em] text-violet-400">
-                        PRO
-                      </span>
-                      <MobileStatusCell cell={row.pro} />
-                    </div>
-
-                    <div className="flex min-h-11 items-center justify-between gap-4 px-3.5 py-2.5">
-                      <span className="text-[10px] font-semibold tracking-[0.1em] text-purple-400">
-                        ADVANCED
-                      </span>
-                      <MobileStatusCell cell={row.advanced} />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        ))}
+                  )
+                )}
+              </div>
+            </section>
+          )
+        )}
       </div>
 
       {/* Desktop / tablet comparison table */}
       <div className="mt-8 hidden overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950/60 shadow-2xl shadow-black/20 md:block">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] border-collapse">
+          <table
+            className={
+              visiblePlans.length ===
+              1
+                ? "w-full min-w-[640px] border-collapse"
+                : "w-full min-w-[900px] border-collapse"
+            }
+          >
             <thead>
               <tr className="border-b border-zinc-800 bg-black/30">
                 <th className="sticky left-0 z-20 w-[42%] bg-zinc-950 px-6 py-5 text-left text-[10px] font-semibold tracking-[0.16em] text-zinc-500">
                   FEATURE
                 </th>
 
-                <th className="w-[19%] px-4 py-5 text-center">
-                  <div className="text-xs font-semibold tracking-[0.14em] text-zinc-300">
-                    FREE
-                  </div>
+                {visiblePlans.map(
+                  plan => (
+                    <th
+                      key={plan}
+                      className={`px-4 py-5 text-center ${
+                        plan ===
+                        "pro"
+                          ? "border-x border-violet-500/10 bg-violet-500/[0.035]"
+                          : ""
+                      }`}
+                    >
+                      <div
+                        className={`text-xs font-semibold tracking-[0.14em] ${planColor(
+                          plan
+                        )}`}
+                      >
+                        {planName(
+                          plan
+                        )}
+                      </div>
 
-                  <div className="mt-1 text-lg font-semibold text-white">
-                    $0
-                  </div>
-                </th>
+                      <div className="mt-1 text-lg font-semibold text-white">
+                        {planPrice(
+                          plan
+                        )}
+                      </div>
 
-                <th className="w-[19%] border-x border-violet-500/10 bg-violet-500/[0.035] px-4 py-5 text-center">
-                  <div className="text-xs font-semibold tracking-[0.14em] text-violet-300">
-                    PRO
-                  </div>
-
-                  <div className="mt-1 text-lg font-semibold text-white">
-                    ${PLANS.pro.monthlyPriceUsd?.toFixed(0)}
-                    <span className="ml-1 text-[10px] font-normal text-zinc-500">
-                      /mo
-                    </span>
-                  </div>
-                </th>
-
-                <th className="w-[20%] px-4 py-5 text-center">
-                  <div className="text-xs font-semibold tracking-[0.14em] text-purple-300">
-                    ADVANCED
-                  </div>
-
-                  <div className="mt-1 text-xs font-medium text-zinc-400">
-                    Pricing coming soon
-                  </div>
-                </th>
+                      {currentPlan ===
+                        plan && (
+                        <div className="mt-2 text-[8px] font-semibold tracking-[0.12em] text-emerald-400">
+                          CURRENT PLAN
+                        </div>
+                      )}
+                    </th>
+                  )
+                )}
               </tr>
             </thead>
 
             <tbody>
               {sections.map(
-                section => (
-                  <>
-                    <tr
-                      key={`${section.title}-heading`}
-                      className="border-y border-zinc-800/80 bg-zinc-900/40"
+                section => [
+                  <tr
+                    key={`${section.title}-heading`}
+                    className="border-y border-zinc-800/80 bg-zinc-900/40"
+                  >
+                    <td
+                      colSpan={
+                        1 +
+                        visiblePlans.length
+                      }
+                      className="px-6 py-4"
                     >
-                      <td
-                        colSpan={4}
-                        className="px-6 py-4"
-                      >
-                        <div className="text-[10px] font-semibold tracking-[0.18em] text-violet-300">
-                          {section.title}
-                        </div>
+                      <div className="text-[10px] font-semibold tracking-[0.18em] text-violet-300">
+                        {
+                          section.title
+                        }
+                      </div>
 
-                        {section.description && (
-                          <div className="mt-1 text-[10px] leading-5 text-zinc-600">
+                      {section.description && (
+                        <div className="mt-1 text-[10px] leading-5 text-zinc-600">
+                          {
+                            section.description
+                          }
+                        </div>
+                      )}
+                    </td>
+                  </tr>,
+
+                  ...section.rows.map(
+                    row => (
+                      <tr
+                        key={`${section.title}-${row.label}`}
+                        className="border-b border-zinc-900 transition hover:bg-white/[0.012]"
+                      >
+                        <td className="sticky left-0 z-10 bg-zinc-950/95 px-6 py-4">
+                          <div className="text-xs font-medium text-zinc-300">
                             {
-                              section.description
+                              row.label
                             }
                           </div>
-                        )}
-                      </td>
-                    </tr>
 
-                    {section.rows.map(
-                      row => (
-                        <tr
-                          key={`${section.title}-${row.label}`}
-                          className="border-b border-zinc-900 transition hover:bg-white/[0.012]"
-                        >
-                          <td className="sticky left-0 z-10 bg-zinc-950/95 px-6 py-4">
-                            <div className="text-xs font-medium text-zinc-300">
-                              {row.label}
+                          {row.detail && (
+                            <div className="mt-1 max-w-lg text-[10px] leading-4 text-zinc-600">
+                              {
+                                row.detail
+                              }
                             </div>
+                          )}
+                        </td>
 
-                            {row.detail && (
-                              <div className="mt-1 max-w-lg text-[10px] leading-4 text-zinc-600">
-                                {
-                                  row.detail
+                        {visiblePlans.map(
+                          plan => (
+                            <td
+                              key={plan}
+                              className={`px-4 py-4 text-center ${
+                                plan ===
+                                "pro"
+                                  ? "border-x border-violet-500/[0.06] bg-violet-500/[0.018]"
+                                  : ""
+                              }`}
+                            >
+                              <StatusCell
+                                cell={
+                                  row[
+                                    plan
+                                  ]
                                 }
-                              </div>
-                            )}
-                          </td>
-
-                          <td className="px-4 py-4 text-center">
-                            <StatusCell
-                              cell={
-                                row.free
-                              }
-                            />
-                          </td>
-
-                          <td className="border-x border-violet-500/[0.06] bg-violet-500/[0.018] px-4 py-4 text-center">
-                            <StatusCell
-                              cell={
-                                row.pro
-                              }
-                            />
-                          </td>
-
-                          <td className="px-4 py-4 text-center">
-                            <StatusCell
-                              cell={
-                                row.advanced
-                              }
-                            />
-                          </td>
-                        </tr>
-                      )
-                    )}
-                  </>
-                )
+                              />
+                            </td>
+                          )
+                        )}
+                      </tr>
+                    )
+                  ),
+                ]
               )}
             </tbody>
           </table>
