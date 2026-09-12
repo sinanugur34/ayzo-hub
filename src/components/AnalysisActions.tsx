@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import EntityAnnotationPanel from "@/components/EntityAnnotationPanel";
+import AyzoEntityLabelsPanel from "@/components/AyzoEntityLabelsPanel";
 import HistoricalChangesPanel from "@/components/HistoricalChangesPanel";
 import InvestigationTimelinePanel from "@/components/InvestigationTimelinePanel";
 
@@ -36,6 +37,7 @@ type Props = {
   subjectValue: string;
   title: string;
   analysisPayload?: unknown;
+  entityEvidencePayload?: unknown;
 };
 
 export default function AnalysisActions({
@@ -44,6 +46,7 @@ export default function AnalysisActions({
   subjectValue,
   title,
   analysisPayload,
+  entityEvidencePayload,
 }: Props) {
   const [
     authState,
@@ -664,6 +667,19 @@ export default function AnalysisActions({
         subjectType={subjectType}
         subjectValue={subjectValue}
       />
+
+      {(subjectType === "token" || subjectType === "entity") && (
+        <AyzoEntityLabelsPanel
+          network={network}
+          subjectType={subjectType}
+          subjectValue={subjectValue}
+          evidencePayload={
+            entityEvidencePayload ??
+            analysisPayload ??
+            null
+          }
+        />
+      )}
 
       <HistoricalChangesPanel
         network={network}
