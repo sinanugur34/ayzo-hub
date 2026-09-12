@@ -7,7 +7,7 @@ import {
   buildSolanaWalletTrackRecord,
 } from "@/lib/intelligence/walletTrackRecord";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AnalysisActions from "@/components/AnalysisActions";
 import { buildHistoricalSnapshot } from "@/lib/account/historicalSnapshot";
 import ActivityTimelinePanel from "@/components/ActivityTimeline";
@@ -237,6 +237,18 @@ export default function IntelligenceReport({
     };
   }, [loading, address]);
 
+  const historicalSnapshot =
+    useMemo(
+      () =>
+        data
+          ? buildHistoricalSnapshot(
+              "solana",
+              data
+            )
+          : null,
+      [data]
+    );
+
   if (loading) {
     return (
       <div className="mt-6 overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-b from-violet-500/5 to-zinc-950/70">
@@ -430,7 +442,7 @@ export default function IntelligenceReport({
           subjectType="token"
           subjectValue={address}
           title="Solana Token Analysis"
-          analysisPayload={buildHistoricalSnapshot("solana", data)}
+          analysisPayload={historicalSnapshot}
         />
       </div>
     );
@@ -772,7 +784,7 @@ export default function IntelligenceReport({
         subjectType="token"
         subjectValue={address}
         title="Solana Token Analysis"
-        analysisPayload={buildHistoricalSnapshot("solana", data)}
+        analysisPayload={historicalSnapshot}
       />
 
       <section className="rounded-3xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 to-zinc-950/70 p-6 sm:p-7">

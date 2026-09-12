@@ -36,6 +36,15 @@ const PRO_PLATFORM_FEATURES = {
   >
 >;
 
+const ADVANCED_PLATFORM_FEATURES = {
+  ...PRO_PLATFORM_FEATURES,
+} as const satisfies Partial<
+  Record<
+    FeatureId,
+    boolean
+  >
+>;
+
 const PRO_ROADMAP_FEATURES = [
   "entityLabels",
   "askAyzo",
@@ -161,7 +170,7 @@ export const PLANS = {
     },
 
     features: {
-      ...PRO_PLATFORM_FEATURES,
+      ...ADVANCED_PLATFORM_FEATURES,
     },
 
     roadmapFeatures:

@@ -4,6 +4,7 @@ import AnalysisLimitCard from "@/components/AnalysisLimitCard";
 
 import {
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -382,6 +383,18 @@ export default function DogecoinIntelligenceReport({
     address,
   ]);
 
+  const historicalSnapshot =
+    useMemo(
+      () =>
+        data
+          ? buildHistoricalSnapshot(
+              "dogecoin",
+              data
+            )
+          : null,
+      [data]
+    );
+
   if (loading) {
     return (
       <div className="mt-6 overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-b from-amber-500/5 to-zinc-950/70 text-left">
@@ -670,7 +683,7 @@ export default function DogecoinIntelligenceReport({
         subjectType="wallet"
         subjectValue={address}
         title="Dogecoin Address Analysis"
-        analysisPayload={buildHistoricalSnapshot("dogecoin", data)}
+        analysisPayload={historicalSnapshot}
       />
 
       <section className="rounded-3xl border border-zinc-900 bg-black/20 p-5">

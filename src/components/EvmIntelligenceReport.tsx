@@ -18,6 +18,7 @@ import type {
 
 import {
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -782,6 +783,21 @@ export default function EvmIntelligenceReport({
     loading,
     address,
   ]);
+
+  const historicalSnapshot =
+    useMemo(
+      () =>
+        data
+          ? buildHistoricalSnapshot(
+              network,
+              data
+            )
+          : null,
+      [
+        network,
+        data,
+      ]
+    );
 
   if (loading) {
     return (
@@ -1613,7 +1629,7 @@ export default function EvmIntelligenceReport({
         subjectType="entity"
         subjectValue={address}
         title={`${networkDefinition.name} Address Analysis`}
-        analysisPayload={buildHistoricalSnapshot(network, data)}
+        analysisPayload={historicalSnapshot}
       />
 
       <section className="rounded-3xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 to-zinc-950/70 p-6 sm:p-7">

@@ -9,6 +9,7 @@ import {
 
 import {
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -370,6 +371,18 @@ export default function BitcoinIntelligenceReport({
     loading,
     address,
   ]);
+
+  const historicalSnapshot =
+    useMemo(
+      () =>
+        data
+          ? buildHistoricalSnapshot(
+              "bitcoin",
+              data
+            )
+          : null,
+      [data]
+    );
 
   if (loading) {
     return (
@@ -744,7 +757,7 @@ export default function BitcoinIntelligenceReport({
         subjectType="wallet"
         subjectValue={address}
         title="Bitcoin Address Analysis"
-        analysisPayload={buildHistoricalSnapshot("bitcoin", data)}
+        analysisPayload={historicalSnapshot}
       />
 
       <section className="rounded-3xl border border-zinc-900 bg-black/20 p-5">
