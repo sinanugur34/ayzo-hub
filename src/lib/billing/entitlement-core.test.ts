@@ -150,7 +150,7 @@ test(
 );
 
 test(
-  "Advanced cannot grant paid entitlement yet",
+  "valid active Advanced grants Advanced",
   () => {
     assert.equal(
       resolveAccountEntitlement(
@@ -158,6 +158,58 @@ test(
           row({
             plan_id:
               "advanced",
+            locked_price_usd_cents:
+              6900,
+          }),
+        ],
+        NOW
+      ).planId,
+      "advanced"
+    );
+  }
+);
+
+test(
+  "Advanced wins when Pro and Advanced are both active",
+  () => {
+    assert.equal(
+      resolveAccountEntitlement(
+        [
+          row({
+            plan_id:
+              "pro",
+            current_period_end:
+              "2026-11-04T12:00:00Z",
+          }),
+          row({
+            plan_id:
+              "advanced",
+            locked_price_usd_cents:
+              6900,
+            current_period_end:
+              "2026-10-04T12:00:00Z",
+          }),
+        ],
+        NOW
+      ).planId,
+      "advanced"
+    );
+  }
+);
+
+test(
+  "expired Advanced falls back to Free",
+  () => {
+    assert.equal(
+      resolveAccountEntitlement(
+        [
+          row({
+            plan_id:
+              "advanced",
+            locked_price_usd_cents:
+              6900,
+            current_period_end:
+              "2026-09-01T00:00:00Z",
           }),
         ],
         NOW
