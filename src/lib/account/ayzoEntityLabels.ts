@@ -188,6 +188,11 @@ function solanaLabels(
       verification?.mint
     );
 
+  const metrics =
+    record(
+      root.metrics
+    );
+
   const mintAuthority =
     text(
       verification
@@ -195,6 +200,10 @@ function solanaLabels(
     ) ??
     text(
       mint?.mintAuthority
+    ) ??
+    text(
+      metrics
+        ?.mintAuthority
     );
 
   const freezeAuthority =
@@ -204,6 +213,10 @@ function solanaLabels(
     ) ??
     text(
       mint?.freezeAuthority
+    ) ??
+    text(
+      metrics
+        ?.freezeAuthority
     );
 
   if (mintAuthority) {

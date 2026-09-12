@@ -668,12 +668,16 @@ export default function AnalysisActions({
         subjectValue={subjectValue}
       />
 
-      {entityEvidencePayload !== undefined && (
+      {(subjectType === "token" || subjectType === "entity") && (
         <AyzoEntityLabelsPanel
           network={network}
           subjectType={subjectType}
           subjectValue={subjectValue}
-          evidencePayload={entityEvidencePayload}
+          evidencePayload={
+            entityEvidencePayload ??
+            analysisPayload ??
+            null
+          }
         />
       )}
 
