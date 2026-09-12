@@ -243,10 +243,22 @@ export function buildInvestigationTimeline(
           input.currentSnapshot
         );
 
+  const currentAlreadySaved =
+    parsedCurrent
+      ? saved.some(
+          item =>
+            item.snapshot
+              .capturedAt ===
+            parsedCurrent
+              .capturedAt
+        )
+      : false;
+
   if (
     parsedCurrent &&
     parsedCurrent.network ===
-      input.network
+      input.network &&
+    !currentAlreadySaved
   ) {
     const previous =
       saved.length >
