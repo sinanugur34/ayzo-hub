@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "check:ask-ayzo-site": "node scripts/check-ask-ayzo-site-knowledge.mjs",
-    "prebuild": "npm run check:ask-ayzo-site"
+    "prebuild": "npm run check:ask-ayzo-site",
+    "test:entity-labels": "tsx --test src/lib/account/ayzoEntityLabels.test.ts"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.74.0",
@@ -31,6 +32,10 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
+    "tsx": "4.23.13",
     "typescript": "^5"
+  },
+  "overrides": {
+    "js-yaml": "4.3.2"
   }
 }
