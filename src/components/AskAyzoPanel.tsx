@@ -10,6 +10,54 @@ import {
   type AskAyzoSubjectType,
 } from "@/components/AskAyzoAssistantProvider";
 
+function evidenceRevision(
+  value: unknown
+) {
+  let serialized:
+    string;
+
+  try {
+    serialized =
+      JSON.stringify(
+        value ??
+        null
+      );
+  } catch {
+    return "unserializable";
+  }
+
+  const bounded =
+    serialized.slice(
+      0,
+      100_000
+    );
+
+  let hash =
+    2166136261;
+
+  for (
+    let index = 0;
+    index <
+    bounded.length;
+    index += 1
+  ) {
+    hash ^=
+      bounded.charCodeAt(
+        index
+      );
+
+    hash =
+      Math.imul(
+        hash,
+        16777619
+      );
+  }
+
+  return (
+    hash >>> 0
+  ).toString(36);
+}
+
 type Props = {
   network: string;
 
@@ -36,8 +84,19 @@ export default function AskAyzoPanel({
   } =
     useAskAyzoAssistant();
 
+  const evidenceKey =
+    useMemo(
+      () =>
+        evidenceRevision(
+          evidencePayload
+        ),
+      [
+        evidencePayload,
+      ]
+    );
+
   const contextKey =
-    `${network}:${subjectType}:${subjectValue}`;
+    `${network}:${subjectType}:${subjectValue}:${evidenceKey}`;
 
   const analysisContext =
     useMemo(

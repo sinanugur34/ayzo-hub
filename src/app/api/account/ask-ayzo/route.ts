@@ -30,6 +30,10 @@ import {
   planHasFeature,
 } from "@/lib/plans/registry";
 
+import {
+  checkRateLimit,
+} from "@/lib/rateLimit";
+
 export const dynamic =
   "force-dynamic";
 
@@ -48,6 +52,143 @@ function noStoreJson(
       },
     }
   );
+}
+
+async function canUseAskAyzoSemantic(
+  userId: string
+) {
+  try {
+    const [
+      userBurst,
+      userDaily,
+      globalBurst,
+      globalDaily,
+    ] =
+      await Promise.all([
+        checkRateLimit({
+          key:
+            `ask-ayzo:semantic:user:${userId}:burst`,
+          limit:
+            8,
+          windowMs:
+            60_000,
+        }),
+
+        checkRateLimit({
+          key:
+            `ask-ayzo:semantic:user:${userId}:daily`,
+          limit:
+            100,
+          windowMs:
+            86_400_000,
+        }),
+
+        checkRateLimit({
+          key:
+            "ask-ayzo:semantic:global:burst",
+          limit:
+            24,
+          windowMs:
+            60_000,
+        }),
+
+        checkRateLimit({
+          key:
+            "ask-ayzo:semantic:global:daily",
+          limit:
+            800,
+          windowMs:
+            86_400_000,
+        }),
+      ]);
+
+    return (
+      userBurst.allowed &&
+      userDaily.allowed &&
+      globalBurst.allowed &&
+      globalDaily.allowed
+    );
+  } catch {
+    /*
+     * Rate-limit infrastructure
+     * must not take Ask AYZO
+     * offline. Provider-level
+     * failures still fall back
+     * to the deterministic engine.
+     */
+    return true;
+  }
+}
+
+type AskAyzoConversationTurn = {
+  role:
+    | "user"
+    | "assistant";
+
+  content:
+    string;
+};
+
+function readRecentConversation(
+  value: unknown
+): AskAyzoConversationTurn[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const turns:
+    AskAyzoConversationTurn[] =
+    [];
+
+  for (
+    const item
+    of value.slice(-6)
+  ) {
+    if (!isRecord(item)) {
+      continue;
+    }
+
+    const role =
+      item.role;
+
+    const content =
+      typeof item.content ===
+        "string"
+        ? item.content
+            .replace(
+              /[\u0000-\u001F\u007F]/g,
+              " "
+            )
+            .replace(
+              /\s+/g,
+              " "
+            )
+            .trim()
+            .slice(
+              0,
+              700
+            )
+        : "";
+
+    if (
+      (
+        role !==
+          "user" &&
+        role !==
+          "assistant"
+      ) ||
+      !content
+    ) {
+      continue;
+    }
+
+    turns.push({
+      role,
+      content,
+    });
+  }
+
+  return turns;
 }
 
 export async function POST(
@@ -146,6 +287,11 @@ export async function POST(
       280
     );
 
+  const recentConversation =
+    readRecentConversation(
+      body.recentConversation
+    );
+
   if (
     !network ||
     !subjectType ||
@@ -184,8 +330,17 @@ export async function POST(
     deterministicResult.mode !==
       "product-help";
 
+  const semanticAllowed =
+    semanticEligible &&
+    isAskAyzoSemanticEnabled()
+      ? await canUseAskAyzoSemantic(
+          userId
+        )
+      : false;
+
   if (
     semanticEligible &&
+    semanticAllowed &&
     isAskAyzoSemanticEnabled()
   ) {
     const semanticResult =
@@ -194,6 +349,7 @@ export async function POST(
         subjectType,
         subjectValue,
         question,
+        recentConversation,
         evidencePayload:
           body.evidencePayload,
         fallback:
