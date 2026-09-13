@@ -1,6 +1,7 @@
 export type AnalysisDepthPlan =
   | "free"
-  | "pro";
+  | "pro"
+  | "advanced";
 
 export type AnalysisDepthPolicy = {
   rootTransactionPages: number;
@@ -37,7 +38,7 @@ const PRO_POLICY:
 export function getAnalysisDepthPolicy(
   plan: AnalysisDepthPlan
 ): AnalysisDepthPolicy {
-  return plan === "pro"
-    ? PRO_POLICY
-    : FREE_POLICY;
+  return plan === "free"
+    ? FREE_POLICY
+    : PRO_POLICY;
 }

@@ -74,3 +74,23 @@ test(
     );
   }
 );
+
+test(
+  "Advanced inherits at least Pro EVM analysis depth",
+  () => {
+    const pro =
+      getAnalysisDepthPolicy(
+        "pro"
+      );
+
+    const advanced =
+      getAnalysisDepthPolicy(
+        "advanced"
+      );
+
+    assert.deepEqual(
+      advanced,
+      pro
+    );
+  }
+);

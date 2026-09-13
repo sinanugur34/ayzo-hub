@@ -8,7 +8,8 @@ import type {
 
 export type QuotaPlan =
   | "free"
-  | "pro";
+  | "pro"
+  | "advanced";
 
 export type AnalysisQuotaPolicy = {
   plan:
@@ -26,21 +27,25 @@ export function getAnalysisQuotaPolicy(
     PlanId
 ): AnalysisQuotaPolicy {
   /*
-   * Advanced paid entitlement is
-   * intentionally disabled today.
-   * Unknown/non-Pro paid state must
-   * safely fall back to Free.
+   * Advanced inherits the current
+   * Pro quota contract until a
+   * dedicated Advanced quota is
+   * explicitly configured.
+   *
+   * Keep the requested plan identity
+   * so downstream API/UI layers do
+   * not misclassify Advanced as Pro
+   * or Free.
    */
-  const effectivePlan:
-    QuotaPlan =
-      planId ===
-      "pro"
-        ? "pro"
-        : "free";
+  const quotaSourcePlan:
+    "free" | "pro" =
+      planId === "free"
+        ? "free"
+        : "pro";
 
   const quota =
     PLANS[
-      effectivePlan
+      quotaSourcePlan
     ].analysisQuota;
 
   if (
@@ -48,13 +53,13 @@ export function getAnalysisQuotaPolicy(
     "fixed"
   ) {
     throw new Error(
-      `Analysis quota is not configured for ${effectivePlan}.`
+      `Analysis quota is not configured for ${quotaSourcePlan}.`
     );
   }
 
   return {
     plan:
-      effectivePlan,
+      planId,
 
     limit:
       quota.count,
