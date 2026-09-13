@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import GoogleAnalytics from "../components/GoogleAnalytics";
+import AskAyzoAssistantProvider from "@/components/AskAyzoAssistantProvider";
 
 import "./globals.css";
 
@@ -61,7 +62,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {children}
+        <AskAyzoAssistantProvider>
+          {children}
+        </AskAyzoAssistantProvider>
 
         <footer className="mt-auto border-t border-zinc-900 px-6 py-6">
           <nav
