@@ -438,7 +438,9 @@ export function buildHistoricalSnapshot(
     network ===
       "bitcoin" ||
     network ===
-      "dogecoin"
+      "dogecoin" ||
+    network ===
+      "tron"
   ) {
     return utxoSnapshot(
       network,

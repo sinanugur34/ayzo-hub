@@ -5,6 +5,10 @@ import {
   useState,
 } from "react";
 
+import {
+  getAskAyzoSuggestedQuestions,
+} from "@/lib/account/askAyzoNetworkRegistry";
+
 type SubjectType =
   | "wallet"
   | "token"
@@ -290,7 +294,7 @@ export default function AskAyzoPanel({
                   event.target.value
                 )
             }
-            placeholder="e.g. who deplyd ths contrct?"
+            placeholder="Ask about this analysis..."
             className="h-11 min-w-0 flex-1 rounded-xl border border-zinc-800 bg-black/40 px-4 text-sm text-zinc-200 outline-none placeholder:text-zinc-700 focus:border-violet-500"
           />
 
@@ -309,11 +313,9 @@ export default function AskAyzoPanel({
         </div>
 
         <div className="mt-2 flex flex-wrap gap-2">
-          {[
-            "What are the most important findings?",
-            "Is there shared funding evidence?",
-            "Who deployed this contract?",
-          ].map(
+          {getAskAyzoSuggestedQuestions(
+            network
+          ).map(
             item => (
               <button
                 key={item}

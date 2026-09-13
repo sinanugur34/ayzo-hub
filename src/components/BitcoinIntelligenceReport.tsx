@@ -384,6 +384,69 @@ export default function BitcoinIntelligenceReport({
       [data]
     );
 
+  const askEvidencePayload =
+    useMemo(
+      () =>
+        data
+          ? {
+              adapter:
+                "utxo",
+
+              network:
+                "bitcoin",
+
+              coverage:
+                data.coverage,
+
+              history: {
+                transactions:
+                  data.history.transactions.slice(
+                    0,
+                    20
+                  ),
+
+                nextCursor:
+                  data.history.nextCursor,
+              },
+
+              canonicalTransaction:
+                data.canonicalTransaction
+                  ? {
+                      ...data.canonicalTransaction,
+
+                      inputs:
+                        data.canonicalTransaction.inputs.slice(
+                          0,
+                          20
+                        ),
+
+                      outputs:
+                        data.canonicalTransaction.outputs.slice(
+                          0,
+                          20
+                        ),
+                    }
+                  : null,
+
+              modules:
+                data.modules,
+
+              findings:
+                data.findings.slice(
+                  0,
+                  20
+                ),
+
+              caveats:
+                data.caveats.slice(
+                  0,
+                  20
+                ),
+            }
+          : undefined,
+      [data]
+    );
+
   if (loading) {
     return (
       <div className="mt-6 overflow-hidden rounded-3xl border border-orange-500/20 bg-gradient-to-b from-orange-500/5 to-zinc-950/70 text-left">
@@ -758,6 +821,7 @@ export default function BitcoinIntelligenceReport({
         subjectValue={address}
         title="Bitcoin Address Analysis"
         analysisPayload={historicalSnapshot}
+        askEvidencePayload={askEvidencePayload}
       />
 
       <section className="rounded-3xl border border-zinc-900 bg-black/20 p-5">

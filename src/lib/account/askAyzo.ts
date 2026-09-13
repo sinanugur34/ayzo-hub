@@ -10,6 +10,13 @@ export type AskAyzoIntent =
   | "deployment"
   | "developer-history"
   | "coverage"
+  | "transaction-history"
+  | "canonical-transaction"
+  | "transaction-value"
+  | "transaction-cost"
+  | "execution"
+  | "resource-usage"
+  | "contract-type"
   | "financial-advice"
   | "unknown";
 
@@ -260,6 +267,124 @@ function detectIntent(
     includesAny(
       q,
       [
+        "contract type",
+        "contract türü",
+        "sözleşme türü",
+      ]
+    )
+  ) {
+    return "contract-type";
+  }
+
+  if (
+    includesAny(
+      q,
+      [
+        "energy usage",
+        "energy used",
+        "energy was used",
+        "how much energy",
+        "energy total",
+        "net usage",
+        "bandwidth usage",
+        "enerji kullanımı",
+        "enerji kullanıldı",
+        "ne kadar enerji",
+      ]
+    )
+  ) {
+    return "resource-usage";
+  }
+
+  if (
+    includesAny(
+      q,
+      [
+        "transaction fee",
+        "transaction fees",
+        "fee sun",
+        "fees koinu",
+        "işlem ücreti",
+        "işlem masrafı",
+      ]
+    )
+  ) {
+    return "transaction-cost";
+  }
+
+  if (
+    includesAny(
+      q,
+      [
+        "execution result",
+        "execution status",
+        "transaction result",
+        "işlem sonucu",
+        "execution",
+      ]
+    )
+  ) {
+    return "execution";
+  }
+
+  if (
+    includesAny(
+      q,
+      [
+        "transaction value",
+        "value transferred",
+        "doge value",
+        "value koinu",
+        "işlem değeri",
+        "transfer değeri",
+      ]
+    )
+  ) {
+    return "transaction-value";
+  }
+
+  if (
+    includesAny(
+      q,
+      [
+        "canonical transaction",
+        "canonical tx",
+        "is it confirmed",
+        "transaction confirmed",
+        "confirmations",
+        "how many inputs",
+        "how many outputs",
+        "prevout",
+        "onaylı mı",
+        "onay sayısı",
+      ]
+    )
+  ) {
+    return "canonical-transaction";
+  }
+
+  if (
+    includesAny(
+      q,
+      [
+        "transaction history",
+        "address history",
+        "transaction count",
+        "how many transactions",
+        "transactions observed",
+        "observed transactions",
+        "kaç işlem",
+        "işlem sayısı",
+      ]
+    )
+  ) {
+    return "transaction-history";
+  }
+
+  if (
+    includesAny(
+      q,
+      [
         "coverage",
         "complete",
         "limited",
@@ -320,7 +445,7 @@ function baseResult(
     evidence,
     caveats,
     limitation:
-      "Ask AYZO V1 answers only from evidence already collected by AYZO for the current analysis. It does not infer legal identity, beneficial ownership, intent, affiliation or investment suitability.",
+      "Ask AYZO answers only from evidence already collected by AYZO for the current analysis. It does not infer legal identity, beneficial ownership, intent, affiliation or investment suitability.",
   };
 }
 
@@ -1061,6 +1186,525 @@ function answerDeveloperHistory(
   );
 }
 
+function canonicalFrom(
+  root: JsonRecord
+) {
+  return record(
+    root.canonicalTransaction
+  );
+}
+
+function formatBaseUnits(
+  raw: string,
+  decimals: number,
+  symbol: string
+) {
+  try {
+    const value =
+      BigInt(raw);
+
+    const divisor =
+      10n **
+      BigInt(decimals);
+
+    const whole =
+      value /
+      divisor;
+
+    const remainder =
+      value %
+      divisor;
+
+    const wholeText =
+      whole.toLocaleString(
+        "en-US"
+      );
+
+    if (
+      remainder ===
+      0n
+    ) {
+      return `${wholeText} ${symbol}`;
+    }
+
+    const fraction =
+      remainder
+        .toString()
+        .padStart(
+          decimals,
+          "0"
+        )
+        .replace(
+          /0+$/,
+          ""
+        );
+
+    return (
+      `${wholeText}.${fraction} ${symbol}`
+    );
+  } catch {
+    return `${raw} ${symbol} base units`;
+  }
+}
+
+function answerTransactionHistory(
+  root: JsonRecord
+) {
+  const history =
+    record(
+      root.history
+    );
+
+  if (!history) {
+    return baseResult(
+      "transaction-history",
+      "insufficient-evidence",
+      "Address transaction history is unavailable in the current evidence.",
+      "low",
+      [],
+      []
+    );
+  }
+
+  const transactions =
+    array(
+      history.transactions
+    );
+
+  return baseResult(
+    "transaction-history",
+    "answered",
+    `AYZO observed ${transactions.length} transaction${transactions.length === 1 ? "" : "s"} in the bounded address-history window.`,
+    "high",
+    [
+      `Observed transactions: ${transactions.length}.`,
+    ],
+    [
+      "The bounded history window may not represent the complete lifetime history of the address.",
+    ]
+  );
+}
+
+function answerCanonicalTransaction(
+  root: JsonRecord
+) {
+  const tx =
+    canonicalFrom(
+      root
+    );
+
+  if (!tx) {
+    return baseResult(
+      "canonical-transaction",
+      "insufficient-evidence",
+      "Canonical transaction evidence is unavailable.",
+      "low",
+      [],
+      []
+    );
+  }
+
+  const confirmed =
+    typeof tx.confirmed ===
+      "boolean"
+      ? tx.confirmed
+      : null;
+
+  const confirmations =
+    numberValue(
+      tx.confirmations
+    );
+
+  const inputs =
+    "inputs" in tx
+      ? array(
+          tx.inputs
+        )
+      : null;
+
+  const outputs =
+    "outputs" in tx
+      ? array(
+          tx.outputs
+        )
+      : null;
+
+  return baseResult(
+    "canonical-transaction",
+    "answered",
+
+    confirmed !== null
+      ? `The canonical transaction is ${confirmed ? "confirmed" : "not confirmed"}${confirmations !== null ? ` with ${confirmations} confirmation${confirmations === 1 ? "" : "s"}` : ""}.`
+      : "AYZO resolved canonical transaction evidence.",
+
+    "high",
+
+    [
+      ...(confirmed !== null
+        ? [
+            `Confirmed: ${confirmed ? "yes" : "no"}.`,
+          ]
+        : []),
+
+      ...(confirmations !== null
+        ? [
+            `Confirmations: ${confirmations}.`,
+          ]
+        : []),
+
+      ...(inputs
+        ? [
+            `Inputs: ${inputs.length}.`,
+          ]
+        : []),
+
+      ...(outputs
+        ? [
+            `Outputs: ${outputs.length}.`,
+          ]
+        : []),
+    ],
+
+    [
+      "Canonical transaction evidence does not establish ownership or intent.",
+    ]
+  );
+}
+
+function answerTransactionCost(
+  root: JsonRecord
+) {
+  const tx =
+    canonicalFrom(
+      root
+    );
+
+  if (!tx) {
+    return baseResult(
+      "transaction-cost",
+      "insufficient-evidence",
+      "Transaction fee evidence is unavailable.",
+      "low",
+      [],
+      []
+    );
+  }
+
+  const doge =
+    text(
+      tx.feesKoinu
+    );
+
+  if (doge !== null) {
+    const formatted =
+      formatBaseUnits(
+        doge,
+        8,
+        "DOGE"
+      );
+
+    return baseResult(
+      "transaction-cost",
+      "answered",
+      `The canonical Dogecoin transaction fee is ${formatted}.`,
+      "high",
+      [
+        `Transaction fee: ${formatted}.`,
+      ],
+      []
+    );
+  }
+
+  const tron =
+    text(
+      tx.feeSun
+    );
+
+  if (tron !== null) {
+    const formatted =
+      formatBaseUnits(
+        tron,
+        6,
+        "TRX"
+      );
+
+    return baseResult(
+      "transaction-cost",
+      "answered",
+      `The canonical TRON transaction fee is ${formatted}.`,
+      "high",
+      [
+        `Transaction fee: ${formatted}.`,
+      ],
+      []
+    );
+  }
+
+  return baseResult(
+    "transaction-cost",
+    "insufficient-evidence",
+    "A supported transaction fee field is unavailable.",
+    "low",
+    [],
+    []
+  );
+}
+
+function answerTransactionValue(
+  root: JsonRecord
+) {
+  const tx =
+    canonicalFrom(
+      root
+    );
+
+  if (!tx) {
+    return baseResult(
+      "transaction-value",
+      "insufficient-evidence",
+      "Transaction value evidence is unavailable.",
+      "low",
+      [],
+      []
+    );
+  }
+
+  const doge =
+    text(
+      tx.valueKoinu
+    );
+
+  if (doge !== null) {
+    const formatted =
+      formatBaseUnits(
+        doge,
+        8,
+        "DOGE"
+      );
+
+    return baseResult(
+      "transaction-value",
+      "answered",
+      `The canonical Dogecoin evidence reports ${formatted}.`,
+      "high",
+      [
+        `Observed value: ${formatted}.`,
+      ],
+      []
+    );
+  }
+
+  const contract =
+    record(
+      tx.contract
+    );
+
+  const sun =
+    text(
+      contract?.amountSun
+    ) ??
+    text(
+      contract?.callValueSun
+    );
+
+  if (sun !== null) {
+    const formatted =
+      formatBaseUnits(
+        sun,
+        6,
+        "TRX"
+      );
+
+    return baseResult(
+      "transaction-value",
+      "answered",
+      `The TRON contract evidence reports an observed value of ${formatted}.`,
+      "high",
+      [
+        `Observed value: ${formatted}.`,
+      ],
+      []
+    );
+  }
+
+  return baseResult(
+    "transaction-value",
+    "insufficient-evidence",
+    "A supported transaction value field is unavailable.",
+    "low",
+    [],
+    []
+  );
+}
+
+function answerExecution(
+  root: JsonRecord
+) {
+  const tx =
+    canonicalFrom(
+      root
+    );
+
+  const result =
+    text(
+      tx?.executionResult
+    );
+
+  if (!result) {
+    return baseResult(
+      "execution",
+      "insufficient-evidence",
+      "Execution result evidence is unavailable.",
+      "low",
+      [],
+      []
+    );
+  }
+
+  return baseResult(
+    "execution",
+    "answered",
+    `The canonical TRON transaction execution result is ${result}.`,
+    "high",
+    [
+      `Execution result: ${result}.`,
+    ],
+    []
+  );
+}
+
+function answerResourceUsage(
+  root: JsonRecord
+) {
+  const tx =
+    canonicalFrom(
+      root
+    );
+
+  if (!tx) {
+    return baseResult(
+      "resource-usage",
+      "insufficient-evidence",
+      "TRON resource usage evidence is unavailable.",
+      "low",
+      [],
+      []
+    );
+  }
+
+  const energyTotal =
+    numberValue(
+      tx.energyUsageTotal
+    );
+
+  const energy =
+    numberValue(
+      tx.energyUsage
+    );
+
+  const net =
+    numberValue(
+      tx.netUsage
+    );
+
+  if (
+    energyTotal === null &&
+    energy === null &&
+    net === null
+  ) {
+    return baseResult(
+      "resource-usage",
+      "insufficient-evidence",
+      "Energy and network usage are unavailable for the current transaction.",
+      "low",
+      [],
+      []
+    );
+  }
+
+  const primaryEnergy =
+    energyTotal ??
+    energy;
+
+  return baseResult(
+    "resource-usage",
+    "answered",
+
+    primaryEnergy !== null
+      ? `The canonical TRON evidence reports energy usage of ${primaryEnergy.toLocaleString("en-US")}${net !== null ? ` and net usage of ${net.toLocaleString("en-US")}` : ""}.`
+      : `The canonical TRON evidence reports net usage of ${net?.toLocaleString("en-US")}.`,
+
+    "high",
+
+    [
+      ...(energyTotal !== null
+        ? [
+            `Energy usage total: ${energyTotal.toLocaleString("en-US")}.`,
+          ]
+        : []),
+
+      ...(energy !== null
+        ? [
+            `Energy usage: ${energy.toLocaleString("en-US")}.`,
+          ]
+        : []),
+
+      ...(net !== null
+        ? [
+            `Net usage: ${net.toLocaleString("en-US")}.`,
+          ]
+        : []),
+    ],
+
+    [
+      "Resource usage is transaction execution evidence, not an investment or risk classification.",
+    ]
+  );
+}
+
+function answerContractType(
+  root: JsonRecord
+) {
+  const tx =
+    canonicalFrom(
+      root
+    );
+
+  const contract =
+    record(
+      tx?.contract
+    );
+
+  const contractType =
+    text(
+      contract?.type
+    );
+
+  if (!contractType) {
+    return baseResult(
+      "contract-type",
+      "insufficient-evidence",
+      "TRON contract type evidence is unavailable.",
+      "low",
+      [],
+      []
+    );
+  }
+
+  return baseResult(
+    "contract-type",
+    "answered",
+    `The canonical TRON transaction contains contract type ${contractType}.`,
+    "high",
+    [
+      `Contract type: ${contractType}.`,
+    ],
+    [
+      "Contract type alone does not establish purpose, identity or intent.",
+    ]
+  );
+}
+
 function answerCoverage(
   root: JsonRecord
 ) {
@@ -1180,7 +1824,7 @@ export function buildAskAyzoAnswer({
     return baseResult(
       intent,
       "unsupported-question",
-      "Ask AYZO V1 can answer questions about the main findings, holder concentration, wallet relationships, funding, Solana authorities, EVM deployment/developer history and analysis coverage.",
+      "Ask AYZO can answer questions about findings, coverage, Solana authorities, holder concentration, wallet relationships, funding, EVM deployment/developer history, and supported Bitcoin, Dogecoin and TRON transaction evidence.",
       "high",
       [],
       []
@@ -1238,6 +1882,41 @@ export function buildAskAyzoAnswer({
 
     case "coverage":
       return answerCoverage(
+        root
+      );
+
+    case "transaction-history":
+      return answerTransactionHistory(
+        root
+      );
+
+    case "canonical-transaction":
+      return answerCanonicalTransaction(
+        root
+      );
+
+    case "transaction-value":
+      return answerTransactionValue(
+        root
+      );
+
+    case "transaction-cost":
+      return answerTransactionCost(
+        root
+      );
+
+    case "execution":
+      return answerExecution(
+        root
+      );
+
+    case "resource-usage":
+      return answerResourceUsage(
+        root
+      );
+
+    case "contract-type":
+      return answerContractType(
         root
       );
   }
