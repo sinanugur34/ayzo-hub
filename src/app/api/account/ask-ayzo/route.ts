@@ -11,6 +11,11 @@ import {
 } from "@/lib/account/askAyzoRouter";
 
 import {
+  answerAskAyzoSemantically,
+  isAskAyzoSemanticEnabled,
+} from "@/lib/account/askAyzoSemantic";
+
+import {
   isRecord,
   readRequiredString,
   readSubjectType,
@@ -156,7 +161,7 @@ export async function POST(
     );
   }
 
-  const result =
+  const deterministicResult =
     routeAskAyzoQuestion({
       network,
       subjectType,
@@ -165,6 +170,41 @@ export async function POST(
       evidencePayload:
         body.evidencePayload,
     });
+
+  let result =
+    deterministicResult;
+
+  const semanticEligible =
+    network !==
+      "ayzo" &&
+    deterministicResult.intent !==
+      "financial-advice" &&
+    deterministicResult.mode !==
+      "site-help" &&
+    deterministicResult.mode !==
+      "product-help";
+
+  if (
+    semanticEligible &&
+    isAskAyzoSemanticEnabled()
+  ) {
+    const semanticResult =
+      await answerAskAyzoSemantically({
+        network,
+        subjectType,
+        subjectValue,
+        question,
+        evidencePayload:
+          body.evidencePayload,
+        fallback:
+          deterministicResult,
+      });
+
+    if (semanticResult) {
+      result =
+        semanticResult;
+    }
+  }
 
   return noStoreJson({
     ok: true,
