@@ -3,6 +3,10 @@ import {
   type ActivityTimeline,
 } from "@/lib/intelligence/activityTimeline";
 
+import {
+  buildEvmMarketFlowIntelligence,
+} from "./marketFlowIntelligence";
+
 import type {
   IntelligenceEngineResult,
   IntelligenceErrorResponse,
@@ -1914,6 +1918,83 @@ export async function runEvmUnifiedIntelligence(
       unavailable(
         "No usable transaction or transfer evidence was available for graph construction."
       );
+  }
+
+
+  if (
+    request.analysisPlan === "pro" ||
+    request.analysisPlan === "advanced"
+  ) {
+    const marketFlow =
+      buildEvmMarketFlowIntelligence({
+        analyzedAddress:
+          address,
+
+        transactions:
+          rootTransactions,
+
+        transfers:
+          rootTransfers,
+
+        transactionsAvailable:
+          rootTransactionResult.ok,
+
+        transfersAvailable:
+          transferResult?.ok ===
+          true,
+
+        transactionExhausted,
+
+        transferExhausted,
+      });
+
+    modules.marketFlowIntelligence =
+      limited(
+        marketFlow,
+        marketFlow.limitation
+      );
+
+    if (
+      marketFlow.totalDirectionalObservationCount >
+      0
+    ) {
+      findings.push({
+        id:
+          "evm-market-flow-observed",
+
+        category:
+          "market-flow",
+
+        title:
+          "Market flow evidence observed",
+
+        severity:
+          "informational",
+
+        confidence:
+          "high",
+
+        summary:
+          `AYZO observed ${marketFlow.incomingObservationCount} incoming and ${marketFlow.outgoingObservationCount} outgoing evidence item(s) across ${marketFlow.uniqueCounterpartyCount} unique counterparty address(es) in the bounded analysis window.`,
+
+        caveat:
+          marketFlow.limitation,
+      });
+    }
+  } else {
+    modules.marketFlowIntelligence = {
+      status:
+        "not-run",
+
+      data:
+        null,
+
+      error:
+        null,
+
+      limitation:
+        "Market Flow Intelligence requires AYZO Pro or Advanced.",
+    };
   }
 
 
