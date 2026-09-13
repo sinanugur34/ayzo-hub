@@ -196,8 +196,7 @@ export async function POST(
 ) {
   if (
     requestTooLarge(
-      request,
-      196_608
+      request
     )
   ) {
     return noStoreJson(
