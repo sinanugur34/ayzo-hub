@@ -4,8 +4,15 @@ import AnalysisLimitCard from "@/components/AnalysisLimitCard";
 
 import {
   useEffect,
+  useMemo,
   useState,
 } from "react";
+
+import AnalysisActions from "@/components/AnalysisActions";
+
+import {
+  buildHistoricalSnapshot,
+} from "@/lib/account/historicalSnapshot";
 
 import type {
   TronTransactionEvidence,
@@ -390,6 +397,111 @@ export default function TronIntelligenceReport({
     address,
   ]);
 
+  const historicalSnapshot =
+    useMemo(
+      () =>
+        data
+          ? buildHistoricalSnapshot(
+              "tron",
+              data
+            )
+          : null,
+      [data]
+    );
+
+  const askEvidencePayload =
+    useMemo(
+      () =>
+        data
+          ? {
+              adapter:
+                "tron",
+
+              network:
+                "tron",
+
+              coverage:
+                data.coverage,
+
+              history: {
+                transactions:
+                  data.history.transactions.slice(
+                    0,
+                    20
+                  ),
+
+                nextCursor:
+                  data.history.nextCursor,
+              },
+
+              canonicalTransaction:
+                data.canonicalTransaction
+                  ? {
+                      transactionHash:
+                        data.canonicalTransaction.transactionHash,
+
+                      blockHeight:
+                        data.canonicalTransaction.blockHeight,
+
+                      timestamp:
+                        data.canonicalTransaction.timestamp,
+
+                      confirmed:
+                        data.canonicalTransaction.confirmed,
+
+                      executionResult:
+                        data.canonicalTransaction.executionResult,
+
+                      feeSun:
+                        data.canonicalTransaction.feeSun,
+
+                      energyUsage:
+                        data.canonicalTransaction.energyUsage,
+
+                      energyUsageTotal:
+                        data.canonicalTransaction.energyUsageTotal,
+
+                      netUsage:
+                        data.canonicalTransaction.netUsage,
+
+                      signatureCount:
+                        data.canonicalTransaction.signatureCount,
+
+                      contract:
+                        data.canonicalTransaction.contract
+                          ? {
+                              type:
+                                data.canonicalTransaction.contract.type,
+
+                              amountSun:
+                                data.canonicalTransaction.contract.amountSun,
+
+                              callValueSun:
+                                data.canonicalTransaction.contract.callValueSun,
+                            }
+                          : null,
+                    }
+                  : null,
+
+              modules:
+                data.modules,
+
+              findings:
+                data.findings.slice(
+                  0,
+                  20
+                ),
+
+              caveats:
+                data.caveats.slice(
+                  0,
+                  20
+                ),
+            }
+          : undefined,
+      [data]
+    );
+
   if (loading) {
     return (
       <div className="mt-6 overflow-hidden rounded-3xl border border-red-500/20 bg-gradient-to-b from-red-500/5 to-zinc-950/70 text-left">
@@ -680,6 +792,17 @@ export default function TronIntelligenceReport({
           </div>
         </div>
       )}
+
+      <div className="border-t border-zinc-900 p-6 sm:p-8">
+        <AnalysisActions
+          network="tron"
+          subjectType="wallet"
+          subjectValue={address}
+          title="TRON Address Analysis"
+          analysisPayload={historicalSnapshot}
+          askEvidencePayload={askEvidencePayload}
+        />
+      </div>
 
       {data.caveats.length >
         0 && (

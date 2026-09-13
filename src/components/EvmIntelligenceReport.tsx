@@ -821,6 +821,101 @@ export default function EvmIntelligenceReport({
       ]
     );
 
+  const askEvidencePayload =
+    useMemo(
+      () =>
+        data
+          ? {
+              coverage:
+                data.coverage,
+
+              moduleSummary:
+                data.moduleSummary,
+
+              findings:
+                data.findings.slice(
+                  0,
+                  20
+                ),
+
+              caveats:
+                data.caveats.slice(
+                  0,
+                  20
+                ),
+
+              modules: {
+                assetVerification:
+                  data.modules.assetVerification,
+
+                holderIntelligence:
+                  data.modules.holderIntelligence,
+
+                walletRelationships:
+                  data.modules.walletRelationships.data
+                    ? {
+                        ...data.modules.walletRelationships,
+
+                        data: {
+                          ...data.modules.walletRelationships.data,
+
+                          counterparties:
+                            data.modules.walletRelationships.data.counterparties.slice(
+                              0,
+                              20
+                            ),
+                        },
+                      }
+                    : data.modules.walletRelationships,
+
+                fundingProvenance:
+                  data.modules.fundingProvenance.data
+                    ? {
+                        ...data.modules.fundingProvenance,
+
+                        data: {
+                          ...data.modules.fundingProvenance.data,
+
+                          sources:
+                            data.modules.fundingProvenance.data.sources.slice(
+                              0,
+                              20
+                            ),
+                        },
+                      }
+                    : data.modules.fundingProvenance,
+
+                deploymentIntelligence:
+                  data.modules.deploymentIntelligence,
+
+                developerHistory:
+                  data.modules.developerHistory,
+
+                coordinatedWalletBehavior:
+                  data.modules.coordinatedWalletBehavior,
+
+                walletGraph:
+                  data.modules.walletGraph.data
+                    ? {
+                        ...data.modules.walletGraph,
+
+                        data: {
+                          ...data.modules.walletGraph.data,
+
+                          nodes:
+                            data.modules.walletGraph.data.nodes.slice(
+                              0,
+                              20
+                            ),
+                        },
+                      }
+                    : data.modules.walletGraph,
+              },
+            }
+          : undefined,
+      [data]
+    );
+
   if (loading) {
     return (
       <div className="mt-6 overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-b from-violet-500/5 to-zinc-950/70 text-left">
@@ -1653,6 +1748,7 @@ export default function EvmIntelligenceReport({
         title={`${networkDefinition.name} Address Analysis`}
         analysisPayload={historicalSnapshot}
         entityEvidencePayload={entityEvidencePayload}
+        askEvidencePayload={askEvidencePayload}
       />
 
       <section className="rounded-3xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 to-zinc-950/70 p-6 sm:p-7">
