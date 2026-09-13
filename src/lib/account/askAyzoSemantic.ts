@@ -49,25 +49,52 @@ type SemanticModelResult = {
 };
 
 const MAX_TOTAL_EVIDENCE =
-  180;
+  88;
 
 const MAX_SECTION_EVIDENCE =
-  20;
+  8;
 
 const MAX_ARRAY_ITEMS =
-  12;
+  8;
 
 const MAX_DEPTH =
   7;
 
 const MAX_SCALAR_LENGTH =
-  320;
+  180;
 
 const REQUEST_TIMEOUT_MS =
   20_000;
 
-const DEFAULT_MODEL =
+const DEFAULT_GROQ_MODEL =
+  "openai/gpt-oss-120b";
+
+const DEFAULT_OPENAI_MODEL =
   "gpt-5.6-sol";
+
+const GROQ_RESPONSES_ENDPOINT =
+  "https://api.groq.com/openai/v1/responses";
+
+const OPENAI_RESPONSES_ENDPOINT =
+  "https://api.openai.com/v1/responses";
+
+type AskAyzoSemanticProvider =
+  | "groq"
+  | "openai";
+
+type AskAyzoProviderConfig = {
+  provider:
+    AskAyzoSemanticProvider;
+
+  endpoint:
+    string;
+
+  apiKey:
+    string;
+
+  model:
+    string;
+};
 
 const OUTPUT_SCHEMA = {
   type:
@@ -323,8 +350,11 @@ function collectSection(
 function buildEvidenceItems(
   payload: unknown
 ): EvidenceItem[] {
-  const raw:
-    Omit<EvidenceItem, "id">[] =
+  const sections:
+    Omit<
+      EvidenceItem,
+      "id"
+    >[][] =
     [];
 
   const root =
@@ -342,13 +372,6 @@ function buildEvidenceItems(
         root
       )
     ) {
-      if (
-        raw.length >=
-        MAX_TOTAL_EVIDENCE
-      ) {
-        break;
-      }
-
       const section:
         Omit<
           EvidenceItem,
@@ -364,50 +387,116 @@ function buildEvidenceItems(
         section
       );
 
-      const remaining =
-        MAX_TOTAL_EVIDENCE -
-        raw.length;
-
-      raw.push(
-        ...section.slice(
-          0,
-          remaining
-        )
-      );
+      if (
+        section.length >
+        0
+      ) {
+        sections.push(
+          section
+        );
+      }
     }
   } else {
+    const section:
+      Omit<
+        EvidenceItem,
+        "id"
+      >[] =
+      [];
+
     collectSection(
       payload,
       "$",
-      raw
+      section
     );
+
+    if (
+      section.length >
+      0
+    ) {
+      sections.push(
+        section
+      );
+    }
   }
 
-  return raw
-    .slice(
-      0,
-      MAX_TOTAL_EVIDENCE
-    )
-    .map(
-      (
-        item,
-        index
-      ) => ({
-        id:
-          `E${String(
-            index + 1
-          ).padStart(
-            3,
-            "0"
-          )}`,
+  /*
+   * Round-robin across top-level
+   * evidence sections so one large
+   * module cannot consume the entire
+   * semantic evidence budget.
+   */
+  const raw:
+    Omit<
+      EvidenceItem,
+      "id"
+    >[] =
+    [];
 
-        path:
-          item.path,
+  let row =
+    0;
 
-        value:
-          item.value,
-      })
-    );
+  while (
+    raw.length <
+    MAX_TOTAL_EVIDENCE
+  ) {
+    let added =
+      false;
+
+    for (
+      const section
+      of sections
+    ) {
+      if (
+        raw.length >=
+        MAX_TOTAL_EVIDENCE
+      ) {
+        break;
+      }
+
+      const item =
+        section[row];
+
+      if (!item) {
+        continue;
+      }
+
+      raw.push(
+        item
+      );
+
+      added =
+        true;
+    }
+
+    if (!added) {
+      break;
+    }
+
+    row +=
+      1;
+  }
+
+  return raw.map(
+    (
+      item,
+      index
+    ) => ({
+      id:
+        `E${String(
+          index + 1
+        ).padStart(
+          3,
+          "0"
+        )}`,
+
+      path:
+        item.path,
+
+      value:
+        item.value,
+    })
+  );
 }
 
 function extractOutputText(
@@ -627,14 +716,98 @@ function parseSemanticResult(
   };
 }
 
-function modelName() {
+function semanticProvider():
+  AskAyzoSemanticProvider | null {
   const configured =
+    process.env
+      .ASK_AYZO_PROVIDER
+      ?.trim()
+      .toLocaleLowerCase(
+        "en-US"
+      );
+
+  if (
+    !configured ||
+    configured ===
+      "groq"
+  ) {
+    return "groq";
+  }
+
+  if (
+    configured ===
+      "openai"
+  ) {
+    return "openai";
+  }
+
+  return null;
+}
+
+function resolveProviderConfig():
+  AskAyzoProviderConfig | null {
+  const provider =
+    semanticProvider();
+
+  if (!provider) {
+    return null;
+  }
+
+  const configuredModel =
     process.env
       .ASK_AYZO_MODEL
       ?.trim();
 
-  return configured ||
-    DEFAULT_MODEL;
+  if (
+    provider ===
+    "groq"
+  ) {
+    const apiKey =
+      process.env
+        .GROQ_API_KEY
+        ?.trim();
+
+    if (!apiKey) {
+      return null;
+    }
+
+    return {
+      provider:
+        "groq",
+
+      endpoint:
+        GROQ_RESPONSES_ENDPOINT,
+
+      apiKey,
+
+      model:
+        configuredModel ||
+        DEFAULT_GROQ_MODEL,
+    };
+  }
+
+  const apiKey =
+    process.env
+      .OPENAI_API_KEY
+      ?.trim();
+
+  if (!apiKey) {
+    return null;
+  }
+
+  return {
+    provider:
+      "openai",
+
+    endpoint:
+      OPENAI_RESPONSES_ENDPOINT,
+
+    apiKey,
+
+    model:
+      configuredModel ||
+      DEFAULT_OPENAI_MODEL,
+  };
 }
 
 export function isAskAyzoSemanticEnabled() {
@@ -642,11 +815,8 @@ export function isAskAyzoSemanticEnabled() {
     process.env
       .ASK_AYZO_LLM_ENABLED ===
       "1" &&
-    Boolean(
-      process.env
-        .OPENAI_API_KEY
-        ?.trim()
-    )
+    resolveProviderConfig() !==
+      null
   );
 }
 
@@ -660,13 +830,11 @@ export async function answerAskAyzoSemantically({
 }: SemanticInput): Promise<
   AskAyzoRouterResult | null
 > {
-  const apiKey =
-    process.env
-      .OPENAI_API_KEY
-      ?.trim();
+  const provider =
+    resolveProviderConfig();
 
   if (
-    !apiKey ||
+    !provider ||
     process.env
       .ASK_AYZO_LLM_ENABLED !==
       "1"
@@ -714,7 +882,7 @@ export async function answerAskAyzoSemantically({
   try {
     const response =
       await fetch(
-        "https://api.openai.com/v1/responses",
+        provider.endpoint,
         {
           method:
             "POST",
@@ -727,7 +895,7 @@ export async function answerAskAyzoSemantically({
 
           headers: {
             Authorization:
-              `Bearer ${apiKey}`,
+              `Bearer ${provider.apiKey}`,
 
             "Content-Type":
               "application/json",
@@ -736,10 +904,17 @@ export async function answerAskAyzoSemantically({
           body:
             JSON.stringify({
               model:
-                modelName(),
+                provider.model,
 
-              store:
-                false,
+              ...(
+                provider.provider ===
+                  "openai"
+                  ? {
+                      store:
+                        false,
+                    }
+                  : {}
+              ),
 
               reasoning: {
                 effort:
@@ -747,12 +922,9 @@ export async function answerAskAyzoSemantically({
               },
 
               max_output_tokens:
-                2200,
+                1400,
 
               text: {
-                verbosity:
-                  "low",
-
                 format: {
                   type:
                     "json_schema",
