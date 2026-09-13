@@ -9,7 +9,8 @@
     "lint": "eslint",
     "check:ask-ayzo-site": "node scripts/check-ask-ayzo-site-knowledge.mjs",
     "prebuild": "npm run check:ask-ayzo-site",
-    "test:entity-labels": "tsx --test src/lib/account/ayzoEntityLabels.test.ts"
+    "test:entity-labels": "tsx --test src/lib/account/ayzoEntityLabels.test.ts",
+    "test:all": "node scripts/run-ts-tests.mjs"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.74.0",
@@ -22,6 +23,7 @@
     "next": "16.3.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "server-only": "0.0.1",
     "sharp": "0.35.4"
   },
   "devDependencies": {

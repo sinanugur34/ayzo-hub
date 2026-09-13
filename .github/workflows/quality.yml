@@ -1,0 +1,57 @@
+name: Quality Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Tests, lint, build, audit
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 15
+
+    env:
+      CI: "1"
+      NEXT_TELEMETRY_DISABLED: "1"
+      SENTRY_AUTH_TOKEN: ""
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.10.0"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript tests
+        run: npm run test:all
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build
+
+      - name: Security audit
+        run: npm audit --audit-level=high
