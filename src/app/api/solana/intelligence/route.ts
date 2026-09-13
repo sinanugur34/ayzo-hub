@@ -137,13 +137,17 @@ export async function POST(request: Request) {
           {
             ok: false,
             code:
-              quota.plan === "pro"
-                ? "DAILY_PRO_LIMIT"
-                : "DAILY_FREE_LIMIT",
+              quota.plan === "advanced"
+                ? "DAILY_ADVANCED_LIMIT"
+                : quota.plan === "pro"
+                  ? "DAILY_PRO_LIMIT"
+                  : "DAILY_FREE_LIMIT",
             error:
-              quota.plan === "pro"
-                ? "Daily Pro analysis limit reached."
-                : "Daily free analysis limit reached.",
+              quota.plan === "advanced"
+                ? "Daily Advanced analysis limit reached."
+                : quota.plan === "pro"
+                  ? "Daily Pro analysis limit reached."
+                  : "Daily free analysis limit reached.",
             plan: quota.plan,
             quota: {
               limit: quota.limit,

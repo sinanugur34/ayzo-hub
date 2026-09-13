@@ -74,28 +74,47 @@ function getRedis() {
   return redisClient;
 }
 
+type PaidQuotaPlan =
+  | "pro"
+  | "advanced";
+
 function hashUserId(
   userId:
-    string
+    string,
+  plan:
+    PaidQuotaPlan
 ) {
+  /*
+   * Preserve the historical Pro
+   * hash input exactly so existing
+   * Pro daily counters are not reset.
+   */
+  const namespace =
+    plan === "pro"
+      ? "pro-quota"
+      : "advanced-quota";
+
   return createHmac(
     "sha256",
     getInternalApiKey()
   )
     .update(
-      `pro-quota:${userId}`
+      `${namespace}:${userId}`
     )
     .digest("hex");
 }
 
-function proQuotaKey(
+function paidQuotaKey(
   userId:
-    string
+    string,
+  plan:
+    PaidQuotaPlan
 ) {
   return (
-    "ayzo:quota:v1:pro:user:" +
+    `ayzo:quota:v1:${plan}:user:` +
     hashUserId(
-      userId
+      userId,
+      plan
     )
   );
 }
@@ -140,13 +159,15 @@ function resetAtFromTtl(
   );
 }
 
-async function getProStatus(
+async function getPaidStatus(
   userId:
-    string
+    string,
+  plan:
+    PaidQuotaPlan
 ): Promise<AnalysisQuotaState> {
   const policy =
     getAnalysisQuotaPolicy(
-      "pro"
+      plan
     );
 
   const redis =
@@ -155,7 +176,7 @@ async function getProStatus(
   if (!redis) {
     return {
       plan:
-        "pro",
+        plan,
       allowed:
         true,
       available:
@@ -172,8 +193,9 @@ async function getProStatus(
   }
 
   const key =
-    proQuotaKey(
-      userId
+    paidQuotaKey(
+      userId,
+      plan
     );
 
   try {
@@ -197,7 +219,7 @@ async function getProStatus(
 
     return {
       plan:
-        "pro",
+        plan,
 
       allowed:
         count <
@@ -232,7 +254,7 @@ async function getProStatus(
      */
     return {
       plan:
-        "pro",
+        plan,
       allowed:
         true,
       available:
@@ -249,13 +271,15 @@ async function getProStatus(
   }
 }
 
-async function consumePro(
+async function consumePaid(
   userId:
-    string
+    string,
+  plan:
+    PaidQuotaPlan
 ): Promise<AnalysisQuotaState> {
   const policy =
     getAnalysisQuotaPolicy(
-      "pro"
+      plan
     );
 
   const redis =
@@ -264,7 +288,7 @@ async function consumePro(
   if (!redis) {
     return {
       plan:
-        "pro",
+        plan,
       allowed:
         true,
       available:
@@ -281,8 +305,9 @@ async function consumePro(
   }
 
   const key =
-    proQuotaKey(
-      userId
+    paidQuotaKey(
+      userId,
+      plan
     );
 
   try {
@@ -329,7 +354,7 @@ async function consumePro(
 
     return {
       plan:
-        "pro",
+        plan,
 
       allowed:
         count <=
@@ -359,7 +384,7 @@ async function consumePro(
   } catch {
     return {
       plan:
-        "pro",
+        plan,
       allowed:
         true,
       available:
@@ -387,13 +412,17 @@ export async function getAnalysisQuotaStatus(
     await getServerEntitlement();
 
   if (
-    entitlement
-      .planId ===
-      "pro" &&
+    (
+      entitlement.planId ===
+        "pro" ||
+      entitlement.planId ===
+        "advanced"
+    ) &&
     userId
   ) {
-    return getProStatus(
-      userId
+    return getPaidStatus(
+      userId,
+      entitlement.planId
     );
   }
 
@@ -420,13 +449,17 @@ export async function consumeAnalysisQuota(
     await getServerEntitlement();
 
   if (
-    entitlement
-      .planId ===
-      "pro" &&
+    (
+      entitlement.planId ===
+        "pro" ||
+      entitlement.planId ===
+        "advanced"
+    ) &&
     userId
   ) {
-    return consumePro(
-      userId
+    return consumePaid(
+      userId,
+      entitlement.planId
     );
   }
 
@@ -453,8 +486,8 @@ export async function refundAnalysisQuota(
   }
 
   if (
-    quota.plan ===
-    "pro"
+    quota.plan === "pro" ||
+    quota.plan === "advanced"
   ) {
     const {
       entitlement,
@@ -464,7 +497,7 @@ export async function refundAnalysisQuota(
 
     if (
       entitlement.planId !==
-        "pro" ||
+        quota.plan ||
       !userId
     ) {
       return;
@@ -478,8 +511,9 @@ export async function refundAnalysisQuota(
     }
 
     const key =
-      proQuotaKey(
-        userId
+      paidQuotaKey(
+        userId,
+        quota.plan
       );
 
     try {

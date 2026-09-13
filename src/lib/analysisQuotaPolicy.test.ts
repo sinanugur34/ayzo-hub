@@ -56,21 +56,31 @@ test(
 );
 
 test(
-  "Advanced safely falls back to Free quota while disabled",
+  "Advanced inherits Pro quota while preserving Advanced identity",
   () => {
-    const policy =
+    const pro =
+      getAnalysisQuotaPolicy(
+        "pro"
+      );
+
+    const advanced =
       getAnalysisQuotaPolicy(
         "advanced"
       );
 
     assert.equal(
-      policy.plan,
-      "free"
+      advanced.plan,
+      "advanced"
     );
 
     assert.equal(
-      policy.limit,
-      3
+      advanced.limit,
+      pro.limit
+    );
+
+    assert.equal(
+      advanced.windowSeconds,
+      pro.windowSeconds
     );
   }
 );
