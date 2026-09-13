@@ -335,6 +335,121 @@ export default function IntelligenceReport({
       ]
     );
 
+  const askEvidencePayload =
+    useMemo(
+      () =>
+        data
+          ? {
+              coverage:
+                data.coverage ??
+                data.holders.coverage ??
+                "full",
+
+              tokenVerification: {
+                tokenProgram:
+                  tokenSnapshot.tokenProgram,
+
+                supply:
+                  tokenSnapshot.mint.supply,
+
+                decimals:
+                  tokenSnapshot.mint.decimals,
+
+                mintAuthority:
+                  tokenSnapshot.mint.mintAuthority,
+
+                freezeAuthority:
+                  tokenSnapshot.mint.freezeAuthority,
+              },
+
+              holders: {
+                coverage:
+                  data.holders.coverage,
+
+                limitation:
+                  data.holders.limitation,
+
+                concentration:
+                  data.holders.concentration,
+
+                tokenAccountsAnalyzed:
+                  data.holders.tokenAccountsAnalyzed,
+
+                uniqueOwners:
+                  data.holders.uniqueOwners,
+
+                owners:
+                  data.holders.owners.slice(
+                    0,
+                    20
+                  ),
+              },
+
+              relationships:
+                data.relationships
+                  ? {
+                      walletsAnalyzed:
+                        data.relationships.walletsAnalyzed,
+
+                      sharedTransactionsDetected:
+                        data.relationships.sharedTransactionsDetected,
+
+                      relationshipsDetected:
+                        data.relationships.relationshipsDetected,
+
+                      relations:
+                        data.relationships.relations.slice(
+                          0,
+                          20
+                        ),
+                    }
+                  : null,
+
+              funding:
+                data.funding
+                  ? {
+                      walletsAnalyzed:
+                        data.funding.walletsAnalyzed,
+
+                      incomingTransfersDetected:
+                        data.funding.incomingTransfersDetected,
+
+                      sharedFundingSourcesDetected:
+                        data.funding.sharedFundingSourcesDetected,
+
+                      perWallet:
+                        data.funding.perWallet
+                          .slice(
+                            0,
+                            20
+                          )
+                          .map(
+                            item => ({
+                              ...item,
+
+                              recentIncomingTransfers:
+                                item.recentIncomingTransfers.slice(
+                                  0,
+                                  10
+                                ),
+                            })
+                          ),
+                    }
+                  : null,
+
+              findings:
+                data.findings.slice(
+                  0,
+                  20
+                ),
+            }
+          : undefined,
+      [
+        data,
+        tokenSnapshot,
+      ]
+    );
+
   if (loading) {
     return (
       <div className="mt-6 overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-b from-violet-500/5 to-zinc-950/70">
@@ -529,6 +644,7 @@ export default function IntelligenceReport({
           subjectValue={address}
           title="Solana Token Analysis"
           analysisPayload={historicalSnapshot}
+          askEvidencePayload={askEvidencePayload}
         />
       </div>
     );
@@ -872,6 +988,7 @@ export default function IntelligenceReport({
         title="Solana Token Analysis"
         analysisPayload={historicalSnapshot}
         entityEvidencePayload={entityEvidencePayload}
+        askEvidencePayload={askEvidencePayload}
       />
 
       <section className="rounded-3xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 to-zinc-950/70 p-6 sm:p-7">

@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check:ask-ayzo-site": "node scripts/check-ask-ayzo-site-knowledge.mjs",
+    "prebuild": "npm run check:ask-ayzo-site"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.74.0",

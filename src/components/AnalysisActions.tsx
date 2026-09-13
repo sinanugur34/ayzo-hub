@@ -6,6 +6,7 @@ import EntityAnnotationPanel from "@/components/EntityAnnotationPanel";
 import AyzoEntityLabelsPanel from "@/components/AyzoEntityLabelsPanel";
 import HistoricalChangesPanel from "@/components/HistoricalChangesPanel";
 import InvestigationTimelinePanel from "@/components/InvestigationTimelinePanel";
+import AskAyzoPanel from "@/components/AskAyzoPanel";
 
 import {
   useEffect,
@@ -38,6 +39,7 @@ type Props = {
   title: string;
   analysisPayload?: unknown;
   entityEvidencePayload?: unknown;
+  askEvidencePayload?: unknown;
 };
 
 export default function AnalysisActions({
@@ -47,6 +49,7 @@ export default function AnalysisActions({
   title,
   analysisPayload,
   entityEvidencePayload,
+  askEvidencePayload,
 }: Props) {
   const [
     authState,
@@ -680,6 +683,18 @@ export default function AnalysisActions({
           }
         />
       )}
+
+      <AskAyzoPanel
+        network={network}
+        subjectType={subjectType}
+        subjectValue={subjectValue}
+        evidencePayload={
+          askEvidencePayload ??
+          entityEvidencePayload ??
+          analysisPayload ??
+          null
+        }
+      />
 
       <HistoricalChangesPanel
         network={network}
