@@ -54,6 +54,118 @@ function noStoreJson(
   );
 }
 
+function isShortConversationalFollowUp({
+  question,
+  recentConversation,
+}: {
+  question: string;
+  recentConversation:
+    readonly AskAyzoConversationTurn[];
+}) {
+  if (
+    recentConversation.length ===
+      0
+  ) {
+    return false;
+  }
+
+  const normalized =
+    question
+      .toLocaleLowerCase(
+        "tr-TR"
+      )
+      .replace(
+        /[?!.,;:]+/g,
+        " "
+      )
+      .replace(
+        /\s+/g,
+        " "
+      )
+      .trim();
+
+  if (
+    !normalized ||
+    normalized.length >
+      120
+  ) {
+    return false;
+  }
+
+  const markers = [
+    "peki",
+    "neden",
+    "niye",
+    "bunun",
+    "bunun nedeni",
+    "bu neden",
+    "bu ne anlama geliyor",
+    "bu ne demek",
+    "o zaman",
+    "peki ya",
+    "peki bunun",
+    "neden olabilir",
+    "why",
+    "why is that",
+    "how so",
+    "what about",
+    "what does that mean",
+    "and why",
+    "so why",
+    "then why",
+  ] as const;
+
+  return markers.some(
+    marker =>
+      normalized ===
+        marker ||
+      normalized.startsWith(
+        `${marker} `
+      ) ||
+      normalized.includes(
+        ` ${marker} `
+      )
+  );
+}
+
+function unresolvedFollowUpResult({
+  deterministicResult,
+}: {
+  deterministicResult:
+    ReturnType<
+      typeof routeAskAyzoQuestion
+    >;
+}) {
+  return {
+    ...deterministicResult,
+
+    mode:
+      "evidence" as const,
+
+    status:
+      "insufficient-evidence" as const,
+
+    answer:
+      "Ask AYZO could not ground this follow-up reliably from the current bounded evidence. The previous conversation was preserved, but no unsupported explanation was generated.",
+
+    confidence:
+      "low" as const,
+
+    evidence:
+      [] as readonly string[],
+
+    caveats: [
+      "A short follow-up was recognized, but the semantic reasoning layer did not return a verifiable evidence-grounded answer.",
+    ],
+
+    directions:
+      null,
+
+    limitation:
+      "Ask AYZO does not replace a failed semantic follow-up with an unrelated product-help answer or an uncited factual conclusion.",
+  };
+}
+
 async function canUseAskAyzoSemantic(
   userId: string
 ) {
@@ -319,15 +431,26 @@ export async function POST(
   let result =
     deterministicResult;
 
+  const shortFollowUp =
+    isShortConversationalFollowUp({
+      question,
+      recentConversation,
+    });
+
   const semanticEligible =
     network !==
       "ayzo" &&
     deterministicResult.intent !==
       "financial-advice" &&
-    deterministicResult.mode !==
-      "site-help" &&
-    deterministicResult.mode !==
-      "product-help";
+    (
+      shortFollowUp ||
+      (
+        deterministicResult.mode !==
+          "site-help" &&
+        deterministicResult.mode !==
+          "product-help"
+      )
+    );
 
   const semanticAllowed =
     semanticEligible &&
@@ -358,6 +481,35 @@ export async function POST(
     if (semanticResult) {
       result =
         semanticResult;
+    } else if (
+      shortFollowUp
+    ) {
+      /*
+       * One bounded retry is allowed
+       * only for short conversational
+       * follow-ups. This protects the
+       * UX from transient provider /
+       * schema failures without
+       * doubling normal Groq usage.
+       */
+      const retryResult =
+        await answerAskAyzoSemantically({
+          network,
+          subjectType,
+          subjectValue,
+          question,
+          recentConversation,
+          evidencePayload:
+            body.evidencePayload,
+          fallback:
+            deterministicResult,
+        });
+
+      result =
+        retryResult ??
+        unresolvedFollowUpResult({
+          deterministicResult,
+        });
     }
   }
 
