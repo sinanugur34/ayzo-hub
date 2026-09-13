@@ -20,6 +20,7 @@ export const EVM_UNIFIED_MODULE_IDS = [
   "developerHistory",
   "coordinatedWalletBehavior",
   "walletGraph",
+  "marketFlowIntelligence",
 ] as const;
 
 export type EvmUnifiedModuleId =

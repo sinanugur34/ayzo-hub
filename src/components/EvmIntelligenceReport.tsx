@@ -290,6 +290,99 @@ type WalletGraph = {
   };
 };
 
+type MarketFlowCounterparty = {
+  address:
+    string;
+
+  incomingObservationCount:
+    number;
+
+  outgoingObservationCount:
+    number;
+
+  totalObservationCount:
+    number;
+
+  firstObservedAt:
+    string | null;
+
+  lastObservedAt:
+    string | null;
+};
+
+type MarketFlowEvidence = {
+  kind:
+    | "native_transaction"
+    | "token_transfer";
+
+  direction:
+    | "incoming"
+    | "outgoing"
+    | "self";
+
+  transactionHash:
+    string;
+
+  timestamp:
+    string | null;
+
+  counterparty:
+    string | null;
+
+  assetAddress:
+    string | null;
+
+  rawValue:
+    string | null;
+};
+
+type MarketFlowIntelligence = {
+  schemaVersion:
+    number;
+
+  dominantDirection:
+    | "incoming"
+    | "outgoing"
+    | "balanced"
+    | "none";
+
+  incomingObservationCount:
+    number;
+
+  outgoingObservationCount:
+    number;
+
+  selfObservationCount:
+    number;
+
+  totalDirectionalObservationCount:
+    number;
+
+  uniqueCounterpartyCount:
+    number;
+
+  topCounterpartyObservationShare:
+    number | null;
+
+  firstObservedAt:
+    string | null;
+
+  lastObservedAt:
+    string | null;
+
+  counterparties:
+    readonly MarketFlowCounterparty[];
+
+  recentFlows:
+    readonly MarketFlowEvidence[];
+
+  methodology:
+    string;
+
+  limitation:
+    string;
+};
+
 type EvmSuccess = {
   ok: true;
 
@@ -385,6 +478,11 @@ type EvmSuccess = {
     walletGraph:
       ModuleResult<
         WalletGraph
+      >;
+
+    marketFlowIntelligence:
+      ModuleResult<
+        MarketFlowIntelligence
       >;
   };
 
@@ -1047,6 +1145,11 @@ export default function EvmIntelligenceReport({
       .walletGraph
       .data;
 
+  const marketFlow =
+    data.modules
+      .marketFlowIntelligence
+      .data;
+
   return (
     <div className="mt-6 space-y-6 text-left">
       <section className="overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-b from-violet-500/10 via-purple-500/5 to-zinc-950/80 shadow-2xl shadow-purple-950/10">
@@ -1085,7 +1188,7 @@ export default function EvmIntelligenceReport({
             </div>
           </div>
 
-          <div className="grid gap-3 py-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 py-6 sm:grid-cols-2 lg:grid-cols-5">
             <OverviewStat
               label="Asset type"
               value={
@@ -1122,6 +1225,24 @@ export default function EvmIntelligenceReport({
               value={
                 graph
                   ? `${graph.nodeCount} nodes · ${graph.edgeCount} edges`
+                  : "—"
+              }
+            />
+
+            <OverviewStat
+              label="Market flow"
+              value={
+                marketFlow
+                  ? marketFlow.dominantDirection ===
+                    "incoming"
+                    ? "Incoming"
+                    : marketFlow.dominantDirection ===
+                        "outgoing"
+                      ? "Outgoing"
+                      : marketFlow.dominantDirection ===
+                          "balanced"
+                        ? "Balanced"
+                        : "No flow"
                   : "—"
               }
             />
@@ -1183,6 +1304,13 @@ export default function EvmIntelligenceReport({
                   "Graph",
                   data.modules
                     .walletGraph
+                    .status,
+                ],
+
+                [
+                  "Market Flow",
+                  data.modules
+                    .marketFlowIntelligence
                     .status,
                 ],
               ] as const
@@ -1441,6 +1569,159 @@ export default function EvmIntelligenceReport({
           </>
         ) : (
           <Unavailable />
+        )}
+      </EvidenceSection>
+
+      <EvidenceSection
+        title="Market Flow"
+        subtitle="Observed movement direction and concentration"
+        metric={
+          marketFlow
+            ? marketFlow.dominantDirection ===
+              "incoming"
+              ? "Incoming"
+              : marketFlow.dominantDirection ===
+                  "outgoing"
+                ? "Outgoing"
+                : marketFlow.dominantDirection ===
+                    "balanced"
+                  ? "Balanced"
+                  : "No flow"
+            : "Pro feature"
+        }
+      >
+        {marketFlow ? (
+          <>
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <Stat
+                label="Incoming"
+                value={formatCount(
+                  marketFlow.incomingObservationCount
+                )}
+              />
+
+              <Stat
+                label="Outgoing"
+                value={formatCount(
+                  marketFlow.outgoingObservationCount
+                )}
+              />
+
+              <Stat
+                label="Counterparties"
+                value={formatCount(
+                  marketFlow.uniqueCounterpartyCount
+                )}
+              />
+
+              <Stat
+                label="Top concentration"
+                value={
+                  marketFlow.topCounterpartyObservationShare !==
+                  null
+                    ? `${Math.round(
+                        marketFlow.topCounterpartyObservationShare *
+                          100
+                      )}%`
+                    : "—"
+                }
+              />
+            </div>
+
+            {marketFlow.counterparties.length >
+              0 && (
+              <div className="mt-5 space-y-2">
+                {marketFlow.counterparties
+                  .slice(
+                    0,
+                    3
+                  )
+                  .map(
+                    item => (
+                      <EvidenceRow
+                        key={
+                          item.address
+                        }
+                        left={short(
+                          item.address
+                        )}
+                        middle={
+                          item.incomingObservationCount >
+                            0 &&
+                          item.outgoingObservationCount >
+                            0
+                            ? "bidirectional"
+                            : item.incomingObservationCount >
+                                0
+                              ? "incoming"
+                              : "outgoing"
+                        }
+                        right={`${item.totalObservationCount} observations`}
+                      />
+                    )
+                  )}
+              </div>
+            )}
+
+            {marketFlow.recentFlows.length >
+              0 && (
+              <details className="group mt-5">
+                <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl border border-zinc-900 bg-black/20 px-4 py-3 text-xs text-zinc-400 transition hover:border-zinc-800">
+                  <span>
+                    View recent evidence
+                  </span>
+
+                  <span className="text-lg text-zinc-600 transition-transform group-open:rotate-90">
+                    ›
+                  </span>
+                </summary>
+
+                <div className="mt-2 space-y-2">
+                  {marketFlow.recentFlows
+                    .slice(
+                      0,
+                      5
+                    )
+                    .map(
+                      flow => (
+                        <EvidenceRow
+                          key={`${flow.transactionHash}:${flow.kind}`}
+                          left={
+                            flow.counterparty
+                              ? short(
+                                  flow.counterparty
+                                )
+                              : "Self"
+                          }
+                          middle={
+                            flow.direction
+                          }
+                          right={short(
+                            flow.transactionHash
+                          )}
+                        />
+                      )
+                    )}
+                </div>
+              </details>
+            )}
+
+            <Methodology>
+              {marketFlow.methodology}{" "}
+              {marketFlow.limitation}
+            </Methodology>
+          </>
+        ) : (
+          <Unavailable
+            text={
+              data.modules
+                .marketFlowIntelligence
+                .status ===
+              "not-run"
+                ? "Market Flow Intelligence is available with AYZO Pro and Advanced."
+                : "Market Flow Intelligence is unavailable for the current analysis."
+            }
+          />
         )}
       </EvidenceSection>
 

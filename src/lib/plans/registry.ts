@@ -32,6 +32,7 @@ const PRO_PLATFORM_FEATURES = {
   investigationTimeline: true,
   entityLabels: true,
   askAyzo: true,
+  marketFlowIntelligence: true,
 } as const satisfies Partial<
   Record<
     FeatureId,
@@ -49,7 +50,6 @@ const ADVANCED_PLATFORM_FEATURES = {
 >;
 
 const PRO_ROADMAP_FEATURES = [
-  "marketFlowIntelligence",
   "advancedReports",
   "dataExport",
   "mobileApp",
