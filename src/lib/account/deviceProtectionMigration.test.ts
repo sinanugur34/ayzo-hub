@@ -16,6 +16,18 @@ const sql =
     "utf8"
   );
 
+const hardeningMigrationUrl =
+  new URL(
+    "../../../supabase/migrations/20260914130000_device_protection_hardening.sql",
+    import.meta.url
+  );
+
+const hardeningSql =
+  readFileSync(
+    hardeningMigrationUrl,
+    "utf8"
+  );
+
 test(
   "device session ledger is server only",
   () => {
@@ -50,7 +62,12 @@ test(
     );
 
     assert.match(
-      sql,
+      hardeningSql,
+      /order by[\s\S]*active_since asc[\s\S]*created_at asc/i
+    );
+
+    assert.doesNotMatch(
+      hardeningSql,
       /order by[\s\S]*last_seen_at asc[\s\S]*created_at asc/i
     );
 
@@ -97,6 +114,58 @@ test(
     assert.match(
       sql,
       /\bdevice_token_hash\b/i
+    );
+  }
+);
+
+
+test(
+  "legacy bootstrap is allowed only with zero device history",
+  () => {
+    assert.match(
+      hardeningSql,
+      /ayzo_bootstrap_account_device/i
+    );
+
+    assert.match(
+      hardeningSql,
+      /if exists\s*\([\s\S]*account_device_sessions[\s\S]*DEVICE_BOOTSTRAP_NOT_ALLOWED/i
+    );
+
+    assert.match(
+      hardeningSql,
+      /pg_advisory_xact_lock/i
+    );
+
+    assert.match(
+      hardeningSql,
+      /from public,\s*anon,\s*authenticated/i
+    );
+
+    assert.match(
+      hardeningSql,
+      /to service_role/i
+    );
+  }
+);
+
+
+test(
+  "active session age is independent from request activity",
+  () => {
+    assert.match(
+      hardeningSql,
+      /active_since timestamptz/i
+    );
+
+    assert.match(
+      hardeningSql,
+      /active_since\s*=\s*created_at/i
+    );
+
+    assert.match(
+      hardeningSql,
+      /active_since asc/i
     );
   }
 );
