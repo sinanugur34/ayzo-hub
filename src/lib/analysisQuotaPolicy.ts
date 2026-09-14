@@ -27,25 +27,17 @@ export function getAnalysisQuotaPolicy(
     PlanId
 ): AnalysisQuotaPolicy {
   /*
-   * Advanced inherits the current
-   * Pro quota contract until a
-   * dedicated Advanced quota is
-   * explicitly configured.
+   * Every AYZO tier owns its explicit
+   * analysis allowance in the central
+   * plan registry.
    *
-   * Keep the requested plan identity
-   * so downstream API/UI layers do
-   * not misclassify Advanced as Pro
-   * or Free.
+   * Free:     3 / 24h
+   * Pro:      25 / 24h
+   * Advanced: 90 / 24h
    */
-  const quotaSourcePlan:
-    "free" | "pro" =
-      planId === "free"
-        ? "free"
-        : "pro";
-
   const quota =
     PLANS[
-      quotaSourcePlan
+      planId
     ].analysisQuota;
 
   if (
@@ -53,7 +45,7 @@ export function getAnalysisQuotaPolicy(
     "fixed"
   ) {
     throw new Error(
-      `Analysis quota is not configured for ${quotaSourcePlan}.`
+      `Analysis quota is not configured for ${planId}.`
     );
   }
 
