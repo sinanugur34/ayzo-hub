@@ -12,6 +12,10 @@ type LoginPageProps = {
       mode?:
         | string
         | string[];
+
+      error?:
+        | string
+        | string[];
     }>;
 };
 
@@ -29,6 +33,22 @@ export default async function LoginPage({
   const isSignup =
     mode ===
     "signup";
+
+  const errorParam =
+    Array.isArray(
+      params.error
+    )
+      ? params.error[0]
+      : params.error;
+
+  const securityMessage =
+    errorParam ===
+      "device_replaced"
+      ? "This session was signed out because your AYZO account was opened on another device."
+      : errorParam ===
+          "device_registration"
+        ? "AYZO could not securely register this device. Please sign in again."
+        : null;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-black px-4 py-12 text-white">
@@ -56,6 +76,15 @@ export default async function LoginPage({
               ? "Create an account to save analyses, build watchlists and access your AYZO plan."
               : "Sign in to access your saved research, watchlists and AYZO plan."}
           </p>
+
+          {securityMessage && (
+            <div
+              role="alert"
+              className="mt-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs leading-5 text-amber-200"
+            >
+              {securityMessage}
+            </div>
+          )}
 
           <div className="mt-7">
             <LoginForm

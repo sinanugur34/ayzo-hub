@@ -138,6 +138,34 @@ export default function HeaderAuthControls() {
     );
 
     try {
+      try {
+        await fetch(
+          "/api/account/device-security",
+          {
+            method:
+              "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify({
+                action:
+                  "revoke_current",
+              }),
+          }
+        );
+      } catch {
+        /*
+         * Local auth sign-out must
+         * still proceed even if the
+         * device ledger is temporarily
+         * unavailable.
+         */
+      }
+
       const supabase =
         createClient();
 
