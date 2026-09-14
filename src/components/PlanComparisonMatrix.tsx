@@ -616,11 +616,6 @@ const sections:
         ),
 
         featureRow(
-          "Team workspace",
-          "teamWorkspace"
-        ),
-
-        featureRow(
           "No-Code Intelligence Dashboards",
           "noCodeDashboards"
         ),
