@@ -21,9 +21,41 @@ export function createDeviceToken() {
   );
 }
 
+export function isValidDeviceToken(
+  token: string
+) {
+  /*
+   * 32 random bytes encoded with base64url
+   * without padding always produces
+   * exactly 43 characters.
+   */
+  return /^[A-Za-z0-9_-]{43}$/.test(
+    token
+  );
+}
+
+export function assertValidDeviceToken(
+  token: string
+) {
+  if (
+    !isValidDeviceToken(
+      token
+    )
+  ) {
+    throw new Error(
+      "INVALID_DEVICE_TOKEN"
+    );
+  }
+}
+
+
 export function hashDeviceToken(
   token: string
 ) {
+  assertValidDeviceToken(
+    token
+  );
+
   return createHash(
     "sha256"
   )

@@ -184,3 +184,24 @@ test(
     );
   }
 );
+
+
+test(
+  "device security signals use a domain-separated derived key",
+  () => {
+    assert.match(
+      deviceServer,
+      /ayzo:account-device-signals:v1/
+    );
+
+    assert.match(
+      deviceServer,
+      /createHmac/
+    );
+
+    assert.doesNotMatch(
+      deviceServer,
+      /function getSecuritySecret\(\)\s*\{\s*return getInternalApiKey\(\);\s*\}/
+    );
+  }
+);
