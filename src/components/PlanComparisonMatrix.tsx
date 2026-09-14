@@ -70,10 +70,9 @@ function registryCell(
    * Product hierarchy:
    * Advanced includes everything in Pro.
    *
-   * Advanced is not live yet, so this is
-   * presentation of the intended tier
-   * hierarchy only. Entitlement/runtime
-   * behavior is not changed here.
+   * Advanced inherits every live Pro
+   * capability. Roadmap capabilities remain
+   * explicitly marked as SOON until released.
    */
   const effectivePlan =
     planId === "advanced" &&
@@ -176,7 +175,10 @@ const sections:
 
           advanced: {
             kind: "value",
-            label: "TBD",
+            label:
+              `${PLANS.advanced.analysisQuota.kind === "fixed"
+                ? PLANS.advanced.analysisQuota.count
+                : "—"} / 24h`,
           },
         },
 
@@ -521,10 +523,10 @@ const sections:
 
     {
       title:
-        "PRO ROADMAP",
+        "PRO CAPABILITIES & ROADMAP",
 
       description:
-        "Included in the Pro roadmap. Advanced inherits Pro roadmap capabilities.",
+        "Live Pro capabilities are included today. Roadmap items remain clearly marked. Advanced inherits Pro capabilities and roadmap.",
 
       rows: [
         featureRow(
@@ -570,7 +572,7 @@ const sections:
         "ADVANCED INVESTIGATION",
 
       description:
-        "Advanced includes everything in Pro plus professional-scale workflows.",
+        "Advanced includes every live Pro capability. Additional Advanced workflows remain clearly marked as roadmap until released.",
 
       rows: [
         featureRow(
@@ -838,9 +840,16 @@ export default function PlanComparisonMatrix({
     }
 
     return (
-      <span className="text-[9px] leading-4 text-zinc-500">
-        Pricing coming soon
-      </span>
+      <>
+        $
+        {PLANS.advanced.monthlyPriceUsd?.toFixed(
+          0
+        )}
+
+        <span className="ml-1 text-[9px] font-normal text-zinc-500">
+          /mo
+        </span>
+      </>
     );
   }
 

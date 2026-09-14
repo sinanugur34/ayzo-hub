@@ -1,16 +1,16 @@
 import "server-only";
 
 import {
-  parseProCheckoutEnabled,
+  parsePaidCheckoutEnabled,
 } from "@/lib/billing/checkoutLaunchPolicyCore";
 
-export const PRO_CHECKOUT_ENABLE_ENV =
-  "AYZO_PRO_CHECKOUT_ENABLED";
+export const PAID_CHECKOUT_ENABLE_ENV =
+  "AYZO_PAID_CHECKOUT_ENABLED";
 
-export function isProCheckoutEnabled() {
-  return parseProCheckoutEnabled(
+export function isPaidCheckoutEnabled() {
+  return parsePaidCheckoutEnabled(
     process.env[
-      PRO_CHECKOUT_ENABLE_ENV
+      PAID_CHECKOUT_ENABLE_ENV
     ]
   );
 }

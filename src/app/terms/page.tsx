@@ -49,10 +49,10 @@ export default function TermsPage() {
         <section>
           <h2 className="text-lg font-semibold text-white">4. Paid Plans</h2>
           <p className="mt-2">
-            Paid plans, when available, provide the features and usage limits
-            described on the AYZO pricing interface at the time of purchase.
-            Subscription billing and payment processing may be handled by our
-            authorized Merchant of Record and payment provider.
+            Paid plans provide the features and usage limits described on the
+            AYZO pricing interface at the time of purchase. Subscription billing
+            and payment processing are handled through our authorized Merchant
+            of Record and payment provider.
           </p>
         </section>
 

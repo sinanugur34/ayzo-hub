@@ -3,7 +3,7 @@ import {
 } from "@/lib/billing/entitlement";
 
 import {
-  isProCheckoutEnabled,
+  isPaidCheckoutEnabled,
 } from "@/lib/billing/checkoutLaunchPolicy";
 
 import {
@@ -77,7 +77,7 @@ export async function POST(
   }
 
   if (
-    !isProCheckoutEnabled()
+    !isPaidCheckoutEnabled()
   ) {
     return Response.json(
       {

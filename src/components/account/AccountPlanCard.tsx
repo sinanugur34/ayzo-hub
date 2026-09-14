@@ -3,10 +3,10 @@ import {
 } from "@/lib/billing/entitlement";
 
 import {
-  isProCheckoutEnabled,
+  isPaidCheckoutEnabled,
 } from "@/lib/billing/checkoutLaunchPolicy";
 
-import ProCheckoutButton from "@/components/billing/ProCheckoutButton";
+import PlanCheckoutButton from "@/components/billing/PlanCheckoutButton";
 
 import {
   PLANS,
@@ -51,18 +51,20 @@ export default async function AccountPlanCard() {
   } =
     await getServerEntitlement();
 
+  const paidCheckoutEnabled =
+    isPaidCheckoutEnabled();
+
   const periodEnd =
     formatPeriodEnd(
       entitlement
         .currentPeriodEnd
     );
 
-  const proCheckoutEnabled =
-    isProCheckoutEnabled();
-
   if (
     entitlement.planId ===
-    "pro"
+      "pro" ||
+    entitlement.planId ===
+      "advanced"
   ) {
     const interval =
       entitlement
@@ -70,6 +72,10 @@ export default async function AccountPlanCard() {
       "annual"
         ? "Annual"
         : "Monthly";
+
+    const isAdvanced =
+      entitlement.planId ===
+        "advanced";
 
     return (
       <div className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-5">
@@ -79,7 +85,9 @@ export default async function AccountPlanCard() {
 
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <span className="text-sm font-medium text-violet-200">
-            Pro
+            {isAdvanced
+              ? "Advanced"
+              : "Pro"}
           </span>
 
           {entitlement
@@ -98,6 +106,37 @@ export default async function AccountPlanCard() {
               : "Cancellation scheduled"
             : `${interval} subscription · Active`}
         </div>
+
+        {!isAdvanced &&
+          billingAvailable &&
+          paidCheckoutEnabled && (
+            <div className="mt-4 border-t border-zinc-900 pt-4">
+              <div className="mb-3 text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-500">
+                Upgrade to Advanced
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-2">
+                <PlanCheckoutButton
+                  plan="advanced"
+                  interval="monthly"
+                  compact
+                  label={`Monthly · $${PLANS.advanced.monthlyPriceUsd?.toFixed(
+                    0
+                  )}/mo`}
+                />
+
+                <PlanCheckoutButton
+                  plan="advanced"
+                  interval="annual"
+                  compact
+                  variant="secondary"
+                  label={`Annual · $${PLANS.advanced.annualPriceUsd?.toFixed(
+                    2
+                  )}/yr`}
+                />
+              </div>
+            </div>
+          )}
       </div>
     );
   }
@@ -119,27 +158,66 @@ export default async function AccountPlanCard() {
       </div>
 
       {billingAvailable &&
-        proCheckoutEnabled && (
+        paidCheckoutEnabled && (
           <div className="mt-4 border-t border-zinc-900 pt-4">
             <div className="mb-3 text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-500">
-              Upgrade to Pro
+              Upgrade
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-2">
-              <ProCheckoutButton
-                plan="pro"
-                interval="monthly"
-                compact
-                label={`Monthly · $${PLANS.pro.monthlyPriceUsd?.toFixed(0)}/mo`}
-              />
+            <div className="grid gap-3">
+              <div>
+                <div className="mb-2 text-[10px] font-medium text-violet-300">
+                  AYZO Pro
+                </div>
 
-              <ProCheckoutButton
-                plan="pro"
-                interval="annual"
-                compact
-                variant="secondary"
-                label={`Annual · $${PLANS.pro.annualPriceUsd?.toFixed(2)}/yr`}
-              />
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <PlanCheckoutButton
+                    plan="pro"
+                    interval="monthly"
+                    compact
+                    label={`Monthly · $${PLANS.pro.monthlyPriceUsd?.toFixed(
+                      0
+                    )}/mo`}
+                  />
+
+                  <PlanCheckoutButton
+                    plan="pro"
+                    interval="annual"
+                    compact
+                    variant="secondary"
+                    label={`Annual · $${PLANS.pro.annualPriceUsd?.toFixed(
+                      2
+                    )}/yr`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-2 text-[10px] font-medium text-purple-300">
+                  AYZO Advanced
+                </div>
+
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <PlanCheckoutButton
+                    plan="advanced"
+                    interval="monthly"
+                    compact
+                    label={`Monthly · $${PLANS.advanced.monthlyPriceUsd?.toFixed(
+                      0
+                    )}/mo`}
+                  />
+
+                  <PlanCheckoutButton
+                    plan="advanced"
+                    interval="annual"
+                    compact
+                    variant="secondary"
+                    label={`Annual · $${PLANS.advanced.annualPriceUsd?.toFixed(
+                      2
+                    )}/yr`}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         )}

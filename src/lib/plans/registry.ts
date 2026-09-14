@@ -107,7 +107,7 @@ export const PLANS = {
   pro: {
     id: "pro",
     name: "AYZO Pro",
-    status: "coming-soon",
+    status: "active",
 
     monthlyPriceUsd:
       19,
@@ -122,7 +122,7 @@ export const PLANS = {
       true,
 
     checkoutEnabled:
-      false,
+      true,
 
     analysisQuota: {
       kind: "fixed",
@@ -141,7 +141,7 @@ export const PLANS = {
   advanced: {
     id: "advanced",
     name: "AYZO Advanced",
-    status: "coming-soon",
+    status: "active",
 
     /*
      * Advanced is positioned as
@@ -161,11 +161,12 @@ export const PLANS = {
       false,
 
     checkoutEnabled:
-      false,
+      true,
 
     analysisQuota: {
-      kind:
-        "not-configured",
+      kind: "fixed",
+      period: "24h",
+      count: 30,
     },
 
     features: {
