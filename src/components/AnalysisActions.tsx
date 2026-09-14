@@ -31,6 +31,66 @@ type AuthState =
   | "unauthenticated"
   | "error";
 
+type AdvancedReport = {
+  version: 1;
+  reportType: "advanced-analysis";
+  generatedAt: string;
+  title: string;
+
+  subject: {
+    network: string;
+    type: string;
+    value: string;
+    snapshotKind: string | null;
+  };
+
+  evidence: {
+    capturedAt: string;
+    coverage: string | null;
+    metricCount: number;
+    moduleCount: number;
+    findingCount: number;
+  };
+
+  executiveSummary:
+    readonly string[];
+
+  metrics:
+    readonly {
+      key: string;
+      label: string;
+      value:
+        | string
+        | number;
+    }[];
+
+  modules:
+    readonly {
+      id: string;
+      status: string;
+    }[];
+
+  findings:
+    readonly {
+      id:
+        string | null;
+      category:
+        string | null;
+      severity:
+        string | null;
+      confidence:
+        string | null;
+      title:
+        string | null;
+    }[];
+
+  methodology:
+    readonly string[];
+
+  limitations:
+    readonly string[];
+};
+
 type Props = {
   network: string;
   subjectType:
@@ -118,6 +178,32 @@ export default function AnalysisActions({
       "error" |
       ""
     >("");
+
+  const [
+    reportLoading,
+    setReportLoading,
+  ] =
+    useState(false);
+
+  const [
+    report,
+    setReport,
+  ] =
+    useState<
+      AdvancedReport | null
+    >(null);
+
+  const [
+    reportError,
+    setReportError,
+  ] =
+    useState("");
+
+  const [
+    reportOpen,
+    setReportOpen,
+  ] =
+    useState(false);
 
   useEffect(() => {
     let cancelled =
@@ -331,6 +417,103 @@ export default function AnalysisActions({
       );
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function generateAdvancedReport() {
+    if (
+      reportLoading ||
+      !analysisPayload
+    ) {
+      return;
+    }
+
+    setReportLoading(true);
+    setReportError("");
+
+    try {
+      const response =
+        await fetch(
+          "/api/account/advanced-report",
+          {
+            method:
+              "POST",
+
+            credentials:
+              "same-origin",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify({
+                network,
+                subjectType,
+                subjectValue,
+                title,
+                currentSnapshot:
+                  analysisPayload,
+              }),
+          }
+        );
+
+      const body =
+        await response
+          .json()
+          .catch(
+            () =>
+              null
+          );
+
+      if (
+        response.status ===
+        401
+      ) {
+        setReportError(
+          "Sign in to generate an Advanced Report."
+        );
+
+        return;
+      }
+
+      if (
+        response.status ===
+        403
+      ) {
+        setReportError(
+          "Advanced Reports requires AYZO Pro or Advanced."
+        );
+
+        return;
+      }
+
+      if (
+        !response.ok ||
+        !body?.report
+      ) {
+        setReportError(
+          typeof body?.error ===
+            "string"
+            ? body.error
+            : "Unable to generate report."
+        );
+
+        return;
+      }
+
+      setReport(
+        body.report as AdvancedReport
+      );
+
+      setReportOpen(true);
+    } catch {
+      setReportError(
+        "Unable to generate report."
+      );
+    } finally {
+      setReportLoading(false);
     }
   }
 
@@ -652,6 +835,24 @@ export default function AnalysisActions({
 
           <button
             type="button"
+            onClick={
+              generateAdvancedReport
+            }
+            disabled={
+              reportLoading ||
+              !analysisPayload
+            }
+            className="inline-flex h-11 items-center justify-center rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 text-sm font-semibold text-violet-200 transition hover:bg-violet-500/20 disabled:cursor-default disabled:opacity-50"
+          >
+            {reportLoading
+              ? "Generating..."
+              : report
+                ? "Refresh Report"
+                : "Generate Report"}
+          </button>
+
+          <button
+            type="button"
             onClick={() =>
               setPanelOpen(
                 value =>
@@ -709,6 +910,201 @@ export default function AnalysisActions({
         subjectValue={subjectValue}
         currentSnapshot={analysisPayload}
       />
+
+      {(reportError || report) && (
+        <section className="mt-5 rounded-2xl border border-violet-500/20 bg-black/30 p-4 sm:p-5">
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <div>
+              <div className="text-[10px] font-medium tracking-[0.14em] text-violet-400">
+                ADVANCED REPORT
+              </div>
+
+              <h4 className="mt-2 text-sm font-semibold text-zinc-100">
+                Evidence-first investigation report
+              </h4>
+            </div>
+
+            {report && (
+              <button
+                type="button"
+                onClick={() =>
+                  setReportOpen(
+                    value =>
+                      !value
+                  )
+                }
+                className="text-xs font-medium text-violet-300 transition hover:text-violet-200"
+              >
+                {reportOpen
+                  ? "Hide report"
+                  : "View report"}
+              </button>
+            )}
+          </div>
+
+          {reportError && (
+            <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs leading-5 text-amber-200">
+              {reportError}
+            </div>
+          )}
+
+          {report &&
+            reportOpen && (
+            <div className="mt-5 space-y-5">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-3">
+                  <div className="text-[10px] uppercase tracking-[0.12em] text-zinc-600">
+                    Metrics
+                  </div>
+                  <div className="mt-1 text-lg font-semibold text-zinc-100">
+                    {report.evidence.metricCount}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-3">
+                  <div className="text-[10px] uppercase tracking-[0.12em] text-zinc-600">
+                    Modules
+                  </div>
+                  <div className="mt-1 text-lg font-semibold text-zinc-100">
+                    {report.evidence.moduleCount}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-3">
+                  <div className="text-[10px] uppercase tracking-[0.12em] text-zinc-600">
+                    Findings
+                  </div>
+                  <div className="mt-1 text-lg font-semibold text-zinc-100">
+                    {report.evidence.findingCount}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-xs font-semibold text-zinc-300">
+                  Executive summary
+                </div>
+
+                <div className="mt-2 space-y-2">
+                  {report.executiveSummary.map(
+                    (line, index) => (
+                      <p
+                        key={`${line}-${index}`}
+                        className="text-xs leading-5 text-zinc-500"
+                      >
+                        {line}
+                      </p>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {report.metrics.length >
+                0 && (
+                <details className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3">
+                  <summary className="cursor-pointer text-xs font-medium text-zinc-300">
+                    Key metrics
+                  </summary>
+
+                  <div className="mt-3 space-y-2">
+                    {report.metrics.map(
+                      metric => (
+                        <div
+                          key={
+                            metric.key
+                          }
+                          className="flex items-start justify-between gap-4 text-xs"
+                        >
+                          <span className="text-zinc-500">
+                            {metric.label}
+                          </span>
+
+                          <span className="max-w-[55%] break-all text-right text-zinc-300">
+                            {String(
+                              metric.value
+                            )}
+                          </span>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </details>
+              )}
+
+              {report.findings.length >
+                0 && (
+                <details className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3">
+                  <summary className="cursor-pointer text-xs font-medium text-zinc-300">
+                    Findings
+                  </summary>
+
+                  <div className="mt-3 space-y-3">
+                    {report.findings.map(
+                      (
+                        finding,
+                        index
+                      ) => (
+                        <div
+                          key={
+                            finding.id ??
+                            `${finding.title}-${index}`
+                          }
+                          className="rounded-lg border border-zinc-900 bg-black/30 p-3"
+                        >
+                          <div className="text-xs font-medium text-zinc-200">
+                            {finding.title ??
+                              "Evidence finding"}
+                          </div>
+
+                          <div className="mt-1 text-[11px] text-zinc-600">
+                            {[
+                              finding.category,
+                              finding.severity,
+                              finding.confidence,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </details>
+              )}
+
+              <details className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3">
+                <summary className="cursor-pointer text-xs font-medium text-zinc-300">
+                  Methodology & limitations
+                </summary>
+
+                <div className="mt-3 space-y-3">
+                  {report.methodology.map(
+                    (line, index) => (
+                      <p
+                        key={`method-${index}`}
+                        className="text-xs leading-5 text-zinc-500"
+                      >
+                        {line}
+                      </p>
+                    )
+                  )}
+
+                  {report.limitations.map(
+                    (line, index) => (
+                      <p
+                        key={`limit-${index}`}
+                        className="text-xs leading-5 text-zinc-600"
+                      >
+                        {line}
+                      </p>
+                    )
+                  )}
+                </div>
+              </details>
+            </div>
+          )}
+        </section>
+      )}
 
       {panelOpen && (
         <div className="mt-5 rounded-2xl border border-zinc-800 bg-black/30 p-4">
