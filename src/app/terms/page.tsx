@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms and Conditions | AYZO",
-  description: "Terms and Conditions for use of AYZO.",
+  title: "Terms of Service | AYZO",
+  description: "Terms of Service for use of AYZO.",
 };
 
 export default function TermsPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-16 text-zinc-300">
       <h1 className="text-3xl font-semibold text-white">
-        Terms and Conditions
+        Terms of Service
       </h1>
 
       <p className="mt-4 text-sm text-zinc-500">

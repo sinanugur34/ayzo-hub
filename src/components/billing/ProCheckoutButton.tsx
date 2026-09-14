@@ -17,6 +17,9 @@ type BillingInterval =
   | "annual";
 
 type Props = {
+  plan:
+    "pro" | "advanced";
+
   interval:
     BillingInterval;
 
@@ -40,6 +43,7 @@ type CheckoutPayload = {
 };
 
 export default function ProCheckoutButton({
+  plan,
   interval,
   label,
   variant = "primary",
@@ -71,6 +75,7 @@ export default function ProCheckoutButton({
     trackEvent(
       "checkout_started",
       {
+        plan,
         interval,
       }
     );
@@ -90,6 +95,7 @@ export default function ProCheckoutButton({
 
             body:
               JSON.stringify({
+                plan,
                 interval,
               }),
           }
@@ -117,6 +123,7 @@ export default function ProCheckoutButton({
         trackEvent(
           "checkout_auth_required",
           {
+            plan,
             interval,
           }
         );
@@ -139,6 +146,7 @@ export default function ProCheckoutButton({
         trackEvent(
           "checkout_failed",
           {
+            plan,
             interval,
             status:
               response.status,
@@ -187,6 +195,7 @@ export default function ProCheckoutButton({
       trackEvent(
         "checkout_created",
         {
+          plan,
           interval,
         }
       );
@@ -198,6 +207,7 @@ export default function ProCheckoutButton({
       trackEvent(
         "checkout_failed",
         {
+          plan,
           interval,
           status:
             0,

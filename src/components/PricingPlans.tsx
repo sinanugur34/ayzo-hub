@@ -272,6 +272,7 @@ export default function PricingPlans() {
                   {proCheckoutEnabled ? (
                     <div className="space-y-2">
                       <ProCheckoutButton
+                        plan="pro"
                         interval="monthly"
                         label={`Start Monthly · $${PLANS.pro.monthlyPriceUsd?.toFixed(
                           0
@@ -279,6 +280,7 @@ export default function PricingPlans() {
                       />
 
                       <ProCheckoutButton
+                        plan="pro"
                         interval="annual"
                         variant="secondary"
                         label={`Start Annual · $${PLANS.pro.annualPriceUsd?.toFixed(

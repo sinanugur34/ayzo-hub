@@ -127,12 +127,14 @@ export default async function AccountPlanCard() {
 
             <div className="grid gap-2 sm:grid-cols-2">
               <ProCheckoutButton
+                plan="pro"
                 interval="monthly"
                 compact
                 label={`Monthly · $${PLANS.pro.monthlyPriceUsd?.toFixed(0)}/mo`}
               />
 
               <ProCheckoutButton
+                plan="pro"
                 interval="annual"
                 compact
                 variant="secondary"
