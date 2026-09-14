@@ -31,6 +31,22 @@ type AuthState =
   | "unauthenticated"
   | "error";
 
+type DataExportFormat =
+  | "json"
+  | "csv";
+
+type DataExportResponse = {
+  version: 1;
+  format:
+    DataExportFormat;
+  filename:
+    string;
+  contentType:
+    string;
+  content:
+    string;
+};
+
 type AdvancedReport = {
   version: 1;
   reportType: "advanced-analysis";
@@ -204,6 +220,20 @@ export default function AnalysisActions({
     setReportOpen,
   ] =
     useState(false);
+
+  const [
+    exportLoading,
+    setExportLoading,
+  ] =
+    useState<
+      DataExportFormat | null
+    >(null);
+
+  const [
+    exportError,
+    setExportError,
+  ] =
+    useState("");
 
   useEffect(() => {
     let cancelled =
@@ -514,6 +544,168 @@ export default function AnalysisActions({
       );
     } finally {
       setReportLoading(false);
+    }
+  }
+
+  async function exportData(
+    format:
+      DataExportFormat
+  ) {
+    if (
+      exportLoading ||
+      !analysisPayload
+    ) {
+      return;
+    }
+
+    setExportLoading(
+      format
+    );
+
+    setExportError("");
+
+    try {
+      const response =
+        await fetch(
+          "/api/account/data-export",
+          {
+            method:
+              "POST",
+
+            credentials:
+              "same-origin",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify({
+                network,
+                subjectType,
+                subjectValue,
+                title,
+                format,
+                currentSnapshot:
+                  analysisPayload,
+              }),
+          }
+        );
+
+      const body =
+        await response
+          .json()
+          .catch(
+            () =>
+              null
+          );
+
+      if (
+        response.status ===
+        401
+      ) {
+        setExportError(
+          "Sign in to export analysis data."
+        );
+
+        return;
+      }
+
+      if (
+        response.status ===
+        403
+      ) {
+        setExportError(
+          "Data Export requires AYZO Pro or Advanced."
+        );
+
+        return;
+      }
+
+      if (
+        !response.ok ||
+        !body?.export
+      ) {
+        setExportError(
+          typeof body?.error ===
+            "string"
+            ? body.error
+            : "Unable to export analysis data."
+        );
+
+        return;
+      }
+
+      const data =
+        body.export as
+          DataExportResponse;
+
+      if (
+        data.format !==
+          format ||
+        typeof data.filename !==
+          "string" ||
+        typeof data.contentType !==
+          "string" ||
+        typeof data.content !==
+          "string"
+      ) {
+        setExportError(
+          "Invalid export response."
+        );
+
+        return;
+      }
+
+      const blob =
+        new Blob(
+          [
+            data.content,
+          ],
+          {
+            type:
+              data.contentType,
+          }
+        );
+
+      const url =
+        URL.createObjectURL(
+          blob
+        );
+
+      const link =
+        document.createElement(
+          "a"
+        );
+
+      link.href =
+        url;
+
+      link.download =
+        data.filename;
+
+      link.rel =
+        "noopener";
+
+      document.body.appendChild(
+        link
+      );
+
+      link.click();
+      link.remove();
+
+      URL.revokeObjectURL(
+        url
+      );
+    } catch {
+      setExportError(
+        "Unable to export analysis data."
+      );
+    } finally {
+      setExportLoading(
+        null
+      );
     }
   }
 
@@ -925,26 +1117,72 @@ export default function AnalysisActions({
             </div>
 
             {report && (
-              <button
-                type="button"
-                onClick={() =>
-                  setReportOpen(
-                    value =>
-                      !value
-                  )
-                }
-                className="text-xs font-medium text-violet-300 transition hover:text-violet-200"
-              >
-                {reportOpen
-                  ? "Hide report"
-                  : "View report"}
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    exportData(
+                      "json"
+                    )
+                  }
+                  disabled={
+                    exportLoading !==
+                    null
+                  }
+                  className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs font-medium text-zinc-300 transition hover:bg-zinc-900 disabled:cursor-default disabled:opacity-50"
+                >
+                  {exportLoading ===
+                  "json"
+                    ? "Exporting..."
+                    : "Export JSON"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    exportData(
+                      "csv"
+                    )
+                  }
+                  disabled={
+                    exportLoading !==
+                    null
+                  }
+                  className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs font-medium text-zinc-300 transition hover:bg-zinc-900 disabled:cursor-default disabled:opacity-50"
+                >
+                  {exportLoading ===
+                  "csv"
+                    ? "Exporting..."
+                    : "Export CSV"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setReportOpen(
+                      value =>
+                        !value
+                    )
+                  }
+                  className="text-xs font-medium text-violet-300 transition hover:text-violet-200"
+                >
+                  {reportOpen
+                    ? "Hide report"
+                    : "View report"}
+                </button>
+              </div>
             )}
           </div>
 
           {reportError && (
             <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs leading-5 text-amber-200">
               {reportError}
+            </div>
+          )}
+
+          {exportError && (
+            <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs leading-5 text-amber-200">
+              {exportError}
             </div>
           )}
 
