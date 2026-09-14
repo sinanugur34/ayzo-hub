@@ -9,6 +9,16 @@ import {
 } from "@/lib/supabase/server";
 
 import {
+  createDeviceToken,
+  DEVICE_COOKIE_NAME,
+} from "@/lib/account/deviceProtection";
+
+import {
+  isRevokedDeviceError,
+  registerAccountDevice,
+} from "@/lib/account/deviceProtectionServer";
+
+import {
   deliverWelcomeEmailIfEligible,
 } from "@/lib/account/welcomeEmail";
 
@@ -24,6 +34,39 @@ function safeNext(
   }
 
   return value;
+}
+
+function setDeviceCookie(
+  response:
+    NextResponse,
+  deviceToken:
+    string
+) {
+  response.cookies.set(
+    DEVICE_COOKIE_NAME,
+    deviceToken,
+    {
+      httpOnly:
+        true,
+
+      secure:
+        process.env
+          .NODE_ENV ===
+        "production",
+
+      sameSite:
+        "lax",
+
+      path:
+        "/",
+
+      maxAge:
+        60 *
+        60 *
+        24 *
+        365,
+    }
+  );
 }
 
 export async function GET(
@@ -87,7 +130,72 @@ export async function GET(
           .sub
       : null;
 
+  let deviceToken =
+    request.cookies
+      .get(
+        DEVICE_COOKIE_NAME
+      )
+      ?.value ??
+    createDeviceToken();
+
   if (userId) {
+    try {
+      await registerAccountDevice({
+        userId,
+        deviceToken,
+      });
+    } catch (deviceError) {
+      /*
+       * A device that was removed because
+       * a third device logged in must not
+       * silently reactivate its old token.
+       *
+       * A genuine new authentication event
+       * may receive a fresh device identity.
+       */
+      if (
+        isRevokedDeviceError(
+          deviceError
+        )
+      ) {
+        deviceToken =
+          createDeviceToken();
+
+        try {
+          await registerAccountDevice({
+            userId,
+            deviceToken,
+          });
+        } catch {
+          await supabase.auth
+            .signOut({
+              scope:
+                "local",
+            });
+
+          return NextResponse.redirect(
+            new URL(
+              "/login?error=device_registration",
+              request.url
+            )
+          );
+        }
+      } else {
+        await supabase.auth
+          .signOut({
+            scope:
+              "local",
+          });
+
+        return NextResponse.redirect(
+          new URL(
+            "/login?error=device_registration",
+            request.url
+          )
+        );
+      }
+    }
+
     after(
       async () => {
         try {
@@ -104,10 +212,18 @@ export async function GET(
     );
   }
 
-  return NextResponse.redirect(
-    new URL(
-      next,
-      request.url
-    )
+  const response =
+    NextResponse.redirect(
+      new URL(
+        next,
+        request.url
+      )
+    );
+
+  setDeviceCookie(
+    response,
+    deviceToken
   );
+
+  return response;
 }

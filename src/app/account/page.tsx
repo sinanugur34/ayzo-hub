@@ -1,5 +1,6 @@
 import AccountPlanCard from "@/components/account/AccountPlanCard";
 import AlertRulesPanel from "@/components/account/AlertRulesPanel";
+import DeviceSecurityPanel from "@/components/account/DeviceSecurityPanel";
 import Link from "next/link";
 
 import {
@@ -9,45 +10,32 @@ import {
 import SignOutButton from "@/components/auth/SignOutButton";
 
 import {
-  createClient,
-} from "@/lib/supabase/server";
+  getAuthenticatedAccountContext,
+} from "@/lib/account/auth";
 
 export const dynamic =
   "force-dynamic";
 
 export default async function AccountPage() {
-  const supabase =
-    await createClient();
-
   const {
-    data:
-      claimsData,
-    error:
-      claimsError,
+    supabase,
+    userId,
+    userEmail,
+    deviceRevoked,
   } =
-    await supabase.auth
-      .getClaims();
+    await getAuthenticatedAccountContext();
 
-  const claims =
-    claimsData?.claims;
-
-  if (
-    claimsError ||
-    !claims?.sub
-  ) {
+  if (!userId) {
     redirect(
-      "/login"
+      deviceRevoked
+        ? "/login?error=device_replaced"
+        : "/login"
     );
   }
 
-  const userId =
-    claims.sub;
-
   const email =
-    typeof claims.email ===
-      "string"
-      ? claims.email
-      : "Authenticated user";
+    userEmail ??
+    "Authenticated user";
 
   const [
     savedResult,
@@ -268,6 +256,8 @@ export default async function AccountPage() {
             )}
           </section>
         </div>
+
+        <DeviceSecurityPanel />
 
         <AlertRulesPanel />
 

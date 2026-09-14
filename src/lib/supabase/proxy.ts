@@ -7,6 +7,11 @@ import {
   type NextRequest,
 } from "next/server";
 
+import {
+  createDeviceToken,
+  DEVICE_COOKIE_NAME,
+} from "@/lib/account/deviceProtection";
+
 export async function updateSession(
   request: NextRequest
 ) {
@@ -24,6 +29,23 @@ export async function updateSession(
   ) {
     throw new Error(
       "Supabase auth environment is not configured."
+    );
+  }
+
+  let deviceToken =
+    request.cookies
+      .get(
+        DEVICE_COOKIE_NAME
+      )
+      ?.value;
+
+  if (!deviceToken) {
+    deviceToken =
+      createDeviceToken();
+
+    request.cookies.set(
+      DEVICE_COOKIE_NAME,
+      deviceToken
     );
   }
 
@@ -88,6 +110,32 @@ export async function updateSession(
    * validated authentication claims.
    */
   await supabase.auth.getClaims();
+
+  response.cookies.set(
+    DEVICE_COOKIE_NAME,
+    deviceToken,
+    {
+      httpOnly:
+        true,
+
+      secure:
+        process.env
+          .NODE_ENV ===
+        "production",
+
+      sameSite:
+        "lax",
+
+      path:
+        "/",
+
+      maxAge:
+        60 *
+        60 *
+        24 *
+        365,
+    }
+  );
 
   return response;
 }
