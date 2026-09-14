@@ -31,7 +31,7 @@ test(
 );
 
 test(
-  "Pro receives 30 analyses per 24h",
+  "Pro receives 25 analyses per 24h",
   () => {
     const policy =
       getAnalysisQuotaPolicy(
@@ -45,7 +45,7 @@ test(
 
     assert.equal(
       policy.limit,
-      30
+      25
     );
 
     assert.equal(
@@ -56,13 +56,8 @@ test(
 );
 
 test(
-  "Advanced inherits Pro quota while preserving Advanced identity",
+  "Advanced receives 90 analyses per 24h",
   () => {
-    const pro =
-      getAnalysisQuotaPolicy(
-        "pro"
-      );
-
     const advanced =
       getAnalysisQuotaPolicy(
         "advanced"
@@ -75,12 +70,12 @@ test(
 
     assert.equal(
       advanced.limit,
-      pro.limit
+      90
     );
 
     assert.equal(
       advanced.windowSeconds,
-      pro.windowSeconds
+      86400
     );
   }
 );

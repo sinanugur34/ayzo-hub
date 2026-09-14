@@ -127,7 +127,7 @@ export const PLANS = {
     analysisQuota: {
       kind: "fixed",
       period: "24h",
-      count: 30,
+      count: 25,
     },
 
     features: {
@@ -166,7 +166,7 @@ export const PLANS = {
     analysisQuota: {
       kind: "fixed",
       period: "24h",
-      count: 30,
+      count: 90,
     },
 
     features: {
