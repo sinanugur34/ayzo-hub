@@ -11,6 +11,7 @@ import {
 import {
   createDeviceToken,
   DEVICE_COOKIE_NAME,
+  isValidDeviceToken,
 } from "@/lib/account/deviceProtection";
 
 import {
@@ -130,13 +131,33 @@ export async function GET(
           .sub
       : null;
 
-  let deviceToken =
+  const existingDeviceToken =
     request.cookies
       .get(
         DEVICE_COOKIE_NAME
       )
       ?.value ??
-    createDeviceToken();
+    null;
+
+  /*
+   * A genuine authentication callback may arrive
+   * with a legacy AYZO device cookie created before
+   * strict 43-character base64url device tokens.
+   *
+   * Do not let that stale cookie permanently block
+   * authentication. Generate a fresh device identity
+   * only during this genuine authentication event.
+   *
+   * Valid revoked tokens still follow the existing
+   * DEVICE_SESSION_REVOKED recovery path below.
+   */
+  let deviceToken =
+    existingDeviceToken &&
+    isValidDeviceToken(
+      existingDeviceToken
+    )
+      ? existingDeviceToken
+      : createDeviceToken();
 
   if (userId) {
     try {
