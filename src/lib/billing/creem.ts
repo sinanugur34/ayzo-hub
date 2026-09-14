@@ -1,5 +1,9 @@
 import "server-only";
 
+import {
+  isAllowedCreemPortalUrl,
+} from "@/lib/billing/creemPortalCore";
+
 import type {
   BillingInterval,
   PlanId,
@@ -24,6 +28,22 @@ export type CreemCheckoutResult =
       ok: true;
       checkoutUrl: string;
       checkoutId: string;
+    }
+  | {
+      ok: false;
+      stage:
+        | "config"
+        | "request"
+        | "provider"
+        | "response";
+      providerStatus:
+        number | null;
+    };
+
+export type CreemPortalResult =
+  | {
+      ok: true;
+      portalUrl: string;
     }
   | {
       ok: false;
@@ -302,5 +322,142 @@ export async function createCreemCheckout({
       payload.id,
     checkoutUrl:
       payload.checkout_url,
+  };
+}
+
+
+export async function createCreemCustomerPortal(
+  providerCustomerId: string
+): Promise<CreemPortalResult> {
+  if (
+    typeof providerCustomerId !== "string" ||
+    providerCustomerId.trim().length === 0
+  ) {
+    return {
+      ok: false,
+      stage: "config",
+      providerStatus: null,
+    };
+  }
+
+  let apiKey:
+    string;
+
+  let mode:
+    CreemMode;
+
+  try {
+    apiKey =
+      requiredEnv(
+        "CREEM_API_KEY"
+      );
+
+    mode =
+      parseMode(
+        process.env
+          .CREEM_MODE
+      );
+  } catch {
+    return {
+      ok: false,
+      stage: "config",
+      providerStatus: null,
+    };
+  }
+
+  let response:
+    Response;
+
+  try {
+    response =
+      await fetch(
+        `${apiBaseUrl(mode)}/v1/customers/billing`,
+        {
+          method:
+            "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            "x-api-key":
+              apiKey,
+          },
+
+          body:
+            JSON.stringify({
+              customer_id:
+                providerCustomerId,
+            }),
+        }
+      );
+  } catch {
+    return {
+      ok: false,
+      stage: "request",
+      providerStatus: null,
+    };
+  }
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      stage: "provider",
+      providerStatus:
+        response.status,
+    };
+  }
+
+  let payload:
+    unknown;
+
+  try {
+    payload =
+      await response.json();
+  } catch {
+    return {
+      ok: false,
+      stage: "response",
+      providerStatus:
+        response.status,
+    };
+  }
+
+  if (
+    typeof payload !== "object" ||
+    payload === null
+  ) {
+    return {
+      ok: false,
+      stage: "response",
+      providerStatus:
+        response.status,
+    };
+  }
+
+  const portalUrl =
+    (
+      payload as Record<
+        string,
+        unknown
+      >
+    ).customer_portal_link;
+
+  if (
+    !isAllowedCreemPortalUrl(
+      portalUrl
+    )
+  ) {
+    return {
+      ok: false,
+      stage: "response",
+      providerStatus:
+        response.status,
+    };
+  }
+
+  return {
+    ok: true,
+    portalUrl,
   };
 }

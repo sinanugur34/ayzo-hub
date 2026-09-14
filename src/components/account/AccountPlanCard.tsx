@@ -107,6 +107,25 @@ export default async function AccountPlanCard() {
             : `${interval} subscription · Active`}
         </div>
 
+        {billingAvailable && (
+          <form
+            action="/api/billing/portal"
+            method="post"
+            className="mt-4"
+          >
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-[10px] font-medium text-zinc-300 transition hover:border-zinc-700 hover:text-white"
+            >
+              Manage subscription
+            </button>
+
+            <div className="mt-2 text-[9px] text-zinc-600">
+              Billing, payment method and cancellation
+            </div>
+          </form>
+        )}
+
         {!isAdvanced &&
           billingAvailable &&
           paidCheckoutEnabled && (
