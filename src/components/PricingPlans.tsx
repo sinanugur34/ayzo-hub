@@ -6,8 +6,7 @@ import {
 } from "react";
 
 import PlanComparisonMatrix from "@/components/PlanComparisonMatrix";
-import WaitlistForm from "@/components/WaitlistForm";
-import ProCheckoutButton from "@/components/billing/ProCheckoutButton";
+import PlanCheckoutButton from "@/components/billing/PlanCheckoutButton";
 
 import {
   PLANS,
@@ -39,6 +38,14 @@ function isPlanId(
   );
 }
 
+function annualLabel(
+  value: number | null
+) {
+  return value === null
+    ? "—"
+    : value.toFixed(2);
+}
+
 export default function PricingPlans() {
   const [
     account,
@@ -48,9 +55,9 @@ export default function PricingPlans() {
       AccountState | null
     >(null);
 
-  const proCheckoutEnabled =
+  const paidCheckoutEnabled =
     process.env
-      .NEXT_PUBLIC_AYZO_PRO_CHECKOUT_ENABLED
+      .NEXT_PUBLIC_AYZO_PAID_CHECKOUT_ENABLED
       ?.trim() === "true";
 
   useEffect(() => {
@@ -104,11 +111,6 @@ export default function PricingPlans() {
         });
       } catch {
         if (!cancelled) {
-          /*
-           * If account state cannot
-           * be resolved, fall back
-           * to public comparison.
-           */
           setAccount({
             authenticated:
               false,
@@ -127,11 +129,6 @@ export default function PricingPlans() {
     };
   }, []);
 
-  /*
-   * Avoid briefly showing lower
-   * tiers while authenticated
-   * account state is loading.
-   */
   if (!account) {
     return null;
   }
@@ -217,7 +214,7 @@ export default function PricingPlans() {
           {showPro && (
             <div className="rounded-2xl border border-violet-500/25 bg-violet-500/[0.05] p-5">
               <div className="mb-4">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="text-[10px] font-semibold tracking-[0.16em] text-violet-300">
                       PRO ACCESS
@@ -228,74 +225,62 @@ export default function PricingPlans() {
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    {currentPro ? (
-                      <div className="rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1.5 text-[9px] font-semibold tracking-[0.12em] text-emerald-300">
-                        CURRENT PLAN
+                  {currentPro ? (
+                    <div className="rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1.5 text-[9px] font-semibold tracking-[0.12em] text-emerald-300">
+                      CURRENT PLAN
+                    </div>
+                  ) : (
+                    <div className="text-right">
+                      <div className="text-lg font-semibold text-white">
+                        $
+                        {PLANS.pro.monthlyPriceUsd?.toFixed(
+                          0
+                        )}
+
+                        <span className="ml-1 text-[10px] font-normal text-zinc-500">
+                          /mo
+                        </span>
                       </div>
-                    ) : (
-                      <>
-                        <div className="text-lg font-semibold text-white">
-                          $
-                          {PLANS.pro.monthlyPriceUsd?.toFixed(
-                            0
-                          )}
 
-                          <span className="ml-1 text-[10px] font-normal text-zinc-500">
-                            /mo
-                          </span>
-                        </div>
-
-                        <div className="mt-1 text-[9px] text-zinc-600">
-                          Founding price
-                        </div>
-                      </>
-                    )}
-                  </div>
+                      <div className="mt-1 text-[9px] text-zinc-600">
+                        Founding price
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {currentPro ? (
-                  <p className="mt-3 text-xs leading-5 text-zinc-500">
-                    Your AYZO Pro access is active.
-                  </p>
-                ) : (
-                  !proCheckoutEnabled && (
-                    <p className="mt-3 text-xs leading-5 text-zinc-500">
-                      Join the waitlist for Pro access and launch updates.
-                    </p>
-                  )
-                )}
+                <p className="mt-3 text-xs leading-5 text-zinc-500">
+                  {currentPro
+                    ? "Your AYZO Pro access is active."
+                    : "Higher usage limits and live Pro intelligence features for individual research."}
+                </p>
               </div>
 
               {!currentPro && (
-                <>
-                  {proCheckoutEnabled ? (
-                    <div className="space-y-2">
-                      <ProCheckoutButton
-                        plan="pro"
-                        interval="monthly"
-                        label={`Start Monthly · $${PLANS.pro.monthlyPriceUsd?.toFixed(
-                          0
-                        )}/mo`}
-                      />
-
-                      <ProCheckoutButton
-                        plan="pro"
-                        interval="annual"
-                        variant="secondary"
-                        label={`Start Annual · $${PLANS.pro.annualPriceUsd?.toFixed(
-                          2
-                        )}/yr`}
-                      />
-                    </div>
-                  ) : (
-                    <WaitlistForm
-                      source="pro-card"
-                      compact
-                      buttonLabel="Join Pro Waitlist"
+                paidCheckoutEnabled ? (
+                  <div className="space-y-2">
+                    <PlanCheckoutButton
+                      plan="pro"
+                      interval="monthly"
+                      label={`Start Monthly · $${PLANS.pro.monthlyPriceUsd?.toFixed(
+                        0
+                      )}/mo`}
                     />
-                  )}
-                </>
+
+                    <PlanCheckoutButton
+                      plan="pro"
+                      interval="annual"
+                      variant="secondary"
+                      label={`Start Annual · $${annualLabel(
+                        PLANS.pro.annualPriceUsd
+                      )}/yr`}
+                    />
+                  </div>
+                ) : (
+                  <p className="rounded-xl border border-zinc-800 bg-black/20 px-4 py-3 text-xs leading-5 text-zinc-500">
+                    Secure checkout is temporarily unavailable.
+                  </p>
+                )
               )}
             </div>
           )}
@@ -303,7 +288,7 @@ export default function PricingPlans() {
           {showAdvanced && (
             <div className="rounded-2xl border border-purple-400/25 bg-purple-500/[0.05] p-5">
               <div className="mb-4">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="text-[10px] font-semibold tracking-[0.16em] text-purple-300">
                       ADVANCED ACCESS
@@ -319,10 +304,21 @@ export default function PricingPlans() {
                       CURRENT PLAN
                     </div>
                   ) : (
-                    <div className="text-right text-[10px] font-medium text-zinc-500">
-                      Pricing
-                      <br />
-                      coming soon
+                    <div className="text-right">
+                      <div className="text-lg font-semibold text-white">
+                        $
+                        {PLANS.advanced.monthlyPriceUsd?.toFixed(
+                          0
+                        )}
+
+                        <span className="ml-1 text-[10px] font-normal text-zinc-500">
+                          /mo
+                        </span>
+                      </div>
+
+                      <div className="mt-1 text-[9px] text-zinc-600">
+                        Premium individual plan
+                      </div>
                     </div>
                   )}
                 </div>
@@ -330,16 +326,35 @@ export default function PricingPlans() {
                 <p className="mt-3 text-xs leading-5 text-zinc-500">
                   {currentAdvanced
                     ? "Your AYZO Advanced access is active."
-                    : "Advanced includes Pro capabilities plus professional investigation workflows, API access and team-scale features."}
+                    : "Includes every live Pro capability. Additional Advanced workflows remain clearly marked as roadmap until released."}
                 </p>
               </div>
 
               {!currentAdvanced && (
-                <WaitlistForm
-                  source="advanced-card"
-                  compact
-                  buttonLabel="Join Advanced Waitlist"
-                />
+                paidCheckoutEnabled ? (
+                  <div className="space-y-2">
+                    <PlanCheckoutButton
+                      plan="advanced"
+                      interval="monthly"
+                      label={`Start Monthly · $${PLANS.advanced.monthlyPriceUsd?.toFixed(
+                        0
+                      )}/mo`}
+                    />
+
+                    <PlanCheckoutButton
+                      plan="advanced"
+                      interval="annual"
+                      variant="secondary"
+                      label={`Start Annual · $${annualLabel(
+                        PLANS.advanced.annualPriceUsd
+                      )}/yr`}
+                    />
+                  </div>
+                ) : (
+                  <p className="rounded-xl border border-zinc-800 bg-black/20 px-4 py-3 text-xs leading-5 text-zinc-500">
+                    Secure checkout is temporarily unavailable.
+                  </p>
+                )
               )}
             </div>
           )}

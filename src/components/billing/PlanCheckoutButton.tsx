@@ -42,7 +42,7 @@ type CheckoutPayload = {
     unknown;
 };
 
-export default function ProCheckoutButton({
+export default function PlanCheckoutButton({
   plan,
   interval,
   label,

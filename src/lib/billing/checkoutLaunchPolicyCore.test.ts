@@ -2,19 +2,19 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  parseProCheckoutEnabled,
+  parsePaidCheckoutEnabled,
 } from "./checkoutLaunchPolicyCore";
 
 test(
   "checkout is disabled when value is missing",
   () => {
     assert.equal(
-      parseProCheckoutEnabled(undefined),
+      parsePaidCheckoutEnabled(undefined),
       false
     );
 
     assert.equal(
-      parseProCheckoutEnabled(null),
+      parsePaidCheckoutEnabled(null),
       false
     );
   }
@@ -24,7 +24,7 @@ test(
   "checkout is disabled for false",
   () => {
     assert.equal(
-      parseProCheckoutEnabled("false"),
+      parsePaidCheckoutEnabled("false"),
       false
     );
   }
@@ -34,17 +34,17 @@ test(
   "checkout is fail-closed for unexpected values",
   () => {
     assert.equal(
-      parseProCheckoutEnabled("1"),
+      parsePaidCheckoutEnabled("1"),
       false
     );
 
     assert.equal(
-      parseProCheckoutEnabled("TRUE"),
+      parsePaidCheckoutEnabled("TRUE"),
       false
     );
 
     assert.equal(
-      parseProCheckoutEnabled("yes"),
+      parsePaidCheckoutEnabled("yes"),
       false
     );
   }
@@ -54,12 +54,12 @@ test(
   "checkout is enabled only by explicit true",
   () => {
     assert.equal(
-      parseProCheckoutEnabled("true"),
+      parsePaidCheckoutEnabled("true"),
       true
     );
 
     assert.equal(
-      parseProCheckoutEnabled(" true "),
+      parsePaidCheckoutEnabled(" true "),
       true
     );
   }

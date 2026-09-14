@@ -204,18 +204,13 @@ export default function WaitlistForm({
           {loading
             ? "Joining..."
             : buttonLabel ??
-              (
-                source ===
-                  "advanced-card"
-                  ? "Join Advanced Waitlist"
-                  : "Join Pro Waitlist"
-              )}
+              "Join AYZO Updates"}
         </button>
       </div>
 
       <p className="mt-2 text-[10px] leading-4 text-zinc-600">
         By joining, you agree to receive AYZO
-        paid-plan launch and early-access emails.
+        product and platform update emails.
         Unsubscribe anytime.
       </p>
 
