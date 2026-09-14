@@ -1,6 +1,10 @@
 import "server-only";
 
 import {
+  createHmac,
+} from "node:crypto";
+
+import {
   cookies,
   headers,
 } from "next/headers";
@@ -81,7 +85,24 @@ function readString(
 }
 
 function getSecuritySecret() {
-  return getInternalApiKey();
+  /*
+   * Derive a purpose-specific HMAC key instead
+   * of using the internal API credential directly
+   * for account-device telemetry hashing.
+   *
+   * Domain separation prevents cross-protocol
+   * reuse of the same raw key material.
+   */
+  return createHmac(
+    "sha256",
+    getInternalApiKey()
+  )
+    .update(
+      "ayzo:account-device-signals:v1"
+    )
+    .digest(
+      "hex"
+    );
 }
 
 function readClientIpFromHeaders(

@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   createDeviceToken,
+  isValidDeviceToken,
   describeDevice,
   DEVICE_TOKEN_BYTES,
   hashDeviceToken,
@@ -44,8 +45,12 @@ test(
 test(
   "raw device token hashes deterministically",
   () => {
+    /*
+     * Canonical deterministic fixture matching
+     * the 32-byte base64url device-token contract.
+     */
     const token =
-      "example-device-token";
+      "A".repeat(43);
 
     const first =
       hashDeviceToken(
@@ -65,11 +70,6 @@ test(
     assert.match(
       first,
       /^[a-f0-9]{64}$/
-    );
-
-    assert.notEqual(
-      first,
-      token
     );
   }
 );
@@ -144,6 +144,76 @@ test(
         null
       ),
       "Browser on Unknown device"
+    );
+  }
+);
+
+
+test(
+  "device token validation accepts only canonical 32-byte base64url tokens",
+  () => {
+    const token =
+      createDeviceToken();
+
+    assert.equal(
+      token.length,
+      43
+    );
+
+    assert.equal(
+      isValidDeviceToken(
+        token
+      ),
+      true
+    );
+
+    assert.equal(
+      isValidDeviceToken(
+        ""
+      ),
+      false
+    );
+
+    assert.equal(
+      isValidDeviceToken(
+        "a".repeat(42)
+      ),
+      false
+    );
+
+    assert.equal(
+      isValidDeviceToken(
+        "a".repeat(44)
+      ),
+      false
+    );
+
+    assert.equal(
+      isValidDeviceToken(
+        `${"a".repeat(42)}=`
+      ),
+      false
+    );
+
+    assert.equal(
+      isValidDeviceToken(
+        `${"a".repeat(42)}+`
+      ),
+      false
+    );
+  }
+);
+
+
+test(
+  "device hashing rejects malformed device tokens",
+  () => {
+    assert.throws(
+      () =>
+        hashDeviceToken(
+          "not-a-valid-device-token"
+        ),
+      /INVALID_DEVICE_TOKEN/
     );
   }
 );
