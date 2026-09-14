@@ -36,6 +36,11 @@ const account =
     "../../app/account/page.tsx"
   );
 
+const deviceServer =
+  read(
+    "./deviceProtectionServer.ts"
+  );
+
 test(
   "central account auth enforces device ledger",
   () => {
@@ -107,6 +112,75 @@ test(
     assert.match(
       account,
       /device_replaced/
+    );
+  }
+);
+
+
+test(
+  "unknown device token cannot use genuine-login registration path",
+  () => {
+    const start =
+      deviceServer.indexOf(
+        "export async function ensureCurrentAccountDevice"
+      );
+
+    const end =
+      deviceServer.indexOf(
+        "export async function getCurrentDeviceToken"
+      );
+
+    assert.ok(
+      start >= 0 &&
+      end > start
+    );
+
+    const ensureBlock =
+      deviceServer.slice(
+        start,
+        end
+      );
+
+    assert.match(
+      ensureBlock,
+      /bootstrapAccountDevice/
+    );
+
+    assert.doesNotMatch(
+      ensureBlock,
+      /registerAccountDevice/
+    );
+  }
+);
+
+
+test(
+  "legacy bootstrap uses dedicated zero-history database RPC",
+  () => {
+    assert.match(
+      deviceServer,
+      /ayzo_bootstrap_account_device/
+    );
+
+    assert.match(
+      deviceServer,
+      /export async function bootstrapAccountDevice/
+    );
+  }
+);
+
+
+test(
+  "genuine auth callback still owns new-device registration",
+  () => {
+    assert.match(
+      callback,
+      /registerAccountDevice/
+    );
+
+    assert.doesNotMatch(
+      callback,
+      /bootstrapAccountDevice/
     );
   }
 );

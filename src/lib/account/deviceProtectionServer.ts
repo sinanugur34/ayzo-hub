@@ -227,6 +227,85 @@ export async function registerAccountDevice({
   };
 }
 
+export async function bootstrapAccountDevice({
+  userId,
+  deviceToken,
+}: {
+  userId: string;
+  deviceToken: string;
+}) {
+  const signals =
+    await requestSignals();
+
+  const admin =
+    createAdminClient();
+
+  const {
+    data,
+    error,
+  } =
+    await admin.rpc(
+      "ayzo_bootstrap_account_device",
+      {
+        p_user_id:
+          userId,
+
+        p_device_token_hash:
+          hashDeviceToken(
+            deviceToken
+          ),
+
+        p_device_label:
+          signals.deviceLabel,
+
+        p_user_agent_hash:
+          signals.userAgentHash,
+
+        p_ip_hash:
+          signals.ipHash,
+      }
+    );
+
+  if (error) {
+    throw new Error(
+      error.message
+    );
+  }
+
+  const row =
+    firstRow(
+      data
+    );
+
+  if (
+    !row ||
+    !readString(
+      row.session_id
+    )
+  ) {
+    throw new Error(
+      "DEVICE_BOOTSTRAP_FAILED"
+    );
+  }
+
+  return {
+    sessionId:
+      readString(
+        row.session_id
+      )!,
+
+    isNew:
+      row.is_new ===
+        true,
+
+    revokedSessionId:
+      readString(
+        row.revoked_session_id
+      ),
+  };
+}
+
+
 export async function touchAccountDevice({
   userId,
   deviceToken,
@@ -319,24 +398,31 @@ export async function ensureCurrentAccountDevice({
     });
 
   /*
-   * Existing authenticated AYZO sessions
-   * created before Device Protection V1
-   * have no ledger row yet.
+   * Legacy authenticated AYZO sessions created before
+   * Device Protection V1 may have no ledger row.
    *
-   * Bootstrap them on first protected request.
+   * Bootstrap is intentionally separate from genuine
+   * authentication registration. The database permits
+   * bootstrap only when this account has zero historical
+   * device rows.
+   *
+   * Once any device history exists, an unknown token
+   * fails closed. This prevents a revoked device from
+   * deleting/replacing its cookie and registering itself
+   * again without a genuine authentication event.
    */
   if (
     !touched.registered
   ) {
-    const registration =
-      await registerAccountDevice({
+    const bootstrap =
+      await bootstrapAccountDevice({
         userId,
         deviceToken,
       });
 
     return {
       sessionId:
-        registration.sessionId,
+        bootstrap.sessionId,
 
       active:
         true,
