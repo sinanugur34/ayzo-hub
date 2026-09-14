@@ -72,7 +72,7 @@ export default function RootLayout({
             className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-zinc-500"
           >
             <a className="transition hover:text-zinc-300" href="/terms">
-              Terms and Conditions
+              Terms of Service
             </a>
             <a className="transition hover:text-zinc-300" href="/privacy">
               Privacy Policy

@@ -7,21 +7,35 @@ import {
 } from "@/lib/billing/checkoutLaunchPolicy";
 
 import {
-  createProCheckoutSession,
-  type ProBillingInterval,
-} from "@/lib/billing/fastspring";
+  createCreemCheckout,
+} from "@/lib/billing/creem";
+
+import type {
+  BillingInterval,
+} from "@/lib/plans/types";
 
 export const dynamic =
   "force-dynamic";
 
+type PaidPlan =
+  "pro" |
+  "advanced";
+
 function isBillingInterval(
   value: unknown
-): value is ProBillingInterval {
+): value is BillingInterval {
   return (
-    value ===
-      "monthly" ||
-    value ===
-      "annual"
+    value === "monthly" ||
+    value === "annual"
+  );
+}
+
+function isPaidPlan(
+  value: unknown
+): value is PaidPlan {
+  return (
+    value === "pro" ||
+    value === "advanced"
   );
 }
 
@@ -39,53 +53,25 @@ export async function POST(
   if (!userId) {
     return Response.json(
       {
-        ok:
-          false,
+        ok: false,
         error:
           "Authentication required.",
       },
       {
-        status:
-          401,
+        status: 401,
       }
     );
   }
 
-  /*
-   * If AYZO cannot safely
-   * read billing state, do
-   * not risk duplicate paid
-   * subscriptions.
-   */
   if (!billingAvailable) {
     return Response.json(
       {
-        ok:
-          false,
+        ok: false,
         error:
           "Billing state is temporarily unavailable.",
       },
       {
-        status:
-          503,
-      }
-    );
-  }
-
-  if (
-    entitlement.planId ===
-    "pro"
-  ) {
-    return Response.json(
-      {
-        ok:
-          false,
-        error:
-          "A Pro subscription is already active.",
-      },
-      {
-        status:
-          409,
+        status: 503,
       }
     );
   }
@@ -95,14 +81,12 @@ export async function POST(
   ) {
     return Response.json(
       {
-        ok:
-          false,
+        ok: false,
         error:
-          "Pro checkout is temporarily unavailable.",
+          "Paid checkout is temporarily unavailable.",
       },
       {
-        status:
-          503,
+        status: 503,
       }
     );
   }
@@ -116,32 +100,47 @@ export async function POST(
   } catch {
     return Response.json(
       {
-        ok:
-          false,
+        ok: false,
         error:
           "Invalid request body.",
       },
       {
-        status:
-          400,
+        status: 400,
       }
     );
   }
 
-  const interval =
-    typeof body ===
-      "object" &&
-    body !==
-      null &&
-    "interval" in
-      body
-      ? (
-          body as {
-            interval?:
-              unknown;
-          }
-        ).interval
+  const record =
+    typeof body === "object" &&
+    body !== null
+      ? body as Record<
+          string,
+          unknown
+        >
       : null;
+
+  const plan =
+    record?.plan;
+
+  const interval =
+    record?.interval;
+
+  if (
+    !isPaidPlan(
+      plan
+    )
+  ) {
+    return Response.json(
+      {
+        ok: false,
+        error:
+          "Plan must be pro or advanced.",
+      },
+      {
+        status: 400,
+      }
+    );
+  }
 
   if (
     !isBillingInterval(
@@ -150,96 +149,107 @@ export async function POST(
   ) {
     return Response.json(
       {
-        ok:
-          false,
+        ok: false,
         error:
           "Billing interval must be monthly or annual.",
       },
       {
-        status:
-          400,
+        status: 400,
       }
     );
   }
 
-  try {
-    const result =
-      await createProCheckoutSession({
-        userId,
-        userEmail,
-        interval,
-      });
-
-    if (!result.ok) {
-      /*
-       * Do not expose FastSpring
-       * response bodies or
-       * credentials to the client.
-       */
-      console.error(
-        "FastSpring checkout failed",
-        {
-          stage:
-            result.stage,
-          status:
-            result.providerStatus,
-        }
-      );
-
-      return Response.json(
-        {
-          ok:
-            false,
-          error:
-            "Unable to start checkout.",
-        },
-        {
-          status:
-            502,
-        }
-      );
-    }
-
+  /*
+   * Never create a second checkout
+   * for the currently active plan.
+   */
+  if (
+    entitlement.planId ===
+      plan
+  ) {
     return Response.json(
       {
-        ok:
-          true,
-
-        checkoutUrl:
-          result.checkoutUrl,
-
-        interval,
-      },
-      {
-        status:
-          201,
-
-        headers: {
-          "Cache-Control":
-            "no-store",
-        },
-      }
-    );
-  } catch (error) {
-    console.error(
-      "FastSpring checkout configuration failed",
-      error instanceof
-        Error
-        ? error.message
-        : "unknown"
-    );
-
-    return Response.json(
-      {
-        ok:
-          false,
+        ok: false,
         error:
-          "Checkout is temporarily unavailable.",
+          `An ${plan} subscription is already active.`,
       },
       {
-        status:
-          503,
+        status: 409,
       }
     );
   }
+
+  /*
+   * Downgrades are intentionally
+   * not handled through purchase.
+   */
+  if (
+    entitlement.planId ===
+      "advanced" &&
+    plan === "pro"
+  ) {
+    return Response.json(
+      {
+        ok: false,
+        error:
+          "Advanced accounts cannot purchase Pro through upgrade checkout.",
+      },
+      {
+        status: 409,
+      }
+    );
+  }
+
+  const result =
+    await createCreemCheckout({
+      userId,
+      userEmail,
+      planId:
+        plan,
+      interval,
+    });
+
+  if (!result.ok) {
+    console.error(
+      "Creem checkout failed",
+      {
+        stage:
+          result.stage,
+        status:
+          result.providerStatus,
+      }
+    );
+
+    return Response.json(
+      {
+        ok: false,
+        error:
+          "Unable to start checkout.",
+      },
+      {
+        status:
+          result.stage ===
+            "config"
+            ? 503
+            : 502,
+      }
+    );
+  }
+
+  return Response.json(
+    {
+      ok: true,
+      checkoutUrl:
+        result.checkoutUrl,
+      plan,
+      interval,
+    },
+    {
+      status: 201,
+      headers: {
+        "Cache-Control":
+          "no-store",
+      },
+    }
+  );
 }
