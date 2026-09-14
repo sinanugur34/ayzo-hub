@@ -34,6 +34,7 @@ const PRO_PLATFORM_FEATURES = {
   askAyzo: true,
   marketFlowIntelligence: true,
   advancedReports: true,
+  dataExport: true,
 } as const satisfies Partial<
   Record<
     FeatureId,
@@ -51,7 +52,6 @@ const ADVANCED_PLATFORM_FEATURES = {
 >;
 
 const PRO_ROADMAP_FEATURES = [
-  "dataExport",
   "mobileApp",
 ] as const satisfies readonly FeatureId[];
 
