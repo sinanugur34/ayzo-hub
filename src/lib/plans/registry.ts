@@ -65,7 +65,6 @@ const ADVANCED_ROADMAP_FEATURES = [
   "advancedWatchlists",
   "customAlertRules",
   "apiAccess",
-  "teamWorkspace",
   "noCodeDashboards",
   "priorityAnalysis",
 ] as const satisfies readonly FeatureId[];
@@ -145,18 +144,18 @@ export const PLANS = {
     status: "coming-soon",
 
     /*
-     * No public Advanced price
-     * until its paid value and
-     * entitlement are ready.
+     * Advanced is positioned as
+     * AYZO's premium individual
+     * investigation plan.
      */
     monthlyPriceUsd:
-      null,
+      69,
 
     annualPriceUsd:
-      null,
+      662,
 
     annualDiscountPercent:
-      null,
+      20,
 
     foundingPrice:
       false,
