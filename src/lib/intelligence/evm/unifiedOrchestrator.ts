@@ -14,6 +14,10 @@ import type {
 } from "../types";
 
 import {
+  getEvmCoordinationPolicy,
+} from "./coordinationPolicy";
+
+import {
   analyzeEvmCoordinatedWalletBehavior,
   evmTransactionsToCoordinationObservations,
   evmTransfersToCoordinationObservations,
@@ -1746,6 +1750,12 @@ export async function runEvmUnifiedIntelligence(
       )
     );
 
+    const coordinationPolicy =
+      getEvmCoordinationPolicy(
+        request.analysisPlan ??
+          "free"
+      );
+
     const coverage:
       EvmCoordinationCoverage = {
       includesEvmTransactions:
@@ -1772,13 +1782,17 @@ export async function runEvmUnifiedIntelligence(
         true,
 
       includesTemporalCorrelation:
-        false,
+        coordinationPolicy
+          .includesTemporalCorrelation,
 
       includesOwnershipInference:
         false,
 
       limitation:
-        `Coordination analysis is bounded to the analyzed address and up to ${depthPolicy.expansionWalletLimit} strongest observed counterparties. Secondary wallet expansion uses up to ${depthPolicy.expansionTransactionPages} transaction page(s). Temporal-correlation scoring and ownership inference are not included.`,
+        coordinationPolicy
+          .includesTemporalCorrelation
+          ? `Coordination analysis is bounded to the analyzed address and up to ${depthPolicy.expansionWalletLimit} strongest observed counterparties. Secondary wallet expansion uses up to ${depthPolicy.expansionTransactionPages} transaction page(s). Temporal correlation is limited to evidence involving the same observed external counterparty within a ${Math.round((coordinationPolicy.temporalWindowMs ?? 0) / 60000)} minute window. It does not establish ownership, identity, intent, or control.`
+          : `Coordination analysis is bounded to the analyzed address and up to ${depthPolicy.expansionWalletLimit} strongest observed counterparties. Secondary wallet expansion uses up to ${depthPolicy.expansionTransactionPages} transaction page(s). Temporal correlation and ownership inference are not included.`,
     };
 
     const intelligence =
@@ -1789,6 +1803,11 @@ export async function runEvmUnifiedIntelligence(
         observations,
 
         coverage,
+
+        temporalWindowMs:
+          coordinationPolicy
+            .temporalWindowMs ??
+          undefined,
       });
 
     modules

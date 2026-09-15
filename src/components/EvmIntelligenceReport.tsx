@@ -259,7 +259,13 @@ type CoordinationIntelligence = {
   corroboratedSignalCount:
     number;
 
+  temporalCorrelationSignalCount:
+    number;
+
   coverage: {
+    includesTemporalCorrelation:
+      boolean;
+
     includesOwnershipInference:
       false;
   };
@@ -1901,7 +1907,14 @@ export default function EvmIntelligenceReport({
       >
         {coordination ? (
           <>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div
+              className={
+                coordination.coverage
+                  .includesTemporalCorrelation
+                  ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+                  : "grid gap-3 sm:grid-cols-3"
+              }
+            >
               <Stat
                 label="Wallets"
                 value={formatCount(
@@ -1922,7 +1935,33 @@ export default function EvmIntelligenceReport({
                   coordination.corroboratedSignalCount
                 )}
               />
+
+              {coordination
+                .coverage
+                .includesTemporalCorrelation && (
+                <Stat
+                  label="Temporal"
+                  value={formatCount(
+                    coordination
+                      .temporalCorrelationSignalCount
+                  )}
+                />
+              )}
             </div>
+
+            {coordination
+              .coverage
+              .includesTemporalCorrelation && (
+              <div className="mt-4 rounded-2xl border border-violet-500/20 bg-violet-500/5 px-4 py-3">
+                <div className="text-[9px] font-medium tracking-[0.16em] text-violet-300">
+                  ADVANCED TEMPORAL CORRELATION
+                </div>
+
+                <div className="mt-1 text-xs leading-5 text-zinc-500">
+                  AYZO checks whether multiple observed wallets interacted with the same external counterparty inside a bounded time window. Timing proximity is corroborating evidence only.
+                </div>
+              </div>
+            )}
 
             <Methodology>
               Coordination signals describe shared on-chain evidence.
