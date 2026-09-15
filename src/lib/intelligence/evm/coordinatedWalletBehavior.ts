@@ -4,6 +4,10 @@ import {
   type EvmEntityEvidence,
 } from "./entityAttribution";
 
+import type {
+  EvmMultiHopPathCorroboration,
+} from "./walletGraphPathCorroboration";
+
 const EVM_ADDRESS =
   /^0x[0-9a-fA-F]{40}$/;
 
@@ -84,6 +88,7 @@ export type EvmCoordinationCoverage = {
   includesSharedTokenActivity: boolean;
 
   includesTemporalCorrelation: boolean;
+  includesMultiHopPathCorroboration: boolean;
   includesOwnershipInference: false;
 
   limitation: string;
@@ -160,6 +165,12 @@ export type EvmCoordinatedWalletBehavior = {
   temporalCorrelationSignalCount:
     number;
 
+  multiHopPathCorroborationCount:
+    number;
+
+  multiHopPathCorroborations:
+    readonly EvmMultiHopPathCorroboration[];
+
   signalsByKind: {
     sharedFunder: number;
     sharedCounterparty: number;
@@ -201,6 +212,9 @@ export type AnalyzeEvmCoordinatedWalletBehaviorRequest = {
 
   temporalWindowMs?:
     number;
+
+  multiHopPathCorroborations?:
+    readonly EvmMultiHopPathCorroboration[];
 };
 
 type SeenRange = {
@@ -1582,6 +1596,18 @@ export function analyzeEvmCoordinatedWalletBehavior(
       countKind(
         "temporal_correlation"
       ),
+
+    multiHopPathCorroborationCount:
+      (
+        request
+          .multiHopPathCorroborations ??
+        []
+      ).length,
+
+    multiHopPathCorroborations:
+      request
+        .multiHopPathCorroborations ??
+      [],
 
     signalsByKind: {
       sharedFunder:

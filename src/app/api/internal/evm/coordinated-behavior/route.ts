@@ -575,6 +575,9 @@ export async function POST(
     includesTemporalCorrelation:
       false,
 
+    includesMultiHopPathCorroboration:
+      false,
+
     includesOwnershipInference:
       false,
 

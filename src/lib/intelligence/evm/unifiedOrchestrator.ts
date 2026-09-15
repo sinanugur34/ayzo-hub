@@ -108,6 +108,10 @@ import {
 } from "./walletGraphDiscovery";
 
 import {
+  analyzeEvmMultiHopPathCorroboration,
+} from "./walletGraphPathCorroboration";
+
+import {
   analyzeEvmWalletRelationships,
   evmTransfersToRelationshipObservations,
   type EvmRelationshipEvidenceKind,
@@ -1708,6 +1712,57 @@ export async function runEvmUnifiedIntelligence(
     }
   }
 
+  const graphObservations = [
+    ...rootGraphObservations,
+
+    ...evmTransactionsToGraphObservations(
+      expansionTransactions
+    ),
+  ];
+
+  const graphCoverage:
+    EvmWalletGraphEvidenceCoverage = {
+    includesEvmTransactions:
+      rootTransactionResult.ok,
+
+    includesErc20Transfers:
+      transferResult?.ok ===
+      true,
+
+    includesOwnershipInference:
+      false,
+
+    limitation:
+      `Unified analysis uses a bounded graph expansion: the root address plus up to ${depthPolicy.expansionWalletLimit} strongest observed counterparties, with up to ${depthPolicy.expansionTransactionPages} transaction page(s) per expanded address. This is not an exhaustive recursive graph.`,
+  };
+
+  const graph =
+    graphObservations.length >
+      0
+      ? analyzeEvmWalletGraph({
+          rootAddress:
+            address,
+
+          observations:
+            graphObservations,
+
+          maxHops:
+            depthPolicy
+              .graphMaxHops,
+
+          maxNodes:
+            depthPolicy
+              .graphMaxNodes,
+
+          maxEdges:
+            depthPolicy
+              .graphMaxEdges,
+
+          evidenceCoverage:
+            graphCoverage,
+        })
+      : null;
+
   const coordinationWallets = [
     address,
     ...strongestNeighbors.map(
@@ -1785,15 +1840,38 @@ export async function runEvmUnifiedIntelligence(
         coordinationPolicy
           .includesTemporalCorrelation,
 
+      includesMultiHopPathCorroboration:
+        coordinationPolicy
+          .includesMultiHopPathCorroboration,
+
       includesOwnershipInference:
         false,
 
       limitation:
         coordinationPolicy
           .includesTemporalCorrelation
-          ? `Coordination analysis is bounded to the analyzed address and up to ${depthPolicy.expansionWalletLimit} strongest observed counterparties. Secondary wallet expansion uses up to ${depthPolicy.expansionTransactionPages} transaction page(s). Temporal correlation is limited to evidence involving the same observed external counterparty within a ${Math.round((coordinationPolicy.temporalWindowMs ?? 0) / 60000)} minute window. It does not establish ownership, identity, intent, or control.`
+          ? `Coordination analysis is bounded to the analyzed address and up to ${depthPolicy.expansionWalletLimit} strongest observed counterparties. Secondary wallet expansion uses up to ${depthPolicy.expansionTransactionPages} transaction page(s). Temporal correlation is limited to evidence involving the same observed external counterparty within a ${Math.round((coordinationPolicy.temporalWindowMs ?? 0) / 60000)} minute window. Advanced multi-hop corroboration uses only directed from-to evidence inside the selected bounded wallet graph. It does not establish ownership, identity, intent, funding control, or common control.`
           : `Coordination analysis is bounded to the analyzed address and up to ${depthPolicy.expansionWalletLimit} strongest observed counterparties. Secondary wallet expansion uses up to ${depthPolicy.expansionTransactionPages} transaction page(s). Temporal correlation and ownership inference are not included.`,
     };
+
+    const multiHopPathCorroborations =
+      coordinationPolicy
+        .includesMultiHopPathCorroboration &&
+      graph
+        ? analyzeEvmMultiHopPathCorroboration({
+            graph,
+
+            targetWallets:
+              coordinationWallets,
+
+            observations:
+              graphObservations,
+
+            maxPathHops:
+              depthPolicy
+                .graphMaxHops,
+          })
+        : [];
 
     const intelligence =
       analyzeEvmCoordinatedWalletBehavior({
@@ -1808,6 +1886,8 @@ export async function runEvmUnifiedIntelligence(
           coordinationPolicy
             .temporalWindowMs ??
           undefined,
+
+        multiHopPathCorroborations,
       });
 
     modules
@@ -1852,55 +1932,7 @@ export async function runEvmUnifiedIntelligence(
       );
   }
 
-  const graphObservations = [
-    ...rootGraphObservations,
-
-    ...evmTransactionsToGraphObservations(
-      expansionTransactions
-    ),
-  ];
-
-  if (
-    graphObservations.length >
-      0
-  ) {
-    const graphCoverage:
-      EvmWalletGraphEvidenceCoverage = {
-      includesEvmTransactions:
-        rootTransactionResult.ok,
-
-      includesErc20Transfers:
-        transferResult?.ok ===
-        true,
-
-      includesOwnershipInference:
-        false,
-
-      limitation:
-        `Unified analysis uses a bounded graph expansion: the root address plus up to ${depthPolicy.expansionWalletLimit} strongest observed counterparties, with up to ${depthPolicy.expansionTransactionPages} transaction page(s) per expanded address. This is not an exhaustive recursive graph.`,
-    };
-
-    const graph =
-      analyzeEvmWalletGraph({
-        rootAddress:
-          address,
-
-        observations:
-          graphObservations,
-
-        maxHops:
-          depthPolicy.graphMaxHops,
-
-        maxNodes:
-          depthPolicy.graphMaxNodes,
-
-        maxEdges:
-          depthPolicy.graphMaxEdges,
-
-        evidenceCoverage:
-          graphCoverage,
-      });
-
+  if (graph) {
     modules.walletGraph =
       limited(
         graph,
@@ -1908,7 +1940,9 @@ export async function runEvmUnifiedIntelligence(
           .limitation
       );
 
-    if (graph.edgeCount > 0) {
+    if (
+      graph.edgeCount > 0
+    ) {
       findings.push({
         id:
           "evm-wallet-graph-observed",

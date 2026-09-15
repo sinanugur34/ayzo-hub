@@ -56,6 +56,9 @@ const coverage:
   includesTemporalCorrelation:
     false,
 
+  includesMultiHopPathCorroboration:
+    false,
+
   includesOwnershipInference:
     false,
 

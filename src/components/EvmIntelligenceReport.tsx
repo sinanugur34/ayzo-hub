@@ -262,8 +262,47 @@ type CoordinationIntelligence = {
   temporalCorrelationSignalCount:
     number;
 
+  multiHopPathCorroborationCount:
+    number;
+
+  multiHopPathCorroborations:
+    readonly {
+      sourceAddress:
+        string;
+
+      wallets:
+        readonly string[];
+
+      pathCount:
+        number;
+
+      maxPathHops:
+        number;
+
+      evidenceTransactionHashes:
+        readonly string[];
+
+      paths:
+        readonly {
+          walletAddress:
+            string;
+
+          hopCount:
+            number;
+
+          addresses:
+            readonly string[];
+
+          evidenceTransactionHashes:
+            readonly string[];
+        }[];
+    }[];
+
   coverage: {
     includesTemporalCorrelation:
+      boolean;
+
+    includesMultiHopPathCorroboration:
       boolean;
 
     includesOwnershipInference:
@@ -1910,9 +1949,12 @@ export default function EvmIntelligenceReport({
             <div
               className={
                 coordination.coverage
-                  .includesTemporalCorrelation
-                  ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
-                  : "grid gap-3 sm:grid-cols-3"
+                  .includesMultiHopPathCorroboration
+                  ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
+                  : coordination.coverage
+                      .includesTemporalCorrelation
+                    ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+                    : "grid gap-3 sm:grid-cols-3"
               }
             >
               <Stat
@@ -1947,6 +1989,18 @@ export default function EvmIntelligenceReport({
                   )}
                 />
               )}
+
+              {coordination
+                .coverage
+                .includesMultiHopPathCorroboration && (
+                <Stat
+                  label="Multi-hop"
+                  value={formatCount(
+                    coordination
+                      .multiHopPathCorroborationCount
+                  )}
+                />
+              )}
             </div>
 
             {coordination
@@ -1963,10 +2017,74 @@ export default function EvmIntelligenceReport({
               </div>
             )}
 
+            {coordination
+              .coverage
+              .includesMultiHopPathCorroboration && (
+              <div className="mt-4 rounded-2xl border border-violet-500/20 bg-violet-500/5 px-4 py-4">
+                <div className="text-[9px] font-medium tracking-[0.16em] text-violet-300">
+                  ADVANCED MULTI-HOP PATH CORROBORATION
+                </div>
+
+                <div className="mt-1 text-xs leading-5 text-zinc-500">
+                  AYZO checks directed evidence paths inside the bounded wallet graph for upstream addresses that connect to multiple analyzed wallets. Path convergence is corroborating on-chain evidence only.
+                </div>
+
+                {coordination
+                  .multiHopPathCorroborations
+                  .length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    {coordination
+                      .multiHopPathCorroborations
+                      .slice(
+                        0,
+                        3
+                      )
+                      .map(
+                        corroboration => (
+                          <div
+                            key={
+                              corroboration
+                                .sourceAddress
+                            }
+                            className="rounded-xl border border-white/5 bg-black/20 px-3 py-3"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="font-mono text-[10px] text-zinc-300 break-all">
+                                {
+                                  corroboration
+                                    .sourceAddress
+                                }
+                              </div>
+
+                              <div className="text-[10px] text-zinc-500">
+                                {
+                                  corroboration
+                                    .wallets
+                                    .length
+                                } wallets · {
+                                  corroboration
+                                    .maxPathHops
+                                } max hops · {
+                                  corroboration
+                                    .evidenceTransactionHashes
+                                    .length
+                                } evidence TXs
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      )}
+                  </div>
+                )}
+              </div>
+            )}
+
             <Methodology>
               Coordination signals describe shared on-chain evidence.
-              They do not prove common ownership, identity, intent or
-              malicious activity.
+              Multi-hop path corroboration follows observed directed
+              transaction paths inside the bounded graph. It does not
+              prove common ownership, identity, intent, funding control
+              or malicious activity.
             </Methodology>
           </>
         ) : (

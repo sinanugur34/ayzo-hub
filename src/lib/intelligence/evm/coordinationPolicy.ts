@@ -6,6 +6,9 @@ export type EvmCoordinationPolicy = {
   includesTemporalCorrelation:
     boolean;
 
+  includesMultiHopPathCorroboration:
+    boolean;
+
   temporalWindowMs:
     number | null;
 };
@@ -18,6 +21,9 @@ const STANDARD_POLICY:
     includesTemporalCorrelation:
       false,
 
+    includesMultiHopPathCorroboration:
+      false,
+
     temporalWindowMs:
       null,
   };
@@ -25,6 +31,9 @@ const STANDARD_POLICY:
 const ADVANCED_POLICY:
   EvmCoordinationPolicy = {
     includesTemporalCorrelation:
+      true,
+
+    includesMultiHopPathCorroboration:
       true,
 
     temporalWindowMs:
