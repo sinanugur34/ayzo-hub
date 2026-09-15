@@ -17,6 +17,9 @@ test(
         includesTemporalCorrelation:
           false,
 
+        includesMultiHopPathCorroboration:
+          false,
+
         temporalWindowMs:
           null,
       }
@@ -33,6 +36,9 @@ test(
       ),
       {
         includesTemporalCorrelation:
+          false,
+
+        includesMultiHopPathCorroboration:
           false,
 
         temporalWindowMs:
@@ -53,6 +59,12 @@ test(
     assert.equal(
       policy
         .includesTemporalCorrelation,
+      true
+    );
+
+    assert.equal(
+      policy
+        .includesMultiHopPathCorroboration,
       true
     );
 
