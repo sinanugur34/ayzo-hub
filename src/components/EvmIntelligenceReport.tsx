@@ -12,6 +12,9 @@ import VisualEvidenceGraphPanel from "@/components/VisualEvidenceGraph";
 import {
   buildEvmVisualEvidenceGraph,
 } from "@/lib/intelligence/visualEvidenceGraph";
+import {
+  getEvmWalletGraphPresentation,
+} from "@/lib/intelligence/evm/walletGraphPresentation";
 import type {
   ActivityTimeline as ActivityTimelineData,
 } from "@/lib/intelligence/activityTimeline";
@@ -287,6 +290,18 @@ type WalletGraph = {
   coverage: {
     includesOwnershipInference:
       false;
+
+    maxHops:
+      number;
+
+    maxNodes:
+      number;
+
+    maxEdges:
+      number;
+
+    truncated:
+      boolean;
   };
 };
 
@@ -1145,6 +1160,13 @@ export default function EvmIntelligenceReport({
       .walletGraph
       .data;
 
+  const graphPresentation =
+    graph
+      ? getEvmWalletGraphPresentation(
+          graph.coverage
+        )
+      : null;
+
   const marketFlow =
     data.modules
       .marketFlowIntelligence
@@ -1956,11 +1978,32 @@ export default function EvmIntelligenceReport({
               />
             </div>
 
+            {graphPresentation
+              ?.advancedDepth && (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-violet-500/20 bg-violet-500/5 px-4 py-3">
+                <div>
+                  <div className="text-[9px] font-medium tracking-[0.16em] text-violet-300">
+                    {graphPresentation.capabilityLabel}
+                  </div>
+
+                  <div className="mt-1 text-xs text-zinc-400">
+                    Deeper evidence-backed wallet traversal is active.
+                  </div>
+                </div>
+
+                <div className="font-mono text-[10px] text-zinc-500">
+                  up to {graph.coverage.maxHops} hops · {graph.coverage.maxNodes} nodes · {graph.coverage.maxEdges} edges
+                </div>
+              </div>
+            )}
+
             <div className="mt-5 space-y-2">
               {graph.nodes
                 .slice(
                   0,
-                  6
+                  graphPresentation
+                    ?.nodePreviewLimit ??
+                    6
                 )
                 .map(
                   node => (
@@ -2012,6 +2055,14 @@ export default function EvmIntelligenceReport({
             graph,
 
             funding,
+
+            maxNodes:
+              graphPresentation
+                ?.visualMaxNodes,
+
+            maxEdges:
+              graphPresentation
+                ?.visualMaxEdges,
           })
         }
       />
