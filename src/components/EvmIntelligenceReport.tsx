@@ -212,6 +212,72 @@ type FundingIntelligence = {
 
   sources:
     readonly FundingSource[];
+
+  deepFundingTracing:
+    | null
+    | {
+        nodeCount:
+          number;
+
+        edgeCount:
+          number;
+
+        pathCount:
+          number;
+
+        maxDepthReached:
+          number;
+
+        evidenceTransactionHashes:
+          readonly string[];
+
+        paths:
+          readonly {
+            sourceAddress:
+              string;
+
+            hopCount:
+              number;
+
+            addresses:
+              readonly string[];
+
+            evidenceTransactionHashes:
+              readonly string[];
+          }[];
+
+        coverage: {
+          maxHops:
+            number;
+
+          maxNodes:
+            number;
+
+          providerRequestBudgetReached:
+            boolean;
+
+          nodeLimitReached:
+            boolean;
+
+          hopLimitReached:
+            boolean;
+
+          truncated:
+            boolean;
+
+          includesErc20Transfers:
+            false;
+
+          includesOwnershipInference:
+            false;
+
+          includesUltimateOriginInference:
+            false;
+
+          limitation:
+            string;
+        };
+      };
 };
 
 type DeploymentIntelligence = {
@@ -1852,6 +1918,93 @@ export default function EvmIntelligenceReport({
                       />
                     )
                   )}
+              </div>
+            )}
+
+            {funding.deepFundingTracing && (
+              <div className="mt-6 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">
+                      Advanced Deep Funding
+                    </div>
+
+                    <div className="mt-1 text-sm text-zinc-300">
+                      Bounded upstream native-funding evidence paths
+                    </div>
+                  </div>
+
+                  <div className="rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-200">
+                    {funding.deepFundingTracing.coverage.truncated
+                      ? "BOUNDED / PARTIAL"
+                      : "BOUNDED"}
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <MiniStat
+                    label="Maximum depth"
+                    value={`${formatCount(
+                      funding.deepFundingTracing.maxDepthReached
+                    )} hops`}
+                  />
+
+                  <MiniStat
+                    label="Upstream nodes"
+                    value={formatCount(
+                      Math.max(
+                        0,
+                        funding.deepFundingTracing.nodeCount -
+                          1
+                      )
+                    )}
+                  />
+
+                  <MiniStat
+                    label="Evidence transactions"
+                    value={formatCount(
+                      funding.deepFundingTracing
+                        .evidenceTransactionHashes
+                        .length
+                    )}
+                  />
+                </div>
+
+                {funding.deepFundingTracing.paths.length >
+                  0 && (
+                  <div className="mt-4 space-y-2">
+                    {funding.deepFundingTracing.paths
+                      .slice(
+                        0,
+                        3
+                      )
+                      .map(
+                        path => (
+                          <EvidenceRow
+                            key={`${path.sourceAddress}:${path.hopCount}`}
+                            left={short(
+                              path.sourceAddress
+                            )}
+                            middle={`${path.hopCount} hop${
+                              path.hopCount ===
+                              1
+                                ? ""
+                                : "s"
+                            }`}
+                            right={`${path.evidenceTransactionHashes.length} evidence TX`}
+                          />
+                        )
+                      )}
+                  </div>
+                )}
+
+                <div className="mt-4 text-xs leading-5 text-zinc-400">
+                  Deep Funding V1 follows only positive-value native EVM
+                  transactions directed into each traced wallet. ERC-20
+                  upstream tracing is not included. Observed paths do not
+                  establish ownership, identity, control, intent, or the
+                  ultimate origin of funds.
+                </div>
               </div>
             )}
 

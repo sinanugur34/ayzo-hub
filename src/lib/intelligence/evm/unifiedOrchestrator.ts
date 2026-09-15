@@ -18,6 +18,15 @@ import {
 } from "./coordinationPolicy";
 
 import {
+  getEvmDeepFundingPolicy,
+} from "./deepFundingPolicy";
+
+import {
+  analyzeEvmDeepFundingTracing,
+  type EvmDeepFundingTracing,
+} from "./deepFundingTracing";
+
+import {
   analyzeEvmCoordinatedWalletBehavior,
   evmTransactionsToCoordinationObservations,
   evmTransfersToCoordinationObservations,
@@ -960,10 +969,18 @@ export async function runEvmUnifiedIntelligence(
       .trim()
       .toLowerCase();
 
+  const analysisPlan =
+    request.analysisPlan ??
+    "free";
+
   const depthPolicy =
     getAnalysisDepthPolicy(
-      request.analysisPlan ??
-        "free"
+      analysisPlan
+    );
+
+  const deepFundingPolicy =
+    getEvmDeepFundingPolicy(
+      analysisPlan
     );
 
   if (
@@ -1450,14 +1467,96 @@ export async function runEvmUnifiedIntelligence(
         coverage,
       });
 
+    let deepFundingTracing:
+      EvmDeepFundingTracing | null =
+        null;
+
+    let deepFundingFailure:
+      string | null =
+        null;
+
+    if (
+      deepFundingPolicy.enabled
+    ) {
+      if (
+        rootTransactionResult.ok
+      ) {
+        try {
+          deepFundingTracing =
+            await analyzeEvmDeepFundingTracing({
+              rootAddress:
+                address,
+
+              maxHops:
+                deepFundingPolicy
+                  .maxHops,
+
+              maxNodes:
+                deepFundingPolicy
+                  .maxNodes,
+
+              transactionPagesPerNode:
+                deepFundingPolicy
+                  .transactionPagesPerNode,
+
+              providerRequestBudget:
+                deepFundingPolicy
+                  .providerRequestBudget,
+
+              getTransactions:
+                (
+                  wallet,
+                  cursor
+                ) =>
+                  getTransactions(
+                    wallet,
+                    cursor
+                  ),
+            });
+        } catch {
+          deepFundingFailure =
+            "Advanced Deep Funding tracing could not be completed.";
+        }
+      } else {
+        deepFundingFailure =
+          "Advanced Deep Funding tracing was not run because native EVM transaction history was unavailable.";
+      }
+    }
+
+    const fundingLimitation =
+      [
+        coverage.limitation,
+
+        deepFundingTracing
+          ?.coverage
+          .limitation ??
+          deepFundingFailure,
+      ]
+        .filter(
+          (
+            value
+          ): value is string =>
+            typeof value ===
+              "string" &&
+            value.length > 0
+        )
+        .join(" ") ||
+      null;
+
+    const fundingModuleData = {
+      ...intelligence,
+
+      deepFundingTracing,
+    };
+
     modules
       .fundingProvenance =
       createModule(
         moduleStatusFromCoverage(
-          coverage.limitation
+          fundingLimitation
         ),
-        intelligence,
-        coverage.limitation
+        fundingModuleData,
+        fundingLimitation
       );
 
     if (
@@ -1486,6 +1585,36 @@ export async function runEvmUnifiedIntelligence(
 
         caveat:
           "Observed funding sources do not establish ownership or ultimate origin.",
+      });
+    }
+
+    if (
+      deepFundingTracing &&
+      deepFundingTracing
+        .maxDepthReached >=
+        2
+    ) {
+      findings.push({
+        id:
+          "evm-deep-funding-paths-observed",
+
+        category:
+          "funding",
+
+        title:
+          "Upstream funding paths observed",
+
+        severity:
+          "informational",
+
+        confidence:
+          "high",
+
+        summary:
+          `AYZO traced ${deepFundingTracing.pathCount} bounded upstream funding path(s), reaching a maximum observed depth of ${deepFundingTracing.maxDepthReached} hop(s).`,
+
+        caveat:
+          "Observed upstream funding paths do not establish ownership, identity, control, intent, or ultimate origin of funds.",
       });
     }
   } else {
