@@ -10,7 +10,7 @@ const EVM_ADDRESS =
 const TX_HASH =
   /^0x[0-9a-fA-F]{64}$/;
 
-export const MAX_EVM_GRAPH_HOPS = 3;
+export const MAX_EVM_GRAPH_HOPS = 4;
 export const MAX_EVM_GRAPH_NODES = 100;
 export const MAX_EVM_GRAPH_EDGES = 200;
 
