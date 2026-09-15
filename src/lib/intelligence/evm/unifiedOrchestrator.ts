@@ -27,6 +27,14 @@ import {
 } from "./deepFundingTracing";
 
 import {
+  getEvmRecursiveGraphPolicy,
+} from "./recursiveGraphPolicy";
+
+import {
+  analyzeEvmRecursiveWalletGraphDiscovery,
+} from "./recursiveWalletGraphDiscovery";
+
+import {
   analyzeEvmCoordinatedWalletBehavior,
   evmTransactionsToCoordinationObservations,
   evmTransfersToCoordinationObservations,
@@ -983,6 +991,11 @@ export async function runEvmUnifiedIntelligence(
       analysisPlan
     );
 
+  const recursiveGraphPolicy =
+    getEvmRecursiveGraphPolicy(
+      analysisPlan
+    );
+
   if (
     !EVM_ADDRESS.test(
       address
@@ -1801,69 +1814,150 @@ export async function runEvmUnifiedIntelligence(
   const expansionTransactions:
     EvmTransaction[] = [];
 
-  for (
-    const neighbor of
-      strongestNeighbors
-  ) {
-    let cursor:
-      string | null =
-        null;
+  let graphObservations:
+    EvmWalletGraphObservation[] = [
+      ...rootGraphObservations,
+    ];
 
+  let graphCoverage:
+    EvmWalletGraphEvidenceCoverage;
+
+  if (
+    recursiveGraphPolicy.enabled
+  ) {
+    const recursiveDiscovery =
+      await analyzeEvmRecursiveWalletGraphDiscovery({
+        rootAddress:
+          address,
+
+        rootObservations:
+          rootGraphObservations,
+
+        maxHops:
+          recursiveGraphPolicy
+            .maxHops,
+
+        maxNodes:
+          recursiveGraphPolicy
+            .maxNodes,
+
+        maxEdges:
+          recursiveGraphPolicy
+            .maxEdges,
+
+        maxNeighborsPerNode:
+          recursiveGraphPolicy
+            .maxNeighborsPerNode,
+
+        transactionPagesPerNode:
+          recursiveGraphPolicy
+            .transactionPagesPerNode,
+
+        providerRequestBudget:
+          recursiveGraphPolicy
+            .providerRequestBudget,
+
+        getTransactions:
+          (
+            wallet,
+            cursor
+          ) =>
+            getTransactions(
+              wallet,
+              cursor
+            ),
+      });
+
+    expansionTransactions.push(
+      ...recursiveDiscovery
+        .expansionTransactions
+    );
+
+    graphObservations = [
+      ...recursiveDiscovery
+        .observations,
+    ];
+
+    graphCoverage = {
+      includesEvmTransactions:
+        rootTransactionResult.ok ||
+        recursiveDiscovery
+          .successfulProviderRequestCount >
+          0,
+
+      includesErc20Transfers:
+        transferResult?.ok ===
+        true,
+
+      includesOwnershipInference:
+        false,
+
+      limitation:
+        recursiveDiscovery
+          .limitation,
+    };
+  } else {
     for (
-      let page = 0;
-      page <
-        depthPolicy
-          .expansionTransactionPages;
-      page += 1
+      const neighbor of
+        strongestNeighbors
     ) {
-      const result =
-        await getTransactions(
-          neighbor.address,
-          cursor
+      let cursor:
+        string | null =
+          null;
+
+      for (
+        let page = 0;
+        page <
+          depthPolicy
+            .expansionTransactionPages;
+        page += 1
+      ) {
+        const result =
+          await getTransactions(
+            neighbor.address,
+            cursor
+          );
+
+        if (!result.ok) {
+          break;
+        }
+
+        expansionTransactions.push(
+          ...result.data
+            .transactions
         );
 
-      if (!result.ok) {
-        break;
-      }
+        cursor =
+          result.data
+            .nextCursor;
 
-      expansionTransactions.push(
-        ...result.data
-          .transactions
-      );
-
-      cursor =
-        result.data
-          .nextCursor;
-
-      if (cursor === null) {
-        break;
+        if (cursor === null) {
+          break;
+        }
       }
     }
+
+    graphObservations.push(
+      ...evmTransactionsToGraphObservations(
+        expansionTransactions
+      )
+    );
+
+    graphCoverage = {
+      includesEvmTransactions:
+        rootTransactionResult.ok,
+
+      includesErc20Transfers:
+        transferResult?.ok ===
+        true,
+
+      includesOwnershipInference:
+        false,
+
+      limitation:
+        `Unified analysis uses a bounded graph expansion: the root address plus up to ${depthPolicy.expansionWalletLimit} strongest observed counterparties, with up to ${depthPolicy.expansionTransactionPages} transaction page(s) per expanded address. This is not an exhaustive recursive graph.`,
+    };
   }
-
-  const graphObservations = [
-    ...rootGraphObservations,
-
-    ...evmTransactionsToGraphObservations(
-      expansionTransactions
-    ),
-  ];
-
-  const graphCoverage:
-    EvmWalletGraphEvidenceCoverage = {
-    includesEvmTransactions:
-      rootTransactionResult.ok,
-
-    includesErc20Transfers:
-      transferResult?.ok ===
-      true,
-
-    includesOwnershipInference:
-      false,
-
-    limitation:
-      `Unified analysis uses a bounded graph expansion: the root address plus up to ${depthPolicy.expansionWalletLimit} strongest observed counterparties, with up to ${depthPolicy.expansionTransactionPages} transaction page(s) per expanded address. This is not an exhaustive recursive graph.`,
-  };
 
   const graph =
     graphObservations.length >
