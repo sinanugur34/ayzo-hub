@@ -22,6 +22,7 @@ export type EvmCoordinationSignalKind =
   | "shared_counterparty"
   | "direct_interaction"
   | "same_transaction"
+  | "temporal_correlation"
   | "shared_token_activity";
 
 export type EvmCoordinationSignalClass =
@@ -82,7 +83,7 @@ export type EvmCoordinationCoverage = {
   includesSameTransaction: true;
   includesSharedTokenActivity: boolean;
 
-  includesTemporalCorrelation: false;
+  includesTemporalCorrelation: boolean;
   includesOwnershipInference: false;
 
   limitation: string;
@@ -156,11 +157,16 @@ export type EvmCoordinatedWalletBehavior = {
   corroboratedSignalCount:
     number;
 
+  temporalCorrelationSignalCount:
+    number;
+
   signalsByKind: {
     sharedFunder: number;
     sharedCounterparty: number;
     directInteraction: number;
     sameTransaction: number;
+    temporalCorrelation:
+      number;
     sharedTokenActivity: number;
   };
 
@@ -192,6 +198,9 @@ export type AnalyzeEvmCoordinatedWalletBehaviorRequest = {
 
   entityEvidence?:
     readonly EvmEntityEvidence[];
+
+  temporalWindowMs?:
+    number;
 };
 
 type SeenRange = {
@@ -609,8 +618,11 @@ function signalPriority(
     case "shared_counterparty":
       return 3;
 
-    case "shared_token_activity":
+    case "temporal_correlation":
       return 4;
+
+    case "shared_token_activity":
+      return 5;
   }
 }
 
@@ -729,6 +741,33 @@ export function analyzeEvmCoordinatedWalletBehavior(
     new Set(
       targetWallets
     );
+
+  const temporalWindowMs =
+    request.coverage
+      .includesTemporalCorrelation
+      ? (
+          request
+            .temporalWindowMs ??
+          15 * 60 * 1000
+        )
+      : null;
+
+  if (
+    temporalWindowMs !== null &&
+    (
+      !Number.isSafeInteger(
+        temporalWindowMs
+      ) ||
+      temporalWindowMs <
+        60_000 ||
+      temporalWindowMs >
+        60 * 60 * 1000
+    )
+  ) {
+    throw new Error(
+      "temporalWindowMs must be an integer between 60000 and 3600000."
+    );
+  }
 
   const acceptedObservations:
     NormalizedObservation[] =
@@ -1131,6 +1170,167 @@ export function analyzeEvmCoordinatedWalletBehavior(
     );
   }
 
+  if (
+    temporalWindowMs !== null
+  ) {
+    for (
+      const [
+        counterparty,
+        bucket,
+      ] of byCounterparty
+    ) {
+      const timestamped =
+        bucket.observations
+          .map(
+            observation => {
+              if (
+                !observation
+                  .timestamp
+              ) {
+                return null;
+              }
+
+              const timestampMs =
+                Date.parse(
+                  observation
+                    .timestamp
+                );
+
+              if (
+                !Number.isFinite(
+                  timestampMs
+                )
+              ) {
+                return null;
+              }
+
+              const wallet =
+                targetSet.has(
+                  observation.from
+                )
+                  ? observation.from
+                  : targetSet.has(
+                        observation.to
+                      )
+                    ? observation.to
+                    : null;
+
+              if (!wallet) {
+                return null;
+              }
+
+              return {
+                observation,
+                timestampMs,
+                wallet,
+              };
+            }
+          )
+          .filter(
+            (
+              value
+            ): value is {
+              observation:
+                NormalizedObservation;
+              timestampMs:
+                number;
+              wallet:
+                string;
+            } =>
+              value !== null
+          )
+          .sort(
+            (left, right) =>
+              left.timestampMs -
+                right.timestampMs ||
+              left.wallet.localeCompare(
+                right.wallet
+              ) ||
+              left.observation
+                .transactionHash
+                .localeCompare(
+                  right.observation
+                    .transactionHash
+                )
+          );
+
+      for (
+        let start = 0;
+        start <
+        timestamped.length;
+        start += 1
+      ) {
+        const window =
+          [];
+
+        const wallets =
+          new Set<string>();
+
+        for (
+          let end = start;
+          end <
+          timestamped.length;
+          end += 1
+        ) {
+          const current =
+            timestamped[end];
+
+          if (
+            current.timestampMs -
+              timestamped[start]
+                .timestampMs >
+            temporalWindowMs
+          ) {
+            break;
+          }
+
+          window.push(
+            current.observation
+          );
+
+          wallets.add(
+            current.wallet
+          );
+        }
+
+        if (
+          wallets.size < 2
+        ) {
+          continue;
+        }
+
+        const walletList =
+          [...wallets]
+            .sort();
+
+        const key =
+          signalKey(
+            "temporal_correlation",
+            walletList,
+            counterparty,
+            null,
+            null
+          );
+
+        const signal =
+          getSignal(
+            signals,
+            key,
+            "temporal_correlation",
+            "corroborating",
+            counterparty,
+            null
+          );
+
+        addSignalEvidenceBatch(
+          signal,
+          window,
+          walletList
+        );
+      }
+    }
+  }
+
   for (
     const [
       funder,
@@ -1378,6 +1578,11 @@ export function analyzeEvmCoordinatedWalletBehavior(
             .length > 1
       ).length,
 
+    temporalCorrelationSignalCount:
+      countKind(
+        "temporal_correlation"
+      ),
+
     signalsByKind: {
       sharedFunder:
         countKind(
@@ -1397,6 +1602,11 @@ export function analyzeEvmCoordinatedWalletBehavior(
       sameTransaction:
         countKind(
           "same_transaction"
+        ),
+
+      temporalCorrelation:
+        countKind(
+          "temporal_correlation"
         ),
 
       sharedTokenActivity:

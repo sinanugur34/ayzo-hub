@@ -12,6 +12,9 @@ import VisualEvidenceGraphPanel from "@/components/VisualEvidenceGraph";
 import {
   buildEvmVisualEvidenceGraph,
 } from "@/lib/intelligence/visualEvidenceGraph";
+import {
+  getEvmWalletGraphPresentation,
+} from "@/lib/intelligence/evm/walletGraphPresentation";
 import type {
   ActivityTimeline as ActivityTimelineData,
 } from "@/lib/intelligence/activityTimeline";
@@ -256,7 +259,13 @@ type CoordinationIntelligence = {
   corroboratedSignalCount:
     number;
 
+  temporalCorrelationSignalCount:
+    number;
+
   coverage: {
+    includesTemporalCorrelation:
+      boolean;
+
     includesOwnershipInference:
       false;
   };
@@ -287,6 +296,18 @@ type WalletGraph = {
   coverage: {
     includesOwnershipInference:
       false;
+
+    maxHops:
+      number;
+
+    maxNodes:
+      number;
+
+    maxEdges:
+      number;
+
+    truncated:
+      boolean;
   };
 };
 
@@ -1145,6 +1166,13 @@ export default function EvmIntelligenceReport({
       .walletGraph
       .data;
 
+  const graphPresentation =
+    graph
+      ? getEvmWalletGraphPresentation(
+          graph.coverage
+        )
+      : null;
+
   const marketFlow =
     data.modules
       .marketFlowIntelligence
@@ -1879,7 +1907,14 @@ export default function EvmIntelligenceReport({
       >
         {coordination ? (
           <>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div
+              className={
+                coordination.coverage
+                  .includesTemporalCorrelation
+                  ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+                  : "grid gap-3 sm:grid-cols-3"
+              }
+            >
               <Stat
                 label="Wallets"
                 value={formatCount(
@@ -1900,7 +1935,33 @@ export default function EvmIntelligenceReport({
                   coordination.corroboratedSignalCount
                 )}
               />
+
+              {coordination
+                .coverage
+                .includesTemporalCorrelation && (
+                <Stat
+                  label="Temporal"
+                  value={formatCount(
+                    coordination
+                      .temporalCorrelationSignalCount
+                  )}
+                />
+              )}
             </div>
+
+            {coordination
+              .coverage
+              .includesTemporalCorrelation && (
+              <div className="mt-4 rounded-2xl border border-violet-500/20 bg-violet-500/5 px-4 py-3">
+                <div className="text-[9px] font-medium tracking-[0.16em] text-violet-300">
+                  ADVANCED TEMPORAL CORRELATION
+                </div>
+
+                <div className="mt-1 text-xs leading-5 text-zinc-500">
+                  AYZO checks whether multiple observed wallets interacted with the same external counterparty inside a bounded time window. Timing proximity is corroborating evidence only.
+                </div>
+              </div>
+            )}
 
             <Methodology>
               Coordination signals describe shared on-chain evidence.
@@ -1956,11 +2017,32 @@ export default function EvmIntelligenceReport({
               />
             </div>
 
+            {graphPresentation
+              ?.advancedDepth && (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-violet-500/20 bg-violet-500/5 px-4 py-3">
+                <div>
+                  <div className="text-[9px] font-medium tracking-[0.16em] text-violet-300">
+                    {graphPresentation.capabilityLabel}
+                  </div>
+
+                  <div className="mt-1 text-xs text-zinc-400">
+                    Deeper evidence-backed wallet traversal is active.
+                  </div>
+                </div>
+
+                <div className="font-mono text-[10px] text-zinc-500">
+                  up to {graph.coverage.maxHops} hops · {graph.coverage.maxNodes} nodes · {graph.coverage.maxEdges} edges
+                </div>
+              </div>
+            )}
+
             <div className="mt-5 space-y-2">
               {graph.nodes
                 .slice(
                   0,
-                  6
+                  graphPresentation
+                    ?.nodePreviewLimit ??
+                    6
                 )
                 .map(
                   node => (
@@ -2012,6 +2094,14 @@ export default function EvmIntelligenceReport({
             graph,
 
             funding,
+
+            maxNodes:
+              graphPresentation
+                ?.visualMaxNodes,
+
+            maxEdges:
+              graphPresentation
+                ?.visualMaxEdges,
           })
         }
       />

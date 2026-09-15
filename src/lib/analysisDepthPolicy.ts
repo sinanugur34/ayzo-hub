@@ -35,10 +35,38 @@ const PRO_POLICY:
     graphMaxEdges: 24,
   };
 
+/*
+ * Advanced is intentionally deeper, not merely wider.
+ *
+ * V1 remains bounded to protect:
+ * - provider request budgets
+ * - latency
+ * - deterministic result size
+ * - evidence readability
+ *
+ * We do not infer ownership or identity from graph proximity.
+ */
+const ADVANCED_POLICY:
+  AnalysisDepthPolicy = {
+    rootTransactionPages: 3,
+    rootTransferPages: 3,
+    expansionWalletLimit: 8,
+    expansionTransactionPages: 3,
+    graphMaxHops: 4,
+    graphMaxNodes: 28,
+    graphMaxEdges: 48,
+  };
+
 export function getAnalysisDepthPolicy(
   plan: AnalysisDepthPlan
 ): AnalysisDepthPolicy {
-  return plan === "free"
-    ? FREE_POLICY
-    : PRO_POLICY;
+  if (plan === "free") {
+    return FREE_POLICY;
+  }
+
+  if (plan === "advanced") {
+    return ADVANCED_POLICY;
+  }
+
+  return PRO_POLICY;
 }

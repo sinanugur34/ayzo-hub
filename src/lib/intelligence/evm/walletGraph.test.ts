@@ -589,7 +589,7 @@ test(
           observations: [],
 
           maxHops:
-            4,
+            5,
 
           maxNodes:
             10,
@@ -601,7 +601,7 @@ test(
             coverage,
         }),
 
-      /maxHops must be an integer between 1 and 3/
+      /maxHops must be an integer between 1 and 4/
     );
   }
 );

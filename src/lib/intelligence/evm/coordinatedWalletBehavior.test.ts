@@ -478,3 +478,232 @@ test(
     );
   }
 );
+
+test(
+  "builds bounded temporal correlation only when enabled",
+  () => {
+    const temporalCoverage:
+      EvmCoordinationCoverage = {
+      ...coverage,
+
+      includesTemporalCorrelation:
+        true,
+
+      limitation:
+        "Temporal correlation enabled for bounded test evidence.",
+    };
+
+    const observations:
+      EvmCoordinationObservation[] =
+        [
+          {
+            kind:
+              "evm_transaction",
+
+            transactionHash:
+              hash("a"),
+
+            blockNumber:
+              200,
+
+            timestamp:
+              "2026-01-01T12:00:00Z",
+
+            from:
+              walletA,
+
+            to:
+              counterparty,
+
+            rawValue:
+              "1",
+          },
+
+          {
+            kind:
+              "evm_transaction",
+
+            transactionHash:
+              hash("b"),
+
+            blockNumber:
+              201,
+
+            timestamp:
+              "2026-01-01T12:08:00Z",
+
+            from:
+              walletB,
+
+            to:
+              counterparty,
+
+            rawValue:
+              "1",
+          },
+        ];
+
+    const advanced =
+      analyzeEvmCoordinatedWalletBehavior({
+        walletAddresses: [
+          walletA,
+          walletB,
+        ],
+
+        observations,
+
+        coverage:
+          temporalCoverage,
+
+        temporalWindowMs:
+          15 * 60 * 1000,
+      });
+
+    const temporal =
+      advanced.signals.find(
+        signal =>
+          signal.kind ===
+            "temporal_correlation"
+      );
+
+    assert.ok(
+      temporal
+    );
+
+    assert.equal(
+      advanced
+        .temporalCorrelationSignalCount,
+      1
+    );
+
+    assert.deepEqual(
+      temporal.wallets,
+      [
+        walletA,
+        walletB,
+      ]
+    );
+
+    assert.equal(
+      temporal.externalAddress,
+      counterparty
+    );
+
+    assert.deepEqual(
+      temporal
+        .evidenceTransactionHashes,
+      [
+        hash("a"),
+        hash("b"),
+      ]
+    );
+
+    const standard =
+      analyzeEvmCoordinatedWalletBehavior({
+        walletAddresses: [
+          walletA,
+          walletB,
+        ],
+
+        observations,
+
+        coverage,
+      });
+
+    assert.equal(
+      standard
+        .temporalCorrelationSignalCount,
+      0
+    );
+
+    assert.equal(
+      standard.signals.some(
+        signal =>
+          signal.kind ===
+            "temporal_correlation"
+      ),
+      false
+    );
+  }
+);
+
+test(
+  "does not create temporal correlation outside the bounded window",
+  () => {
+    const temporalCoverage:
+      EvmCoordinationCoverage = {
+      ...coverage,
+
+      includesTemporalCorrelation:
+        true,
+    };
+
+    const result =
+      analyzeEvmCoordinatedWalletBehavior({
+        walletAddresses: [
+          walletA,
+          walletB,
+        ],
+
+        observations: [
+          {
+            kind:
+              "evm_transaction",
+
+            transactionHash:
+              hash("c"),
+
+            blockNumber:
+              300,
+
+            timestamp:
+              "2026-01-01T12:00:00Z",
+
+            from:
+              walletA,
+
+            to:
+              counterparty,
+
+            rawValue:
+              "1",
+          },
+
+          {
+            kind:
+              "evm_transaction",
+
+            transactionHash:
+              hash("d"),
+
+            blockNumber:
+              301,
+
+            timestamp:
+              "2026-01-01T12:30:00Z",
+
+            from:
+              walletB,
+
+            to:
+              counterparty,
+
+            rawValue:
+              "1",
+          },
+        ],
+
+        coverage:
+          temporalCoverage,
+
+        temporalWindowMs:
+          15 * 60 * 1000,
+      });
+
+    assert.equal(
+      result
+        .temporalCorrelationSignalCount,
+      0
+    );
+  }
+);
