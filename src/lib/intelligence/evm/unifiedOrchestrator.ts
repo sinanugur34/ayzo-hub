@@ -4,6 +4,11 @@ import {
 } from "@/lib/intelligence/activityTimeline";
 
 import {
+  analyzeEvmAdvancedInvestigationSynthesis,
+  type EvmAdvancedInvestigationSynthesis,
+} from "./advancedInvestigationSynthesis";
+
+import {
   buildEvmMarketFlowIntelligence,
 } from "./marketFlowIntelligence";
 
@@ -19,6 +24,7 @@ import {
 
 import {
   analyzeEvmDeepDeployerInvestigation,
+  type EvmDeepDeployerInvestigation,
 } from "./deepDeployerInvestigation";
 
 import {
@@ -46,6 +52,7 @@ import {
   analyzeEvmCoordinatedWalletBehavior,
   evmTransactionsToCoordinationObservations,
   evmTransfersToCoordinationObservations,
+  type EvmCoordinatedWalletBehavior,
   type EvmCoordinationCoverage,
   type EvmCoordinationObservation,
 } from "./coordinatedWalletBehavior";
@@ -251,6 +258,9 @@ export type RunEvmUnifiedIntelligenceRequest = {
 
 export type EvmUnifiedIntelligenceWithActivity =
   EvmUnifiedIntelligence & {
+    advancedInvestigationSynthesis:
+      EvmAdvancedInvestigationSynthesis | null;
+
     activityTimeline:
       ActivityTimeline;
   };
@@ -2672,6 +2682,80 @@ export async function runEvmUnifiedIntelligence(
   }
 
 
+  const synthesisFundingData =
+    modules
+      .fundingProvenance
+      .data;
+
+  const synthesisDeepFunding =
+    synthesisFundingData &&
+    typeof synthesisFundingData ===
+      "object" &&
+    "deepFundingTracing" in
+      synthesisFundingData
+      ? (
+          synthesisFundingData
+            .deepFundingTracing as
+            EvmDeepFundingTracing | null
+        )
+      : null;
+
+  const synthesisDeveloperData =
+    modules
+      .developerHistory
+      .data;
+
+  const synthesisDeepDeployer =
+    synthesisDeveloperData &&
+    typeof synthesisDeveloperData ===
+      "object" &&
+    "deepDeployerInvestigation" in
+      synthesisDeveloperData
+      ? (
+          synthesisDeveloperData
+            .deepDeployerInvestigation as
+            EvmDeepDeployerInvestigation | null
+        )
+      : null;
+
+  const synthesisCoordinationData =
+    modules
+      .coordinatedWalletBehavior
+      .data;
+
+  const synthesisCoordination =
+    synthesisCoordinationData &&
+    typeof synthesisCoordinationData ===
+      "object" &&
+    "signalCount" in
+      synthesisCoordinationData
+      ? (
+          synthesisCoordinationData as
+            EvmCoordinatedWalletBehavior
+        )
+      : null;
+
+  const advancedInvestigationSynthesis =
+    analysisPlan ===
+      "advanced"
+      ? analyzeEvmAdvancedInvestigationSynthesis({
+          rootAddress:
+            address,
+
+          deepFundingTracing:
+            synthesisDeepFunding,
+
+          deepDeployerInvestigation:
+            synthesisDeepDeployer,
+
+          walletGraph:
+            graph,
+
+          coordination:
+            synthesisCoordination,
+        })
+      : null;
+
   const activityTimeline =
     buildEvmActivityTimeline({
       analyzedAddress:
@@ -2720,6 +2804,8 @@ export async function runEvmUnifiedIntelligence(
         findings,
         caveats,
       }),
+
+      advancedInvestigationSynthesis,
 
       activityTimeline,
     },

@@ -564,6 +564,132 @@ type WalletGraph = {
   };
 };
 
+type AdvancedInvestigationSynthesis = {
+  schemaVersion:
+    1;
+
+  rootAddress:
+    string;
+
+  sourceModuleCount:
+    number;
+
+  evidenceTransactionCount:
+    number;
+
+  funding: {
+    available:
+      boolean;
+
+    pathCount:
+      number;
+
+    maxDepthReached:
+      number;
+
+    nodeCount:
+      number;
+
+    edgeCount:
+      number;
+  };
+
+  deployer: {
+    available:
+      boolean;
+
+    verifiedDeploymentCount:
+      number;
+
+    otherVerifiedDeploymentCount:
+      number;
+
+    repeatedDeploymentActivity:
+      boolean;
+
+    fundingSourceCount:
+      number;
+
+    counterpartyCount:
+      number;
+  };
+
+  graph: {
+    available:
+      boolean;
+
+    nodeCount:
+      number;
+
+    edgeCount:
+      number;
+
+    maxDepthReached:
+      number;
+  };
+
+  coordination: {
+    available:
+      boolean;
+
+    signalCount:
+      number;
+
+    directSignalCount:
+      number;
+
+    corroboratingSignalCount:
+      number;
+
+    temporalCorrelationSignalCount:
+      number;
+
+    multiHopPathCorroborationCount:
+      number;
+  };
+
+  highlights:
+    readonly {
+      kind:
+        | "deep_funding"
+        | "deep_deployer"
+        | "wallet_graph"
+        | "coordination";
+
+      summary:
+        string;
+    }[];
+
+  coverage: {
+    includesDeepFunding:
+      boolean;
+
+    includesDeepDeployer:
+      boolean;
+
+    includesWalletGraph:
+      boolean;
+
+    includesCoordination:
+      boolean;
+
+    includesOwnershipInference:
+      false;
+
+    includesIdentityInference:
+      false;
+
+    includesIntentInference:
+      false;
+
+    includesRiskScoring:
+      false;
+
+    limitation:
+      string;
+  };
+};
+
 type MarketFlowCounterparty = {
   address:
     string;
@@ -686,6 +812,10 @@ type EvmSuccess = {
 
   activityTimeline:
     ActivityTimelineData;
+
+  advancedInvestigationSynthesis:
+    AdvancedInvestigationSynthesis | null;
+
   assetKind:
     | "wallet"
     | "contract"
@@ -1431,6 +1561,10 @@ export default function EvmIntelligenceReport({
       .marketFlowIntelligence
       .data;
 
+  const synthesis =
+    data
+      .advancedInvestigationSynthesis;
+
   return (
     <div className="mt-6 space-y-6 text-left">
       <section className="overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-b from-violet-500/10 via-purple-500/5 to-zinc-950/80 shadow-2xl shadow-purple-950/10">
@@ -1629,6 +1763,193 @@ export default function EvmIntelligenceReport({
           data.findings
         }
       />
+
+      {synthesis ? (
+        <section className="overflow-hidden rounded-3xl border border-violet-500/25 bg-gradient-to-b from-violet-500/10 via-purple-500/5 to-zinc-950/80">
+          <div className="p-6 sm:p-8">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="text-[10px] font-medium tracking-[0.18em] text-violet-400">
+                  ADVANCED INVESTIGATION SYNTHESIS
+                </div>
+
+                <h3 className="mt-2 text-lg font-semibold text-zinc-100">
+                  Cross-module evidence synthesis
+                </h3>
+
+                <p className="mt-2 max-w-3xl text-xs leading-6 text-zinc-500">
+                  AYZO combines existing Deep Funding, Deep Deployer,
+                  Wallet Graph and Coordination evidence into one bounded
+                  investigation view. No additional provider inference is
+                  introduced by this synthesis.
+                </p>
+              </div>
+
+              <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-[10px] font-medium tracking-wide text-violet-300">
+                ADVANCED
+              </span>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <MiniStat
+                label="Evidence sources"
+                value={formatCount(
+                  synthesis
+                    .sourceModuleCount
+                )}
+              />
+
+              <MiniStat
+                label="Evidence transactions"
+                value={formatCount(
+                  synthesis
+                    .evidenceTransactionCount
+                )}
+              />
+
+              <MiniStat
+                label="Funding paths"
+                value={
+                  synthesis
+                    .funding
+                    .available
+                    ? formatCount(
+                        synthesis
+                          .funding
+                          .pathCount
+                      )
+                    : "Unavailable"
+                }
+              />
+
+              <MiniStat
+                label="Graph depth"
+                value={
+                  synthesis
+                    .graph
+                    .available
+                    ? `${formatCount(
+                        synthesis
+                          .graph
+                          .maxDepthReached
+                      )} hop(s)`
+                    : "Unavailable"
+                }
+              />
+            </div>
+
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <MiniStat
+                label="Deployments"
+                value={
+                  synthesis
+                    .deployer
+                    .available
+                    ? formatCount(
+                        synthesis
+                          .deployer
+                          .verifiedDeploymentCount
+                      )
+                    : "Unavailable"
+                }
+              />
+
+              <MiniStat
+                label="Deployer funding sources"
+                value={
+                  synthesis
+                    .deployer
+                    .available
+                    ? formatCount(
+                        synthesis
+                          .deployer
+                          .fundingSourceCount
+                      )
+                    : "Unavailable"
+                }
+              />
+
+              <MiniStat
+                label="Coordination signals"
+                value={
+                  synthesis
+                    .coordination
+                    .available
+                    ? formatCount(
+                        synthesis
+                          .coordination
+                          .signalCount
+                      )
+                    : "Unavailable"
+                }
+              />
+
+              <MiniStat
+                label="Multi-hop corroborations"
+                value={
+                  synthesis
+                    .coordination
+                    .available
+                    ? formatCount(
+                        synthesis
+                          .coordination
+                          .multiHopPathCorroborationCount
+                      )
+                    : "Unavailable"
+                }
+              />
+            </div>
+
+            {synthesis
+              .highlights
+              .length > 0 ? (
+              <div className="mt-5 space-y-2">
+                {synthesis
+                  .highlights
+                  .map(
+                    (
+                      highlight,
+                      index
+                    ) => (
+                      <div
+                        key={`${highlight.kind}-${index}`}
+                        className="rounded-xl border border-zinc-800 bg-black/20 px-4 py-3"
+                      >
+                        <div className="text-[9px] font-medium uppercase tracking-[0.16em] text-violet-400">
+                          {highlight.kind ===
+                          "deep_funding"
+                            ? "Deep Funding"
+                            : highlight.kind ===
+                                "deep_deployer"
+                              ? "Deep Deployer"
+                              : highlight.kind ===
+                                  "wallet_graph"
+                                ? "Wallet Graph"
+                                : "Coordination"}
+                        </div>
+
+                        <div className="mt-1 text-xs leading-5 text-zinc-400">
+                          {
+                            highlight
+                              .summary
+                          }
+                        </div>
+                      </div>
+                    )
+                  )}
+              </div>
+            ) : null}
+
+            <p className="mt-5 border-t border-zinc-900 pt-4 text-[10px] leading-5 text-zinc-600">
+              {
+                synthesis
+                  .coverage
+                  .limitation
+              }
+            </p>
+          </div>
+        </section>
+      ) : null}
 
       <EvidenceSection
         title="Asset Verification"
