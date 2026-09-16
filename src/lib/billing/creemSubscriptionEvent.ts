@@ -267,18 +267,6 @@ export function interpretCreemSubscriptionEvent(
       "ayzo_user_id"
     );
 
-  const metadataPlan =
-    metadataString(
-      metadata,
-      "ayzo_plan"
-    );
-
-  const metadataInterval =
-    metadataString(
-      metadata,
-      "ayzo_interval"
-    );
-
   if (
     !userId ||
     !isUuid(
@@ -287,17 +275,6 @@ export function interpretCreemSubscriptionEvent(
   ) {
     throw new Error(
       "CREEM_USER_METADATA_INVALID"
-    );
-  }
-
-  if (
-    metadataPlan !==
-      contract.planId ||
-    metadataInterval !==
-      contract.interval
-  ) {
-    throw new Error(
-      "CREEM_METADATA_CONTRACT_MISMATCH"
     );
   }
 

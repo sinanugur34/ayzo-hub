@@ -315,17 +315,47 @@ test(
 );
 
 test(
-  "rejects conflicting AYZO metadata",
+  "product contract remains authoritative after plan upgrade",
   () => {
-    assert.throws(
-      () =>
-        interpretCreemSubscriptionEvent(
-          event({
-            plan:
-              "advanced",
-          })
-        ),
-      /CREEM_METADATA_CONTRACT_MISMATCH/
+    const result =
+      interpretCreemSubscriptionEvent(
+        event({
+          productId:
+            "prod_advanced_month",
+          price:
+            6900,
+          billingPeriod:
+            "every-month",
+          plan:
+            "pro",
+          interval:
+            "monthly",
+        })
+      );
+
+    assert.equal(
+      result.action,
+      "apply"
     );
+
+    if (
+      result.action ===
+        "apply"
+    ) {
+      assert.equal(
+        result.planId,
+        "advanced"
+      );
+
+      assert.equal(
+        result.billingInterval,
+        "monthly"
+      );
+
+      assert.equal(
+        result.lockedPriceUsdCents,
+        6900
+      );
+    }
   }
 );

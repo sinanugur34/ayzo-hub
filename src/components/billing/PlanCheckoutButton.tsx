@@ -38,6 +38,10 @@ type CheckoutPayload = {
   ok?: unknown;
   checkoutUrl?:
     unknown;
+  upgraded?:
+    unknown;
+  upgradeConfirmationRequired?:
+    unknown;
   error?:
     unknown;
 };
@@ -64,7 +68,10 @@ export default function PlanCheckoutButton({
   ] =
     useState("");
 
-  async function startCheckout() {
+  async function startCheckout(
+    confirmUpgrade =
+      false
+  ) {
     if (loading) {
       return;
     }
@@ -97,6 +104,7 @@ export default function PlanCheckoutButton({
               JSON.stringify({
                 plan,
                 interval,
+                confirmUpgrade,
               }),
           }
         );
@@ -118,6 +126,32 @@ export default function PlanCheckoutButton({
 
       if (
         response.status ===
+          409 &&
+        payload
+          .upgradeConfirmationRequired ===
+          true
+      ) {
+        const confirmed =
+          window.confirm(
+            typeof payload.error ===
+              "string"
+              ? payload.error
+              : "Confirm subscription upgrade."
+          );
+
+        if (confirmed) {
+          setLoading(false);
+
+          await startCheckout(
+            true
+          );
+        }
+
+        return;
+      }
+
+      if (
+        response.status ===
         401
       ) {
         trackEvent(
@@ -130,6 +164,30 @@ export default function PlanCheckoutButton({
 
         router.push(
           "/login"
+        );
+
+        return;
+      }
+
+      if (
+        response.ok &&
+        payload.ok ===
+          true &&
+        payload.upgraded ===
+          true
+      ) {
+        trackEvent(
+          "subscription_upgraded",
+          {
+            plan,
+            interval,
+          }
+        );
+
+        router.refresh();
+
+        router.push(
+          "/account?upgrade=success"
         );
 
         return;
@@ -232,9 +290,9 @@ export default function PlanCheckoutButton({
     <div>
       <button
         type="button"
-        onClick={
-          startCheckout
-        }
+        onClick={() => {
+          void startCheckout();
+        }}
         disabled={
           loading
         }

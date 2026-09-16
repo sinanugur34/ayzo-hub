@@ -7,8 +7,17 @@ import {
 } from "@/lib/billing/checkoutLaunchPolicy";
 
 import {
+  resolveCheckoutAction,
+} from "@/lib/billing/checkoutActionCore";
+
+import {
   createCreemCheckout,
+  upgradeCreemSubscription,
 } from "@/lib/billing/creem";
+
+import {
+  createCreemWebhookAdminClient,
+} from "@/lib/billing/creemWebhookAdmin";
 
 import type {
   BillingInterval,
@@ -125,6 +134,10 @@ export async function POST(
   const interval =
     record?.interval;
 
+  const confirmUpgrade =
+    record?.confirmUpgrade ===
+      true;
+
   if (
     !isPaidPlan(
       plan
@@ -159,13 +172,18 @@ export async function POST(
     );
   }
 
-  /*
-   * Never create a second checkout
-   * for the currently active plan.
-   */
+  const checkoutAction =
+    resolveCheckoutAction({
+      currentPlan:
+        entitlement.planId,
+      targetPlan:
+        plan,
+      confirmUpgrade,
+    });
+
   if (
-    entitlement.planId ===
-      plan
+    checkoutAction ===
+      "same-plan"
   ) {
     return Response.json(
       {
@@ -179,14 +197,9 @@ export async function POST(
     );
   }
 
-  /*
-   * Downgrades are intentionally
-   * not handled through purchase.
-   */
   if (
-    entitlement.planId ===
-      "advanced" &&
-    plan === "pro"
+    checkoutAction ===
+      "downgrade-blocked"
   ) {
     return Response.json(
       {
@@ -196,6 +209,199 @@ export async function POST(
       },
       {
         status: 409,
+      }
+    );
+  }
+
+  if (
+    checkoutAction ===
+      "upgrade-confirmation"
+  ) {
+    return Response.json(
+      {
+        ok: false,
+        upgradeConfirmationRequired:
+          true,
+        error:
+          "Confirm upgrade to AYZO Advanced. Creem may charge a prorated amount immediately.",
+      },
+      {
+        status: 409,
+      }
+    );
+  }
+
+  /*
+   * Existing Pro subscriptions must be
+   * upgraded in-place at Creem.
+   *
+   * Never create a second subscription
+   * through checkout.
+   */
+  if (
+    checkoutAction ===
+      "upgrade"
+  ) {
+
+    let admin:
+      ReturnType<
+        typeof createCreemWebhookAdminClient
+      >;
+
+    try {
+      admin =
+        createCreemWebhookAdminClient();
+    } catch {
+      return Response.json(
+        {
+          ok: false,
+          error:
+            "Billing management is temporarily unavailable.",
+        },
+        {
+          status: 503,
+        }
+      );
+    }
+
+    const {
+      data:
+        subscriptions,
+      error:
+        subscriptionError,
+    } =
+      await admin
+        .from(
+          "subscriptions"
+        )
+        .select(
+          "provider_subscription_id,status"
+        )
+        .eq(
+          "user_id",
+          userId
+        )
+        .eq(
+          "provider",
+          "creem"
+        )
+        .in(
+          "status",
+          [
+            "active",
+            "canceling",
+          ]
+        );
+
+    if (
+      subscriptionError ||
+      !Array.isArray(
+        subscriptions
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          error:
+            "Unable to resolve the current subscription.",
+        },
+        {
+          status: 503,
+        }
+      );
+    }
+
+    const providerIds =
+      subscriptions
+        .map(
+          row =>
+            row
+              .provider_subscription_id
+        )
+        .filter(
+          (
+            value
+          ): value is string =>
+            typeof value ===
+              "string" &&
+            value.length > 0
+        );
+
+    if (
+      providerIds.length !==
+        1
+    ) {
+      console.error(
+        "Creem upgrade subscription invariant failed",
+        {
+          count:
+            providerIds.length,
+        }
+      );
+
+      return Response.json(
+        {
+          ok: false,
+          error:
+            "Unable to safely upgrade the current subscription.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
+
+    const result =
+      await upgradeCreemSubscription({
+        providerSubscriptionId:
+          providerIds[0],
+        planId:
+          "advanced",
+        interval,
+      });
+
+    if (!result.ok) {
+      console.error(
+        "Creem subscription upgrade failed",
+        {
+          stage:
+            result.stage,
+          status:
+            result.providerStatus,
+        }
+      );
+
+      return Response.json(
+        {
+          ok: false,
+          error:
+            "Unable to upgrade the subscription.",
+        },
+        {
+          status:
+            result.stage ===
+              "config"
+              ? 503
+              : 502,
+        }
+      );
+    }
+
+    return Response.json(
+      {
+        ok: true,
+        upgraded:
+          true,
+        plan:
+          "advanced",
+        interval,
+      },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control":
+            "no-store",
+        },
       }
     );
   }
