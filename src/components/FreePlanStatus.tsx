@@ -11,7 +11,8 @@ type PlanStatus = {
 
   plan:
     | "free"
-    | "pro";
+    | "pro"
+    | "advanced";
 
   available:
     boolean;
@@ -120,9 +121,21 @@ export default function FreePlanStatus() {
 
   const fallbackLimit =
     plan ===
-    "pro"
-      ? 30
-      : 3;
+    "advanced"
+      ? 90
+      : plan ===
+          "pro"
+        ? 25
+        : 3;
+
+  const planLabel =
+    plan ===
+    "advanced"
+      ? "ADVANCED PLAN"
+      : plan ===
+          "pro"
+        ? "PRO PLAN"
+        : "FREE PLAN";
 
   return (
     <div
@@ -137,15 +150,14 @@ export default function FreePlanStatus() {
           exhausted
             ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
             : plan ===
-                "pro"
+                "pro" ||
+              plan ===
+                "advanced"
               ? "border-violet-400/30 bg-violet-500/10 text-violet-200"
               : "border-violet-500/20 bg-violet-500/5 text-violet-300"
         }`}
       >
-        {plan ===
-        "pro"
-          ? "PRO PLAN"
-          : "FREE PLAN"}
+        {planLabel}
       </span>
 
       <span>
