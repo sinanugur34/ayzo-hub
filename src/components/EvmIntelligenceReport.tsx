@@ -313,6 +313,154 @@ type DeveloperHistory = {
 
   repeatedDeploymentActivity:
     boolean;
+
+  deepDeployerInvestigation:
+    | {
+        schemaVersion:
+          1;
+
+        targetDeploymentRank:
+          number | null;
+
+        verifiedDeploymentsBeforeTargetCount:
+          number;
+
+        verifiedDeploymentsAfterTargetCount:
+          number;
+
+        timestampedDeploymentCount:
+          number;
+
+        firstObservedAt:
+          string | null;
+
+        lastObservedAt:
+          string | null;
+
+        observedDeploymentSpanSeconds:
+          number | null;
+
+        chronology:
+          readonly {
+            rank:
+              number;
+
+            contractAddress:
+              string;
+
+            transactionHash:
+              string;
+
+            blockNumber:
+              number;
+
+            timestamp:
+              string | null;
+
+            isTargetContract:
+              boolean;
+          }[];
+
+        fundingContext:
+          | {
+              fundingObservationCount:
+                number;
+
+              uniqueFundingTransactionCount:
+                number;
+
+              fundingSourceCount:
+                number;
+
+              repeatedFundingSourceCount:
+                number;
+
+              strongestSources:
+                readonly {
+                  rank:
+                    number;
+
+                  sourceAddress:
+                    string;
+
+                  fundingObservationCount:
+                    number;
+
+                  evidenceTransactionCount:
+                    number;
+
+                  repeatedFundingSource:
+                    boolean;
+                }[];
+            }
+          | null;
+
+        relationshipContext:
+          | {
+              interactionCount:
+                number;
+
+              incomingInteractionCount:
+                number;
+
+              outgoingInteractionCount:
+                number;
+
+              transactionCount:
+                number;
+
+              counterpartyCount:
+                number;
+
+              strongestCounterparties:
+                readonly {
+                  rank:
+                    number;
+
+                  counterparty:
+                    string;
+
+                  direction:
+                    | "incoming"
+                    | "outgoing"
+                    | "bidirectional";
+
+                  interactionCount:
+                    number;
+                }[];
+            }
+          | null;
+
+        coverage: {
+          includesReceiptBackedTopLevelCreate:
+            true;
+
+          includesInternalCreate:
+            false;
+
+          includesCreate2:
+            false;
+
+          includesFundingContext:
+            boolean;
+
+          includesRelationshipContext:
+            boolean;
+
+          includesOwnershipInference:
+            false;
+
+          includesIdentityInference:
+            false;
+
+          includesIntentInference:
+            false;
+
+          limitation:
+            string;
+        };
+      }
+    | null;
 };
 
 type CoordinationIntelligence = {
@@ -2076,6 +2224,217 @@ export default function EvmIntelligenceReport({
                 }
               />
             </div>
+
+            {developer
+              ?.deepDeployerInvestigation ? (
+              <div className="mt-4 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4 sm:p-5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="text-[10px] font-medium tracking-[0.18em] text-violet-400">
+                      ADVANCED DEEP DEPLOYER
+                    </div>
+
+                    <div className="mt-1 text-sm font-medium text-zinc-200">
+                      Evidence-backed deployer investigation
+                    </div>
+                  </div>
+
+                  <div className="rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1 text-[10px] font-medium text-violet-300">
+                    ADVANCED
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <MiniStat
+                    label="Target deployment rank"
+                    value={
+                      developer
+                        .deepDeployerInvestigation
+                        .targetDeploymentRank !==
+                      null
+                        ? `#${developer.deepDeployerInvestigation.targetDeploymentRank}`
+                        : "Unavailable"
+                    }
+                  />
+
+                  <MiniStat
+                    label="Before target"
+                    value={formatCount(
+                      developer
+                        .deepDeployerInvestigation
+                        .verifiedDeploymentsBeforeTargetCount
+                    )}
+                  />
+
+                  <MiniStat
+                    label="After target"
+                    value={formatCount(
+                      developer
+                        .deepDeployerInvestigation
+                        .verifiedDeploymentsAfterTargetCount
+                    )}
+                  />
+
+                  <MiniStat
+                    label="Chronology entries"
+                    value={formatCount(
+                      developer
+                        .deepDeployerInvestigation
+                        .chronology.length
+                    )}
+                  />
+                </div>
+
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <MiniStat
+                    label="Funding sources"
+                    value={
+                      developer
+                        .deepDeployerInvestigation
+                        .fundingContext
+                        ? formatCount(
+                            developer
+                              .deepDeployerInvestigation
+                              .fundingContext
+                              .fundingSourceCount
+                          )
+                        : "Unavailable"
+                    }
+                  />
+
+                  <MiniStat
+                    label="Funding observations"
+                    value={
+                      developer
+                        .deepDeployerInvestigation
+                        .fundingContext
+                        ? formatCount(
+                            developer
+                              .deepDeployerInvestigation
+                              .fundingContext
+                              .fundingObservationCount
+                          )
+                        : "Unavailable"
+                    }
+                  />
+
+                  <MiniStat
+                    label="Counterparties"
+                    value={
+                      developer
+                        .deepDeployerInvestigation
+                        .relationshipContext
+                        ? formatCount(
+                            developer
+                              .deepDeployerInvestigation
+                              .relationshipContext
+                              .counterpartyCount
+                          )
+                        : "Unavailable"
+                    }
+                  />
+
+                  <MiniStat
+                    label="Interactions"
+                    value={
+                      developer
+                        .deepDeployerInvestigation
+                        .relationshipContext
+                        ? formatCount(
+                            developer
+                              .deepDeployerInvestigation
+                              .relationshipContext
+                              .interactionCount
+                          )
+                        : "Unavailable"
+                    }
+                  />
+                </div>
+
+                {developer
+                  .deepDeployerInvestigation
+                  .fundingContext
+                  ?.strongestSources[0] ? (
+                  <div className="mt-4 rounded-xl border border-zinc-800 bg-black/20 px-4 py-3">
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-zinc-600">
+                      Strongest observed funding source
+                    </div>
+
+                    <div className="mt-1 font-mono text-xs text-zinc-300">
+                      {short(
+                        developer
+                          .deepDeployerInvestigation
+                          .fundingContext
+                          .strongestSources[0]
+                          .sourceAddress
+                      )}
+                    </div>
+
+                    <div className="mt-1 text-[10px] leading-5 text-zinc-600">
+                      {
+                        developer
+                          .deepDeployerInvestigation
+                          .fundingContext
+                          .strongestSources[0]
+                          .fundingObservationCount
+                      } observed funding event(s) in the bounded evidence window.
+                    </div>
+                  </div>
+                ) : null}
+
+                {developer
+                  .deepDeployerInvestigation
+                  .relationshipContext
+                  ?.strongestCounterparties[0] ? (
+                  <div className="mt-3 rounded-xl border border-zinc-800 bg-black/20 px-4 py-3">
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-zinc-600">
+                      Strongest observed counterparty
+                    </div>
+
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-xs text-zinc-300">
+                        {short(
+                          developer
+                            .deepDeployerInvestigation
+                            .relationshipContext
+                            .strongestCounterparties[0]
+                            .counterparty
+                        )}
+                      </span>
+
+                      <span className="rounded-full border border-zinc-800 px-2 py-0.5 text-[9px] uppercase text-zinc-500">
+                        {
+                          developer
+                            .deepDeployerInvestigation
+                            .relationshipContext
+                            .strongestCounterparties[0]
+                            .direction
+                        }
+                      </span>
+                    </div>
+
+                    <div className="mt-1 text-[10px] leading-5 text-zinc-600">
+                      {
+                        developer
+                          .deepDeployerInvestigation
+                          .relationshipContext
+                          .strongestCounterparties[0]
+                          .interactionCount
+                      } observed interaction(s) in the bounded evidence window.
+                    </div>
+                  </div>
+                ) : null}
+
+                <p className="mt-4 text-[10px] leading-5 text-zinc-600">
+                  {
+                    developer
+                      .deepDeployerInvestigation
+                      .coverage
+                      .limitation
+                  }
+                </p>
+              </div>
+            ) : null}
 
             <Methodology>
               The deployer is the address proven by the specific
