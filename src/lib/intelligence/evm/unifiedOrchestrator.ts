@@ -18,6 +18,14 @@ import {
 } from "./coordinationPolicy";
 
 import {
+  analyzeEvmDeepDeployerInvestigation,
+} from "./deepDeployerInvestigation";
+
+import {
+  getEvmDeepDeployerPolicy,
+} from "./deepDeployerPolicy";
+
+import {
   getEvmDeepFundingPolicy,
 } from "./deepFundingPolicy";
 
@@ -609,7 +617,11 @@ async function buildDeveloperHistory(
           EvmTransactionsPage
         >
       >
-    >
+    >,
+  maxPages: number,
+  receiptCheckLimit: number,
+  includeDeepInvestigation:
+    boolean
 ): Promise<
   EvmUnifiedModuleResult
 > {
@@ -645,7 +657,7 @@ async function buildDeveloperHistory(
   for (
     let page = 0;
     page <
-      DEVELOPER_MAX_PAGES;
+      maxPages;
     page += 1
   ) {
     const key =
@@ -735,12 +747,12 @@ async function buildDeveloperHistory(
 
   const receiptCheckLimited =
     candidates.length >
-      DEVELOPER_RECEIPT_LIMIT;
+      receiptCheckLimit;
 
   const candidatesToCheck =
     candidates.slice(
       0,
-      DEVELOPER_RECEIPT_LIMIT
+      receiptCheckLimit
     );
 
   const deployments:
@@ -814,13 +826,13 @@ async function buildDeveloperHistory(
 
   if (!historyExhausted) {
     limitations.push(
-      `Developer transaction history was bounded to ${DEVELOPER_MAX_PAGES} page(s).`
+      `Developer transaction history was bounded to ${maxPages} page(s).`
     );
   }
 
   if (receiptCheckLimited) {
     limitations.push(
-      `Only ${DEVELOPER_RECEIPT_LIMIT} creation candidate(s) were receipt-checked.`
+      `Only ${receiptCheckLimit} creation candidate(s) were receipt-checked.`
     );
   }
 
@@ -839,14 +851,13 @@ async function buildDeveloperHistory(
       "goldrush_transactions_v3",
 
     requestedMaxPages:
-      DEVELOPER_MAX_PAGES,
+      maxPages,
 
     scannedPages,
 
     historyExhausted,
 
-    receiptCheckLimit:
-      DEVELOPER_RECEIPT_LIMIT,
+    receiptCheckLimit,
 
     receiptCheckLimited,
 
@@ -911,8 +922,317 @@ async function buildDeveloperHistory(
       coverage,
     });
 
+  let deepDeployerFundingContext =
+    null;
+
+  let deepDeployerRelationshipContext =
+    null;
+
+  if (includeDeepInvestigation) {
+    const fundingCoverage:
+      EvmFundingCoverage = {
+      includesEvmTransactions:
+        true,
+
+      includesErc20Transfers:
+        false,
+
+      includedEvidenceKinds: [
+        "evm_transaction",
+      ],
+
+      omittedEvidenceKinds: [
+        "erc20_transfer",
+      ],
+
+      limitation:
+        "Advanced deployer funding context covers native EVM transactions from the bounded developer-history window only; ERC-20 deployer transfer history was not requested.",
+    };
+
+    const deployerFunding =
+      analyzeEvmFundingProvenance({
+        walletAddress:
+          deployer,
+
+        observations:
+          evmTransactionsToFundingObservations(
+            transactions
+          ),
+
+        coverage:
+          fundingCoverage,
+      });
+
+    deepDeployerFundingContext = {
+      fundingObservationCount:
+        deployerFunding
+          .fundingObservationCount,
+
+      uniqueFundingTransactionCount:
+        deployerFunding
+          .uniqueFundingTransactionCount,
+
+      fundingSourceCount:
+        deployerFunding
+          .fundingSourceCount,
+
+      repeatedFundingSourceCount:
+        deployerFunding
+          .repeatedFundingSourceCount,
+
+      firstSeen:
+        deployerFunding.firstSeen,
+
+      lastSeen:
+        deployerFunding.lastSeen,
+
+      firstObservedFunding:
+        deployerFunding
+          .firstObservedFunding
+          ? {
+              sourceAddress:
+                deployerFunding
+                  .firstObservedFunding
+                  .sourceAddress,
+
+              transactionHash:
+                deployerFunding
+                  .firstObservedFunding
+                  .transactionHash,
+
+              timestamp:
+                deployerFunding
+                  .firstObservedFunding
+                  .timestamp,
+
+              rawValue:
+                deployerFunding
+                  .firstObservedFunding
+                  .rawValue,
+            }
+          : null,
+
+      strongestSources:
+        deployerFunding
+          .sources
+          .slice(
+            0,
+            5
+          )
+          .map(
+            source => ({
+              rank:
+                source.rank,
+
+              sourceAddress:
+                source
+                  .sourceAddress,
+
+              fundingObservationCount:
+                source
+                  .fundingObservationCount,
+
+              evidenceTransactionCount:
+                source
+                  .evidenceTransactionCount,
+
+              nativeRawValue:
+                source
+                  .nativeRawValue,
+
+              firstSeen:
+                source.firstSeen,
+
+              lastSeen:
+                source.lastSeen,
+
+              repeatedFundingSource:
+                source
+                  .repeatedFundingSource,
+
+              evidenceTransactionHashes:
+                source
+                  .evidenceTransactionHashes,
+            })
+          ),
+
+      limitation:
+        fundingCoverage
+          .limitation ??
+        "Advanced deployer funding context is bounded.",
+    };
+
+    const relationshipObservations:
+      EvmRelationshipObservation[] =
+        transactions
+          .filter(
+            transaction =>
+              transaction.from !==
+                null &&
+              transaction.to !==
+                null
+          )
+          .map(
+            transaction => ({
+              kind:
+                "evm_transaction" as const,
+
+              transactionHash:
+                transaction.hash,
+
+              blockNumber:
+                transaction.blockNumber,
+
+              timestamp:
+                transaction.timestamp,
+
+              from:
+                transaction.from as string,
+
+              to:
+                transaction.to as string,
+
+              rawValue:
+                transaction.value,
+            })
+          );
+
+    const relationshipCoverage:
+      EvmWalletRelationshipCoverage = {
+      includesEvmTransactions:
+        true,
+
+      includesErc20Transfers:
+        false,
+
+      includedEvidenceKinds: [
+        "evm_transaction",
+      ],
+
+      omittedEvidenceKinds: [
+        "erc20_transfer",
+      ],
+
+      limitation:
+        "Advanced deployer relationship context covers native EVM transactions from the bounded developer-history window only; ERC-20 deployer transfer history was not requested.",
+    };
+
+    const deployerRelationships =
+      analyzeEvmWalletRelationships({
+        walletAddress:
+          deployer,
+
+        observations:
+          relationshipObservations,
+
+        coverage:
+          relationshipCoverage,
+      });
+
+    deepDeployerRelationshipContext = {
+      interactionCount:
+        deployerRelationships
+          .interactionCount,
+
+      incomingInteractionCount:
+        deployerRelationships
+          .incomingInteractionCount,
+
+      outgoingInteractionCount:
+        deployerRelationships
+          .outgoingInteractionCount,
+
+      transactionCount:
+        deployerRelationships
+          .transactionCount,
+
+      counterpartyCount:
+        deployerRelationships
+          .counterpartyCount,
+
+      firstSeen:
+        deployerRelationships
+          .firstSeen,
+
+      lastSeen:
+        deployerRelationships
+          .lastSeen,
+
+      strongestCounterparties:
+        deployerRelationships
+          .counterparties
+          .slice(
+            0,
+            5
+          )
+          .map(
+            relationship => ({
+              rank:
+                relationship.rank,
+
+              counterparty:
+                relationship
+                  .counterparty,
+
+              direction:
+                relationship
+                  .direction,
+
+              interactionCount:
+                relationship
+                  .interactionCount,
+
+              incomingInteractionCount:
+                relationship
+                  .incomingInteractionCount,
+
+              outgoingInteractionCount:
+                relationship
+                  .outgoingInteractionCount,
+
+              transactionCount:
+                relationship
+                  .transactionCount,
+
+              firstSeen:
+                relationship
+                  .firstSeen,
+
+              lastSeen:
+                relationship
+                  .lastSeen,
+
+              evidenceTransactionHashes:
+                relationship
+                  .evidenceTransactionHashes,
+            })
+          ),
+
+      limitation:
+        relationshipCoverage
+          .limitation ??
+        "Advanced deployer relationship context is bounded.",
+    };
+  }
+
+  const deepDeployerInvestigation =
+    includeDeepInvestigation
+      ? analyzeEvmDeepDeployerInvestigation({
+          developerHistory:
+            intelligence,
+
+          fundingContext:
+            deepDeployerFundingContext,
+
+          relationshipContext:
+            deepDeployerRelationshipContext,
+        })
+      : null;
+
   const publicDeveloperHistory = {
     ...intelligence,
+
+    deepDeployerInvestigation,
 
     coverage: {
       requestedMaxPages:
@@ -990,6 +1310,30 @@ export async function runEvmUnifiedIntelligence(
     getEvmDeepFundingPolicy(
       analysisPlan
     );
+
+  const deepDeployerPolicy =
+    getEvmDeepDeployerPolicy(
+      analysisPlan
+    );
+
+  const developerHistoryScanPolicy =
+    deepDeployerPolicy.enabled
+      ? {
+          maxPages:
+            deepDeployerPolicy
+              .maxPages,
+
+          receiptCheckLimit:
+            deepDeployerPolicy
+              .receiptCheckLimit,
+        }
+      : {
+          maxPages:
+            DEVELOPER_MAX_PAGES,
+
+          receiptCheckLimit:
+            DEVELOPER_RECEIPT_LIMIT,
+        };
 
   const recursiveGraphPolicy =
     getEvmRecursiveGraphPolicy(
@@ -1720,7 +2064,13 @@ export async function runEvmUnifiedIntelligence(
         network,
         deployment,
         deps,
-        transactionCache
+        transactionCache,
+        developerHistoryScanPolicy
+          .maxPages,
+        developerHistoryScanPolicy
+          .receiptCheckLimit,
+        deepDeployerPolicy
+          .enabled
       );
 
     const developerData =
@@ -1760,6 +2110,54 @@ export async function runEvmUnifiedIntelligence(
         caveat:
           "Repeated deployment activity is descriptive and does not imply malicious intent or common ownership.",
       });
+    }
+
+    const deepDeployerData =
+      developerData &&
+      typeof developerData ===
+        "object" &&
+      "deepDeployerInvestigation" in
+        developerData
+        ? developerData
+            .deepDeployerInvestigation
+        : null;
+
+    if (
+      deepDeployerData &&
+      typeof deepDeployerData ===
+        "object" &&
+      "verifiedDeploymentCount" in
+        deepDeployerData &&
+      typeof deepDeployerData
+        .verifiedDeploymentCount ===
+        "number"
+    ) {
+      findings.push({
+        id:
+          "evm-advanced-deep-deployer-investigation",
+
+        category:
+          "developer-history",
+
+        title:
+          "Advanced deployer investigation completed",
+
+        severity:
+          "informational",
+
+        confidence:
+          "high",
+
+        summary:
+          `AYZO analyzed ${deepDeployerData.verifiedDeploymentCount} receipt-backed deployment record(s) together with bounded deployer funding and relationship context.`,
+
+        caveat:
+          "This investigation reports bounded observed evidence only. It does not establish ownership, identity, control, intent, malicious behavior, or exhaustive deployer history.",
+      });
+
+      caveats.push(
+        "Advanced Deep Deployer Investigation uses bounded transaction-history evidence. Internal CREATE, CREATE2 and ERC-20 deployer transfer history may fall outside its current coverage."
+      );
     }
   } else if (
     metadata.isContract
