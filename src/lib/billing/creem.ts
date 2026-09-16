@@ -56,6 +56,22 @@ export type CreemPortalResult =
         number | null;
     };
 
+export type CreemUpgradeResult =
+  | {
+      ok: true;
+      subscriptionId: string;
+    }
+  | {
+      ok: false;
+      stage:
+        | "config"
+        | "request"
+        | "provider"
+        | "response";
+      providerStatus:
+        number | null;
+    };
+
 function requiredEnv(
   name: string
 ) {
@@ -324,6 +340,150 @@ export async function createCreemCheckout({
       payload.checkout_url,
   };
 }
+
+
+
+export async function upgradeCreemSubscription({
+  providerSubscriptionId,
+  planId,
+  interval,
+}: {
+  providerSubscriptionId: string;
+  planId: PaidPlanId;
+  interval: BillingInterval;
+}): Promise<CreemUpgradeResult> {
+  if (
+    typeof providerSubscriptionId !== "string" ||
+    providerSubscriptionId.trim().length === 0
+  ) {
+    return {
+      ok: false,
+      stage: "config",
+      providerStatus: null,
+    };
+  }
+
+  let apiKey: string;
+  let mode: CreemMode;
+  let productId: string;
+
+  try {
+    apiKey =
+      requiredEnv(
+        "CREEM_API_KEY"
+      );
+
+    mode =
+      parseMode(
+        process.env
+          .CREEM_MODE
+      );
+
+    productId =
+      productIdFor({
+        planId,
+        interval,
+      });
+  } catch {
+    return {
+      ok: false,
+      stage: "config",
+      providerStatus: null,
+    };
+  }
+
+  let response: Response;
+
+  try {
+    response =
+      await fetch(
+        `${apiBaseUrl(mode)}/v1/subscriptions/${encodeURIComponent(
+          providerSubscriptionId
+        )}/upgrade`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            "x-api-key":
+              apiKey,
+          },
+
+          body:
+            JSON.stringify({
+              product_id:
+                productId,
+
+              update_behavior:
+                "proration-charge-immediately",
+            }),
+        }
+      );
+  } catch {
+    return {
+      ok: false,
+      stage: "request",
+      providerStatus: null,
+    };
+  }
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      stage: "provider",
+      providerStatus:
+        response.status,
+    };
+  }
+
+  let payload: unknown;
+
+  try {
+    payload =
+      await response.json();
+  } catch {
+    return {
+      ok: false,
+      stage: "response",
+      providerStatus:
+        response.status,
+    };
+  }
+
+  if (
+    typeof payload !== "object" ||
+    payload === null ||
+    typeof (
+      payload as Record<
+        string,
+        unknown
+      >
+    ).id !== "string" ||
+    (
+      payload as Record<
+        string,
+        unknown
+      >
+    ).id !==
+      providerSubscriptionId
+  ) {
+    return {
+      ok: false,
+      stage: "response",
+      providerStatus:
+        response.status,
+    };
+  }
+
+  return {
+    ok: true,
+    subscriptionId:
+      providerSubscriptionId,
+  };
+}
+
 
 
 export async function createCreemCustomerPortal(

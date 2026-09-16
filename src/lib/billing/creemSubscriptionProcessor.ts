@@ -112,7 +112,7 @@ export async function processCreemSubscriptionEvent(
       );
     }
 
-    if (
+    const contractChanged =
       existing.plan_id !==
         mutation.planId ||
       existing
@@ -120,7 +120,17 @@ export async function processCreemSubscriptionEvent(
         mutation.billingInterval ||
       existing
         .locked_price_usd_cents !==
-        mutation.lockedPriceUsdCents
+        mutation.lockedPriceUsdCents;
+
+    const allowedUpgrade =
+      existing.plan_id ===
+        "pro" &&
+      mutation.planId ===
+        "advanced";
+
+    if (
+      contractChanged &&
+      !allowedUpgrade
     ) {
       throw new Error(
         "CREEM_SUBSCRIPTION_CONTRACT_CONFLICT"
@@ -136,6 +146,15 @@ export async function processCreemSubscriptionEvent(
           "subscriptions"
         )
         .update({
+          plan_id:
+            mutation.planId,
+
+          billing_interval:
+            mutation.billingInterval,
+
+          locked_price_usd_cents:
+            mutation.lockedPriceUsdCents,
+
           status:
             mutation.status,
 
