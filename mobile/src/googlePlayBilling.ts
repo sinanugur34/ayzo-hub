@@ -78,6 +78,7 @@ type AyzoPlayBillingPlugin = {
     options: {
       productId: string;
       basePlanId: string;
+      obfuscatedAccountId: string;
     }
   ): Promise<
     GooglePlayLaunchResponse
@@ -128,10 +129,36 @@ export async function getGooglePlaySubscriptionProducts():
     });
 }
 
+async function sha256Base64Url(
+  value: string
+) {
+  const bytes =
+    new TextEncoder()
+      .encode(value);
+
+  const digest =
+    await crypto.subtle.digest(
+      "SHA-256",
+      bytes
+    );
+
+  return btoa(
+    String.fromCharCode(
+      ...new Uint8Array(
+        digest
+      )
+    )
+  )
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
+
 export async function startGooglePlaySubscriptionPurchase(
   options: {
     planId: PlanId;
     interval: BillingInterval;
+    userId: string;
   }
 ): Promise<
   GooglePlayLaunchResponse
@@ -160,10 +187,17 @@ export async function startGooglePlaySubscriptionPurchase(
    * This only launches Google Play.
    * Never grant AYZO entitlement here.
    */
-  return AyzoPlayBilling
-    .launchSubscriptionPurchase(
-      selection
+  const obfuscatedAccountId =
+    await sha256Base64Url(
+      "ayzo:google-play:account:v1\0" +
+        options.userId
     );
+
+  return AyzoPlayBilling
+    .launchSubscriptionPurchase({
+      ...selection,
+      obfuscatedAccountId,
+    });
 }
 
 export function listenForGooglePlayPurchaseUpdates(

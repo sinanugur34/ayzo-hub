@@ -400,11 +400,19 @@ public class AyzoPlayBillingPlugin
                 ""
             ).trim();
 
+        String obfuscatedAccountId =
+            call.getString(
+                "obfuscatedAccountId",
+                ""
+            ).trim();
+
         if (
             productId.isEmpty() ||
             basePlanId.isEmpty() ||
             productId.length() > 100 ||
-            basePlanId.length() > 100
+            basePlanId.length() > 100 ||
+            obfuscatedAccountId.isEmpty() ||
+            obfuscatedAccountId.length() > 64
         ) {
             call.reject(
                 "Invalid Google Play purchase selection."
@@ -418,7 +426,8 @@ public class AyzoPlayBillingPlugin
                 queryAndLaunchSubscriptionPurchase(
                     call,
                     productId,
-                    basePlanId
+                    basePlanId,
+                    obfuscatedAccountId
                 )
         );
     }
@@ -426,7 +435,8 @@ public class AyzoPlayBillingPlugin
     private void queryAndLaunchSubscriptionPurchase(
         PluginCall call,
         String productId,
-        String basePlanId
+        String basePlanId,
+        String obfuscatedAccountId
     ) {
         List<QueryProductDetailsParams.Product>
             products =
@@ -568,6 +578,9 @@ public class AyzoPlayBillingPlugin
                         .newBuilder()
                         .setProductDetailsParamsList(
                             productParams
+                        )
+                        .setObfuscatedAccountId(
+                            obfuscatedAccountId
                         )
                         .build();
 
