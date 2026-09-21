@@ -8,7 +8,7 @@ export const GOOGLE_PLAY_SUBSCRIPTIONS = {
     planId: "pro",
     productId: "ayzo_pro",
     basePlans: {
-      monthly: "monthly",
+      monthly: "monthly-v2",
       annual: "annual",
     },
   },
@@ -52,7 +52,10 @@ export function getGooglePlayPlanForProductId(
 export function getGooglePlayIntervalForBasePlanId(
   basePlanId: string
 ): BillingInterval | null {
-  if (basePlanId === "monthly") {
+  if (
+    basePlanId === "monthly" ||
+    basePlanId === "monthly-v2"
+  ) {
     return "monthly";
   }
 

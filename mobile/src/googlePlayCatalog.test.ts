@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   GOOGLE_PLAY_PRODUCT_IDS,
+  GOOGLE_PLAY_SUBSCRIPTIONS,
   getGooglePlayIntervalForBasePlanId,
   getGooglePlayPlanForProductId,
 } from "./googlePlayCatalog";
@@ -16,6 +17,31 @@ test(
         "ayzo_pro",
         "ayzo_advanced",
       ]
+    );
+  }
+);
+
+test(
+  "locks live Google Play base plan ids",
+  () => {
+    assert.equal(
+      GOOGLE_PLAY_SUBSCRIPTIONS.pro.basePlans.monthly,
+      "monthly-v2"
+    );
+
+    assert.equal(
+      GOOGLE_PLAY_SUBSCRIPTIONS.pro.basePlans.annual,
+      "annual"
+    );
+
+    assert.equal(
+      GOOGLE_PLAY_SUBSCRIPTIONS.advanced.basePlans.monthly,
+      "monthly"
+    );
+
+    assert.equal(
+      GOOGLE_PLAY_SUBSCRIPTIONS.advanced.basePlans.annual,
+      "annual"
     );
   }
 );
@@ -52,6 +78,13 @@ test(
     assert.equal(
       getGooglePlayIntervalForBasePlanId(
         "monthly"
+      ),
+      "monthly"
+    );
+
+    assert.equal(
+      getGooglePlayIntervalForBasePlanId(
+        "monthly-v2"
       ),
       "monthly"
     );
