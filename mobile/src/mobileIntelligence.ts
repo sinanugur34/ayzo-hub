@@ -7,6 +7,11 @@ import type {
 } from "../../src/lib/networks/registry";
 
 import {
+  resolveSelectedNetworkForAddress,
+  type AddressKind,
+} from "../../src/lib/networks/addressSelection";
+
+import {
   getMobileAuthHeaders,
   MOBILE_API_BASE_URL,
 } from "./mobileSession";
@@ -16,6 +21,76 @@ export type MobileAnalysisResult = {
   address: string;
   data: unknown;
 };
+
+export async function detectMobileAddressNetwork({
+  address,
+  selectedNetworkId,
+}: {
+  address: string;
+  selectedNetworkId: NetworkId;
+}): Promise<NetworkId | null> {
+  const trimmed =
+    address.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const response =
+    await CapacitorHttp.request({
+      url:
+        `${MOBILE_API_BASE_URL}/api/address-detect`,
+      method:
+        "POST",
+      headers: {
+        Accept:
+          "application/json",
+        "Content-Type":
+          "application/json",
+      },
+      data: {
+        address:
+          trimmed,
+      },
+    });
+
+  const body =
+    response.data;
+
+  if (
+    response.status < 200 ||
+    response.status >= 300 ||
+    !body?.ok
+  ) {
+    return null;
+  }
+
+  const detected =
+    body.network;
+
+  const validKinds:
+    readonly AddressKind[] = [
+      "evm",
+      "solana",
+      "bitcoin",
+      "dogecoin",
+      "tron",
+    ];
+
+  if (
+    typeof detected !== "string" ||
+    !validKinds.includes(
+      detected as AddressKind
+    )
+  ) {
+    return null;
+  }
+
+  return resolveSelectedNetworkForAddress(
+    selectedNetworkId,
+    detected as AddressKind
+  );
+}
 
 export async function analyzeMobileAddress({
   networkId,

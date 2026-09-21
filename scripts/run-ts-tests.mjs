@@ -72,18 +72,31 @@ async function collectTests(
   return files;
 }
 
-const sourceDirectory =
-  join(
-    root,
-    "src"
-  );
+const testDirectories =
+  [
+    join(
+      root,
+      "src"
+    ),
+    join(
+      root,
+      "mobile"
+    ),
+  ];
 
 const testFiles =
   (
-    await collectTests(
-      sourceDirectory
+    await Promise.all(
+      testDirectories.map(
+        (directory) =>
+          collectTests(
+            directory
+          )
+      )
     )
-  ).sort();
+  )
+    .flat()
+    .sort();
 
 if (
   testFiles.length ===
