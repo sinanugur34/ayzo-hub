@@ -1,22 +1,29 @@
 import "server-only";
 
 import {
-  createSign,
-} from "node:crypto";
+  getVercelOidcToken,
+} from "@vercel/oidc";
 
-const TOKEN_URL =
-  "https://oauth2.googleapis.com/token";
+const STS_TOKEN_URL =
+  "https://sts.googleapis.com/v1/token";
+
+const IAM_CREDENTIALS_URL =
+  "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/" +
+  "ayzo-google-play-billing%40project-743c1d83-fb1f-498b-bdf.iam.gserviceaccount.com" +
+  ":generateAccessToken";
+
+const WIF_AUDIENCE =
+  "//iam.googleapis.com/projects/674643951828/locations/global/" +
+  "workloadIdentityPools/ayzo-vercel/providers/vercel";
+
+const CLOUD_PLATFORM_SCOPE =
+  "https://www.googleapis.com/auth/cloud-platform";
 
 const ANDROID_PUBLISHER_SCOPE =
   "https://www.googleapis.com/auth/androidpublisher";
 
 const PACKAGE_NAME =
   "io.ayzo.app";
-
-type ServiceAccount = {
-  client_email: string;
-  private_key: string;
-};
 
 let cachedAccessToken:
   | {
@@ -26,173 +33,66 @@ let cachedAccessToken:
   | null =
     null;
 
-function base64Url(
-  value: string | Buffer
-) {
-  return Buffer
-    .from(value)
-    .toString("base64url");
-}
-
-function serviceAccount():
-  ServiceAccount {
-  const raw =
-    process.env
-      .GOOGLE_PLAY_SERVICE_ACCOUNT_JSON
-      ?.trim();
-
-  if (!raw) {
-    throw new Error(
-      "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON is not configured."
-    );
-  }
-
-  let parsed:
-    unknown;
-
-  try {
-    parsed =
-      JSON.parse(raw);
-  } catch {
-    throw new Error(
-      "Invalid Google Play service account JSON."
-    );
-  }
-
-  if (
-    typeof parsed !== "object" ||
-    parsed === null
-  ) {
-    throw new Error(
-      "Invalid Google Play service account."
-    );
-  }
-
-  const row =
-    parsed as Record<
-      string,
-      unknown
-    >;
-
-  if (
-    typeof row.client_email !==
-      "string" ||
-    typeof row.private_key !==
-      "string"
-  ) {
-    throw new Error(
-      "Incomplete Google Play service account."
-    );
-  }
-
-  return {
-    client_email:
-      row.client_email,
-
-    private_key:
-      row.private_key,
-  };
-}
-
-async function accessToken() {
-  const now =
-    Date.now();
-
-  if (
-    cachedAccessToken &&
-    cachedAccessToken
-      .expiresAtMs >
-      now + 60_000
-  ) {
-    return cachedAccessToken
-      .token;
-  }
-
-  const account =
-    serviceAccount();
-
-  const nowSeconds =
-    Math.floor(
-      now / 1000
-    );
-
-  const header =
-    base64Url(
-      JSON.stringify({
-        alg: "RS256",
-        typ: "JWT",
-      })
-    );
-
-  const claims =
-    base64Url(
-      JSON.stringify({
-        iss:
-          account.client_email,
-
-        scope:
-          ANDROID_PUBLISHER_SCOPE,
-
-        aud:
-          TOKEN_URL,
-
-        iat:
-          nowSeconds,
-
-        exp:
-          nowSeconds + 3600,
-      })
-    );
-
-  const unsigned =
-    `${header}.${claims}`;
-
-  const signer =
-    createSign(
-      "RSA-SHA256"
-    );
-
-  signer.update(
-    unsigned
+function isRecord(
+  value: unknown
+): value is Record<string, unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value)
   );
+}
 
-  signer.end();
+async function getFederatedAccessToken() {
+  const oidcToken =
+    await getVercelOidcToken();
 
-  const signature =
-    signer.sign(
-      account.private_key
+  if (
+    typeof oidcToken !== "string" ||
+    oidcToken.length < 20
+  ) {
+    throw new Error(
+      "VERCEL_OIDC_TOKEN_UNAVAILABLE"
     );
-
-  const assertion =
-    `${unsigned}.${base64Url(
-      signature
-    )}`;
+  }
 
   const response =
     await fetch(
-      TOKEN_URL,
+      STS_TOKEN_URL,
       {
-        method:
-          "POST",
+        method: "POST",
 
         headers: {
           "Content-Type":
-            "application/x-www-form-urlencoded",
+            "application/json",
         },
 
         body:
-          new URLSearchParams({
-            grant_type:
-              "urn:ietf:params:oauth:grant-type:jwt-bearer",
+          JSON.stringify({
+            audience:
+              WIF_AUDIENCE,
 
-            assertion,
+            grantType:
+              "urn:ietf:params:oauth:grant-type:token-exchange",
+
+            requestedTokenType:
+              "urn:ietf:params:oauth:token-type:access_token",
+
+            scope:
+              CLOUD_PLATFORM_SCOPE,
+
+            subjectTokenType:
+              "urn:ietf:params:oauth:token-type:id_token",
+
+            subjectToken:
+              oidcToken,
           }),
       }
     );
 
   if (!response.ok) {
     throw new Error(
-      "GOOGLE_PLAY_OAUTH_FAILED"
+      `GOOGLE_PLAY_STS_FAILED_${response.status}`
     );
   }
 
@@ -201,43 +101,104 @@ async function accessToken() {
       await response.json();
 
   if (
-    typeof payload !==
-      "object" ||
-    payload === null
+    !isRecord(payload) ||
+    typeof payload.access_token !==
+      "string"
   ) {
     throw new Error(
-      "GOOGLE_PLAY_OAUTH_INVALID_RESPONSE"
+      "GOOGLE_PLAY_STS_INVALID_RESPONSE"
     );
   }
 
-  const row =
-    payload as Record<
-      string,
-      unknown
-    >;
+  return payload.access_token;
+}
+
+async function accessToken() {
+  const now =
+    Date.now();
 
   if (
-    typeof row.access_token !==
+    cachedAccessToken &&
+    cachedAccessToken.expiresAtMs >
+      now + 60_000
+  ) {
+    return cachedAccessToken.token;
+  }
+
+  const federatedToken =
+    await getFederatedAccessToken();
+
+  const response =
+    await fetch(
+      IAM_CREDENTIALS_URL,
+      {
+        method: "POST",
+
+        headers: {
+          Authorization:
+            `Bearer ${federatedToken}`,
+
+          "Content-Type":
+            "application/json",
+        },
+
+        body:
+          JSON.stringify({
+            scope: [
+              ANDROID_PUBLISHER_SCOPE,
+            ],
+
+            lifetime:
+              "3600s",
+          }),
+      }
+    );
+
+  if (!response.ok) {
+    throw new Error(
+      `GOOGLE_PLAY_IMPERSONATION_FAILED_${response.status}`
+    );
+  }
+
+  const payload:
+    unknown =
+      await response.json();
+
+  if (
+    !isRecord(payload) ||
+    typeof payload.accessToken !==
       "string" ||
-    typeof row.expires_in !==
-      "number"
+    typeof payload.expireTime !==
+      "string"
   ) {
     throw new Error(
-      "GOOGLE_PLAY_OAUTH_INVALID_RESPONSE"
+      "GOOGLE_PLAY_IMPERSONATION_INVALID_RESPONSE"
+    );
+  }
+
+  const expiresAtMs =
+    Date.parse(
+      payload.expireTime
+    );
+
+  if (
+    !Number.isFinite(
+      expiresAtMs
+    )
+  ) {
+    throw new Error(
+      "GOOGLE_PLAY_IMPERSONATION_INVALID_EXPIRY"
     );
   }
 
   cachedAccessToken = {
     token:
-      row.access_token,
+      payload.accessToken,
 
-    expiresAtMs:
-      now +
-      row.expires_in *
-        1000,
+    expiresAtMs,
   };
 
-  return row.access_token;
+  return payload.accessToken;
 }
 
 export async function getGooglePlaySubscription(
