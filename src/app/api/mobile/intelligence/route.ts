@@ -62,6 +62,38 @@ import {
 const EVM_ADDRESS =
   /^0x[0-9a-fA-F]{40}$/;
 
+type MobileResponseMeta = {
+  plan: "free" | "pro" | "advanced";
+  billingAvailable: boolean;
+  quota: {
+    limit: number;
+    remaining: number | null;
+    resetAt: number | null;
+  };
+};
+
+function withMobileMeta(
+  data: unknown,
+  meta: MobileResponseMeta
+) {
+  if (
+    typeof data === "object" &&
+    data !== null &&
+    !Array.isArray(data)
+  ) {
+    return {
+      ...data,
+      mobile: meta,
+    };
+  }
+
+  return {
+    ok: true,
+    data,
+    mobile: meta,
+  };
+}
+
 function json(
   body: unknown,
   status: number,
@@ -374,6 +406,20 @@ export async function POST(
       );
     }
 
+    const mobileMeta: MobileResponseMeta = {
+      plan:
+        entitlement.planId,
+      billingAvailable,
+      quota: {
+        limit:
+          quota.limit,
+        remaining:
+          quota.remaining,
+        resetAt:
+          quota.resetAt,
+      },
+    };
+
     const refundOnFailure =
       async (
         status: number
@@ -408,7 +454,10 @@ export async function POST(
         );
 
         return json(
-          result.data,
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
           result.status
         );
       }
@@ -428,7 +477,10 @@ export async function POST(
         );
 
         return json(
-          result.data,
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
           result.status
         );
       }
@@ -444,7 +496,10 @@ export async function POST(
         );
 
         return json(
-          result.data,
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
           result.status
         );
       }
@@ -460,7 +515,10 @@ export async function POST(
         );
 
         return json(
-          result.data,
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
           result.status
         );
       }
@@ -476,7 +534,10 @@ export async function POST(
         );
 
         return json(
-          result.data,
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
           result.status
         );
       }

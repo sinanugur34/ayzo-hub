@@ -6,6 +6,10 @@ import type {
   NetworkId,
 } from "../../src/lib/networks/registry";
 
+import type {
+  PlanId,
+} from "../../src/lib/plans/types";
+
 import {
   resolveSelectedNetworkForAddress,
   type AddressKind,
@@ -16,11 +20,105 @@ import {
   MOBILE_API_BASE_URL,
 } from "./mobileSession";
 
+import {
+  readMobileQuotaStatus,
+  type MobileQuotaStatus,
+} from "./mobileQuota";
+
 export type MobileAnalysisResult = {
   networkId: NetworkId;
   address: string;
   data: unknown;
+  plan: PlanId | null;
+  quota: MobileQuotaStatus | null;
 };
+
+export class MobileAnalysisError extends Error {
+  status: number | null;
+  code: string | null;
+  plan: PlanId | null;
+  quota: MobileQuotaStatus | null;
+
+  constructor({
+    message,
+    status,
+    code,
+    plan,
+    quota,
+  }: {
+    message: string;
+    status?: number | null;
+    code?: string | null;
+    plan?: PlanId | null;
+    quota?: MobileQuotaStatus | null;
+  }) {
+    super(message);
+
+    this.name =
+      "MobileAnalysisError";
+
+    this.status =
+      status ?? null;
+
+    this.code =
+      code ?? null;
+
+    this.plan =
+      plan ?? null;
+
+    this.quota =
+      quota ?? null;
+  }
+}
+
+function isRecord(
+  value: unknown
+): value is Record<string, unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value)
+  );
+}
+
+function readPlan(
+  value: unknown
+): PlanId | null {
+  return (
+    value === "free" ||
+    value === "pro" ||
+    value === "advanced"
+  )
+    ? value
+    : null;
+}
+
+function readSuccessMobileMeta(
+  body: unknown
+) {
+  if (
+    !isRecord(body) ||
+    !isRecord(body.mobile)
+  ) {
+    return {
+      plan:
+        null,
+      quota:
+        null,
+    };
+  }
+
+  return {
+    plan:
+      readPlan(
+        body.mobile.plan
+      ),
+    quota:
+      readMobileQuotaStatus(
+        body.mobile.quota
+      ),
+  };
+}
 
 export async function detectMobileAddressNetwork({
   address,
@@ -137,25 +235,31 @@ export async function analyzeMobileAddress({
     response.status < 200 ||
     response.status >= 300
   ) {
-    const error =
-      new Error(
+    throw new MobileAnalysisError({
+      message:
         body?.error ??
-        "AYZO analysis request failed."
-      );
-
-    Object.assign(
-      error,
-      {
-        status:
-          response.status,
-        code:
-          body?.code,
-        body,
-      }
-    );
-
-    throw error;
+        "AYZO analysis request failed.",
+      status:
+        response.status,
+      code:
+        typeof body?.code === "string"
+          ? body.code
+          : null,
+      plan:
+        readPlan(
+          body?.plan
+        ),
+      quota:
+        readMobileQuotaStatus(
+          body?.quota
+        ),
+    });
   }
+
+  const mobile =
+    readSuccessMobileMeta(
+      body
+    );
 
   return {
     networkId,
@@ -163,5 +267,9 @@ export async function analyzeMobileAddress({
       trimmed,
     data:
       body,
+    plan:
+      mobile.plan,
+    quota:
+      mobile.quota,
   };
 }

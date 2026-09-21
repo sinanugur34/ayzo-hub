@@ -11,8 +11,13 @@ import { supabase } from "./supabase";
 import {
   analyzeMobileAddress,
   detectMobileAddressNetwork,
+  MobileAnalysisError,
   type MobileAnalysisResult,
 } from "./mobileIntelligence";
+import type {
+  MobileQuotaStatus,
+} from "./mobileQuota";
+import MobileQuotaCard from "./MobileQuotaCard";
 import MobileAnalysisResultPanel from "./MobileAnalysisResultPanel";
 import {
   NETWORKS,
@@ -52,6 +57,16 @@ function Dashboard() {
 
   const [analysisError, setAnalysisError] =
     useState<string | null>(
+      null
+    );
+
+  const [analysisPlan, setAnalysisPlan] =
+    useState<"free" | "pro" | "advanced" | null>(
+      null
+    );
+
+  const [analysisQuota, setAnalysisQuota] =
+    useState<MobileQuotaStatus | null>(
       null
     );
 
@@ -166,12 +181,33 @@ function Dashboard() {
         setAnalysisResult(
           result
         );
+
+        setAnalysisPlan(
+          result.plan
+        );
+
+        setAnalysisQuota(
+          result.quota
+        );
       } catch (error) {
         setAnalysisError(
           error instanceof Error
             ? error.message
             : "AYZO analysis failed."
         );
+
+        if (
+          error instanceof
+            MobileAnalysisError
+        ) {
+          setAnalysisPlan(
+            error.plan
+          );
+
+          setAnalysisQuota(
+            error.quota
+          );
+        }
       } finally {
         setAnalysisLoading(false);
       }
@@ -270,6 +306,13 @@ function Dashboard() {
             <strong>Analysis failed</strong>
             <span>{analysisError}</span>
           </div>
+        )}
+
+        {analysisPlan && analysisQuota && (
+          <MobileQuotaCard
+            plan={analysisPlan}
+            quota={analysisQuota}
+          />
         )}
 
         {analysisResult && (
