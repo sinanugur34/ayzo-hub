@@ -5,6 +5,7 @@ import {
   GOOGLE_PLAY_PRODUCT_IDS,
   GOOGLE_PLAY_SUBSCRIPTIONS,
   getGooglePlayIntervalForBasePlanId,
+  getGooglePlaySubscriptionSelection,
   getGooglePlayPlanForProductId,
 } from "./googlePlayCatalog";
 
@@ -99,6 +100,52 @@ test(
     assert.equal(
       getGooglePlayIntervalForBasePlanId(
         "trial"
+      ),
+      null
+    );
+  }
+);
+
+test(
+  "resolves the live Google Play purchase selection",
+  () => {
+    assert.deepEqual(
+      getGooglePlaySubscriptionSelection(
+        "pro",
+        "monthly"
+      ),
+      {
+        productId: "ayzo_pro",
+        basePlanId: "monthly-v2",
+      }
+    );
+
+    assert.deepEqual(
+      getGooglePlaySubscriptionSelection(
+        "pro",
+        "annual"
+      ),
+      {
+        productId: "ayzo_pro",
+        basePlanId: "annual",
+      }
+    );
+
+    assert.deepEqual(
+      getGooglePlaySubscriptionSelection(
+        "advanced",
+        "monthly"
+      ),
+      {
+        productId: "ayzo_advanced",
+        basePlanId: "monthly",
+      }
+    );
+
+    assert.equal(
+      getGooglePlaySubscriptionSelection(
+        "free",
+        "monthly"
       ),
       null
     );
