@@ -669,3 +669,32 @@ button {
 .network-pill select option {
   color: #111;
 }
+
+.analysis-message {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 13px;
+}
+
+.analysis-message span {
+  opacity: 0.72;
+  overflow-wrap: anywhere;
+}
+
+.analysis-success {
+  background: rgba(39, 174, 96, 0.08);
+}
+
+.analysis-error {
+  background: rgba(235, 87, 87, 0.08);
+}
+
+.analyze-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}

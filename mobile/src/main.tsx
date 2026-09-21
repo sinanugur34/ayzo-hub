@@ -9,6 +9,10 @@ import {
 } from "./mobileSession";
 import { supabase } from "./supabase";
 import {
+  analyzeMobileAddress,
+  type MobileAnalysisResult,
+} from "./mobileIntelligence";
+import {
   NETWORKS,
   type NetworkId,
 } from "../../src/lib/networks/registry";
@@ -35,6 +39,55 @@ function Dashboard() {
 
   const tools =
     getProductToolsForNetwork(selectedNetworkId);
+
+  const [analysisInput, setAnalysisInput] =
+    useState("");
+
+  const [analysisResult, setAnalysisResult] =
+    useState<MobileAnalysisResult | null>(
+      null
+    );
+
+  const [analysisError, setAnalysisError] =
+    useState<string | null>(
+      null
+    );
+
+  const [analysisLoading, setAnalysisLoading] =
+    useState(false);
+
+  const runAnalysis =
+    async () => {
+      if (analysisLoading) {
+        return;
+      }
+
+      setAnalysisLoading(true);
+      setAnalysisError(null);
+      setAnalysisResult(null);
+
+      try {
+        const result =
+          await analyzeMobileAddress({
+            networkId:
+              selectedNetworkId,
+            address:
+              analysisInput,
+          });
+
+        setAnalysisResult(
+          result
+        );
+      } catch (error) {
+        setAnalysisError(
+          error instanceof Error
+            ? error.message
+            : "AYZO analysis failed."
+        );
+      } finally {
+        setAnalysisLoading(false);
+      }
+    };
 
   return (
     <main className="app">
@@ -90,13 +143,59 @@ function Dashboard() {
         <div className="search-box">
           <span className="search-icon">⌕</span>
           <input
-            placeholder="Token, wallet or transaction hash"
-            aria-label="Token, wallet or transaction hash"
+            placeholder="Wallet, token or contract address"
+            aria-label="Wallet, token or contract address"
+            value={analysisInput}
+            onChange={(event) =>
+              setAnalysisInput(
+                event.target.value
+              )
+            }
+            onKeyDown={(event) => {
+              if (
+                event.key === "Enter"
+              ) {
+                void runAnalysis();
+              }
+            }}
           />
-          <button className="analyze-button">
-            Analyze
+          <button
+            className="analyze-button"
+            disabled={analysisLoading}
+            onClick={() =>
+              void runAnalysis()
+            }
+          >
+            {analysisLoading
+              ? "Analyzing..."
+              : "Analyze"}
           </button>
         </div>
+
+        {analysisError && (
+          <div
+            className="analysis-message analysis-error"
+            role="alert"
+          >
+            <strong>Analysis failed</strong>
+            <span>{analysisError}</span>
+          </div>
+        )}
+
+        {analysisResult && (
+          <div
+            className="analysis-message analysis-success"
+          >
+            <strong>Live intelligence received</strong>
+            <span>
+              {NETWORKS[
+                analysisResult.networkId
+              ].name}
+              {" · "}
+              {analysisResult.address}
+            </span>
+          </div>
+        )}
       </section>
 
       <section className="section-block">
