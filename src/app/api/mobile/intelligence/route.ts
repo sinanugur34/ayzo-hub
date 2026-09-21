@@ -1,0 +1,506 @@
+import { isAddress } from "@solana/kit";
+
+import {
+  authenticateMobileRequest,
+} from "@/lib/account/mobileRequestAuth";
+
+import {
+  getMobileEntitlement,
+} from "@/lib/account/mobileEntitlement";
+
+import {
+  consumeMobileAnalysisQuota,
+  refundMobileAnalysisQuota,
+  type MobileAnalysisQuotaState,
+} from "@/lib/account/mobileAnalysisQuota";
+
+import {
+  resolveIntelligenceNetwork,
+} from "@/lib/intelligence/router";
+
+import {
+  isBitcoinMainnetAddress,
+} from "@/lib/intelligence/bitcoin/address";
+
+import {
+  runBitcoinIntelligence,
+} from "@/lib/intelligence/bitcoin/engine";
+
+import {
+  isDogecoinMainnetAddress,
+} from "@/lib/intelligence/dogecoin/address";
+
+import {
+  runDogecoinIntelligence,
+} from "@/lib/intelligence/dogecoin/engine";
+
+import {
+  isTronAddress,
+} from "@/lib/intelligence/tron/address";
+
+import {
+  runTronIntelligence,
+} from "@/lib/intelligence/tron/engine";
+
+import {
+  runEvmUnifiedIntelligence,
+} from "@/lib/intelligence/evm/unifiedOrchestrator";
+
+import {
+  runSolanaIntelligence,
+} from "@/lib/intelligence/solana/engine";
+
+import {
+  checkRateLimit,
+  getClientIp,
+} from "@/lib/rateLimit";
+
+import {
+  readJsonObjectBody,
+} from "@/lib/requestBody";
+
+const EVM_ADDRESS =
+  /^0x[0-9a-fA-F]{40}$/;
+
+function json(
+  body: unknown,
+  status: number,
+  headers: HeadersInit = {}
+) {
+  return Response.json(
+    body,
+    {
+      status,
+      headers: {
+        "Cache-Control":
+          "no-store",
+        ...headers,
+      },
+    }
+  );
+}
+
+export async function POST(
+  request: Request
+) {
+  let quota:
+    MobileAnalysisQuotaState |
+    null = null;
+
+  let quotaUserId:
+    string |
+    null = null;
+
+  const clientIp =
+    getClientIp(
+      request
+    );
+
+  const rateLimit =
+    await checkRateLimit({
+      key:
+        `mobile-intelligence:${clientIp}`,
+      limit:
+        10,
+      windowMs:
+        60_000,
+    });
+
+  if (!rateLimit.allowed) {
+    return json(
+      {
+        ok: false,
+        code:
+          "RATE_LIMITED",
+        error:
+          "Too many analysis requests.",
+        retryAfterSeconds:
+          rateLimit.retryAfterSeconds,
+      },
+      429,
+      {
+        "Retry-After":
+          String(
+            rateLimit.retryAfterSeconds
+          ),
+      }
+    );
+  }
+
+  try {
+    const auth =
+      await authenticateMobileRequest(
+        request
+      );
+
+    if (!auth.ok) {
+      return json(
+        {
+          ok: false,
+          code:
+            auth.code,
+          error:
+            auth.error,
+        },
+        auth.status
+      );
+    }
+
+    const parsedBody =
+      await readJsonObjectBody(
+        request
+      );
+
+    if (!parsedBody.ok) {
+      return parsedBody.response;
+    }
+
+    const body =
+      parsedBody.body;
+
+    const resolution =
+      resolveIntelligenceNetwork(
+        body.network
+      );
+
+    if (!resolution.ok) {
+      return json(
+        {
+          ok: false,
+          code:
+            resolution.code,
+          error:
+            resolution.error,
+          network:
+            resolution.networkId,
+        },
+        resolution.code ===
+          "NETWORK_NOT_AVAILABLE"
+          ? 503
+          : 400
+      );
+    }
+
+    const address =
+      typeof body.address ===
+        "string"
+        ? body.address.trim()
+        : "";
+
+    if (!address) {
+      return json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Address is required.",
+          network:
+            resolution.networkId,
+        },
+        400
+      );
+    }
+
+    if (
+      resolution.engine ===
+        "solana" &&
+      !isAddress(
+        address
+      )
+    ) {
+      return json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid Solana address.",
+          network:
+            resolution.networkId,
+        },
+        400
+      );
+    }
+
+    if (
+      resolution.engine ===
+        "evm" &&
+      !EVM_ADDRESS.test(
+        address
+      )
+    ) {
+      return json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid EVM address.",
+          network:
+            resolution.networkId,
+        },
+        400
+      );
+    }
+
+    if (
+      resolution.engine ===
+        "bitcoin" &&
+      !isBitcoinMainnetAddress(
+        address
+      )
+    ) {
+      return json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid Bitcoin address.",
+          network:
+            resolution.networkId,
+        },
+        400
+      );
+    }
+
+    if (
+      resolution.engine ===
+        "dogecoin" &&
+      !isDogecoinMainnetAddress(
+        address
+      )
+    ) {
+      return json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid Dogecoin address.",
+          network:
+            resolution.networkId,
+        },
+        400
+      );
+    }
+
+    if (
+      resolution.engine ===
+        "tron" &&
+      !isTronAddress(
+        address
+      )
+    ) {
+      return json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid TRON address.",
+          network:
+            resolution.networkId,
+        },
+        400
+      );
+    }
+
+    const {
+      entitlement,
+      billingAvailable,
+    } =
+      await getMobileEntitlement(
+        auth.identity.userId
+      );
+
+    quotaUserId =
+      auth.identity.userId;
+
+    quota =
+      await consumeMobileAnalysisQuota(
+        quotaUserId,
+        entitlement.planId
+      );
+
+    if (!quota.allowed) {
+      const retryAfterSeconds =
+        quota.resetAt
+          ? Math.max(
+              1,
+              Math.ceil(
+                (
+                  quota.resetAt -
+                  Date.now()
+                ) /
+                  1000
+              )
+            )
+          : 24 * 60 * 60;
+
+      return json(
+        {
+          ok: false,
+          code:
+            entitlement.planId ===
+              "advanced"
+              ? "DAILY_ADVANCED_LIMIT"
+              : entitlement.planId ===
+                  "pro"
+                ? "DAILY_PRO_LIMIT"
+                : "DAILY_FREE_LIMIT",
+          error:
+            "Daily analysis limit reached.",
+          plan:
+            entitlement.planId,
+          billingAvailable,
+          quota: {
+            limit:
+              quota.limit,
+            remaining:
+              0,
+            resetAt:
+              quota.resetAt,
+          },
+        },
+        429,
+        {
+          "Retry-After":
+            String(
+              retryAfterSeconds
+            ),
+        }
+      );
+    }
+
+    const refundOnFailure =
+      async (
+        status: number
+      ) => {
+        if (
+          status >= 400 &&
+          quota &&
+          quotaUserId
+        ) {
+          await refundMobileAnalysisQuota(
+            quotaUserId,
+            quota
+          );
+        }
+      };
+
+    switch (
+      resolution.engine
+    ) {
+      case "solana": {
+        const result =
+          await runSolanaIntelligence({
+            address,
+            requestUrl:
+              request.url,
+            testFailure:
+              null,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        return json(
+          result.data,
+          result.status
+        );
+      }
+
+      case "evm": {
+        const result =
+          await runEvmUnifiedIntelligence({
+            networkId:
+              resolution.networkId,
+            address,
+            analysisPlan:
+              entitlement.planId,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        return json(
+          result.data,
+          result.status
+        );
+      }
+
+      case "bitcoin": {
+        const result =
+          await runBitcoinIntelligence({
+            address,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        return json(
+          result.data,
+          result.status
+        );
+      }
+
+      case "dogecoin": {
+        const result =
+          await runDogecoinIntelligence({
+            address,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        return json(
+          result.data,
+          result.status
+        );
+      }
+
+      case "tron": {
+        const result =
+          await runTronIntelligence({
+            address,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        return json(
+          result.data,
+          result.status
+        );
+      }
+    }
+  } catch {
+    if (
+      quota &&
+      quotaUserId
+    ) {
+      await refundMobileAnalysisQuota(
+        quotaUserId,
+        quota
+      );
+    }
+
+    return json(
+      {
+        ok: false,
+        code:
+          "UPSTREAM_ERROR",
+        error:
+          "AYZO Intelligence Pipeline failed.",
+      },
+      500
+    );
+  }
+}

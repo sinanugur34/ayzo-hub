@@ -2,7 +2,7 @@ import { SecureStorage } from "@aparajita/capacitor-secure-storage";
 import { CapacitorHttp } from "@capacitor/core";
 import { supabase } from "./supabase";
 
-const API_BASE_URL =
+export const MOBILE_API_BASE_URL =
   "https://app.ayzo.io";
 
 const DEVICE_TOKEN_KEY =
@@ -106,9 +106,7 @@ async function getAccessToken() {
   return data.session.access_token;
 }
 
-async function requestMobileSession(
-  method: "GET" | "POST"
-) {
+export async function getMobileAuthHeaders() {
   const [
     accessToken,
     deviceToken,
@@ -118,19 +116,28 @@ async function requestMobileSession(
       getOrCreateDeviceToken(),
     ]);
 
+  return {
+    Authorization:
+      `Bearer ${accessToken}`,
+    "x-ayzo-device-token":
+      deviceToken,
+    Accept:
+      "application/json",
+  };
+}
+
+async function requestMobileSession(
+  method: "GET" | "POST"
+) {
+  const headers =
+    await getMobileAuthHeaders();
+
   const response =
     await CapacitorHttp.request({
       url:
-        `${API_BASE_URL}/api/mobile/session`,
+        `${MOBILE_API_BASE_URL}/api/mobile/session`,
       method,
-      headers: {
-        Authorization:
-          `Bearer ${accessToken}`,
-        "x-ayzo-device-token":
-          deviceToken,
-        Accept:
-          "application/json",
-      },
+      headers,
     });
 
   const body =
