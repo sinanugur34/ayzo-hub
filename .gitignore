@@ -50,3 +50,11 @@ skills-lock.json
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Mobile build output
+mobile-shell/
+
+# Android signing secrets
+*.jks
+*.keystore
+key.properties

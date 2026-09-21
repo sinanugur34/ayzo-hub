@@ -13,6 +13,11 @@
     "test:all": "node scripts/run-ts-tests.mjs"
   },
   "dependencies": {
+    "@aparajita/capacitor-secure-storage": "^8.0.0",
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/browser": "^8.0.0",
+    "@capacitor/core": "^8.5.2",
     "@sentry/nextjs": "^10.74.0",
     "@solana/kit": "^8.0.0",
     "@supabase/ssr": "^0.12.5",
@@ -27,15 +32,18 @@
     "sharp": "0.35.4"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.1.1",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
     "tsx": "4.23.13",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite": "^8.3.0"
   },
   "overrides": {
     "js-yaml": "4.3.2"

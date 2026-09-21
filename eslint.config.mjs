@@ -5,6 +5,13 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+
+  {
+    files: ["mobile/**/*.{js,jsx,ts,tsx}"],
+    rules: {
+      "@next/next/no-img-element": "off",
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
@@ -12,6 +19,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+
+    // Generated mobile / Android artifacts:
+    "mobile-shell/**",
+    "android/.gradle/**",
+    "android/app/build/**",
+    "android/app/src/main/assets/**",
   ]),
 ]);
 
