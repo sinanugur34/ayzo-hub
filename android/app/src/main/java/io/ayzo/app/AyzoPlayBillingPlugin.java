@@ -2,6 +2,7 @@ package io.ayzo.app;
 
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingClientStateListener;
+import com.android.billingclient.api.BillingFlowParams;
 import com.android.billingclient.api.BillingResult;
 import com.android.billingclient.api.PendingPurchasesParams;
 import com.android.billingclient.api.ProductDetails;
@@ -383,6 +384,222 @@ public class AyzoPlayBillingPlugin
         );
     }
 
+    @PluginMethod
+    public void launchSubscriptionPurchase(
+        PluginCall call
+    ) {
+        String productId =
+            call.getString(
+                "productId",
+                ""
+            ).trim();
+
+        String basePlanId =
+            call.getString(
+                "basePlanId",
+                ""
+            ).trim();
+
+        if (
+            productId.isEmpty() ||
+            basePlanId.isEmpty() ||
+            productId.length() > 100 ||
+            basePlanId.length() > 100
+        ) {
+            call.reject(
+                "Invalid Google Play purchase selection."
+            );
+            return;
+        }
+
+        runWhenReady(
+            call,
+            () ->
+                queryAndLaunchSubscriptionPurchase(
+                    call,
+                    productId,
+                    basePlanId
+                )
+        );
+    }
+
+    private void queryAndLaunchSubscriptionPurchase(
+        PluginCall call,
+        String productId,
+        String basePlanId
+    ) {
+        List<QueryProductDetailsParams.Product>
+            products =
+                new ArrayList<>();
+
+        products.add(
+            QueryProductDetailsParams
+                .Product
+                .newBuilder()
+                .setProductId(
+                    productId
+                )
+                .setProductType(
+                    BillingClient
+                        .ProductType
+                        .SUBS
+                )
+                .build()
+        );
+
+        QueryProductDetailsParams params =
+            QueryProductDetailsParams
+                .newBuilder()
+                .setProductList(
+                    products
+                )
+                .build();
+
+        billingClient.queryProductDetailsAsync(
+            params,
+            (
+                billingResult,
+                queryResult
+            ) -> {
+                if (
+                    billingResult.getResponseCode()
+                    != BillingClient
+                        .BillingResponseCode
+                        .OK
+                ) {
+                    call.reject(
+                        "Google Play product query failed."
+                    );
+                    return;
+                }
+
+                ProductDetails selectedProduct =
+                    null;
+
+                for (
+                    ProductDetails details :
+                    queryResult
+                        .getProductDetailsList()
+                ) {
+                    if (
+                        productId.equals(
+                            details.getProductId()
+                        )
+                    ) {
+                        selectedProduct =
+                            details;
+                        break;
+                    }
+                }
+
+                if (
+                    selectedProduct == null
+                ) {
+                    call.reject(
+                        "Google Play product is unavailable."
+                    );
+                    return;
+                }
+
+                ProductDetails
+                    .SubscriptionOfferDetails
+                    selectedOffer =
+                        null;
+
+                List<
+                    ProductDetails
+                        .SubscriptionOfferDetails
+                > offers =
+                    selectedProduct
+                        .getSubscriptionOfferDetails();
+
+                if (offers != null) {
+                    for (
+                        ProductDetails
+                            .SubscriptionOfferDetails
+                            offer :
+                        offers
+                    ) {
+                        if (
+                            basePlanId.equals(
+                                offer.getBasePlanId()
+                            ) &&
+                            offer.getOfferId()
+                                == null
+                        ) {
+                            selectedOffer =
+                                offer;
+                            break;
+                        }
+                    }
+                }
+
+                if (
+                    selectedOffer == null
+                ) {
+                    call.reject(
+                        "Google Play base plan is unavailable."
+                    );
+                    return;
+                }
+
+                List<
+                    BillingFlowParams
+                        .ProductDetailsParams
+                > productParams =
+                    new ArrayList<>();
+
+                productParams.add(
+                    BillingFlowParams
+                        .ProductDetailsParams
+                        .newBuilder()
+                        .setProductDetails(
+                            selectedProduct
+                        )
+                        .setOfferToken(
+                            selectedOffer
+                                .getOfferToken()
+                        )
+                        .build()
+                );
+
+                BillingFlowParams flowParams =
+                    BillingFlowParams
+                        .newBuilder()
+                        .setProductDetailsParamsList(
+                            productParams
+                        )
+                        .build();
+
+                BillingResult launchResult =
+                    billingClient
+                        .launchBillingFlow(
+                            getActivity(),
+                            flowParams
+                        );
+
+                JSObject response =
+                    new JSObject();
+
+                response.put(
+                    "responseCode",
+                    launchResult
+                        .getResponseCode()
+                );
+
+                response.put(
+                    "debugMessage",
+                    launchResult
+                        .getDebugMessage()
+                );
+
+                call.resolve(
+                    response
+                );
+            }
+        );
+    }
+
     @Override
     public void onPurchasesUpdated(
         BillingResult billingResult,
@@ -396,11 +613,87 @@ public class AyzoPlayBillingPlugin
             billingResult.getResponseCode()
         );
 
+        event.put(
+            "debugMessage",
+            billingResult.getDebugMessage()
+        );
+
+        JSArray purchaseArray =
+            new JSArray();
+
+        if (purchases != null) {
+            for (
+                Purchase purchase :
+                purchases
+            ) {
+                JSObject purchaseJson =
+                    new JSObject();
+
+                purchaseJson.put(
+                    "purchaseToken",
+                    purchase.getPurchaseToken()
+                );
+
+                JSArray products =
+                    new JSArray();
+
+                for (
+                    String product :
+                    purchase.getProducts()
+                ) {
+                    products.put(
+                        product
+                    );
+                }
+
+                purchaseJson.put(
+                    "products",
+                    products
+                );
+
+                purchaseJson.put(
+                    "purchaseState",
+                    purchase.getPurchaseState()
+                );
+
+                purchaseJson.put(
+                    "acknowledged",
+                    purchase.isAcknowledged()
+                );
+
+                purchaseJson.put(
+                    "purchaseTime",
+                    purchase.getPurchaseTime()
+                );
+
+                if (
+                    purchase.getOrderId()
+                    != null
+                ) {
+                    purchaseJson.put(
+                        "orderId",
+                        purchase.getOrderId()
+                    );
+                }
+
+                purchaseArray.put(
+                    purchaseJson
+                );
+            }
+        }
+
+        event.put(
+            "purchases",
+            purchaseArray
+        );
+
         /*
-         * No entitlement is granted here.
-         * Purchase tokens will be verified
-         * by the AYZO backend in the next
-         * billing stage.
+         * Purchase data is forwarded to
+         * the mobile shell only.
+         *
+         * AYZO entitlement MUST NOT be
+         * granted until the purchase token
+         * is verified by the backend.
          */
         notifyListeners(
             "billingUpdated",

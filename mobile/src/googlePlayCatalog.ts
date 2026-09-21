@@ -65,3 +65,25 @@ export function getGooglePlayIntervalForBasePlanId(
 
   return null;
 }
+
+export function getGooglePlaySubscriptionSelection(
+  planId: PlanId,
+  interval: BillingInterval
+): {
+  productId: string;
+  basePlanId: string;
+} | null {
+  if (planId === "free") {
+    return null;
+  }
+
+  const subscription =
+    GOOGLE_PLAY_SUBSCRIPTIONS[planId];
+
+  return {
+    productId:
+      subscription.productId,
+    basePlanId:
+      subscription.basePlans[interval],
+  };
+}
