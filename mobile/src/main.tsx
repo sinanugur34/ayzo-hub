@@ -8,8 +8,34 @@ import {
   validateMobileSession,
 } from "./mobileSession";
 import { supabase } from "./supabase";
+import {
+  NETWORKS,
+  type NetworkId,
+} from "../../src/lib/networks/registry";
+import {
+  getLiveNetworks,
+  getProductToolsForNetwork,
+} from "../../src/lib/networks/productCapabilities";
+
+function formatCapabilityLabel(value: string) {
+  return value
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (letter) => letter.toUpperCase());
+}
 
 function Dashboard() {
+  const [selectedNetworkId, setSelectedNetworkId] =
+    useState<NetworkId>("ethereum");
+
+  const selectedNetwork =
+    NETWORKS[selectedNetworkId];
+
+  const liveNetworks =
+    getLiveNetworks();
+
+  const tools =
+    getProductToolsForNetwork(selectedNetworkId);
+
   return (
     <main className="app">
       <header className="topbar">
@@ -20,11 +46,28 @@ function Dashboard() {
           </div>
         </div>
 
-        <button className="network-pill">
+        <label className="network-pill">
           <span className="network-dot" />
-          Ethereum
+          <select
+            aria-label="Network"
+            value={selectedNetworkId}
+            onChange={(event) =>
+              setSelectedNetworkId(
+                event.target.value as NetworkId
+              )
+            }
+          >
+            {liveNetworks.map((network) => (
+              <option
+                key={network.id}
+                value={network.id}
+              >
+                {network.name}
+              </option>
+            ))}
+          </select>
           <span className="chevron">⌄</span>
-        </button>
+        </label>
       </header>
 
       <section className="search-panel">
@@ -69,37 +112,20 @@ function Dashboard() {
         </div>
 
         <div className="tool-grid">
-          <button className="tool-card">
-            <div className="tool-icon">◎</div>
-            <div>
-              <strong>Token Analysis</strong>
-              <span>Authorities, holders & liquidity</span>
-            </div>
-          </button>
-
-          <button className="tool-card">
-            <div className="tool-icon">◌</div>
-            <div>
-              <strong>Wallet Analysis</strong>
-              <span>Behavior, history & signals</span>
-            </div>
-          </button>
-
-          <button className="tool-card">
-            <div className="tool-icon">↗</div>
-            <div>
-              <strong>Funding Trace</strong>
-              <span>Follow source and destination</span>
-            </div>
-          </button>
-
-          <button className="tool-card">
-            <div className="tool-icon">⌘</div>
-            <div>
-              <strong>Connections</strong>
-              <span>Entities, clusters & links</span>
-            </div>
-          </button>
+          {tools.map((tool) => (
+            <button
+              className="tool-card"
+              key={tool.id}
+            >
+              <div className="tool-icon">
+                {tool.icon}
+              </div>
+              <div>
+                <strong>{tool.title}</strong>
+                <span>{tool.description}</span>
+              </div>
+            </button>
+          ))}
         </div>
       </section>
 
@@ -119,7 +145,7 @@ function Dashboard() {
           <div className="metric-row">
             <div className="metric">
               <span>Network</span>
-              <strong>Ethereum</strong>
+              <strong>{selectedNetwork.name}</strong>
             </div>
 
             <div className="metric">
@@ -128,36 +154,35 @@ function Dashboard() {
             </div>
 
             <div className="metric">
-              <span>Signals</span>
-              <strong className="green">Active</strong>
+              <span>Capabilities</span>
+              <strong className="green">
+                {selectedNetwork.capabilities.length}
+              </strong>
             </div>
           </div>
 
           <div className="divider" />
 
-          <div className="signal-row">
-            <div>
-              <strong>Funding provenance</strong>
-              <span>Trace transaction origins</span>
-            </div>
-            <span className="available">Available</span>
-          </div>
-
-          <div className="signal-row">
-            <div>
-              <strong>Wallet relationships</strong>
-              <span>Identify linked addresses</span>
-            </div>
-            <span className="available">Available</span>
-          </div>
-
-          <div className="signal-row">
-            <div>
-              <strong>Cluster intelligence</strong>
-              <span>Surface connected entities</span>
-            </div>
-            <span className="available">Available</span>
-          </div>
+          {selectedNetwork.capabilities
+            .slice(0, 3)
+            .map((capability) => (
+              <div
+                className="signal-row"
+                key={capability}
+              >
+                <div>
+                  <strong>
+                    {formatCapabilityLabel(capability)}
+                  </strong>
+                  <span>
+                    Evidence-backed {selectedNetwork.shortName} capability
+                  </span>
+                </div>
+                <span className="available">
+                  Available
+                </span>
+              </div>
+            ))}
         </article>
       </section>
 
