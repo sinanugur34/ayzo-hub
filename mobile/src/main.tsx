@@ -10,8 +10,10 @@ import {
 import { supabase } from "./supabase";
 import {
   analyzeMobileAddress,
+  detectMobileAddressNetwork,
   type MobileAnalysisResult,
 } from "./mobileIntelligence";
+import MobileAnalysisResultPanel from "./MobileAnalysisResultPanel";
 import {
   NETWORKS,
   type NetworkId,
@@ -56,6 +58,72 @@ function Dashboard() {
   const [analysisLoading, setAnalysisLoading] =
     useState(false);
 
+  useEffect(() => {
+    const address =
+      analysisInput.trim();
+
+    if (
+      address.length < 26 ||
+      analysisLoading
+    ) {
+      return;
+    }
+
+    let cancelled =
+      false;
+
+    const timer =
+      window.setTimeout(
+        () => {
+          void detectMobileAddressNetwork({
+            address,
+            selectedNetworkId,
+          })
+            .then(
+              (detectedNetworkId) => {
+                if (
+                  cancelled ||
+                  !detectedNetworkId ||
+                  detectedNetworkId ===
+                    selectedNetworkId
+                ) {
+                  return;
+                }
+
+                setSelectedNetworkId(
+                  detectedNetworkId
+                );
+
+                setAnalysisResult(
+                  null
+                );
+
+                setAnalysisError(
+                  null
+                );
+              }
+            )
+            .catch(
+              () => undefined
+            );
+        },
+        450
+      );
+
+    return () => {
+      cancelled =
+        true;
+
+      window.clearTimeout(
+        timer
+      );
+    };
+  }, [
+    analysisInput,
+    selectedNetworkId,
+    analysisLoading,
+  ]);
+
   const runAnalysis =
     async () => {
       if (analysisLoading) {
@@ -67,10 +135,30 @@ function Dashboard() {
       setAnalysisResult(null);
 
       try {
+        const detectedNetworkId =
+          await detectMobileAddressNetwork({
+            address:
+              analysisInput,
+            selectedNetworkId,
+          });
+
+        const effectiveNetworkId =
+          detectedNetworkId ??
+          selectedNetworkId;
+
+        if (
+          effectiveNetworkId !==
+          selectedNetworkId
+        ) {
+          setSelectedNetworkId(
+            effectiveNetworkId
+          );
+        }
+
         const result =
           await analyzeMobileAddress({
             networkId:
-              selectedNetworkId,
+              effectiveNetworkId,
             address:
               analysisInput,
           });
@@ -104,11 +192,13 @@ function Dashboard() {
           <select
             aria-label="Network"
             value={selectedNetworkId}
-            onChange={(event) =>
+            onChange={(event) => {
               setSelectedNetworkId(
                 event.target.value as NetworkId
-              )
-            }
+              );
+              setAnalysisResult(null);
+              setAnalysisError(null);
+            }}
           >
             {liveNetworks.map((network) => (
               <option
@@ -183,18 +273,9 @@ function Dashboard() {
         )}
 
         {analysisResult && (
-          <div
-            className="analysis-message analysis-success"
-          >
-            <strong>Live intelligence received</strong>
-            <span>
-              {NETWORKS[
-                analysisResult.networkId
-              ].name}
-              {" · "}
-              {analysisResult.address}
-            </span>
-          </div>
+          <MobileAnalysisResultPanel
+            result={analysisResult}
+          />
         )}
       </section>
 
