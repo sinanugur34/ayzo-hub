@@ -854,3 +854,55 @@ button {
   line-height: 1.5;
   opacity: 0.62;
 }
+
+.mobile-quota-card {
+  margin-top: 12px;
+  border: 1px solid rgba(139, 92, 246, 0.22);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgba(124, 58, 237, 0.055);
+}
+
+.mobile-quota-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.mobile-quota-top > div:last-child {
+  text-align: right;
+}
+
+.mobile-quota-top span {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  opacity: 0.48;
+}
+
+.mobile-quota-top strong {
+  font-size: 12px;
+}
+
+.mobile-quota-track {
+  height: 4px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.mobile-quota-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: currentColor;
+  color: #8b5cf6;
+}
+
+.mobile-quota-reset {
+  margin-top: 7px;
+  font-size: 10px;
+  opacity: 0.5;
+}
