@@ -20,6 +20,22 @@ import type {
 import MobileQuotaCard from "./MobileQuotaCard";
 import MobileAnalysisResultPanel from "./MobileAnalysisResultPanel";
 import {
+  getGooglePlaySubscriptionProducts,
+  listenForGooglePlayPurchaseUpdates,
+  startGooglePlaySubscriptionPurchase,
+  type GooglePlaySubscriptionProduct,
+} from "./googlePlayBilling";
+import {
+  GOOGLE_PLAY_SUBSCRIPTIONS,
+} from "./googlePlayCatalog";
+import {
+  verifyGooglePlayPurchase,
+} from "./googlePlayVerification";
+import type {
+  BillingInterval,
+  PlanId,
+} from "../../src/lib/plans/types";
+import {
   NETWORKS,
   type NetworkId,
 } from "../../src/lib/networks/registry";
@@ -72,6 +88,116 @@ function Dashboard() {
 
   const [analysisLoading, setAnalysisLoading] =
     useState(false);
+
+  const [billingProducts, setBillingProducts] =
+    useState<GooglePlaySubscriptionProduct[]>([]);
+
+  const [billingInterval, setBillingInterval] =
+    useState<BillingInterval>("monthly");
+
+  const [billingLoading, setBillingLoading] =
+    useState<PlanId | null>(null);
+
+  const [billingMessage, setBillingMessage] =
+    useState<string | null>(null);
+
+  const [billingError, setBillingError] =
+    useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled =
+      false;
+
+    let listener:
+      Awaited<
+        ReturnType<
+          typeof listenForGooglePlayPurchaseUpdates
+        >
+      > |
+      undefined;
+
+    void getGooglePlaySubscriptionProducts()
+      .then((result) => {
+        if (!cancelled) {
+          setBillingProducts(
+            result.products
+          );
+        }
+      })
+      .catch(() => undefined);
+
+    void listenForGooglePlayPurchaseUpdates(
+      (event) => {
+        if (
+          event.responseCode !== 0
+        ) {
+          setBillingLoading(null);
+
+          if (event.responseCode !== 1) {
+            setBillingError(
+              event.debugMessage ??
+              "Google Play purchase failed."
+            );
+          }
+
+          return;
+        }
+
+        const purchases =
+          event.purchases ?? [];
+
+        if (!purchases.length) {
+          setBillingLoading(null);
+          return;
+        }
+
+        void (async () => {
+          try {
+            for (
+              const purchase of purchases
+            ) {
+              if (
+                !purchase.purchaseToken
+              ) {
+                continue;
+              }
+
+              const verified =
+                await verifyGooglePlayPurchase(
+                  purchase.purchaseToken
+                );
+
+              setAnalysisPlan(
+                verified.plan
+              );
+
+              setBillingMessage(
+                `${verified.plan === "advanced" ? "Advanced" : "Pro"} activated through Google Play.`
+              );
+            }
+          } catch (error) {
+            setBillingError(
+              error instanceof Error
+                ? error.message
+                : "Google Play purchase verification failed."
+            );
+          } finally {
+            setBillingLoading(null);
+          }
+        })();
+      }
+    ).then((handle) => {
+      listener =
+        handle;
+    });
+
+    return () => {
+      cancelled =
+        true;
+
+      void listener?.remove();
+    };
+  }, []);
 
   useEffect(() => {
     const address =
@@ -138,6 +264,104 @@ function Dashboard() {
     selectedNetworkId,
     analysisLoading,
   ]);
+
+  function getPlayPrice(
+    planId: "pro" | "advanced",
+    interval: BillingInterval
+  ) {
+    const subscription =
+      GOOGLE_PLAY_SUBSCRIPTIONS[
+        planId
+      ];
+
+    const product =
+      billingProducts.find(
+        (item) =>
+          item.productId ===
+          subscription.productId
+      );
+
+    const offer =
+      product?.offers.find(
+        (item) =>
+          item.basePlanId ===
+          subscription.basePlans[
+            interval
+          ]
+      );
+
+    return (
+      offer
+        ?.pricingPhases
+        ?.at(-1)
+        ?.formattedPrice ??
+      null
+    );
+  }
+
+  const startUpgrade =
+    async (
+      planId:
+        "pro" |
+        "advanced"
+    ) => {
+      if (billingLoading) {
+        return;
+      }
+
+      setBillingError(null);
+      setBillingMessage(null);
+      setBillingLoading(planId);
+
+      try {
+        const {
+          data,
+          error,
+        } =
+          await supabase.auth.getUser();
+
+        if (
+          error ||
+          !data.user?.id
+        ) {
+          throw new Error(
+            "AYZO authentication session is unavailable."
+          );
+        }
+
+        const result =
+          await startGooglePlaySubscriptionPurchase({
+            planId,
+            interval:
+              billingInterval,
+            userId:
+              data.user.id,
+          });
+
+        if (
+          result.responseCode !== 0
+        ) {
+          setBillingLoading(null);
+
+          if (
+            result.responseCode !== 1
+          ) {
+            throw new Error(
+              result.debugMessage ??
+              "Google Play purchase could not start."
+            );
+          }
+        }
+      } catch (error) {
+        setBillingLoading(null);
+
+        setBillingError(
+          error instanceof Error
+            ? error.message
+            : "Google Play purchase could not start."
+        );
+      }
+    };
 
   const runAnalysis =
     async () => {
@@ -319,6 +543,134 @@ function Dashboard() {
           <MobileAnalysisResultPanel
             result={analysisResult}
           />
+        )}
+      </section>
+
+      <section className="section-block">
+        <div className="section-header">
+          <div>
+            <div className="eyebrow">AYZO PLANS</div>
+            <h2>Upgrade with Google Play</h2>
+          </div>
+        </div>
+
+        <div className="billing-toggle">
+          <button
+            className={
+              billingInterval === "monthly"
+                ? "active"
+                : ""
+            }
+            onClick={() =>
+              setBillingInterval(
+                "monthly"
+              )
+            }
+          >
+            Monthly
+          </button>
+
+          <button
+            className={
+              billingInterval === "annual"
+                ? "active"
+                : ""
+            }
+            onClick={() =>
+              setBillingInterval(
+                "annual"
+              )
+            }
+          >
+            Annual
+          </button>
+        </div>
+
+        <div className="billing-grid">
+          {(
+            [
+              "pro",
+              "advanced",
+            ] as const
+          ).map((planId) => {
+            const price =
+              getPlayPrice(
+                planId,
+                billingInterval
+              );
+
+            return (
+              <article
+                className="billing-card"
+                key={planId}
+              >
+                <div>
+                  <span className="billing-label">
+                    {planId ===
+                    "advanced"
+                      ? "ADVANCED"
+                      : "PRO"}
+                  </span>
+
+                  <strong>
+                    {planId ===
+                    "advanced"
+                      ? "Advanced intelligence"
+                      : "Professional intelligence"}
+                  </strong>
+
+                  <span className="billing-price">
+                    {price ??
+                      "Loading Google Play price..."}
+                  </span>
+                </div>
+
+                <button
+                  disabled={
+                    billingLoading !==
+                    null
+                  }
+                  onClick={() =>
+                    void startUpgrade(
+                      planId
+                    )
+                  }
+                >
+                  {billingLoading ===
+                  planId
+                    ? "Opening Google Play..."
+                    : `Choose ${
+                        planId ===
+                        "advanced"
+                          ? "Advanced"
+                          : "Pro"
+                      }`}
+                </button>
+              </article>
+            );
+          })}
+        </div>
+
+        {billingMessage && (
+          <div className="analysis-message analysis-success">
+            <strong>
+              Subscription verified
+            </strong>
+            <span>
+              {billingMessage}
+            </span>
+          </div>
+        )}
+
+        {billingError && (
+          <div className="analysis-message analysis-error">
+            <strong>
+              Billing error
+            </strong>
+            <span>
+              {billingError}
+            </span>
+          </div>
         )}
       </section>
 
