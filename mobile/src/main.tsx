@@ -476,6 +476,40 @@ function Dashboard() {
           );
         }
 
+        let oldPurchaseToken:
+          string | undefined;
+
+        let oldProductId:
+          string | undefined;
+
+        if (
+          analysisPlan === "pro" &&
+          planId === "advanced"
+        ) {
+          const activeSubscriptions =
+            await getActiveGooglePlaySubscriptions();
+
+          const proPurchase =
+            activeSubscriptions.purchases.find(
+              (purchase) =>
+                purchase.products.includes(
+                  GOOGLE_PLAY_SUBSCRIPTIONS.pro.productId
+                )
+            );
+
+          if (!proPurchase?.purchaseToken) {
+            throw new Error(
+              "Your current Google Play Pro subscription could not be found."
+            );
+          }
+
+          oldPurchaseToken =
+            proPurchase.purchaseToken;
+
+          oldProductId =
+            GOOGLE_PLAY_SUBSCRIPTIONS.pro.productId;
+        }
+
         const result =
           await startGooglePlaySubscriptionPurchase({
             planId,
@@ -483,6 +517,8 @@ function Dashboard() {
               billingInterval,
             userId:
               data.user.id,
+            oldPurchaseToken,
+            oldProductId,
           });
 
         if (
