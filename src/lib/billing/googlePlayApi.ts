@@ -272,3 +272,34 @@ export async function acknowledgeGooglePlaySubscription({
     );
   }
 }
+
+
+export async function checkGooglePlayPublisherAccess() {
+  const token =
+    await accessToken();
+
+  const response =
+    await fetch(
+      `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/subscriptions?pageSize=1`,
+      {
+        headers: {
+          Authorization:
+            `Bearer ${token}`,
+        },
+
+        cache:
+          "no-store",
+      }
+    );
+
+  if (!response.ok) {
+    throw new Error(
+      `GOOGLE_PLAY_PUBLISHER_HEALTH_FAILED_${response.status}`
+    );
+  }
+
+  return {
+    ok: true as const,
+    publisherApiReachable: true as const,
+  };
+}
