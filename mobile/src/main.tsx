@@ -20,6 +20,7 @@ import type {
 import MobileQuotaCard from "./MobileQuotaCard";
 import MobileAnalysisResultPanel from "./MobileAnalysisResultPanel";
 import {
+  getActiveGooglePlaySubscriptions,
   getGooglePlaySubscriptionProducts,
   listenForGooglePlayPurchaseUpdates,
   startGooglePlaySubscriptionPurchase,
@@ -126,6 +127,46 @@ function Dashboard() {
       })
       .catch(() => undefined);
 
+    void getActiveGooglePlaySubscriptions()
+      .then(async (result) => {
+        for (
+          const purchase of
+          result.purchases ?? []
+        ) {
+          if (
+            cancelled ||
+            !purchase.purchaseToken
+          ) {
+            continue;
+          }
+
+          const verified =
+            await verifyGooglePlayPurchase(
+              purchase.purchaseToken
+            );
+
+          if (cancelled) {
+            return;
+          }
+
+          if (
+            verified.status ===
+              "active" ||
+            verified.status ===
+              "canceling"
+          ) {
+            setAnalysisPlan(
+              verified.plan
+            );
+
+            setBillingMessage(
+              `${verified.plan === "advanced" ? "Advanced" : "Pro"} restored through Google Play.`
+            );
+          }
+        }
+      })
+      .catch(() => undefined);
+
     void listenForGooglePlayPurchaseUpdates(
       (event) => {
         if (
@@ -167,13 +208,24 @@ function Dashboard() {
                   purchase.purchaseToken
                 );
 
-              setAnalysisPlan(
-                verified.plan
-              );
+              if (
+                verified.status ===
+                  "active" ||
+                verified.status ===
+                  "canceling"
+              ) {
+                setAnalysisPlan(
+                  verified.plan
+                );
 
-              setBillingMessage(
-                `${verified.plan === "advanced" ? "Advanced" : "Pro"} activated through Google Play.`
-              );
+                setBillingMessage(
+                  `${verified.plan === "advanced" ? "Advanced" : "Pro"} activated through Google Play.`
+                );
+              } else {
+                setBillingMessage(
+                  `Google Play subscription status: ${verified.status}.`
+                );
+              }
             }
           } catch (error) {
             setBillingError(

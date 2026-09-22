@@ -59,6 +59,11 @@ type GooglePlayProductsResponse = {
     GooglePlaySubscriptionProduct[];
 };
 
+type GooglePlayPurchasesResponse = {
+  purchases:
+    GooglePlayPurchase[];
+};
+
 type GooglePlayLaunchResponse = {
   responseCode: number;
   debugMessage?: string;
@@ -73,6 +78,11 @@ type AyzoPlayBillingPlugin = {
   ): Promise<
     GooglePlayProductsResponse
   >;
+
+  getActiveSubscriptions():
+    Promise<
+      GooglePlayPurchasesResponse
+    >;
 
   launchSubscriptionPurchase(
     options: {
@@ -127,6 +137,22 @@ export async function getGooglePlaySubscriptionProducts():
       productIds:
         GOOGLE_PLAY_PRODUCT_IDS,
     });
+}
+
+export async function getActiveGooglePlaySubscriptions():
+  Promise<
+    GooglePlayPurchasesResponse
+  > {
+  if (
+    !isGooglePlayBillingAvailable()
+  ) {
+    return {
+      purchases: [],
+    };
+  }
+
+  return AyzoPlayBilling
+    .getActiveSubscriptions();
 }
 
 async function sha256Base64Url(
