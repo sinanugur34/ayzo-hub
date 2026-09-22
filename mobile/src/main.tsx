@@ -55,6 +55,9 @@ function formatCapabilityLabel(value: string) {
 }
 
 function Dashboard() {
+  const [activeNav, setActiveNav] = useState<
+    "home" | "explore" | "analyze" | "alerts" | "profile"
+  >("home");
   const [selectedNetworkId, setSelectedNetworkId] =
     useState<NetworkId>("ethereum");
 
@@ -660,7 +663,10 @@ function Dashboard() {
         </label>
       </header>
 
-      <section className="search-panel">
+      <section
+        className="search-panel"
+        id="analyze"
+      >
         <div className="search-heading">
           <div>
             <div className="eyebrow">ON-CHAIN ANALYSIS</div>
@@ -733,7 +739,10 @@ function Dashboard() {
         )}
       </section>
 
-      <section className="section-block">
+      <section
+        className="section-block"
+        id="profile"
+      >
         <div className="section-header">
           <div>
             <div className="eyebrow">AYZO PLANS</div>
@@ -882,7 +891,10 @@ function Dashboard() {
         )}
       </section>
 
-      <section className="section-block">
+      <section
+        className="section-block"
+        id="explore"
+      >
         <div className="section-header">
           <div>
             <div className="eyebrow">QUICK ACCESS</div>
@@ -970,27 +982,87 @@ function Dashboard() {
       </section>
 
       <nav className="bottom-nav">
-        <button className="active">
+        <button
+          className={activeNav === "home" ? "active" : ""}
+          onClick={() => {
+            setActiveNav("home");
+            window.scrollTo({
+              top: 0,
+              behavior: "smooth",
+            });
+          }}
+        >
           <span>⌂</span>
           Home
         </button>
 
-        <button>
+        <button
+          className={activeNav === "explore" ? "active" : ""}
+          onClick={() => {
+            setActiveNav("explore");
+            document
+              .getElementById("explore")
+              ?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+          }}
+        >
           <span>◇</span>
           Explore
         </button>
 
-        <button className="center-action">
+        <button
+          className={`center-action ${
+            activeNav === "analyze" ? "active" : ""
+          }`}
+          onClick={() => {
+            setActiveNav("analyze");
+            document
+              .getElementById("analyze")
+              ?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+
+            window.setTimeout(() => {
+              document
+                .querySelector<HTMLInputElement>(
+                  'input[aria-label="Wallet, token or contract address"]'
+                )
+                ?.focus();
+            }, 350);
+          }}
+        >
           <span>◎</span>
           Analyze
         </button>
 
-        <button>
+        <button
+          className={activeNav === "alerts" ? "active" : ""}
+          onClick={() => {
+            setActiveNav("alerts");
+            window.alert(
+              "Alerts dashboard is being prepared."
+            );
+          }}
+        >
           <span>♧</span>
           Alerts
         </button>
 
-        <button>
+        <button
+          className={activeNav === "profile" ? "active" : ""}
+          onClick={() => {
+            setActiveNav("profile");
+            document
+              .getElementById("profile")
+              ?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+          }}
+        >
           <span>○</span>
           Profile
         </button>
