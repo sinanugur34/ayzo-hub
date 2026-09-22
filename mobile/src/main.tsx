@@ -32,6 +32,9 @@ import {
 import {
   verifyGooglePlayPurchase,
 } from "./googlePlayVerification";
+import {
+  getMobileAccountStatus,
+} from "./mobileStatus";
 import type {
   BillingInterval,
   PlanId,
@@ -117,7 +120,39 @@ function Dashboard() {
       > |
       undefined;
 
+    const refreshAccountStatus =
+      async () => {
+        const status =
+          await getMobileAccountStatus();
+
+        if (cancelled) {
+          return;
+        }
+
+        setAnalysisPlan(
+          status.plan
+        );
+
+        setAnalysisQuota(
+          status.quota
+        );
+      };
+
+    const refreshAccountStatusSafely =
+      async () => {
+        try {
+          await refreshAccountStatus();
+        } catch (error) {
+          console.error(
+            "AYZO mobile account status query failed.",
+            error
+          );
+        }
+      };
+
     void (async () => {
+      await refreshAccountStatusSafely();
+
       try {
         const productResult =
           await getGooglePlaySubscriptionProducts();
@@ -162,6 +197,12 @@ function Dashboard() {
             await verifyGooglePlayPurchase(
               purchase.purchaseToken
             );
+
+          if (cancelled) {
+            return;
+          }
+
+          await refreshAccountStatus();
 
           if (cancelled) {
             return;
@@ -234,6 +275,8 @@ function Dashboard() {
                   purchase.purchaseToken
                 );
 
+              await refreshAccountStatus();
+
               if (
                 verified.status ===
                   "active" ||
@@ -269,11 +312,37 @@ function Dashboard() {
         handle;
     });
 
+    let appStateListener:
+      | Awaited<
+          ReturnType<
+            typeof CapacitorApp.addListener
+          >
+        >
+      | undefined;
+
+    void CapacitorApp.addListener(
+      "appStateChange",
+      ({ isActive }) => {
+        if (
+          !isActive ||
+          cancelled
+        ) {
+          return;
+        }
+
+        void refreshAccountStatusSafely();
+      }
+    ).then((handle) => {
+      appStateListener =
+        handle;
+    });
+
     return () => {
       cancelled =
         true;
 
       void listener?.remove();
+      void appStateListener?.remove();
     };
   }, []);
 
