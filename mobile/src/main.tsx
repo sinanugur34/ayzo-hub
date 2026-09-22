@@ -39,6 +39,10 @@ import {
   getMobileAlerts,
   type MobileAlertRule,
 } from "./mobileAlerts";
+import {
+  askMobileAyzo,
+  type MobileAskAyzoTurn,
+} from "./mobileAskAyzo";
 
 import {
   clearMobileHistory,
@@ -124,6 +128,9 @@ function Dashboard({
     );
 
   const [analysisLoading, setAnalysisLoading] =
+    useState(false);
+
+  const [askAyzoOpen, setAskAyzoOpen] =
     useState(false);
 
   const [billingProducts, setBillingProducts] =
@@ -662,6 +669,24 @@ function Dashboard({
       }
     };
 
+  if (
+    askAyzoOpen &&
+    analysisResult
+  ) {
+    return (
+      <AskAyzoScreen
+        result={
+          analysisResult
+        }
+        onBack={() =>
+          setAskAyzoOpen(
+            false
+          )
+        }
+      />
+    );
+  }
+
   return (
     <main className="app">
       <header className="topbar">
@@ -772,9 +797,48 @@ function Dashboard({
         )}
 
         {analysisResult && (
-          <MobileAnalysisResultPanel
-            result={analysisResult}
-          />
+          <>
+            <MobileAnalysisResultPanel
+              result={analysisResult}
+            />
+
+            <section className="ask-ayzo-entry-card">
+              <div>
+                <div className="eyebrow">
+                  ASK AYZO
+                </div>
+
+                <strong>
+                  Ask about this analysis
+                </strong>
+
+                <span>
+                  Current network, address and evidence are connected automatically.
+                </span>
+              </div>
+
+              <button
+                disabled={
+                  analysisResult.plan !==
+                    "pro" &&
+                  analysisResult.plan !==
+                    "advanced"
+                }
+                onClick={() =>
+                  setAskAyzoOpen(
+                    true
+                  )
+                }
+              >
+                {analysisResult.plan ===
+                    "pro" ||
+                analysisResult.plan ===
+                    "advanced"
+                  ? "Open Ask AYZO"
+                  : "Pro / Advanced"}
+              </button>
+            </section>
+          </>
         )}
       </section>
 
@@ -1101,6 +1165,275 @@ function Dashboard({
 
 
 
+
+
+function AskAyzoScreen({
+  result,
+  onBack,
+}: {
+  result:
+    MobileAnalysisResult;
+  onBack:
+    () => void;
+}) {
+  const [messages, setMessages] =
+    useState<
+      MobileAskAyzoTurn[]
+    >([]);
+
+  const [question, setQuestion] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const quickQuestions = [
+    "Summarize the most important findings.",
+    "What funding evidence matters here?",
+    "Are there important wallet relationships?",
+    "What limitations should I know about?",
+  ] as const;
+
+  async function submit(
+    value?: string
+  ) {
+    const nextQuestion =
+      (
+        value ??
+        question
+      ).trim();
+
+    if (
+      !nextQuestion ||
+      loading
+    ) {
+      return;
+    }
+
+    const previous =
+      messages.slice(-6);
+
+    setMessages(
+      current => [
+        ...current,
+        {
+          role:
+            "user",
+          content:
+            nextQuestion,
+        },
+      ]
+    );
+
+    setQuestion("");
+    setError("");
+    setLoading(true);
+
+    try {
+      const response =
+        await askMobileAyzo({
+          network:
+            result.networkId,
+          subjectValue:
+            result.address,
+          question:
+            nextQuestion,
+          evidencePayload:
+            result.data,
+          recentConversation:
+            previous,
+        });
+
+      setMessages(
+        current => [
+          ...current,
+          {
+            role:
+              "assistant",
+            content:
+              response.answer,
+          },
+        ]
+      );
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Ask AYZO is temporarily unavailable."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <main className="app ask-ayzo-page">
+      <header className="account-page-header">
+        <button
+          className="account-back-button"
+          onClick={onBack}
+          aria-label="Back to analysis"
+        >
+          ‹
+        </button>
+
+        <div>
+          <div className="eyebrow">
+            EVIDENCE ASSISTANT
+          </div>
+          <h1>Ask AYZO</h1>
+        </div>
+      </header>
+
+      <section className="ask-ayzo-context">
+        <div>
+          <strong>
+            Current analysis connected
+          </strong>
+
+          <span>
+            {result.networkId}
+          </span>
+        </div>
+
+        <code>
+          {result.address}
+        </code>
+      </section>
+
+      <section className="ask-ayzo-conversation">
+        {messages.length ===
+        0 ? (
+          <div className="ask-ayzo-welcome">
+            <img
+              src="/ayzo-logo.png"
+              alt="AYZO"
+            />
+
+            <strong>
+              Ask about the evidence
+            </strong>
+
+            <span>
+              AYZO answers from the current bounded analysis and does not invent unsupported on-chain facts.
+            </span>
+
+            <div className="ask-ayzo-prompts">
+              {quickQuestions.map(
+                prompt => (
+                  <button
+                    key={prompt}
+                    onClick={() =>
+                      void submit(
+                        prompt
+                      )
+                    }
+                  >
+                    {prompt}
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+        ) : (
+          messages.map(
+            (
+              message,
+              index
+            ) => (
+              <article
+                key={`${message.role}-${index}`}
+                className={
+                  message.role ===
+                    "user"
+                    ? "ask-message user"
+                    : "ask-message assistant"
+                }
+              >
+                <span>
+                  {message.role ===
+                    "user"
+                    ? "YOU"
+                    : "ASK AYZO"}
+                </span>
+
+                <p>
+                  {message.content}
+                </p>
+              </article>
+            )
+          )
+        )}
+
+        {loading && (
+          <article className="ask-message assistant">
+            <span>
+              ASK AYZO
+            </span>
+
+            <p>
+              Reviewing current evidence…
+            </p>
+          </article>
+        )}
+
+        {error && (
+          <div
+            className="analysis-message analysis-error"
+            role="alert"
+          >
+            <strong>
+              Ask AYZO unavailable
+            </strong>
+
+            <span>
+              {error}
+            </span>
+          </div>
+        )}
+      </section>
+
+      <section className="ask-ayzo-composer">
+        <textarea
+          aria-label="Ask AYZO question"
+          placeholder="Ask about this analysis…"
+          maxLength={280}
+          value={question}
+          onChange={event =>
+            setQuestion(
+              event.target.value
+            )
+          }
+          onKeyDown={event => {
+            if (
+              event.key ===
+                "Enter" &&
+              !event.shiftKey
+            ) {
+              event.preventDefault();
+              void submit();
+            }
+          }}
+        />
+
+        <button
+          disabled={
+            loading ||
+            !question.trim()
+          }
+          onClick={() =>
+            void submit()
+          }
+        >
+          Send
+        </button>
+      </section>
+    </main>
+  );
+}
 
 function HistoryScreen({
   onBack,

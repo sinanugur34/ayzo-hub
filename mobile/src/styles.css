@@ -1467,3 +1467,238 @@ button {
   font-size: 9px;
   line-height: 1.5;
 }
+
+/* AYZO Mobile Ask AYZO */
+
+.ask-ayzo-entry-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid rgba(139, 92, 246, 0.22);
+  border-radius: 18px;
+  background: rgba(109, 40, 217, 0.06);
+}
+
+.ask-ayzo-entry-card > div {
+  min-width: 0;
+}
+
+.ask-ayzo-entry-card strong,
+.ask-ayzo-entry-card span {
+  display: block;
+}
+
+.ask-ayzo-entry-card strong {
+  margin-top: 5px;
+  color: #eee9f7;
+  font-size: 12px;
+}
+
+.ask-ayzo-entry-card span {
+  margin-top: 5px;
+  color: #77717e;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.ask-ayzo-entry-card button {
+  flex-shrink: 0;
+  border: 1px solid rgba(139, 92, 246, 0.32);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #d8c8ff;
+  background: rgba(124, 58, 237, 0.12);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.ask-ayzo-entry-card button:disabled {
+  color: #66606d;
+  border-color: #29252f;
+  background: #111015;
+}
+
+.ask-ayzo-page {
+  min-height: 100vh;
+  padding-bottom: 100px;
+}
+
+.ask-ayzo-context {
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid #292530;
+  border-radius: 16px;
+  background: #0c0b10;
+}
+
+.ask-ayzo-context div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ask-ayzo-context strong {
+  font-size: 11px;
+}
+
+.ask-ayzo-context span {
+  color: #8b72d8;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.ask-ayzo-context code {
+  display: block;
+  overflow: hidden;
+  margin-top: 8px;
+  color: #77717f;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ask-ayzo-conversation {
+  display: grid;
+  gap: 10px;
+}
+
+.ask-ayzo-welcome {
+  padding: 26px 18px;
+  border: 1px solid #292530;
+  border-radius: 18px;
+  text-align: center;
+  background: #0c0b10;
+}
+
+.ask-ayzo-welcome img {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+
+.ask-ayzo-welcome strong,
+.ask-ayzo-welcome > span {
+  display: block;
+}
+
+.ask-ayzo-welcome strong {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.ask-ayzo-welcome > span {
+  max-width: 290px;
+  margin: 7px auto 0;
+  color: #77717f;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.ask-ayzo-prompts {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.ask-ayzo-prompts button {
+  padding: 11px 12px;
+  border: 1px solid #292530;
+  border-radius: 12px;
+  color: #aaa2b4;
+  text-align: left;
+  background: #111015;
+  font-size: 9px;
+}
+
+.ask-message {
+  max-width: 88%;
+  padding: 12px 14px;
+  border-radius: 16px;
+}
+
+.ask-message span {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.ask-message p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.ask-message.user {
+  justify-self: end;
+  color: #f1ecfa;
+  background: rgba(124, 58, 237, 0.18);
+}
+
+.ask-message.user span {
+  color: #aa8fff;
+}
+
+.ask-message.assistant {
+  justify-self: start;
+  border: 1px solid #292530;
+  color: #d8d2df;
+  background: #0c0b10;
+}
+
+.ask-message.assistant span {
+  color: #8b72d8;
+}
+
+.ask-ayzo-composer {
+  position: sticky;
+  bottom: 12px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 8px;
+  border: 1px solid #302a39;
+  border-radius: 17px;
+  background: rgba(12, 11, 16, 0.96);
+  backdrop-filter: blur(14px);
+}
+
+.ask-ayzo-composer textarea {
+  min-height: 46px;
+  max-height: 110px;
+  resize: none;
+  border: 0;
+  outline: 0;
+  padding: 9px;
+  color: #eee9f7;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+}
+
+.ask-ayzo-composer textarea::placeholder {
+  color: #625d69;
+}
+
+.ask-ayzo-composer button {
+  align-self: end;
+  min-width: 64px;
+  height: 42px;
+  border: 0;
+  border-radius: 12px;
+  color: white;
+  background: #7047d7;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.ask-ayzo-composer button:disabled {
+  opacity: 0.4;
+}
