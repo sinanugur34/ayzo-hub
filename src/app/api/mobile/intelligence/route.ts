@@ -56,6 +56,11 @@ import {
 } from "@/lib/rateLimit";
 
 import {
+  acquireAnalysisLoadGuard,
+  type AnalysisLoadLease,
+} from "@/lib/analysisLoadGuard";
+
+import {
   readJsonObjectBody,
 } from "@/lib/requestBody";
 
@@ -123,6 +128,10 @@ export async function POST(
     string |
     null = null;
 
+  let loadLease:
+    AnalysisLoadLease |
+    null = null;
+
   const clientIp =
     getClientIp(
       request
@@ -177,6 +186,48 @@ export async function POST(
         auth.status
       );
     }
+
+    const loadGuard =
+      await acquireAnalysisLoadGuard({
+        clientKey:
+          `mobile-user:${auth.identity.userId}`,
+      });
+
+    if (!loadGuard.ok) {
+      return json(
+        {
+          ok: false,
+          code:
+            loadGuard.reason ===
+            "client_busy"
+              ? "ANALYSIS_ALREADY_RUNNING"
+              : loadGuard.reason ===
+                  "global_busy"
+                ? "SYSTEM_BUSY"
+                : "LOAD_GUARD_UNAVAILABLE",
+          error:
+            loadGuard.reason ===
+            "client_busy"
+              ? "Too many analyses are already running for this account."
+              : "AYZO is temporarily busy. Please retry shortly.",
+          retryAfterSeconds:
+            loadGuard.retryAfterSeconds,
+        },
+        loadGuard.reason ===
+        "client_busy"
+          ? 429
+          : 503,
+        {
+          "Retry-After":
+            String(
+              loadGuard.retryAfterSeconds
+            ),
+        }
+      );
+    }
+
+    loadLease =
+      loadGuard.lease;
 
     const parsedBody =
       await readJsonObjectBody(
@@ -563,5 +614,8 @@ export async function POST(
       },
       500
     );
+  }  finally {
+    await loadLease?.release();
   }
+
 }
