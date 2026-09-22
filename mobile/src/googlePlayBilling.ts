@@ -89,6 +89,8 @@ type AyzoPlayBillingPlugin = {
       productId: string;
       basePlanId: string;
       obfuscatedAccountId: string;
+      oldPurchaseToken?: string;
+      oldProductId?: string;
     }
   ): Promise<
     GooglePlayLaunchResponse
@@ -185,6 +187,8 @@ export async function startGooglePlaySubscriptionPurchase(
     planId: PlanId;
     interval: BillingInterval;
     userId: string;
+    oldPurchaseToken?: string;
+    oldProductId?: string;
   }
 ): Promise<
   GooglePlayLaunchResponse
@@ -223,6 +227,10 @@ export async function startGooglePlaySubscriptionPurchase(
     .launchSubscriptionPurchase({
       ...selection,
       obfuscatedAccountId,
+      oldPurchaseToken:
+        options.oldPurchaseToken,
+      oldProductId:
+        options.oldProductId,
     });
 }
 

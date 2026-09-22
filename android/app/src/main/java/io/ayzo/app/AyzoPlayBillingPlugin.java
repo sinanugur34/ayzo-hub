@@ -10,6 +10,7 @@ import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.QueryProductDetailsParams;
 import com.android.billingclient.api.QueryPurchasesParams;
+import com.android.billingclient.api.BillingFlowParams.ProductDetailsParams.SubscriptionProductReplacementParams;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -407,13 +408,39 @@ public class AyzoPlayBillingPlugin
                 ""
             ).trim();
 
+        String oldPurchaseToken =
+            call.getString(
+                "oldPurchaseToken",
+                ""
+            ).trim();
+
+        String oldProductId =
+            call.getString(
+                "oldProductId",
+                ""
+            ).trim();
+
+        boolean hasReplacement =
+            !oldPurchaseToken.isEmpty() ||
+            !oldProductId.isEmpty();
+
         if (
             productId.isEmpty() ||
             basePlanId.isEmpty() ||
             productId.length() > 100 ||
             basePlanId.length() > 100 ||
             obfuscatedAccountId.isEmpty() ||
-            obfuscatedAccountId.length() > 64
+            obfuscatedAccountId.length() > 64 ||
+            (
+                hasReplacement &&
+                (
+                    oldPurchaseToken.isEmpty() ||
+                    oldProductId.isEmpty() ||
+                    oldPurchaseToken.length() > 4096 ||
+                    oldProductId.length() > 100 ||
+                    oldProductId.equals(productId)
+                )
+            )
         ) {
             call.reject(
                 "Invalid Google Play purchase selection."
@@ -428,7 +455,9 @@ public class AyzoPlayBillingPlugin
                     call,
                     productId,
                     basePlanId,
-                    obfuscatedAccountId
+                    obfuscatedAccountId,
+                    oldPurchaseToken,
+                    oldProductId
                 )
         );
     }
@@ -437,7 +466,9 @@ public class AyzoPlayBillingPlugin
         PluginCall call,
         String productId,
         String basePlanId,
-        String obfuscatedAccountId
+        String obfuscatedAccountId,
+        String oldPurchaseToken,
+        String oldProductId
     ) {
         List<QueryProductDetailsParams.Product>
             products =
@@ -560,30 +591,73 @@ public class AyzoPlayBillingPlugin
                 > productParams =
                     new ArrayList<>();
 
+                BillingFlowParams
+                    .ProductDetailsParams
+                    .Builder
+                    productDetailsBuilder =
+                        BillingFlowParams
+                            .ProductDetailsParams
+                            .newBuilder()
+                            .setProductDetails(
+                                selectedProduct
+                            )
+                            .setOfferToken(
+                                selectedOffer
+                                    .getOfferToken()
+                            );
+
+                boolean isReplacement =
+                    !oldPurchaseToken.isEmpty() &&
+                    !oldProductId.isEmpty();
+
+                if (isReplacement) {
+                    productDetailsBuilder
+                        .setSubscriptionProductReplacementParams(
+                            SubscriptionProductReplacementParams
+                                .newBuilder()
+                                .setOldProductId(
+                                    oldProductId
+                                )
+                                .setReplacementMode(
+                                    SubscriptionProductReplacementParams
+                                        .ReplacementMode
+                                        .CHARGE_PRORATED_PRICE
+                                )
+                                .build()
+                        );
+                }
+
                 productParams.add(
-                    BillingFlowParams
-                        .ProductDetailsParams
-                        .newBuilder()
-                        .setProductDetails(
-                            selectedProduct
-                        )
-                        .setOfferToken(
-                            selectedOffer
-                                .getOfferToken()
-                        )
+                    productDetailsBuilder
                         .build()
                 );
 
+                BillingFlowParams.Builder
+                    flowBuilder =
+                        BillingFlowParams
+                            .newBuilder()
+                            .setProductDetailsParamsList(
+                                productParams
+                            )
+                            .setObfuscatedAccountId(
+                                obfuscatedAccountId
+                            );
+
+                if (isReplacement) {
+                    flowBuilder
+                        .setSubscriptionUpdateParams(
+                            BillingFlowParams
+                                .SubscriptionUpdateParams
+                                .newBuilder()
+                                .setOldPurchaseToken(
+                                    oldPurchaseToken
+                                )
+                                .build()
+                        );
+                }
+
                 BillingFlowParams flowParams =
-                    BillingFlowParams
-                        .newBuilder()
-                        .setProductDetailsParamsList(
-                            productParams
-                        )
-                        .setObfuscatedAccountId(
-                            obfuscatedAccountId
-                        )
-                        .build();
+                    flowBuilder.build();
 
                 BillingResult launchResult =
                     billingClient
