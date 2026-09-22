@@ -35,6 +35,19 @@ import {
 import {
   getMobileAccountStatus,
 } from "./mobileStatus";
+import {
+  getMobileAlerts,
+  type MobileAlertRule,
+} from "./mobileAlerts";
+
+import {
+  clearMobileHistory,
+  consumeHistoryReplay,
+  readMobileHistory,
+  recordMobileHistory,
+  setHistoryReplay,
+  type MobileHistoryItem,
+} from "./mobileHistory";
 import type {
   BillingInterval,
   PlanId,
@@ -56,14 +69,24 @@ function formatCapabilityLabel(value: string) {
 
 function Dashboard({
   onOpenProfile,
+  onOpenHistory,
+  onOpenAlerts,
 }: {
   onOpenProfile: () => void;
+  onOpenHistory: () => void;
+  onOpenAlerts: () => void;
 }) {
   const [activeNav, setActiveNav] = useState<
     "home" | "explore" | "analyze" | "alerts" | "profile"
   >("home");
+  const replayItem =
+    consumeHistoryReplay();
+
   const [selectedNetworkId, setSelectedNetworkId] =
-    useState<NetworkId>("ethereum");
+    useState<NetworkId>(
+      replayItem?.networkId ??
+        "ethereum"
+    );
 
   const selectedNetwork =
     NETWORKS[selectedNetworkId];
@@ -75,7 +98,10 @@ function Dashboard({
     getProductToolsForNetwork(selectedNetworkId);
 
   const [analysisInput, setAnalysisInput] =
-    useState("");
+    useState(
+      replayItem?.address ??
+        ""
+    );
 
   const [analysisResult, setAnalysisResult] =
     useState<MobileAnalysisResult | null>(
@@ -596,6 +622,15 @@ function Dashboard({
           result
         );
 
+        recordMobileHistory({
+          networkId:
+            effectiveNetworkId,
+          address:
+            analysisInput,
+          analyzedAt:
+            Date.now(),
+        });
+
         setAnalysisPlan(
           result.plan
         );
@@ -1004,16 +1039,11 @@ function Dashboard({
           className={activeNav === "explore" ? "active" : ""}
           onClick={() => {
             setActiveNav("explore");
-            document
-              .getElementById("explore")
-              ?.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-              });
+            onOpenHistory();
           }}
         >
-          <span>◇</span>
-          Explore
+          <span>↺</span>
+          History
         </button>
 
         <button
@@ -1046,9 +1076,7 @@ function Dashboard({
           className={activeNav === "alerts" ? "active" : ""}
           onClick={() => {
             setActiveNav("alerts");
-            window.alert(
-              "Alerts dashboard is being prepared."
-            );
+            onOpenAlerts();
           }}
         >
           <span>♧</span>
@@ -1072,6 +1100,306 @@ function Dashboard({
 
 
 
+
+
+function HistoryScreen({
+  onBack,
+  onReplay,
+}: {
+  onBack: () => void;
+  onReplay: (
+    item: MobileHistoryItem
+  ) => void;
+}) {
+  const [items, setItems] =
+    useState<MobileHistoryItem[]>(
+      () =>
+        readMobileHistory()
+    );
+
+  return (
+    <main className="app account-page">
+      <header className="account-page-header">
+        <button
+          className="account-back-button"
+          onClick={onBack}
+          aria-label="Back to home"
+        >
+          ‹
+        </button>
+
+        <div>
+          <div className="eyebrow">
+            RESEARCH
+          </div>
+          <h1>History</h1>
+        </div>
+      </header>
+
+      <div className="history-toolbar">
+        <span>
+          Recent successful analyses
+        </span>
+
+        {items.length > 0 && (
+          <button
+            onClick={() => {
+              clearMobileHistory();
+              setItems([]);
+            }}
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {items.length === 0 ? (
+        <section className="empty-state-card">
+          <strong>
+            No analysis history yet
+          </strong>
+          <span>
+            Successful analyses will appear here.
+          </span>
+        </section>
+      ) : (
+        <section className="history-list">
+          {items.map(
+            (
+              item,
+              index
+            ) => (
+              <button
+                className="history-row"
+                key={`${item.networkId}-${item.address}-${item.analyzedAt}-${index}`}
+                onClick={() =>
+                  onReplay(item)
+                }
+              >
+                <div>
+                  <strong>
+                    {item.address}
+                  </strong>
+                  <span>
+                    {item.networkId}
+                  </span>
+                </div>
+
+                <div className="history-meta">
+                  <span>
+                    {new Date(
+                      item.analyzedAt
+                    ).toLocaleString()}
+                  </span>
+                  <b>›</b>
+                </div>
+              </button>
+            )
+          )}
+        </section>
+      )}
+    </main>
+  );
+}
+
+function AlertsScreen({
+  onBack,
+}: {
+  onBack: () => void;
+}) {
+  const [rules, setRules] =
+    useState<MobileAlertRule[]>(
+      []
+    );
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
+
+  const [canManage, setCanManage] =
+    useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void getMobileAlerts()
+      .then((result) => {
+        if (cancelled) {
+          return;
+        }
+
+        setRules(
+          result.rules
+        );
+
+        setCanManage(
+          result.canManage
+        );
+      })
+      .catch((caught) => {
+        if (cancelled) {
+          return;
+        }
+
+        setError(
+          caught instanceof Error
+            ? caught.message
+            : "AYZO alerts are unavailable."
+        );
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function ruleLabel(
+    type: string
+  ) {
+    return type
+      .replace(
+        /_/g,
+        " "
+      )
+      .replace(
+        /\b\w/g,
+        letter =>
+          letter.toUpperCase()
+      );
+  }
+
+  return (
+    <main className="app account-page">
+      <header className="account-page-header">
+        <button
+          className="account-back-button"
+          onClick={onBack}
+          aria-label="Back to home"
+        >
+          ‹
+        </button>
+
+        <div>
+          <div className="eyebrow">
+            MONITORING
+          </div>
+          <h1>Alerts</h1>
+        </div>
+      </header>
+
+      <section className="alerts-status-card">
+        <div>
+          <strong>
+            Email monitoring
+          </strong>
+          <span>
+            Scheduled evidence monitoring
+          </span>
+        </div>
+
+        <b>
+          {canManage
+            ? "PRO"
+            : "VIEW"}
+        </b>
+      </section>
+
+      {loading ? (
+        <section className="empty-state-card">
+          <strong>
+            Loading alerts…
+          </strong>
+        </section>
+      ) : error ? (
+        <section className="empty-state-card error">
+          <strong>
+            Alerts unavailable
+          </strong>
+          <span>
+            {error}
+          </span>
+        </section>
+      ) : rules.length === 0 ? (
+        <section className="empty-state-card">
+          <strong>
+            No alert rules yet
+          </strong>
+          <span>
+            Monitoring rules created for your AYZO account will appear here.
+          </span>
+        </section>
+      ) : (
+        <section className="alert-rule-list">
+          {rules.map(
+            rule => (
+              <article
+                className="alert-rule-card"
+                key={rule.id}
+              >
+                <div className="alert-rule-top">
+                  <strong>
+                    {ruleLabel(
+                      rule.rule_type
+                    )}
+                  </strong>
+
+                  <span
+                    className={
+                      rule.enabled
+                        ? "alert-enabled"
+                        : "alert-disabled"
+                    }
+                  >
+                    {rule.enabled
+                      ? "Enabled"
+                      : "Disabled"}
+                  </span>
+                </div>
+
+                <div className="alert-rule-meta">
+                  {rule.network && (
+                    <span>
+                      {rule.network}
+                    </span>
+                  )}
+
+                  {rule.subject_type && (
+                    <span>
+                      {rule.subject_type}
+                    </span>
+                  )}
+
+                  <span>
+                    Email
+                  </span>
+                </div>
+
+                {rule.subject_value && (
+                  <code>
+                    {rule.subject_value}
+                  </code>
+                )}
+              </article>
+            )
+          )}
+        </section>
+      )}
+
+      {!canManage && (
+        <p className="alerts-note">
+          Creating and managing monitoring rules requires an eligible AYZO plan.
+        </p>
+      )}
+    </main>
+  );
+}
 
 function ProfileScreen({
   onBack,
@@ -1314,8 +1642,8 @@ function ProfileScreen({
         </button>
 
         <button disabled>
-          <span>◇</span>
-          Explore
+          <span>↺</span>
+          History
         </button>
 
         <button
@@ -1551,6 +1879,8 @@ function App() {
     | "settings"
     | "security"
     | "about"
+    | "history"
+    | "alerts"
   >("checking");
 
   const [authError, setAuthError] =
@@ -1802,6 +2132,36 @@ function App() {
       <Dashboard
         onOpenProfile={() =>
           setScreen("profile")
+        }
+        onOpenHistory={() =>
+          setScreen("history")
+        }
+        onOpenAlerts={() =>
+          setScreen("alerts")
+        }
+      />
+    );
+  }
+
+  if (screen === "history") {
+    return (
+      <HistoryScreen
+        onBack={() =>
+          setScreen("dashboard")
+        }
+        onReplay={(item) => {
+          setHistoryReplay(item);
+          setScreen("dashboard");
+        }}
+      />
+    );
+  }
+
+  if (screen === "alerts") {
+    return (
+      <AlertsScreen
+        onBack={() =>
+          setScreen("dashboard")
         }
       />
     );
