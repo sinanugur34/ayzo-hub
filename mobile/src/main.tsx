@@ -117,21 +117,39 @@ function Dashboard() {
       > |
       undefined;
 
-    void getGooglePlaySubscriptionProducts()
-      .then((result) => {
+    void (async () => {
+      try {
+        const productResult =
+          await getGooglePlaySubscriptionProducts();
+
+        if (cancelled) {
+          return;
+        }
+
+        setBillingProducts(
+          productResult.products
+        );
+      } catch (error) {
         if (!cancelled) {
-          setBillingProducts(
-            result.products
+          setBillingError(
+            error instanceof Error
+              ? error.message
+              : "Google Play product query failed."
           );
         }
-      })
-      .catch(() => undefined);
+      }
 
-    void getActiveGooglePlaySubscriptions()
-      .then(async (result) => {
+      try {
+        const restoreResult =
+          await getActiveGooglePlaySubscriptions();
+
+        if (cancelled) {
+          return;
+        }
+
         for (
           const purchase of
-          result.purchases ?? []
+          restoreResult.purchases ?? []
         ) {
           if (
             cancelled ||
@@ -164,8 +182,16 @@ function Dashboard() {
             );
           }
         }
-      })
-      .catch(() => undefined);
+      } catch (error) {
+        if (!cancelled) {
+          setBillingError(
+            error instanceof Error
+              ? error.message
+              : "Google Play subscription restore failed."
+          );
+        }
+      }
+    })();
 
     void listenForGooglePlayPurchaseUpdates(
       (event) => {
