@@ -9,6 +9,7 @@ import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.QueryProductDetailsParams;
+import com.android.billingclient.api.QueryPurchasesParams;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -604,6 +605,127 @@ public class AyzoPlayBillingPlugin
                     "debugMessage",
                     launchResult
                         .getDebugMessage()
+                );
+
+                call.resolve(
+                    response
+                );
+            }
+        );
+    }
+
+    @PluginMethod
+    public void getActiveSubscriptions(
+        PluginCall call
+    ) {
+        runWhenReady(
+            call,
+            () ->
+                queryActiveSubscriptions(
+                    call
+                )
+        );
+    }
+
+    private void queryActiveSubscriptions(
+        PluginCall call
+    ) {
+        QueryPurchasesParams params =
+            QueryPurchasesParams
+                .newBuilder()
+                .setProductType(
+                    BillingClient
+                        .ProductType
+                        .SUBS
+                )
+                .build();
+
+        billingClient.queryPurchasesAsync(
+            params,
+            (
+                billingResult,
+                purchases
+            ) -> {
+                if (
+                    billingResult.getResponseCode()
+                    != BillingClient
+                        .BillingResponseCode
+                        .OK
+                ) {
+                    call.reject(
+                        "Google Play active subscription query failed."
+                    );
+                    return;
+                }
+
+                JSArray purchaseArray =
+                    new JSArray();
+
+                for (
+                    Purchase purchase :
+                    purchases
+                ) {
+                    JSObject purchaseJson =
+                        new JSObject();
+
+                    purchaseJson.put(
+                        "purchaseToken",
+                        purchase.getPurchaseToken()
+                    );
+
+                    JSArray products =
+                        new JSArray();
+
+                    for (
+                        String product :
+                        purchase.getProducts()
+                    ) {
+                        products.put(
+                            product
+                        );
+                    }
+
+                    purchaseJson.put(
+                        "products",
+                        products
+                    );
+
+                    purchaseJson.put(
+                        "purchaseState",
+                        purchase.getPurchaseState()
+                    );
+
+                    purchaseJson.put(
+                        "acknowledged",
+                        purchase.isAcknowledged()
+                    );
+
+                    purchaseJson.put(
+                        "purchaseTime",
+                        purchase.getPurchaseTime()
+                    );
+
+                    if (
+                        purchase.getOrderId()
+                        != null
+                    ) {
+                        purchaseJson.put(
+                            "orderId",
+                            purchase.getOrderId()
+                        );
+                    }
+
+                    purchaseArray.put(
+                        purchaseJson
+                    );
+                }
+
+                JSObject response =
+                    new JSObject();
+
+                response.put(
+                    "purchases",
+                    purchaseArray
                 );
 
                 call.resolve(
