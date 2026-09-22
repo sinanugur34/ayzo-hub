@@ -278,9 +278,12 @@ export async function checkGooglePlayPublisherAccess() {
   const token =
     await accessToken();
 
+  const probeToken =
+    "AYZO_WIF_HEALTH_PROBE_INVALID_TOKEN";
+
   const response =
     await fetch(
-      `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/subscriptions?pageSize=1`,
+      `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/purchases/subscriptionsv2/tokens/${probeToken}`,
       {
         headers: {
           Authorization:
@@ -291,6 +294,22 @@ export async function checkGooglePlayPublisherAccess() {
           "no-store",
       }
     );
+
+  /*
+   * A deliberately invalid purchase token should not succeed.
+   * 400/404 proves that Google accepted our authentication and
+   * reached the Purchases API. 401/403 means auth/authorization
+   * is still broken.
+   */
+  if (
+    response.status === 400 ||
+    response.status === 404
+  ) {
+    return {
+      ok: true as const,
+      publisherApiReachable: true as const,
+    };
+  }
 
   if (!response.ok) {
     throw new Error(
