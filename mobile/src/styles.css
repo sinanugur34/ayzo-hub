@@ -1004,3 +1004,261 @@ button {
   cursor: wait;
   opacity: 0.55;
 }
+
+/* AYZO mobile profile / settings */
+
+.account-page {
+  background:
+    radial-gradient(
+      circle at 50% -8%,
+      rgba(139, 92, 246, 0.16),
+      transparent 34%
+    ),
+    #050507;
+}
+
+.account-page-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.account-page-header h1 {
+  margin: 5px 0 0;
+  font-size: 27px;
+  line-height: 1;
+}
+
+.account-back-button {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #292531;
+  border-radius: 13px;
+  color: #f5f1ff;
+  background: #0d0c12;
+  font-size: 29px;
+  line-height: 1;
+}
+
+.profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #282431;
+  border-radius: 20px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(21, 18, 29, 0.98),
+      rgba(10, 9, 14, 0.98)
+    );
+}
+
+.profile-avatar {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  flex-shrink: 0;
+  border: 1px solid #46366b;
+  border-radius: 17px;
+  color: #ddd2ff;
+  background:
+    linear-gradient(
+      135deg,
+      #5b21b6,
+      #2e1065
+    );
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.profile-identity {
+  min-width: 0;
+}
+
+.profile-identity strong,
+.profile-identity span {
+  display: block;
+}
+
+.profile-identity strong {
+  font-size: 15px;
+}
+
+.profile-identity span {
+  overflow: hidden;
+  margin-top: 5px;
+  color: #898491;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-card,
+.account-menu {
+  margin-top: 14px;
+  overflow: hidden;
+  border: 1px solid #282431;
+  border-radius: 18px;
+  background: #0c0b10;
+}
+
+.account-card {
+  padding: 16px;
+}
+
+.account-card-heading,
+.account-stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.account-card-heading span,
+.account-stat-row span {
+  color: #807b87;
+  font-size: 11px;
+}
+
+.account-card-heading strong {
+  color: #b79cff;
+  font-size: 13px;
+}
+
+.account-stat-row {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #201d27;
+}
+
+.account-stat-row strong {
+  font-size: 12px;
+}
+
+.account-menu-row {
+  display: flex;
+  width: 100%;
+  min-height: 68px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 0;
+  border-bottom: 1px solid #201d27;
+  padding: 14px 16px;
+  text-align: left;
+  color: #f4f0fb;
+  background: transparent;
+}
+
+.account-menu-row:last-child {
+  border-bottom: 0;
+}
+
+.account-menu-row.static {
+  cursor: default;
+}
+
+.account-menu-row strong,
+.account-menu-row span {
+  display: block;
+}
+
+.account-menu-row strong {
+  font-size: 12px;
+}
+
+.account-menu-row div > span {
+  margin-top: 4px;
+  color: #797480;
+  font-size: 9px;
+}
+
+.account-chevron {
+  color: #8f82a8;
+  font-size: 24px;
+}
+
+.status-dot-label {
+  flex-shrink: 0;
+  color: #63e6a4;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.settings-danger-zone {
+  margin-top: 22px;
+}
+
+.sign-out-button {
+  width: 100%;
+  height: 48px;
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: 14px;
+  color: #fca5a5;
+  background: rgba(127, 29, 29, 0.10);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.bottom-nav button:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+
+.account-section {
+  margin-top: 22px;
+}
+
+.account-section-title {
+  margin: 0 4px 8px;
+  color: #6f6a77;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.14em;
+}
+
+.account-value {
+  flex-shrink: 0;
+  color: #9f95aa;
+  font-size: 10px;
+}
+
+.about-card {
+  margin-top: 14px;
+  padding: 22px;
+  border: 1px solid #282431;
+  border-radius: 18px;
+  text-align: center;
+  background: #0c0b10;
+}
+
+.about-logo {
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+  margin-bottom: 18px;
+}
+
+.about-card strong {
+  display: block;
+  font-size: 15px;
+}
+
+.about-card p {
+  margin: 10px auto;
+  max-width: 300px;
+  color: #85808d;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.about-card span {
+  color: #625d69;
+  font-size: 9px;
+}

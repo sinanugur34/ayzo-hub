@@ -54,7 +54,11 @@ function formatCapabilityLabel(value: string) {
     .replace(/^./, (letter) => letter.toUpperCase());
 }
 
-function Dashboard() {
+function Dashboard({
+  onOpenProfile,
+}: {
+  onOpenProfile: () => void;
+}) {
   const [activeNav, setActiveNav] = useState<
     "home" | "explore" | "analyze" | "alerts" | "profile"
   >("home");
@@ -1055,12 +1059,7 @@ function Dashboard() {
           className={activeNav === "profile" ? "active" : ""}
           onClick={() => {
             setActiveNav("profile");
-            document
-              .getElementById("profile")
-              ?.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-              });
+            onOpenProfile();
           }}
         >
           <span>○</span>
@@ -1072,6 +1071,441 @@ function Dashboard() {
 }
 
 
+
+
+function ProfileScreen({
+  onBack,
+  onOpenSettings,
+  onOpenSecurity,
+  onOpenAbout,
+  onOpenSubscription,
+  onSignOut,
+}: {
+  onBack: () => void;
+  onOpenSettings: () => void;
+  onOpenSecurity: () => void;
+  onOpenAbout: () => void;
+  onOpenSubscription: () => void;
+  onSignOut: () => Promise<void>;
+}) {
+  const [email, setEmail] =
+    useState("");
+
+  const [plan, setPlan] =
+    useState<"free" | "pro" | "advanced" | null>(
+      null
+    );
+
+  const [quota, setQuota] =
+    useState<MobileQuotaStatus | null>(
+      null
+    );
+
+  const [signingOut, setSigningOut] =
+    useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void supabase.auth
+      .getUser()
+      .then(({ data }) => {
+        if (
+          !cancelled &&
+          data.user?.email
+        ) {
+          setEmail(data.user.email);
+        }
+      });
+
+    void getMobileAccountStatus()
+      .then((status) => {
+        if (cancelled) {
+          return;
+        }
+
+        setPlan(status.plan);
+        setQuota(status.quota);
+      })
+      .catch((error) => {
+        console.error(
+          "AYZO profile status query failed.",
+          error
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const planLabel =
+    plan === "advanced"
+      ? "Advanced"
+      : plan === "pro"
+        ? "Pro"
+        : "Free";
+
+  return (
+    <main className="app account-page">
+      <header className="account-page-header">
+        <button
+          className="account-back-button"
+          onClick={onBack}
+          aria-label="Back to home"
+        >
+          ‹
+        </button>
+
+        <div>
+          <div className="eyebrow">
+            ACCOUNT
+          </div>
+          <h1>Profile</h1>
+        </div>
+      </header>
+
+      <section className="profile-hero">
+        <div className="profile-avatar">
+          {email
+            ? email
+                .slice(0, 1)
+                .toUpperCase()
+            : "A"}
+        </div>
+
+        <div className="profile-identity">
+          <strong>AYZO Account</strong>
+          <span>
+            {email || "Signed in securely"}
+          </span>
+        </div>
+      </section>
+
+      <section className="account-card">
+        <div className="account-card-heading">
+          <span>Current plan</span>
+          <strong>{planLabel}</strong>
+        </div>
+
+        {quota && (
+          <div className="account-stat-row">
+            <span>
+              Analyses remaining
+            </span>
+            <strong>
+              {quota.remaining} / {quota.limit}
+            </strong>
+          </div>
+        )}
+      </section>
+
+      <section className="account-section">
+        <div className="account-section-title">
+          ACCOUNT
+        </div>
+
+        <div className="account-menu">
+          <button
+            className="account-menu-row"
+            onClick={onOpenSubscription}
+          >
+            <div>
+              <strong>Subscription</strong>
+              <span>
+                Plan, billing and upgrades
+              </span>
+            </div>
+            <span className="account-chevron">
+              ›
+            </span>
+          </button>
+
+          <button
+            className="account-menu-row"
+            onClick={onOpenSettings}
+          >
+            <div>
+              <strong>Settings</strong>
+              <span>
+                App and account preferences
+              </span>
+            </div>
+            <span className="account-chevron">
+              ›
+            </span>
+          </button>
+
+          <button
+            className="account-menu-row"
+            onClick={onOpenSecurity}
+          >
+            <div>
+              <strong>
+                Security & Session
+              </strong>
+              <span>
+                Session and account protection
+              </span>
+            </div>
+            <span className="account-chevron">
+              ›
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <section className="account-section">
+        <div className="account-section-title">
+          INFORMATION
+        </div>
+
+        <div className="account-menu">
+          <button
+            className="account-menu-row"
+            onClick={onOpenAbout}
+          >
+            <div>
+              <strong>About AYZO</strong>
+              <span>
+                Product and version information
+              </span>
+            </div>
+            <span className="account-chevron">
+              ›
+            </span>
+          </button>
+
+          <div className="account-menu-row static">
+            <div>
+              <strong>App version</strong>
+              <span>AYZO Android</span>
+            </div>
+            <span className="account-value">
+              1.0 (11)
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section className="settings-danger-zone">
+        <button
+          className="sign-out-button"
+          disabled={signingOut}
+          onClick={() => {
+            setSigningOut(true);
+
+            void onSignOut()
+              .finally(() => {
+                setSigningOut(false);
+              });
+          }}
+        >
+          {signingOut
+            ? "Signing out..."
+            : "Sign out"}
+        </button>
+      </section>
+
+      <nav className="bottom-nav">
+        <button onClick={onBack}>
+          <span>⌂</span>
+          Home
+        </button>
+
+        <button disabled>
+          <span>◇</span>
+          Explore
+        </button>
+
+        <button
+          className="center-action"
+          onClick={onBack}
+        >
+          <span>◎</span>
+          Analyze
+        </button>
+
+        <button disabled>
+          <span>♧</span>
+          Alerts
+        </button>
+
+        <button className="active">
+          <span>○</span>
+          Profile
+        </button>
+      </nav>
+    </main>
+  );
+}
+
+function SimpleAccountScreen({
+  eyebrow,
+  title,
+  children,
+  onBack,
+}: {
+  eyebrow: string;
+  title: string;
+  children: React.ReactNode;
+  onBack: () => void;
+}) {
+  return (
+    <main className="app account-page">
+      <header className="account-page-header">
+        <button
+          className="account-back-button"
+          onClick={onBack}
+          aria-label="Back"
+        >
+          ‹
+        </button>
+
+        <div>
+          <div className="eyebrow">
+            {eyebrow}
+          </div>
+          <h1>{title}</h1>
+        </div>
+      </header>
+
+      {children}
+    </main>
+  );
+}
+
+function SettingsScreen({
+  onBack,
+}: {
+  onBack: () => void;
+}) {
+  return (
+    <SimpleAccountScreen
+      eyebrow="PROFILE"
+      title="Settings"
+      onBack={onBack}
+    >
+      <section className="account-menu">
+        <div className="account-menu-row static">
+          <div>
+            <strong>Theme</strong>
+            <span>
+              AYZO dark interface
+            </span>
+          </div>
+          <span className="account-value">
+            Dark
+          </span>
+        </div>
+
+        <div className="account-menu-row static">
+          <div>
+            <strong>Network</strong>
+            <span>
+              Select networks from Home
+            </span>
+          </div>
+          <span className="account-value">
+            Enabled
+          </span>
+        </div>
+      </section>
+    </SimpleAccountScreen>
+  );
+}
+
+function SecurityScreen({
+  onBack,
+}: {
+  onBack: () => void;
+}) {
+  return (
+    <SimpleAccountScreen
+      eyebrow="PROFILE"
+      title="Security"
+      onBack={onBack}
+    >
+      <section className="account-menu">
+        <div className="account-menu-row static">
+          <div>
+            <strong>
+              Session validation
+            </strong>
+            <span>
+              Automatic secure validation
+            </span>
+          </div>
+          <span className="status-dot-label">
+            Active
+          </span>
+        </div>
+
+        <div className="account-menu-row static">
+          <div>
+            <strong>
+              Idle session protection
+            </strong>
+            <span>
+              Session expires after inactivity
+            </span>
+          </div>
+          <span className="status-dot-label">
+            Protected
+          </span>
+        </div>
+
+        <div className="account-menu-row static">
+          <div>
+            <strong>Authentication</strong>
+            <span>
+              Google or secure email sign-in
+            </span>
+          </div>
+          <span className="status-dot-label">
+            Enabled
+          </span>
+        </div>
+      </section>
+    </SimpleAccountScreen>
+  );
+}
+
+function AboutScreen({
+  onBack,
+}: {
+  onBack: () => void;
+}) {
+  return (
+    <SimpleAccountScreen
+      eyebrow="AYZO"
+      title="About"
+      onBack={onBack}
+    >
+      <section className="about-card">
+        <img
+          className="about-logo"
+          src="/ayzo-logo.png"
+          alt="AYZO"
+        />
+
+        <strong>
+          Evidence-first on-chain intelligence.
+        </strong>
+
+        <p>
+          Analyze wallets, tokens, funding paths
+          and connected entities with
+          evidence-backed intelligence.
+        </p>
+
+        <span>
+          AYZO Android 1.0 · Build 11
+        </span>
+      </section>
+    </SimpleAccountScreen>
+  );
+}
 
 const SESSION_ACTIVITY_KEY =
   "ayzo:last-active-at";
@@ -1108,7 +1542,15 @@ function sessionActivityExpired() {
 
 function App() {
   const [screen, setScreen] = useState<
-    "checking" | "welcome" | "signin" | "signup" | "dashboard"
+    | "checking"
+    | "welcome"
+    | "signin"
+    | "signup"
+    | "dashboard"
+    | "profile"
+    | "settings"
+    | "security"
+    | "about"
   >("checking");
 
   const [authError, setAuthError] =
@@ -1281,6 +1723,18 @@ function App() {
     };
   }, []);
 
+  async function signOutAndReturn() {
+    localStorage.removeItem(
+      SESSION_ACTIVITY_KEY
+    );
+
+    await supabase.auth.signOut({
+      scope: "local",
+    });
+
+    setScreen("welcome");
+  }
+
   async function continueWithEmail(
     isSignup: boolean
   ) {
@@ -1344,7 +1798,68 @@ function App() {
   }
 
   if (screen === "dashboard") {
-    return <Dashboard />;
+    return (
+      <Dashboard
+        onOpenProfile={() =>
+          setScreen("profile")
+        }
+      />
+    );
+  }
+
+  if (screen === "profile") {
+    return (
+      <ProfileScreen
+        onBack={() =>
+          setScreen("dashboard")
+        }
+        onOpenSettings={() =>
+          setScreen("settings")
+        }
+        onOpenSecurity={() =>
+          setScreen("security")
+        }
+        onOpenAbout={() =>
+          setScreen("about")
+        }
+        onOpenSubscription={() =>
+          setScreen("dashboard")
+        }
+        onSignOut={
+          signOutAndReturn
+        }
+      />
+    );
+  }
+
+  if (screen === "settings") {
+    return (
+      <SettingsScreen
+        onBack={() =>
+          setScreen("profile")
+        }
+      />
+    );
+  }
+
+  if (screen === "security") {
+    return (
+      <SecurityScreen
+        onBack={() =>
+          setScreen("profile")
+        }
+      />
+    );
+  }
+
+  if (screen === "about") {
+    return (
+      <AboutScreen
+        onBack={() =>
+          setScreen("profile")
+        }
+      />
+    );
   }
 
   if (screen === "signin" || screen === "signup") {
