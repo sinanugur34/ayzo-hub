@@ -43,6 +43,7 @@ import {
   askMobileAyzo,
   type MobileAskAyzoTurn,
 } from "./mobileAskAyzo";
+import DraggableAskAyzo from "./DraggableAskAyzo";
 
 import {
   clearMobileHistory,
@@ -802,42 +803,32 @@ function Dashboard({
               result={analysisResult}
             />
 
-            <section className="ask-ayzo-entry-card">
-              <div>
-                <div className="eyebrow">
-                  ASK AYZO
+            {analysisResult.plan !==
+                "pro" &&
+            analysisResult.plan !==
+                "advanced" && (
+              <section className="ask-ayzo-entry-card">
+                <div>
+                  <div className="eyebrow">
+                    ASK AYZO
+                  </div>
+
+                  <strong>
+                    Ask about this analysis
+                  </strong>
+
+                  <span>
+                    Ask AYZO is available with Pro or Advanced.
+                  </span>
                 </div>
 
-                <strong>
-                  Ask about this analysis
-                </strong>
-
-                <span>
-                  Current network, address and evidence are connected automatically.
-                </span>
-              </div>
-
-              <button
-                disabled={
-                  analysisResult.plan !==
-                    "pro" &&
-                  analysisResult.plan !==
-                    "advanced"
-                }
-                onClick={() =>
-                  setAskAyzoOpen(
-                    true
-                  )
-                }
-              >
-                {analysisResult.plan ===
-                    "pro" ||
-                analysisResult.plan ===
-                    "advanced"
-                  ? "Open Ask AYZO"
-                  : "Pro / Advanced"}
-              </button>
-            </section>
+                <button
+                  disabled
+                >
+                  Pro / Advanced
+                </button>
+              </section>
+            )}
           </>
         )}
       </section>
@@ -1158,6 +1149,22 @@ function Dashboard({
           Profile
         </button>
       </nav>
+
+      {analysisResult &&
+      (
+        analysisResult.plan ===
+          "pro" ||
+        analysisResult.plan ===
+          "advanced"
+      ) && (
+        <DraggableAskAyzo
+          onOpen={() =>
+            setAskAyzoOpen(
+              true
+            )
+          }
+        />
+      )}
     </main>
   );
 }
