@@ -12,7 +12,7 @@ import type {
   VerifiedGooglePlaySubscription,
 } from "@/lib/billing/googlePlaySubscriptionCore";
 
-function purchaseTokenReference(
+export function googlePlayPurchaseTokenReference(
   purchaseToken: string
 ) {
   const hash =
@@ -50,7 +50,7 @@ export async function persistGooglePlaySubscription({
     createAdminClient();
 
   const providerSubscriptionId =
-    purchaseTokenReference(
+    googlePlayPurchaseTokenReference(
       purchaseToken
     );
 

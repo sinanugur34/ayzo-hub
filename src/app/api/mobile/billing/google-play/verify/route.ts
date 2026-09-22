@@ -16,6 +16,10 @@ import {
 } from "@/lib/billing/googlePlayAccountBinding";
 
 import {
+  ensureGooglePlayBillingCustomer,
+} from "@/lib/billing/googlePlayBillingCustomer";
+
+import {
   persistGooglePlaySubscription,
 } from "@/lib/billing/googlePlaySubscriptionProcessor";
 
@@ -164,6 +168,23 @@ export async function POST(
       },
       {
         status: 409,
+      }
+    );
+  }
+
+  try {
+    await ensureGooglePlayBillingCustomer(
+      auth.identity.userId
+    );
+  } catch {
+    return Response.json(
+      {
+        ok: false,
+        error:
+          "Google Play account mapping could not be stored.",
+      },
+      {
+        status: 500,
       }
     );
   }
