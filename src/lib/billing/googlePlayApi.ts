@@ -312,8 +312,55 @@ export async function checkGooglePlayPublisherAccess() {
   }
 
   if (!response.ok) {
+    let reason =
+      "UNKNOWN";
+
+    try {
+      const payload:
+        unknown =
+          await response.json();
+
+      if (
+        isRecord(payload) &&
+        isRecord(payload.error)
+      ) {
+        const message =
+          typeof payload.error.message ===
+            "string"
+            ? payload.error.message
+            : "";
+
+        const errors =
+          Array.isArray(payload.error.errors)
+            ? payload.error.errors
+            : [];
+
+        const first =
+          errors.length > 0 &&
+          isRecord(errors[0])
+            ? errors[0]
+            : null;
+
+        const apiReason =
+          first &&
+          typeof first.reason ===
+            "string"
+            ? first.reason
+            : "";
+
+        reason =
+          [apiReason, message]
+            .filter(Boolean)
+            .join(":")
+            .slice(0, 240) ||
+          "UNKNOWN";
+      }
+    } catch {
+      // keep bounded fallback
+    }
+
     throw new Error(
-      `GOOGLE_PLAY_PUBLISHER_HEALTH_FAILED_${response.status}`
+      `GOOGLE_PLAY_PUBLISHER_HEALTH_FAILED_${response.status}_${reason}`
     );
   }
 
