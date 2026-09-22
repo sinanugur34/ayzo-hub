@@ -235,6 +235,97 @@ export async function consumeMobileAnalysisQuota(
   }
 }
 
+export async function getMobileAnalysisQuotaStatus(
+  userId: string,
+  plan: QuotaPlan
+): Promise<MobileAnalysisQuotaState> {
+  const policy =
+    getAnalysisQuotaPolicy(
+      plan
+    );
+
+  const redis =
+    getRedis();
+
+  if (!redis) {
+    return {
+      plan,
+      allowed: true,
+      available: false,
+      limit: policy.limit,
+      remaining: null,
+      resetAt: null,
+    };
+  }
+
+  const key =
+    quotaKey(
+      userId,
+      plan
+    );
+
+  try {
+    const [
+      raw,
+      ttl,
+    ] =
+      await Promise.all([
+        redis.get(
+          key
+        ),
+        redis.ttl(
+          key
+        ),
+      ]);
+
+    const count =
+      countValue(
+        raw
+      );
+
+    const effectiveCount =
+      Math.min(
+        count,
+        policy.limit
+      );
+
+    return {
+      plan,
+      allowed:
+        count <
+        policy.limit,
+
+      available: true,
+
+      limit:
+        policy.limit,
+
+      remaining:
+        Math.max(
+          0,
+          policy.limit -
+            effectiveCount
+        ),
+
+      resetAt:
+        count > 0
+          ? resetAtFromTtl(
+              ttl
+            )
+          : null,
+    };
+  } catch {
+    return {
+      plan,
+      allowed: true,
+      available: false,
+      limit: policy.limit,
+      remaining: null,
+      resetAt: null,
+    };
+  }
+}
+
 export async function refundMobileAnalysisQuota(
   userId: string,
   quota: MobileAnalysisQuotaState
