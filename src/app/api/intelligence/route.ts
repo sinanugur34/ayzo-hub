@@ -39,6 +39,11 @@ import {
   checkRateLimit,
   getClientIp,
 } from "@/lib/rateLimit";
+
+import {
+  acquireAnalysisLoadGuard,
+  type AnalysisLoadLease,
+} from "@/lib/analysisLoadGuard";
 import { readJsonObjectBody } from "@/lib/requestBody";
 
 const EVM_ADDRESS =
@@ -52,13 +57,18 @@ export async function POST(request: Request) {
       >
     > | null = null;
 
+  let loadLease:
+    AnalysisLoadLease |
+    null = null;
+
   const isDevelopmentTestRequest =
     process.env.NODE_ENV !== "production" &&
     request.headers.get("x-ayzo-test-request") === "smoke";
 
-  if (!isDevelopmentTestRequest) {
-    const clientIp = getClientIp(request);
+  const clientIp =
+    getClientIp(request);
 
+  if (!isDevelopmentTestRequest) {
     const rateLimit = await checkRateLimit({
       key: `intelligence:${clientIp}`,
       limit: 10,
@@ -196,6 +206,55 @@ export async function POST(request: Request) {
         },
         { status: 400 }
       );
+    }
+
+    if (!isDevelopmentTestRequest) {
+      const loadGuard =
+        await acquireAnalysisLoadGuard({
+          clientKey:
+            `web:${clientIp}`,
+        });
+
+      if (!loadGuard.ok) {
+        return Response.json(
+          {
+            ok: false,
+            code:
+              loadGuard.reason ===
+              "client_busy"
+                ? "ANALYSIS_ALREADY_RUNNING"
+                : loadGuard.reason ===
+                    "global_busy"
+                  ? "SYSTEM_BUSY"
+                  : "LOAD_GUARD_UNAVAILABLE",
+            error:
+              loadGuard.reason ===
+              "client_busy"
+                ? "Too many analyses are already running for this client."
+                : "AYZO is temporarily busy. Please retry shortly.",
+            retryAfterSeconds:
+              loadGuard.retryAfterSeconds,
+          },
+          {
+            status:
+              loadGuard.reason ===
+              "client_busy"
+                ? 429
+                : 503,
+            headers: {
+              "Retry-After":
+                String(
+                  loadGuard.retryAfterSeconds
+                ),
+              "Cache-Control":
+                "no-store",
+            },
+          }
+        );
+      }
+
+      loadLease =
+        loadGuard.lease;
     }
 
     const testFailure =
@@ -407,5 +466,7 @@ export async function POST(request: Request) {
       },
       { status: 500 }
     );
+  } finally {
+    await loadLease?.release();
   }
 }
