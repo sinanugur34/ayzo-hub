@@ -75,10 +75,12 @@ button {
   min-width: 0;
 }
 
-.brand {
-  font-size: 22px;
-  font-weight: 850;
-  letter-spacing: 0.11em;
+.brand-logo {
+  display: block;
+  width: 72px;
+  height: 30px;
+  object-fit: contain;
+  object-position: left center;
 }
 
 .subtitle {
