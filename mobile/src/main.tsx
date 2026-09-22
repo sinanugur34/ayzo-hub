@@ -624,7 +624,11 @@ function Dashboard() {
     <main className="app">
       <header className="topbar">
         <div className="brand-block">
-          <div className="brand">AYZO</div>
+          <img
+            className="brand-logo"
+            src="/ayzo-logo.png"
+            alt="AYZO"
+          />
           <div className="subtitle">
             EVIDENCE FIRST. ON-CHAIN INTELLIGENCE.
           </div>
