@@ -677,6 +677,30 @@ function Dashboard() {
                 billingInterval
               );
 
+            const isCurrentPlan =
+              analysisPlan === planId;
+
+            const isIncludedPlan =
+              analysisPlan === "advanced" &&
+              planId === "pro";
+
+            const isUpgrade =
+              analysisPlan === "pro" &&
+              planId === "advanced";
+
+            const planButtonLabel =
+              isCurrentPlan
+                ? "Current Plan"
+                : isIncludedPlan
+                  ? "Included"
+                  : isUpgrade
+                    ? "Upgrade to Advanced"
+                    : `Choose ${
+                        planId === "advanced"
+                          ? "Advanced"
+                          : "Pro"
+                      }`;
+
             return (
               <article
                 className="billing-card"
@@ -706,7 +730,9 @@ function Dashboard() {
                 <button
                   disabled={
                     billingLoading !==
-                    null
+                      null ||
+                    isCurrentPlan ||
+                    isIncludedPlan
                   }
                   onClick={() =>
                     void startUpgrade(
@@ -717,12 +743,7 @@ function Dashboard() {
                   {billingLoading ===
                   planId
                     ? "Opening Google Play..."
-                    : `Choose ${
-                        planId ===
-                        "advanced"
-                          ? "Advanced"
-                          : "Pro"
-                      }`}
+                    : planButtonLabel}
                 </button>
               </article>
             );
