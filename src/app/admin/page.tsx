@@ -221,6 +221,11 @@ export default async function AdminPage() {
 
           <div className="mt-4 flex flex-wrap gap-2">
             {signup.countries
+              .filter(
+                country =>
+                  country.code !==
+                  "unknown"
+              )
               .slice(
                 0,
                 8
