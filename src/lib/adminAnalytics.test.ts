@@ -9,7 +9,7 @@ import {
 
 const migration =
   fs.readFileSync(
-    "supabase/migrations/20260923120000_analysis_activity_ledger.sql",
+    "supabase/migrations/20260923091630_analysis_activity_ledger.sql",
     "utf8"
   );
 
