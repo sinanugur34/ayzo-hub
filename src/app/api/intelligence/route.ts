@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 
 import {
   consumeAnalysisQuota,
+  getAnalysisQuotaStatus,
   refundAnalysisQuota,
   refundAnalysisQuotaOnFailure,
 } from "@/lib/analysisQuota";
@@ -45,6 +46,11 @@ import {
   type AnalysisLoadLease,
 } from "@/lib/analysisLoadGuard";
 import { readJsonObjectBody } from "@/lib/requestBody";
+
+import {
+  readAnalysisFailureCode,
+  recordAnalysisActivity,
+} from "@/lib/adminAnalytics";
 
 const EVM_ADDRESS =
   /^0x[0-9a-fA-F]{40}$/;
@@ -293,6 +299,42 @@ export async function POST(request: Request) {
       }
 
       if (!quota.allowed) {
+        await recordAnalysisActivity({
+          userId:
+            quota.userId,
+
+          platform:
+            "web",
+
+          network:
+            resolution.networkId,
+
+          planId:
+            quota.plan,
+
+          outcome:
+            "quota_blocked",
+
+          httpStatus:
+            429,
+
+          failureCode:
+            quota.plan === "advanced"
+              ? "DAILY_ADVANCED_LIMIT"
+              : quota.plan === "pro"
+                ? "DAILY_PRO_LIMIT"
+                : "DAILY_FREE_LIMIT",
+
+          quotaLimit:
+            quota.limit,
+
+          quotaRemaining:
+            0,
+
+          quotaResetAt:
+            quota.resetAt,
+        });
+
         const retryAfterSeconds =
           quota.resetAt
             ? Math.max(
@@ -339,6 +381,72 @@ export async function POST(request: Request) {
       }
     }
 
+    const recordWebResult =
+      async (
+        status: number,
+        data: unknown
+      ) => {
+        if (
+          isDevelopmentTestRequest ||
+          !quota
+        ) {
+          return;
+        }
+
+        const failed =
+          status >= 400;
+
+        await recordAnalysisActivity({
+          userId:
+            quota.userId,
+
+          platform:
+            "web",
+
+          network:
+            resolution.networkId,
+
+          planId:
+            quota.plan,
+
+          outcome:
+            failed
+              ? "failed"
+              : "completed",
+
+          httpStatus:
+            status,
+
+          failureCode:
+            failed
+              ? readAnalysisFailureCode(
+                  data
+                )
+              : null,
+
+          quotaLimit:
+            quota.limit,
+
+          quotaRemaining:
+            failed
+              ? (
+                  await getAnalysisQuotaStatus(
+                    request
+                  )
+                ).remaining
+              : quota.remaining,
+
+          quotaResetAt:
+            failed
+              ? (
+                  await getAnalysisQuotaStatus(
+                    request
+                  )
+                ).resetAt
+              : quota.resetAt,
+        });
+      };
+
     switch (resolution.engine) {
       case "solana": {
         const result =
@@ -352,6 +460,11 @@ export async function POST(request: Request) {
           request,
           quota,
           result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
         );
 
         return Response.json(
@@ -375,6 +488,11 @@ export async function POST(request: Request) {
           result.status
         );
 
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
         return Response.json(
           result.data,
           {
@@ -394,6 +512,11 @@ export async function POST(request: Request) {
           request,
           quota,
           result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
         );
 
         return Response.json(
@@ -417,6 +540,11 @@ export async function POST(request: Request) {
           result.status
         );
 
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
         return Response.json(
           result.data,
           {
@@ -436,6 +564,11 @@ export async function POST(request: Request) {
           request,
           quota,
           result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
         );
 
         return Response.json(
