@@ -50,6 +50,22 @@ export type AdminUserFilters = {
   createdTo:
     string |
     null;
+
+  plan:
+    AdminPlanFilter |
+    null;
+
+  provider:
+    AdminProviderFilter |
+    null;
+
+  subscriptionStatus:
+    AdminSubscriptionStatusFilter |
+    null;
+
+  billingInterval:
+    AdminBillingIntervalFilter |
+    null;
 };
 
 function boundedInteger(
@@ -307,6 +323,54 @@ export function parseAdminUserFilters(
         read(
           "to"
         )
+      ),
+
+    plan:
+      enumValue(
+        read(
+          "plan"
+        ),
+        [
+          "free",
+          "pro",
+          "advanced",
+        ] as const
+      ),
+
+    provider:
+      enumValue(
+        read(
+          "provider"
+        ),
+        [
+          "creem",
+          "google_play",
+        ] as const
+      ),
+
+    subscriptionStatus:
+      enumValue(
+        read(
+          "status"
+        ),
+        [
+          "pending",
+          "active",
+          "canceling",
+          "past_due",
+          "inactive",
+        ] as const
+      ),
+
+    billingInterval:
+      enumValue(
+        read(
+          "interval"
+        ),
+        [
+          "monthly",
+          "annual",
+        ] as const
       ),
   };
 }

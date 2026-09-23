@@ -7,6 +7,10 @@ import {
 import {
   getAdminSignupInsights,
 } from "@/lib/adminSignupInsights";
+import {
+  getAdminBillingInsights,
+} from "@/lib/adminBillingInsights";
+
 
 export const dynamic =
   "force-dynamic";
@@ -47,10 +51,12 @@ export default async function AdminPage() {
   const [
     snapshot,
     signup,
+    billing,
   ] =
     await Promise.all([
       getAdminDashboardSnapshot(),
       getAdminSignupInsights(),
+      getAdminBillingInsights(),
     ]);
 
   const signupTracked =
@@ -65,6 +71,24 @@ export default async function AdminPage() {
             100
         )
       : 0;
+
+  const mrrEquivalent =
+    new Intl.NumberFormat(
+      "en-US",
+      {
+        style:
+          "currency",
+        currency:
+          "USD",
+        minimumFractionDigits:
+          2,
+        maximumFractionDigits:
+          2,
+      }
+    ).format(
+      billing.mrrEquivalentUsdCents /
+      100
+    );
 
   const resolvedAnalyses =
     snapshot.activity.completed7d +
@@ -246,6 +270,86 @@ export default async function AdminPage() {
                 )
               )}
           </div>
+        </div>
+      </section>
+
+      <section className="mt-8">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div className="text-xs font-medium tracking-[0.16em] text-zinc-500">
+              BILLING INTELLIGENCE
+            </div>
+
+            <h2 className="mt-2 text-xl font-semibold">
+              Commercial overview
+            </h2>
+          </div>
+
+          <Link
+            href="/admin/users?plan=pro"
+            className="text-xs font-medium text-violet-300 transition hover:text-violet-200"
+          >
+            Explore paid users →
+          </Link>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Metric
+            label="Paid users"
+            value={
+              billing.activeSubscriptions
+            }
+            detail="Active or canceling with paid access"
+          />
+
+          <Metric
+            label="MRR equivalent"
+            value={
+              mrrEquivalent
+            }
+            detail="Annual plans normalized monthly; before fees, tax and refunds"
+          />
+
+          <Metric
+            label="Pro"
+            value={
+              billing.pro
+            }
+          />
+
+          <Metric
+            label="Advanced"
+            value={
+              billing.advanced
+            }
+          />
+
+          <Metric
+            label="Monthly"
+            value={
+              billing.monthly
+            }
+          />
+
+          <Metric
+            label="Annual"
+            value={
+              billing.annual
+            }
+          />
+
+          <Metric
+            label="Canceling"
+            value={
+              billing.canceling
+            }
+          />
+
+          <Metric
+            label="Providers"
+            value={`${billing.creem} / ${billing.googlePlay}`}
+            detail="Creem / Google Play"
+          />
         </div>
       </section>
 

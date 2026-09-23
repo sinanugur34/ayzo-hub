@@ -125,7 +125,7 @@ export default async function AdminUsersPage({
         </h1>
 
         <p className="mt-2 text-sm text-zinc-500">
-          Server-side AYZO account search with signup source filters.
+          Server-side AYZO account search with signup and billing filters.
         </p>
       </div>
 
@@ -318,6 +318,126 @@ export default async function AdminUsersPage({
 
         <label className="block">
           <span className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
+            Plan
+          </span>
+
+          <select
+            name="plan"
+            defaultValue={
+              readRaw(
+                rawParams,
+                "plan"
+              )
+            }
+            className="mt-2 w-full rounded-xl border border-zinc-800 bg-black px-3 py-2 text-sm text-zinc-200 outline-none transition focus:border-violet-500"
+          >
+            <option value="">
+              All
+            </option>
+            <option value="free">
+              Free
+            </option>
+            <option value="pro">
+              Pro
+            </option>
+            <option value="advanced">
+              Advanced
+            </option>
+          </select>
+        </label>
+
+        <label className="block">
+          <span className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
+            Provider
+          </span>
+
+          <select
+            name="provider"
+            defaultValue={
+              readRaw(
+                rawParams,
+                "provider"
+              )
+            }
+            className="mt-2 w-full rounded-xl border border-zinc-800 bg-black px-3 py-2 text-sm text-zinc-200 outline-none transition focus:border-violet-500"
+          >
+            <option value="">
+              All
+            </option>
+            <option value="creem">
+              Creem
+            </option>
+            <option value="google_play">
+              Google Play
+            </option>
+          </select>
+        </label>
+
+        <label className="block">
+          <span className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
+            Subscription status
+          </span>
+
+          <select
+            name="status"
+            defaultValue={
+              readRaw(
+                rawParams,
+                "status"
+              )
+            }
+            className="mt-2 w-full rounded-xl border border-zinc-800 bg-black px-3 py-2 text-sm text-zinc-200 outline-none transition focus:border-violet-500"
+          >
+            <option value="">
+              All
+            </option>
+            <option value="pending">
+              Pending
+            </option>
+            <option value="active">
+              Active
+            </option>
+            <option value="canceling">
+              Canceling
+            </option>
+            <option value="past_due">
+              Past due
+            </option>
+            <option value="inactive">
+              Inactive
+            </option>
+          </select>
+        </label>
+
+        <label className="block">
+          <span className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
+            Billing interval
+          </span>
+
+          <select
+            name="interval"
+            defaultValue={
+              readRaw(
+                rawParams,
+                "interval"
+              )
+            }
+            className="mt-2 w-full rounded-xl border border-zinc-800 bg-black px-3 py-2 text-sm text-zinc-200 outline-none transition focus:border-violet-500"
+          >
+            <option value="">
+              All
+            </option>
+            <option value="monthly">
+              Monthly
+            </option>
+            <option value="annual">
+              Annual
+            </option>
+          </select>
+        </label>
+
+        <label className="block">
+          <span className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
             Per page
           </span>
 
@@ -382,11 +502,27 @@ export default async function AdminUsersPage({
 
       <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-800">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1180px] text-left text-sm">
+          <table className="w-full min-w-[1660px] text-left text-sm">
             <thead className="bg-zinc-950 text-[10px] uppercase tracking-[0.14em] text-zinc-600">
               <tr>
                 <th className="px-5 py-4">
                   User
+                </th>
+
+                <th className="px-5 py-4">
+                  Plan
+                </th>
+
+                <th className="px-5 py-4">
+                  Provider
+                </th>
+
+                <th className="px-5 py-4">
+                  Sub status
+                </th>
+
+                <th className="px-5 py-4">
+                  Billing
                 </th>
 
                 <th className="px-5 py-4">
@@ -436,6 +572,43 @@ export default async function AdminUsersPage({
                       <div className="mt-1 font-mono text-[10px] text-zinc-700">
                         {user.id}
                       </div>
+                    </td>
+
+                    <td className="px-5 py-4">
+                      <span className="font-medium text-zinc-200">
+                        {
+                          user
+                            .billing
+                            .currentPlan
+                        }
+                      </span>
+                    </td>
+
+                    <td className="px-5 py-4 text-zinc-300">
+                      {
+                        user
+                          .billing
+                          .provider ??
+                        "—"
+                      }
+                    </td>
+
+                    <td className="px-5 py-4 text-zinc-300">
+                      {
+                        user
+                          .billing
+                          .status ??
+                        "—"
+                      }
+                    </td>
+
+                    <td className="px-5 py-4 text-zinc-300">
+                      {
+                        user
+                          .billing
+                          .interval ??
+                        "—"
+                      }
                     </td>
 
                     <td className="px-5 py-4 text-zinc-300">
@@ -504,7 +677,7 @@ export default async function AdminUsersPage({
                 0 && (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={12}
                     className="px-5 py-12 text-center text-sm text-zinc-600"
                   >
                     No users match the selected filters.
