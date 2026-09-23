@@ -142,6 +142,42 @@ export default async function AdminUserPage({
 
       <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Card
+          label="Signup channel"
+          value={
+            snapshot.signupSource?.channel ??
+            "unknown"
+          }
+        />
+
+        <Card
+          label="Signup device"
+          value={
+            snapshot.signupSource?.deviceClass ??
+            "unknown"
+          }
+        />
+
+        <Card
+          label="Signup OS"
+          value={
+            snapshot.signupSource?.osFamily ??
+            "unknown"
+          }
+        />
+
+        <Card
+          label="Signup recorded"
+          value={
+            formatDate(
+              snapshot.signupSource?.createdAt ??
+              null
+            )
+          }
+        />
+      </section>
+
+      <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Card
           label="Plan"
           value={
             snapshot

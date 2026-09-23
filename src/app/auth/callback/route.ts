@@ -23,6 +23,10 @@ import {
   deliverWelcomeEmailIfEligible,
 } from "@/lib/account/welcomeEmail";
 
+import {
+  recordSignupSource,
+} from "@/lib/account/signupSourceServer";
+
 function safeNext(
   value: string | null
 ) {
@@ -219,6 +223,23 @@ export async function GET(
 
     after(
       async () => {
+        try {
+          await recordSignupSource({
+            userId,
+            channel:
+              "web",
+            userAgent:
+              request.headers.get(
+                "user-agent"
+              ),
+          });
+        } catch {
+          /*
+           * Signup-source analytics must
+           * never break authentication.
+           */
+        }
+
         try {
           await deliverWelcomeEmailIfEligible(
             userId

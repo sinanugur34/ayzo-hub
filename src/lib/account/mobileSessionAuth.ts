@@ -21,6 +21,10 @@ import {
   readBearerToken,
 } from "@/lib/account/mobileSessionAuthCore";
 
+import {
+  recordSignupSource,
+} from "@/lib/account/signupSourceServer";
+
 type MobileSessionErrorCode =
   | "AUTH_REQUIRED"
   | "INVALID_DEVICE_TOKEN"
@@ -199,6 +203,23 @@ export async function registerMobileSession(
         userId,
         deviceToken,
       });
+
+    try {
+      await recordSignupSource({
+        userId,
+        channel:
+          "android",
+        userAgent:
+          request.headers.get(
+            "user-agent"
+          ),
+      });
+    } catch {
+      /*
+       * Signup-source analytics must
+       * never break authentication.
+       */
+    }
 
     return {
       ok: true as const,
