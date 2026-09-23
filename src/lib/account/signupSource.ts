@@ -156,3 +156,72 @@ export function normalizeSignupCountryCode(
     ? normalized
     : null;
 }
+
+export function isInitialSignupSession({
+  createdAt,
+  lastSignInAt,
+}: {
+  createdAt:
+    string |
+    null |
+    undefined;
+
+  lastSignInAt:
+    string |
+    null |
+    undefined;
+}) {
+  if (
+    !createdAt ||
+    !lastSignInAt
+  ) {
+    return false;
+  }
+
+  const created =
+    Date.parse(
+      createdAt
+    );
+
+  const signedIn =
+    Date.parse(
+      lastSignInAt
+    );
+
+  if (
+    !Number.isFinite(
+      created
+    ) ||
+    !Number.isFinite(
+      signedIn
+    )
+  ) {
+    return false;
+  }
+
+  /*
+   * Supabase may create the auth user shortly before
+   * the OAuth / OTP callback is completed.
+   *
+   * Treat only an authentication close to account
+   * creation as the initial signup session.
+   *
+   * This prevents a historical account's later login
+   * from being mislabeled as its signup source.
+   */
+  const MAX_INITIAL_SIGNUP_WINDOW_MS =
+    2 *
+    60 *
+    60 *
+    1000;
+
+  const ageAtSignIn =
+    signedIn -
+    created;
+
+  return (
+    ageAtSignIn >= 0 &&
+    ageAtSignIn <=
+      MAX_INITIAL_SIGNUP_WINDOW_MS
+  );
+}

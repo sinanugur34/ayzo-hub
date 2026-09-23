@@ -25,6 +25,10 @@ import {
   recordSignupSource,
 } from "@/lib/account/signupSourceServer";
 
+import {
+  isInitialSignupSession,
+} from "@/lib/account/signupSource";
+
 type MobileSessionErrorCode =
   | "AUTH_REQUIRED"
   | "INVALID_DEVICE_TOKEN"
@@ -46,6 +50,8 @@ type VerifiedMobileIdentity = {
   userId: string;
   userEmail: string | null;
   deviceToken: string;
+  createdAt: string | null;
+  lastSignInAt: string | null;
 };
 
 function failure(
@@ -170,6 +176,14 @@ async function verifyMobileIdentity(
         ),
 
       deviceToken,
+
+      createdAt:
+        user.created_at ??
+        null,
+
+      lastSignInAt:
+        user.last_sign_in_at ??
+        null,
     },
   };
 }
@@ -194,6 +208,8 @@ export async function registerMobileSession(
     userId,
     userEmail,
     deviceToken,
+    createdAt,
+    lastSignInAt,
   } =
     verified.identity;
 
@@ -205,20 +221,28 @@ export async function registerMobileSession(
       });
 
     try {
-      await recordSignupSource({
-        userId,
-        channel:
-          "android",
-        userAgent:
-          request.headers.get(
-            "user-agent"
-          ),
+      if (
+        isInitialSignupSession({
+          createdAt,
+          lastSignInAt,
+        })
+      ) {
+        await recordSignupSource({
+          userId,
+          channel:
+            "android",
 
-        countryCode:
-          request.headers.get(
-            "x-vercel-ip-country"
-          ),
-      });
+          userAgent:
+            request.headers.get(
+              "user-agent"
+            ),
+
+          countryCode:
+            request.headers.get(
+              "x-vercel-ip-country"
+            ),
+        });
+      }
     } catch {
       /*
        * Signup-source analytics must

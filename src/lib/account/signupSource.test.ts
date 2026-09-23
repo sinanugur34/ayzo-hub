@@ -107,3 +107,72 @@ test(
     );
   }
 );
+
+test(
+  "accepts authentication close to account creation as initial signup",
+  async () => {
+    const {
+      isInitialSignupSession,
+    } =
+      await import(
+        "./signupSource"
+      );
+
+    assert.equal(
+      isInitialSignupSession({
+        createdAt:
+          "2026-09-23T10:00:00.000Z",
+
+        lastSignInAt:
+          "2026-09-23T10:03:00.000Z",
+      }),
+      true
+    );
+  }
+);
+
+test(
+  "rejects later login from being treated as signup",
+  async () => {
+    const {
+      isInitialSignupSession,
+    } =
+      await import(
+        "./signupSource"
+      );
+
+    assert.equal(
+      isInitialSignupSession({
+        createdAt:
+          "2026-09-20T10:00:00.000Z",
+
+        lastSignInAt:
+          "2026-09-23T10:00:00.000Z",
+      }),
+      false
+    );
+  }
+);
+
+test(
+  "fails closed when signup timestamps are missing",
+  async () => {
+    const {
+      isInitialSignupSession,
+    } =
+      await import(
+        "./signupSource"
+      );
+
+    assert.equal(
+      isInitialSignupSession({
+        createdAt:
+          null,
+
+        lastSignInAt:
+          null,
+      }),
+      false
+    );
+  }
+);
