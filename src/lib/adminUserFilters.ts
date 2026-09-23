@@ -310,3 +310,23 @@ export function parseAdminUserFilters(
       ),
   };
 }
+
+export type AdminPlanFilter =
+  | "free"
+  | "pro"
+  | "advanced";
+
+export type AdminProviderFilter =
+  | "creem"
+  | "google_play";
+
+export type AdminSubscriptionStatusFilter =
+  | "pending"
+  | "active"
+  | "canceling"
+  | "past_due"
+  | "inactive";
+
+export type AdminBillingIntervalFilter =
+  | "monthly"
+  | "annual";
