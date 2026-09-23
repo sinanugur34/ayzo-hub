@@ -93,6 +93,7 @@ export async function getAdminUserSnapshot(
     userResult,
     subscriptionsResult,
     activityResult,
+    signupSourceResult,
   ] =
     await Promise.all([
       admin.auth.admin
@@ -160,6 +161,19 @@ export async function getAdminUserSnapshot(
           }
         )
         .limit(100),
+
+      admin
+        .from(
+          "user_signup_source"
+        )
+        .select(
+          "signup_channel,device_class,os_family,country_code,source_version,created_at"
+        )
+        .eq(
+          "user_id",
+          userId
+        )
+        .maybeSingle(),
     ]);
 
   if (
@@ -221,6 +235,41 @@ export async function getAdminUserSnapshot(
           .last_sign_in_at ??
         null,
     },
+
+    signupSource:
+      signupSourceResult.data
+        ? {
+            channel:
+              signupSourceResult
+                .data
+                .signup_channel,
+
+            deviceClass:
+              signupSourceResult
+                .data
+                .device_class,
+
+            osFamily:
+              signupSourceResult
+                .data
+                .os_family,
+
+            countryCode:
+              signupSourceResult
+                .data
+                .country_code,
+
+            sourceVersion:
+              signupSourceResult
+                .data
+                .source_version,
+
+            createdAt:
+              signupSourceResult
+                .data
+                .created_at,
+          }
+        : null,
 
     entitlement,
 

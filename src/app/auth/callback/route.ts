@@ -23,6 +23,14 @@ import {
   deliverWelcomeEmailIfEligible,
 } from "@/lib/account/welcomeEmail";
 
+import {
+  recordSignupSource,
+} from "@/lib/account/signupSourceServer";
+
+import {
+  isInitialSignupSession,
+} from "@/lib/account/signupSource";
+
 function safeNext(
   value: string | null
 ) {
@@ -219,6 +227,51 @@ export async function GET(
 
     after(
       async () => {
+        try {
+          const {
+            data:
+              userData,
+          } =
+            await supabase.auth
+              .getUser();
+
+          const authUser =
+            userData.user;
+
+          if (
+            authUser &&
+            isInitialSignupSession({
+              createdAt:
+                authUser.created_at,
+
+              lastSignInAt:
+                authUser.last_sign_in_at ??
+                null,
+            })
+          ) {
+            await recordSignupSource({
+              userId,
+              channel:
+                "web",
+
+              userAgent:
+                request.headers.get(
+                  "user-agent"
+                ),
+
+              countryCode:
+                request.headers.get(
+                  "x-vercel-ip-country"
+                ),
+            });
+          }
+        } catch {
+          /*
+           * Signup-source analytics must
+           * never break authentication.
+           */
+        }
+
         try {
           await deliverWelcomeEmailIfEligible(
             userId
