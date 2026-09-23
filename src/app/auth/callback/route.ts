@@ -232,6 +232,11 @@ export async function GET(
               request.headers.get(
                 "user-agent"
               ),
+
+            countryCode:
+              request.headers.get(
+                "x-vercel-ip-country"
+              ),
           });
         } catch {
           /*

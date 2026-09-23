@@ -167,7 +167,7 @@ export async function getAdminUserSnapshot(
           "user_signup_source"
         )
         .select(
-          "signup_channel,device_class,os_family,created_at"
+          "signup_channel,device_class,os_family,country_code,source_version,created_at"
         )
         .eq(
           "user_id",
@@ -253,6 +253,16 @@ export async function getAdminUserSnapshot(
               signupSourceResult
                 .data
                 .os_family,
+
+            countryCode:
+              signupSourceResult
+                .data
+                .country_code,
+
+            sourceVersion:
+              signupSourceResult
+                .data
+                .source_version,
 
             createdAt:
               signupSourceResult

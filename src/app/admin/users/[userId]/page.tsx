@@ -166,6 +166,14 @@ export default async function AdminUserPage({
         />
 
         <Card
+          label="Signup country"
+          value={
+            snapshot.signupSource?.countryCode ??
+            "unknown"
+          }
+        />
+
+        <Card
           label="Signup recorded"
           value={
             formatDate(

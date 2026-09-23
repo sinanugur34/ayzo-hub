@@ -213,6 +213,11 @@ export async function registerMobileSession(
           request.headers.get(
             "user-agent"
           ),
+
+        countryCode:
+          request.headers.get(
+            "x-vercel-ip-country"
+          ),
       });
     } catch {
       /*

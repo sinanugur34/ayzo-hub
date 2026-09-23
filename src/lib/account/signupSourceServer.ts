@@ -7,17 +7,23 @@ import {
 import {
   type SignupChannel,
   detectSignupSourceFromUserAgent,
+  normalizeSignupCountryCode,
 } from "@/lib/account/signupSource";
 
 export async function recordSignupSource({
   userId,
   channel,
   userAgent,
+  countryCode,
 }: {
   userId: string;
   channel:
     SignupChannel;
   userAgent:
+    string |
+    null |
+    undefined;
+  countryCode:
     string |
     null |
     undefined;
@@ -51,6 +57,14 @@ export async function recordSignupSource({
 
           os_family:
             source.osFamily,
+
+          country_code:
+            normalizeSignupCountryCode(
+              countryCode
+            ),
+
+          source_version:
+            1,
         },
         {
           onConflict:

@@ -136,3 +136,23 @@ export function detectSignupSourceFromUserAgent(
     osFamily,
   };
 }
+
+
+export function normalizeSignupCountryCode(
+  value:
+    string |
+    null |
+    undefined
+) {
+  const normalized =
+    value
+      ?.trim()
+      .toUpperCase() ??
+    "";
+
+  return /^[A-Z]{2}$/.test(
+    normalized
+  )
+    ? normalized
+    : null;
+}

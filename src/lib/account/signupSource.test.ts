@@ -74,3 +74,36 @@ test(
     );
   }
 );
+
+test(
+  "normalizes country code",
+  async () => {
+    const {
+      normalizeSignupCountryCode,
+    } =
+      await import(
+        "./signupSource"
+      );
+
+    assert.equal(
+      normalizeSignupCountryCode(
+        "tr"
+      ),
+      "TR"
+    );
+
+    assert.equal(
+      normalizeSignupCountryCode(
+        "USA"
+      ),
+      null
+    );
+
+    assert.equal(
+      normalizeSignupCountryCode(
+        null
+      ),
+      null
+    );
+  }
+);
