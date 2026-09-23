@@ -654,6 +654,23 @@ type AdminUserDirectoryRpcRow = {
   signup_recorded_at:
     string |
     null;
+  current_plan:
+    string;
+  subscription_provider:
+    string |
+    null;
+  subscription_status:
+    string |
+    null;
+  billing_interval:
+    string |
+    null;
+  locked_price_usd_cents:
+    number |
+    null;
+  current_period_end:
+    string |
+    null;
   total_count:
     number |
     string;
@@ -684,6 +701,18 @@ export async function searchAdminUsers(
     createdTo:
       string |
       null;
+    plan:
+      string |
+      null;
+    provider:
+      string |
+      null;
+    subscriptionStatus:
+      string |
+      null;
+    billingInterval:
+      string |
+      null;
   }
 ) {
   const admin =
@@ -694,7 +723,7 @@ export async function searchAdminUsers(
     error,
   } =
     await admin.rpc(
-      "ayzo_admin_list_users",
+      "ayzo_admin_list_users_v2",
       {
         p_page:
           filters.page,
@@ -722,6 +751,18 @@ export async function searchAdminUsers(
 
         p_created_to:
           filters.createdTo,
+
+        p_plan:
+          filters.plan,
+
+        p_provider:
+          filters.provider,
+
+        p_subscription_status:
+          filters.subscriptionStatus,
+
+        p_billing_interval:
+          filters.billingInterval,
       }
     );
 
@@ -786,6 +827,26 @@ export async function searchAdminUsers(
 
             recordedAt:
               row.signup_recorded_at,
+          },
+
+          billing: {
+            currentPlan:
+              row.current_plan,
+
+            provider:
+              row.subscription_provider,
+
+            status:
+              row.subscription_status,
+
+            interval:
+              row.billing_interval,
+
+            lockedPriceUsdCents:
+              row.locked_price_usd_cents,
+
+            currentPeriodEnd:
+              row.current_period_end,
           },
         })
       ),

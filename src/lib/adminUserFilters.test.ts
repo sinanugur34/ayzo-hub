@@ -173,3 +173,77 @@ test(
     );
   }
 );
+
+test(
+  "parses billing filters",
+  () => {
+    const result =
+      parseAdminUserFilters({
+        plan:
+          "advanced",
+        provider:
+          "google_play",
+        status:
+          "canceling",
+        interval:
+          "annual",
+      });
+
+    assert.equal(
+      result.plan,
+      "advanced"
+    );
+
+    assert.equal(
+      result.provider,
+      "google_play"
+    );
+
+    assert.equal(
+      result.subscriptionStatus,
+      "canceling"
+    );
+
+    assert.equal(
+      result.billingInterval,
+      "annual"
+    );
+  }
+);
+
+test(
+  "fails closed for unsupported billing filters",
+  () => {
+    const result =
+      parseAdminUserFilters({
+        plan:
+          "enterprise",
+        provider:
+          "stripe",
+        status:
+          "refunded",
+        interval:
+          "weekly",
+      });
+
+    assert.equal(
+      result.plan,
+      null
+    );
+
+    assert.equal(
+      result.provider,
+      null
+    );
+
+    assert.equal(
+      result.subscriptionStatus,
+      null
+    );
+
+    assert.equal(
+      result.billingInterval,
+      null
+    );
+  }
+);
