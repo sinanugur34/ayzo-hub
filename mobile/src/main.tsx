@@ -44,6 +44,15 @@ import {
   type MobileAskAyzoTurn,
 } from "./mobileAskAyzo";
 import DraggableAskAyzo from "./DraggableAskAyzo";
+import MobileAnalyticsConsentBanner from "./MobileAnalyticsConsent";
+
+import {
+  clearMobileAnalyticsUser,
+  getMobileAnalyticsConsent,
+  identifyMobileAnalyticsUser,
+  setMobileAnalyticsConsent,
+  trackMobileEvent,
+} from "./mobileAnalytics";
 
 import {
   clearMobileHistory,
@@ -262,6 +271,18 @@ function Dashboard({
             setBillingMessage(
               `${verified.plan === "advanced" ? "Advanced" : "Pro"} restored through Google Play.`
             );
+
+            void trackMobileEvent(
+              "subscription_restored",
+              {
+                provider:
+                  "google_play",
+                plan:
+                  verified.plan,
+                status:
+                  verified.status,
+              }
+            );
           }
         }
       } catch (error) {
@@ -330,6 +351,18 @@ function Dashboard({
 
                 setBillingMessage(
                   `${verified.plan === "advanced" ? "Advanced" : "Pro"} activated through Google Play.`
+                );
+
+                void trackMobileEvent(
+                  "purchase_verified",
+                  {
+                    provider:
+                      "google_play",
+                    plan:
+                      verified.plan,
+                    status:
+                      verified.status,
+                  }
                 );
               } else {
                 setBillingMessage(
@@ -501,6 +534,25 @@ function Dashboard({
       setBillingMessage(null);
       setBillingLoading(planId);
 
+      void trackMobileEvent(
+        "purchase_started",
+        {
+          provider:
+            "google_play",
+          plan:
+            planId,
+          interval:
+            billingInterval,
+          flow:
+            analysisPlan ===
+              "pro" &&
+            planId ===
+              "advanced"
+              ? "upgrade"
+              : "purchase",
+        }
+      );
+
       try {
         const {
           data,
@@ -577,6 +629,18 @@ function Dashboard({
           }
         }
       } catch (error) {
+        void trackMobileEvent(
+          "purchase_failed",
+          {
+            provider:
+              "google_play",
+            plan:
+              planId,
+            interval:
+              billingInterval,
+          }
+        );
+
         setBillingLoading(null);
 
         setBillingError(
@@ -596,6 +660,17 @@ function Dashboard({
       setAnalysisLoading(true);
       setAnalysisError(null);
       setAnalysisResult(null);
+
+      void trackMobileEvent(
+        "analysis_started",
+        {
+          network:
+            selectedNetworkId,
+          plan:
+            analysisPlan ??
+            "unknown",
+        }
+      );
 
       try {
         const detectedNetworkId =
@@ -646,7 +721,36 @@ function Dashboard({
         setAnalysisQuota(
           result.quota
         );
+
+        void trackMobileEvent(
+          "analysis_completed",
+          {
+            network:
+              effectiveNetworkId,
+            plan:
+              result.plan ??
+              "unknown",
+            result:
+              "success",
+          }
+        );
       } catch (error) {
+        void trackMobileEvent(
+          "analysis_failed",
+          {
+            network:
+              selectedNetworkId,
+            plan:
+              analysisPlan ??
+              "unknown",
+            result:
+              error instanceof
+                MobileAnalysisError
+                ? "analysis_error"
+                : "error",
+          }
+        );
+
         setAnalysisError(
           error instanceof Error
             ? error.message
@@ -1158,11 +1262,22 @@ function Dashboard({
           "advanced"
       ) && (
         <DraggableAskAyzo
-          onOpen={() =>
+          onOpen={() => {
+            void trackMobileEvent(
+              "ask_ayzo_opened",
+              {
+                network:
+                  analysisResult.networkId,
+                plan:
+                  analysisResult.plan ??
+                  "unknown",
+              }
+            );
+
             setAskAyzoOpen(
               true
-            )
-          }
+            );
+          }}
         />
       )}
     </main>
@@ -1223,6 +1338,21 @@ function AskAyzoScreen({
     const previous =
       messages.slice(-6);
 
+    void trackMobileEvent(
+      "ask_ayzo_question_sent",
+      {
+        network:
+          result.networkId,
+        plan:
+          result.plan ??
+          "unknown",
+        question_source:
+          value
+            ? "quick_prompt"
+            : "custom",
+      }
+    );
+
     setMessages(
       current => [
         ...current,
@@ -1265,7 +1395,32 @@ function AskAyzoScreen({
           },
         ]
       );
+
+      void trackMobileEvent(
+        "ask_ayzo_answered",
+        {
+          network:
+            result.networkId,
+          plan:
+            result.plan ??
+            "unknown",
+          result:
+            "success",
+        }
+      );
     } catch (caught) {
+      void trackMobileEvent(
+        "ask_ayzo_failed",
+        {
+          network:
+            result.networkId,
+          plan:
+            result.plan ??
+            "unknown",
+          result:
+            "error",
+        }
+      );
       setError(
         caught instanceof Error
           ? caught.message
@@ -1950,7 +2105,7 @@ function ProfileScreen({
               <span>AYZO Android</span>
             </div>
             <span className="account-value">
-              1.0 (11)
+              1.0 (15)
             </span>
           </div>
         </div>
@@ -2048,6 +2203,55 @@ function SettingsScreen({
 }: {
   onBack: () => void;
 }) {
+  const [
+    analyticsConsent,
+    setAnalyticsConsentState,
+  ] =
+    useState<
+      "granted" |
+      "denied" |
+      null
+    >(
+      () =>
+        getMobileAnalyticsConsent()
+    );
+
+  async function updateAnalyticsConsent(
+    value:
+      "granted" |
+      "denied"
+  ) {
+    await setMobileAnalyticsConsent(
+      value
+    );
+
+    if (
+      value ===
+      "granted"
+    ) {
+      try {
+        const {
+          data,
+        } =
+          await supabase.auth.getUser();
+
+        if (
+          data.user?.id
+        ) {
+          await identifyMobileAnalyticsUser(
+            data.user.id
+          );
+        }
+      } catch {
+        // Analytics must never interrupt Settings.
+      }
+    }
+
+    setAnalyticsConsentState(
+      value
+    );
+  }
+
   return (
     <SimpleAccountScreen
       eyebrow="PROFILE"
@@ -2077,6 +2281,53 @@ function SettingsScreen({
           <span className="account-value">
             Enabled
           </span>
+        </div>
+
+        <div className="account-menu-row analytics-settings-row">
+          <div>
+            <strong>
+              Product analytics
+            </strong>
+            <span>
+              Anonymous feature-usage measurement. Wallet addresses and Ask AYZO question text are excluded.
+            </span>
+          </div>
+
+          <div className="analytics-setting-actions">
+            <button
+              type="button"
+              className={
+                analyticsConsent ===
+                  "denied"
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                void updateAnalyticsConsent(
+                  "denied"
+                )
+              }
+            >
+              Off
+            </button>
+
+            <button
+              type="button"
+              className={
+                analyticsConsent ===
+                  "granted"
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                void updateAnalyticsConsent(
+                  "granted"
+                )
+              }
+            >
+              On
+            </button>
+          </div>
         </div>
       </section>
     </SimpleAccountScreen>
@@ -2168,7 +2419,7 @@ function AboutScreen({
         </p>
 
         <span>
-          AYZO Android 1.0 · Build 11
+          AYZO Android 1.0 · Build 15
         </span>
       </section>
     </SimpleAccountScreen>
@@ -2241,6 +2492,28 @@ function App() {
   const authFlowActiveRef =
     useRef(false);
 
+  useEffect(
+    () => {
+      if (
+        screen ===
+          "checking"
+      ) {
+        return;
+      }
+
+      void trackMobileEvent(
+        "screen_view",
+        {
+          screen_name:
+            screen,
+        }
+      );
+    },
+    [
+      screen,
+    ]
+  );
+
   useEffect(() => {
     let cancelled = false;
 
@@ -2295,6 +2568,11 @@ function App() {
       }
 
       touchSessionActivity();
+
+      await identifyMobileAnalyticsUser(
+        data.user.id
+      );
+
       startupCompleteRef.current =
         true;
       setScreen("dashboard");
@@ -2314,6 +2592,28 @@ function App() {
           }
 
           touchSessionActivity();
+
+          try {
+            const {
+              data,
+            } =
+              await supabase.auth.getUser();
+
+            if (
+              data.user?.id
+            ) {
+              await identifyMobileAnalyticsUser(
+                data.user.id
+              );
+            }
+          } catch {
+            // Analytics identity must never interrupt login.
+          }
+
+          void trackMobileEvent(
+            "login_success"
+          );
+
           authFlowActiveRef.current =
             false;
           startupCompleteRef.current =
@@ -2394,9 +2694,15 @@ function App() {
   }, []);
 
   async function signOutAndReturn() {
+    void trackMobileEvent(
+      "logout"
+    );
+
     localStorage.removeItem(
       SESSION_ACTIVITY_KEY
     );
+
+    await clearMobileAnalyticsUser();
 
     await supabase.auth.signOut({
       scope: "local",
@@ -2473,12 +2779,24 @@ function App() {
         onOpenProfile={() =>
           setScreen("profile")
         }
-        onOpenHistory={() =>
-          setScreen("history")
-        }
-        onOpenAlerts={() =>
-          setScreen("alerts")
-        }
+        onOpenHistory={() => {
+          void trackMobileEvent(
+            "history_opened"
+          );
+
+          setScreen(
+            "history"
+          );
+        }}
+        onOpenAlerts={() => {
+          void trackMobileEvent(
+            "alerts_opened"
+          );
+
+          setScreen(
+            "alerts"
+          );
+        }}
       />
     );
   }
@@ -2490,6 +2808,14 @@ function App() {
           setScreen("dashboard")
         }
         onReplay={(item) => {
+          void trackMobileEvent(
+            "history_replayed",
+            {
+              network:
+                item.networkId,
+            }
+          );
+
           setHistoryReplay(item);
           setScreen("dashboard");
         }}
@@ -2522,9 +2848,19 @@ function App() {
         onOpenAbout={() =>
           setScreen("about")
         }
-        onOpenSubscription={() =>
-          setScreen("dashboard")
-        }
+        onOpenSubscription={() => {
+          void trackMobileEvent(
+            "plan_viewed",
+            {
+              source:
+                "profile",
+            }
+          );
+
+          setScreen(
+            "dashboard"
+          );
+        }}
         onSignOut={
           signOutAndReturn
         }
@@ -2713,5 +3049,6 @@ ReactDOM
   .render(
     <React.StrictMode>
       <App />
+      <MobileAnalyticsConsentBanner />
     </React.StrictMode>
   );

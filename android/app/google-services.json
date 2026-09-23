@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "501334687107",
+    "project_id": "ayzo-b282c",
+    "storage_bucket": "ayzo-b282c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:501334687107:android:3a69a71f3d0242d8fe4ab6",
+        "android_client_info": {
+          "package_name": "io.ayzo.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIt50CLz1CV5iAUwbxjP6lLW4x8LGipH8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

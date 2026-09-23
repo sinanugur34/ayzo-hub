@@ -15,6 +15,10 @@ public class MainActivity
             AyzoPlayBillingPlugin.class
         );
 
+        registerPlugin(
+            AyzoAnalyticsPlugin.class
+        );
+
         super.onCreate(
             savedInstanceState
         );
