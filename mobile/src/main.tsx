@@ -269,11 +269,11 @@ function Dashboard({
             );
 
             setBillingMessage(
-              `${verified.plan === "advanced" ? "Advanced" : "Pro"} restored through Google Play.`
+              `${verified.plan === "advanced" ? "Advanced" : "Pro"} synced through Google Play.`
             );
 
             void trackMobileEvent(
-              "subscription_restored",
+              "subscription_synced",
               {
                 provider:
                   "google_play",
@@ -2419,7 +2419,7 @@ function AboutScreen({
         </p>
 
         <span>
-          AYZO Android 1.0 · Build 15
+          AYZO Android 1.0 · Build 16
         </span>
       </section>
     </SimpleAccountScreen>
