@@ -1,6 +1,6 @@
 "use client";
 
-import WaitlistForm from "@/components/WaitlistForm";
+import PlanCheckoutButton from "@/components/billing/PlanCheckoutButton";
 import { PLANS } from "@/lib/plans/registry";
 
 export default function AnalysisLimitCard() {
@@ -29,12 +29,13 @@ export default function AnalysisLimitCard() {
 
             <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-400">
               You&apos;ve used your {freeQuota} free analyses for the current
-              24-hour window.
+              24-hour window. Upgrade to AYZO Pro for a higher analysis limit
+              and live Pro intelligence features.
             </p>
           </div>
 
-          <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-[10px] font-medium tracking-wide text-violet-300">
-            AYZO PRO · COMING SOON
+          <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-medium tracking-wide text-emerald-300">
+            AYZO PRO · AVAILABLE NOW
           </span>
         </div>
 
@@ -59,12 +60,29 @@ export default function AnalysisLimitCard() {
           ))}
         </div>
 
-        <div className="mt-6">
-          <WaitlistForm
-            source="free-limit"
-            compact
+        <div className="mt-6 grid gap-2 sm:grid-cols-2">
+          <PlanCheckoutButton
+            plan="pro"
+            interval="monthly"
+            label={`Start Monthly · $${PLANS.pro.monthlyPriceUsd?.toFixed(
+              0
+            )}/mo`}
+          />
+
+          <PlanCheckoutButton
+            plan="pro"
+            interval="annual"
+            variant="secondary"
+            label={`Start Annual · $${PLANS.pro.annualPriceUsd?.toFixed(
+              2
+            )}/yr`}
           />
         </div>
+
+        <p className="mt-3 text-xs leading-5 text-zinc-600">
+          Secure checkout uses the same AYZO billing flow available from your
+          Account and plan selection screens.
+        </p>
       </div>
     </div>
   );
