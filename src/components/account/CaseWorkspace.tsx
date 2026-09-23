@@ -1,9 +1,14 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useState,
 } from "react";
+
+import {
+  useRouter,
+} from "next/navigation";
 
 type CaseRow = {
   id: string;
@@ -32,6 +37,8 @@ export default function CaseWorkspace({
 }: {
   caseId: string;
 }) {
+  const router =
+    useRouter();
   const [
     caseRow,
     setCaseRow,
@@ -92,7 +99,8 @@ export default function CaseWorkspace({
   ] =
     useState(false);
 
-  async function load() {
+  const load =
+    useCallback(async () => {
     setError("");
 
     try {
@@ -202,11 +210,25 @@ export default function CaseWorkspace({
     } finally {
       setLoading(false);
     }
-  }
+  }, [caseId]);
 
   useEffect(() => {
-    load();
-  }, [caseId]);
+    let cancelled =
+      false;
+
+    void Promise.resolve().then(
+      () => {
+        if (!cancelled) {
+          return load();
+        }
+      }
+    );
+
+    return () => {
+      cancelled =
+        true;
+    };
+  }, [load]);
 
   const linkedIds =
     new Set(
@@ -530,8 +552,10 @@ export default function CaseWorkspace({
         return;
       }
 
-      window.location.href =
-        "/account";
+      router.push(
+        "/account"
+      );
+      router.refresh();
     } catch {
       setError(
         "Unable to delete case."

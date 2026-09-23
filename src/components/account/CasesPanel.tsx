@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import {
+  useCallback,
   useEffect,
   useState,
 } from "react";
@@ -59,7 +60,8 @@ export default function CasesPanel() {
   ] =
     useState(false);
 
-  async function loadCases() {
+  const loadCases =
+    useCallback(async () => {
     try {
       const response =
         await fetch(
@@ -114,11 +116,25 @@ export default function CasesPanel() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
-    loadCases();
-  }, []);
+    let cancelled =
+      false;
+
+    void Promise.resolve().then(
+      () => {
+        if (!cancelled) {
+          return loadCases();
+        }
+      }
+    );
+
+    return () => {
+      cancelled =
+        true;
+    };
+  }, [loadCases]);
 
   async function createCase() {
     const cleanName =
