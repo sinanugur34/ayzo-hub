@@ -632,3 +632,180 @@ export async function getAdminDashboardSnapshot():
     },
   };
 }
+
+type AdminUserDirectoryRpcRow = {
+  user_id: string;
+  email:
+    string |
+    null;
+  user_created_at:
+    string;
+  last_sign_in_at:
+    string |
+    null;
+  signup_channel:
+    string;
+  device_class:
+    string;
+  os_family:
+    string;
+  country_code:
+    string;
+  signup_recorded_at:
+    string |
+    null;
+  total_count:
+    number |
+    string;
+};
+
+export async function searchAdminUsers(
+  filters: {
+    page: number;
+    perPage: number;
+    emailSearch:
+      string |
+      null;
+    signupChannel:
+      string |
+      null;
+    deviceClass:
+      string |
+      null;
+    osFamily:
+      string |
+      null;
+    countryCode:
+      string |
+      null;
+    createdFrom:
+      string |
+      null;
+    createdTo:
+      string |
+      null;
+  }
+) {
+  const admin =
+    createAdminClient();
+
+  const {
+    data,
+    error,
+  } =
+    await admin.rpc(
+      "ayzo_admin_list_users",
+      {
+        p_page:
+          filters.page,
+
+        p_per_page:
+          filters.perPage,
+
+        p_email_search:
+          filters.emailSearch,
+
+        p_signup_channel:
+          filters.signupChannel,
+
+        p_device_class:
+          filters.deviceClass,
+
+        p_os_family:
+          filters.osFamily,
+
+        p_country_code:
+          filters.countryCode,
+
+        p_created_from:
+          filters.createdFrom,
+
+        p_created_to:
+          filters.createdTo,
+      }
+    );
+
+  if (
+    error ||
+    !Array.isArray(
+      data
+    )
+  ) {
+    throw new Error(
+      "AYZO_ADMIN_USER_SEARCH_UNAVAILABLE"
+    );
+  }
+
+  const rows =
+    data as
+      AdminUserDirectoryRpcRow[];
+
+  const total =
+    rows.length > 0
+      ? Number(
+          rows[0]
+            .total_count
+        )
+      : 0;
+
+  const safeTotal =
+    Number.isFinite(
+      total
+    )
+      ? total
+      : 0;
+
+  return {
+    users:
+      rows.map(
+        row => ({
+          id:
+            row.user_id,
+
+          email:
+            row.email,
+
+          createdAt:
+            row.user_created_at,
+
+          lastSignInAt:
+            row.last_sign_in_at,
+
+          signupSource: {
+            channel:
+              row.signup_channel,
+
+            deviceClass:
+              row.device_class,
+
+            osFamily:
+              row.os_family,
+
+            countryCode:
+              row.country_code,
+
+            recordedAt:
+              row.signup_recorded_at,
+          },
+        })
+      ),
+
+    total:
+      safeTotal,
+
+    page:
+      filters.page,
+
+    perPage:
+      filters.perPage,
+
+    totalPages:
+      Math.max(
+        1,
+        Math.ceil(
+          safeTotal /
+          filters.perPage
+        )
+      ),
+  };
+}
