@@ -4,6 +4,10 @@ import {
   getAdminDashboardSnapshot,
 } from "@/lib/adminAnalyticsRead";
 
+import {
+  getAdminSignupInsights,
+} from "@/lib/adminSignupInsights";
+
 export const dynamic =
   "force-dynamic";
 
@@ -40,8 +44,27 @@ function Metric({
 }
 
 export default async function AdminPage() {
-  const snapshot =
-    await getAdminDashboardSnapshot();
+  const [
+    snapshot,
+    signup,
+  ] =
+    await Promise.all([
+      getAdminDashboardSnapshot(),
+      getAdminSignupInsights(),
+    ]);
+
+  const signupTracked =
+    signup.tracking.recorded +
+    signup.tracking.unknown;
+
+  const signupCoverage =
+    signupTracked > 0
+      ? Math.round(
+          signup.tracking.recorded /
+            signupTracked *
+            100
+        )
+      : 0;
 
   const resolvedAnalyses =
     snapshot.activity.completed7d +
@@ -111,6 +134,113 @@ export default async function AdminPage() {
             value={`${successRate}%`}
             detail={`${snapshot.activity.completed7d} completed`}
           />
+        </div>
+      </section>
+
+      <section className="mt-8">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div className="text-xs font-medium tracking-[0.16em] text-zinc-500">
+              SIGNUP INTELLIGENCE
+            </div>
+
+            <h2 className="mt-2 text-xl font-semibold">
+              Acquisition overview
+            </h2>
+          </div>
+
+          <Link
+            href="/admin/users"
+            className="text-xs font-medium text-violet-300 transition hover:text-violet-200"
+          >
+            Explore users →
+          </Link>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Metric
+            label="New users · 7d"
+            value={
+              signup.period.last7d
+            }
+          />
+
+          <Metric
+            label="New users · 30d"
+            value={
+              signup.period.last30d
+            }
+          />
+
+          <Metric
+            label="Signup tracking"
+            value={`${signupCoverage}%`}
+            detail={`${signup.tracking.recorded} recorded · ${signup.tracking.unknown} historical/unknown`}
+          />
+
+          <Metric
+            label="Web signups"
+            value={
+              signup.channel.web
+            }
+          />
+
+          <Metric
+            label="Android signups"
+            value={
+              signup.channel.android
+            }
+          />
+
+          <Metric
+            label="iOS signups"
+            value={
+              signup.channel.ios
+            }
+          />
+
+          <Metric
+            label="Desktop"
+            value={
+              signup.device.desktop
+            }
+          />
+
+          <Metric
+            label="Phone"
+            value={
+              signup.device.phone
+            }
+          />
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-950/50 p-5">
+          <div className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
+            Top signup countries
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {signup.countries
+              .slice(
+                0,
+                8
+              )
+              .map(
+                country => (
+                  <Link
+                    key={
+                      country.code
+                    }
+                    href={`/admin/users?country=${encodeURIComponent(
+                      country.code
+                    )}`}
+                    className="rounded-xl border border-zinc-800 px-3 py-2 text-sm text-zinc-300 transition hover:border-violet-500 hover:text-violet-200"
+                  >
+                    {country.code} · {country.total}
+                  </Link>
+                )
+              )}
+          </div>
         </div>
       </section>
 
