@@ -287,3 +287,222 @@ export async function listAdminUsers(
     })
   );
 }
+
+export type AdminDashboardSnapshot = {
+  users: number;
+
+  subscriptions: {
+    total: number;
+    active: number;
+    pro: number;
+    advanced: number;
+    googlePlay: number;
+    creem: number;
+  };
+
+  activity: {
+    last24h: number;
+    last7d: number;
+    completed7d: number;
+    failed7d: number;
+    quotaBlocked7d: number;
+    web7d: number;
+    android7d: number;
+  };
+};
+
+export async function getAdminDashboardSnapshot():
+  Promise<AdminDashboardSnapshot> {
+  const admin =
+    createAdminClient();
+
+  const now =
+    Date.now();
+
+  const since24h =
+    new Date(
+      now -
+      24 * 60 * 60 * 1000
+    ).toISOString();
+
+  const since7d =
+    new Date(
+      now -
+      7 * 24 * 60 * 60 * 1000
+    ).toISOString();
+
+  const [
+    usersResult,
+    subscriptionsResult,
+    activity24hResult,
+    activity7dResult,
+  ] =
+    await Promise.all([
+      admin.auth.admin
+        .listUsers({
+          page:
+            1,
+          perPage:
+            1,
+        }),
+
+      admin
+        .from(
+          "subscriptions"
+        )
+        .select(
+          "plan_id,status,provider"
+        ),
+
+      admin
+        .from(
+          "analysis_activity"
+        )
+        .select(
+          "id",
+          {
+            count:
+              "exact",
+            head:
+              true,
+          }
+        )
+        .gte(
+          "created_at",
+          since24h
+        ),
+
+      admin
+        .from(
+          "analysis_activity"
+        )
+        .select(
+          "platform,outcome"
+        )
+        .gte(
+          "created_at",
+          since7d
+        )
+        .order(
+          "created_at",
+          {
+            ascending:
+              false,
+          }
+        )
+        .limit(
+          10000
+        ),
+    ]);
+
+  if (
+    usersResult.error ||
+    subscriptionsResult.error ||
+    activity24hResult.error ||
+    activity7dResult.error
+  ) {
+    throw new Error(
+      "AYZO_ADMIN_DASHBOARD_UNAVAILABLE"
+    );
+  }
+
+  const subscriptions =
+    subscriptionsResult.data ??
+    [];
+
+  const activity =
+    activity7dResult.data ??
+    [];
+
+  return {
+    users:
+      usersResult.data.total ??
+      0,
+
+    subscriptions: {
+      total:
+        subscriptions.length,
+
+      active:
+        subscriptions.filter(
+          row =>
+            row.status ===
+              "active" ||
+            row.status ===
+              "canceling"
+        ).length,
+
+      pro:
+        subscriptions.filter(
+          row =>
+            row.plan_id ===
+            "pro"
+        ).length,
+
+      advanced:
+        subscriptions.filter(
+          row =>
+            row.plan_id ===
+            "advanced"
+        ).length,
+
+      googlePlay:
+        subscriptions.filter(
+          row =>
+            row.provider ===
+            "google_play"
+        ).length,
+
+      creem:
+        subscriptions.filter(
+          row =>
+            row.provider ===
+            "creem"
+        ).length,
+    },
+
+    activity: {
+      last24h:
+        activity24hResult.count ??
+        0,
+
+      last7d:
+        activity.length,
+
+      completed7d:
+        activity.filter(
+          row =>
+            row.outcome ===
+            "completed"
+        ).length,
+
+      failed7d:
+        activity.filter(
+          row =>
+            row.outcome ===
+            "failed"
+        ).length,
+
+      quotaBlocked7d:
+        activity.filter(
+          row =>
+            row.outcome ===
+            "quota_blocked"
+        ).length,
+
+      web7d:
+        activity.filter(
+          row =>
+            row.platform ===
+            "web"
+        ).length,
+
+      android7d:
+        activity.filter(
+          row =>
+            row.platform ===
+            "android"
+        ).length,
+    },
+  };
+}

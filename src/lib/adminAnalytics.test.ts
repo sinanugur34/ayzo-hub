@@ -288,3 +288,86 @@ test(
     }
   }
 );
+
+test(
+  "admin pages are protected by server authorization",
+  () => {
+    const layout =
+      fs.readFileSync(
+        "src/app/admin/layout.tsx",
+        "utf8"
+      );
+
+    assert.match(
+      layout,
+      /getAdminAccess/
+    );
+
+    assert.match(
+      layout,
+      /!access\.authorized/
+    );
+
+    assert.match(
+      layout,
+      /notFound\(\)/
+    );
+  }
+);
+
+test(
+  "admin pages opt out of search indexing",
+  () => {
+    const layout =
+      fs.readFileSync(
+        "src/app/admin/layout.tsx",
+        "utf8"
+      );
+
+    assert.match(
+      layout,
+      /index:\s*false/
+    );
+
+    assert.match(
+      layout,
+      /follow:\s*false/
+    );
+  }
+);
+
+test(
+  "admin user detail exposes quota and activity without raw analysis subject",
+  () => {
+    const page =
+      fs.readFileSync(
+        "src/app/admin/users/[userId]/page.tsx",
+        "utf8"
+      );
+
+    assert.match(
+      page,
+      /quota\.remaining/
+    );
+
+    assert.match(
+      page,
+      /snapshot\.activity/
+    );
+
+    assert.doesNotMatch(
+      page,
+      /subject_value/
+    );
+
+    assert.doesNotMatch(
+      page,
+      /wallet_address/
+    );
+
+    assert.doesNotMatch(
+      page,
+      /provider_subscription_id/
+    );
+  }
+);
