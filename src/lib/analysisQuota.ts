@@ -32,6 +32,10 @@ export type AnalysisQuotaState =
   FreeQuotaState & {
     plan:
       QuotaPlan;
+
+    userId:
+      string |
+      null;
   };
 
 let redisClient:
@@ -177,6 +181,8 @@ async function getPaidStatus(
     return {
       plan:
         plan,
+
+      userId,
       allowed:
         true,
       available:
@@ -221,6 +227,8 @@ async function getPaidStatus(
       plan:
         plan,
 
+      userId,
+
       allowed:
         count <
         policy.limit,
@@ -255,6 +263,8 @@ async function getPaidStatus(
     return {
       plan:
         plan,
+
+      userId,
       allowed:
         true,
       available:
@@ -289,16 +299,24 @@ async function consumePaid(
     return {
       plan:
         plan,
+
+      userId,
+
       allowed:
         true,
+
       available:
         false,
+
       limit:
         policy.limit,
+
       remaining:
         null,
+
       resetAt:
         null,
+
       deviceCookie:
         null,
     };
@@ -356,6 +374,8 @@ async function consumePaid(
       plan:
         plan,
 
+      userId,
+
       allowed:
         count <=
         policy.limit,
@@ -385,16 +405,24 @@ async function consumePaid(
     return {
       plan:
         plan,
+
+      userId,
+
       allowed:
         true,
+
       available:
         false,
+
       limit:
         policy.limit,
+
       remaining:
         null,
+
       resetAt:
         null,
+
       deviceCookie:
         null,
     };
@@ -433,8 +461,11 @@ export async function getAnalysisQuotaStatus(
 
   return {
     ...free,
+
     plan:
       "free",
+
+    userId,
   };
 }
 
@@ -470,8 +501,11 @@ export async function consumeAnalysisQuota(
 
   return {
     ...free,
+
     plan:
       "free",
+
+    userId,
   };
 }
 

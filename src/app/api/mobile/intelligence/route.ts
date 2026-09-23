@@ -10,6 +10,7 @@ import {
 
 import {
   consumeMobileAnalysisQuota,
+  getMobileAnalysisQuotaStatus,
   refundMobileAnalysisQuota,
   type MobileAnalysisQuotaState,
 } from "@/lib/account/mobileAnalysisQuota";
@@ -63,6 +64,11 @@ import {
 import {
   readJsonObjectBody,
 } from "@/lib/requestBody";
+
+import {
+  readAnalysisFailureCode,
+  recordAnalysisActivity,
+} from "@/lib/adminAnalytics";
 
 const EVM_ADDRESS =
   /^0x[0-9a-fA-F]{40}$/;
@@ -408,6 +414,44 @@ export async function POST(
       );
 
     if (!quota.allowed) {
+      await recordAnalysisActivity({
+        userId:
+          quotaUserId,
+
+        platform:
+          "android",
+
+        network:
+          resolution.networkId,
+
+        planId:
+          entitlement.planId,
+
+        outcome:
+          "quota_blocked",
+
+        httpStatus:
+          429,
+
+        failureCode:
+          entitlement.planId ===
+            "advanced"
+            ? "DAILY_ADVANCED_LIMIT"
+            : entitlement.planId ===
+                "pro"
+              ? "DAILY_PRO_LIMIT"
+              : "DAILY_FREE_LIMIT",
+
+        quotaLimit:
+          quota.limit,
+
+        quotaRemaining:
+          0,
+
+        quotaResetAt:
+          quota.resetAt,
+      });
+
       const retryAfterSeconds =
         quota.resetAt
           ? Math.max(
@@ -471,6 +515,74 @@ export async function POST(
       },
     };
 
+    const recordMobileResult =
+      async (
+        status: number,
+        data: unknown
+      ) => {
+        const failed =
+          status >= 400;
+
+        await recordAnalysisActivity({
+          userId:
+            quotaUserId,
+
+          platform:
+            "android",
+
+          network:
+            resolution.networkId,
+
+          planId:
+            entitlement.planId,
+
+          outcome:
+            failed
+              ? "failed"
+              : "completed",
+
+          httpStatus:
+            status,
+
+          failureCode:
+            failed
+              ? readAnalysisFailureCode(
+                  data
+                )
+              : null,
+
+          quotaLimit:
+            quota?.limit ??
+            null,
+
+          quotaRemaining:
+            failed &&
+            quota &&
+            quotaUserId
+              ? (
+                  await getMobileAnalysisQuotaStatus(
+                    quotaUserId,
+                    entitlement.planId
+                  )
+                ).remaining
+              : quota?.remaining ??
+                null,
+
+          quotaResetAt:
+            failed &&
+            quota &&
+            quotaUserId
+              ? (
+                  await getMobileAnalysisQuotaStatus(
+                    quotaUserId,
+                    entitlement.planId
+                  )
+                ).resetAt
+              : quota?.resetAt ??
+                null,
+        });
+      };
+
     const refundOnFailure =
       async (
         status: number
@@ -504,6 +616,11 @@ export async function POST(
           result.status
         );
 
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
         return json(
           withMobileMeta(
             result.data,
@@ -527,6 +644,11 @@ export async function POST(
           result.status
         );
 
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
         return json(
           withMobileMeta(
             result.data,
@@ -544,6 +666,11 @@ export async function POST(
 
         await refundOnFailure(
           result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
         );
 
         return json(
@@ -565,6 +692,11 @@ export async function POST(
           result.status
         );
 
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
         return json(
           withMobileMeta(
             result.data,
@@ -582,6 +714,11 @@ export async function POST(
 
         await refundOnFailure(
           result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
         );
 
         return json(

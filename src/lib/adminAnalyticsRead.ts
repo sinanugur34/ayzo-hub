@@ -1,0 +1,289 @@
+import "server-only";
+
+import {
+  createAdminClient,
+} from "@/lib/supabase/admin";
+
+import {
+  getMobileAnalysisQuotaStatus,
+} from "@/lib/account/mobileAnalysisQuota";
+
+import {
+  resolveAccountEntitlement,
+  type SubscriptionEntitlementRow,
+} from "@/lib/billing/entitlement-core";
+
+type AdminSubscriptionRow =
+  SubscriptionEntitlementRow & {
+    user_id: string;
+    provider: string;
+    provider_subscription_id:
+      string |
+      null;
+    current_period_start:
+      string |
+      null;
+    created_at: string;
+    updated_at: string;
+  };
+
+function isSubscriptionRow(
+  value: unknown
+): value is AdminSubscriptionRow {
+  if (
+    !value ||
+    typeof value !==
+      "object"
+  ) {
+    return false;
+  }
+
+  const row =
+    value as Record<
+      string,
+      unknown
+    >;
+
+  return (
+    typeof row.user_id ===
+      "string" &&
+    (
+      row.plan_id ===
+        "pro" ||
+      row.plan_id ===
+        "advanced"
+    ) &&
+    (
+      row.billing_interval ===
+        "monthly" ||
+      row.billing_interval ===
+        "annual"
+    ) &&
+    (
+      row.status ===
+        "pending" ||
+      row.status ===
+        "active" ||
+      row.status ===
+        "canceling" ||
+      row.status ===
+        "past_due" ||
+      row.status ===
+        "inactive"
+    ) &&
+    typeof row
+      .locked_price_usd_cents ===
+      "number" &&
+    typeof row
+      .cancel_at_period_end ===
+      "boolean" &&
+    typeof row
+      .founding_customer ===
+      "boolean"
+  );
+}
+
+export async function getAdminUserSnapshot(
+  userId: string
+) {
+  const admin =
+    createAdminClient();
+
+  const [
+    userResult,
+    subscriptionsResult,
+    activityResult,
+  ] =
+    await Promise.all([
+      admin.auth.admin
+        .getUserById(
+          userId
+        ),
+
+      admin
+        .from(
+          "subscriptions"
+        )
+        .select(`
+          user_id,
+          provider,
+          provider_subscription_id,
+          plan_id,
+          billing_interval,
+          status,
+          locked_price_usd_cents,
+          current_period_start,
+          current_period_end,
+          cancel_at_period_end,
+          founding_customer,
+          created_at,
+          updated_at
+        `)
+        .eq(
+          "user_id",
+          userId
+        )
+        .order(
+          "created_at",
+          {
+            ascending:
+              false,
+          }
+        ),
+
+      admin
+        .from(
+          "analysis_activity"
+        )
+        .select(`
+          id,
+          platform,
+          network,
+          plan_id,
+          outcome,
+          http_status,
+          failure_code,
+          quota_limit,
+          quota_remaining,
+          quota_reset_at,
+          created_at
+        `)
+        .eq(
+          "user_id",
+          userId
+        )
+        .order(
+          "created_at",
+          {
+            ascending:
+              false,
+          }
+        )
+        .limit(100),
+    ]);
+
+  if (
+    userResult.error ||
+    !userResult.data.user
+  ) {
+    throw new Error(
+      "AYZO_ADMIN_USER_NOT_FOUND"
+    );
+  }
+
+  const subscriptions =
+    Array.isArray(
+      subscriptionsResult.data
+    )
+      ? subscriptionsResult
+          .data
+          .filter(
+            isSubscriptionRow
+          )
+      : [];
+
+  const entitlement =
+    resolveAccountEntitlement(
+      subscriptions
+    );
+
+  const quota =
+    await getMobileAnalysisQuotaStatus(
+      userId,
+      entitlement.planId
+    );
+
+  return {
+    user: {
+      id:
+        userResult
+          .data
+          .user
+          .id,
+
+      email:
+        userResult
+          .data
+          .user
+          .email ??
+        null,
+
+      createdAt:
+        userResult
+          .data
+          .user
+          .created_at,
+
+      lastSignInAt:
+        userResult
+          .data
+          .user
+          .last_sign_in_at ??
+        null,
+    },
+
+    entitlement,
+
+    quota: {
+      limit:
+        quota.limit,
+
+      remaining:
+        quota.remaining,
+
+      resetAt:
+        quota.resetAt,
+
+      available:
+        quota.available,
+    },
+
+    subscriptions,
+
+    activity:
+      activityResult.data ??
+      [],
+  };
+}
+
+export async function listAdminUsers(
+  page = 1,
+  perPage = 50
+) {
+  const admin =
+    createAdminClient();
+
+  const {
+    data,
+    error,
+  } =
+    await admin.auth.admin
+      .listUsers({
+        page,
+        perPage,
+      });
+
+  if (error) {
+    throw new Error(
+      "AYZO_ADMIN_USERS_UNAVAILABLE"
+    );
+  }
+
+  return data.users.map(
+    user => ({
+      id:
+        user.id,
+
+      email:
+        user.email ??
+        null,
+
+      createdAt:
+        user.created_at,
+
+      lastSignInAt:
+        user.last_sign_in_at ??
+        null,
+    })
+  );
+}
