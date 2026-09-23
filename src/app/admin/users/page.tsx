@@ -1,33 +1,13 @@
 import Link from "next/link";
 
+import AdminLocalDateTime from "@/components/admin/AdminLocalDateTime";
+
 import {
   listAdminUsers,
 } from "@/lib/adminAnalyticsRead";
 
 export const dynamic =
   "force-dynamic";
-
-function formatDate(
-  value:
-    string |
-    null
-) {
-  if (!value) {
-    return "—";
-  }
-
-  return new Intl.DateTimeFormat(
-    "en",
-    {
-      dateStyle:
-        "medium",
-      timeStyle:
-        "short",
-    }
-  ).format(
-    new Date(value)
-  );
-}
 
 export default async function AdminUsersPage() {
   const users =
@@ -95,15 +75,19 @@ export default async function AdminUsersPage() {
                     </td>
 
                     <td className="px-5 py-4 text-zinc-500">
-                      {formatDate(
-                        user.createdAt
-                      )}
+                      <AdminLocalDateTime
+                        value={
+                          user.createdAt
+                        }
+                      />
                     </td>
 
                     <td className="px-5 py-4 text-zinc-500">
-                      {formatDate(
-                        user.lastSignInAt
-                      )}
+                      <AdminLocalDateTime
+                        value={
+                          user.lastSignInAt
+                        }
+                      />
                     </td>
 
                     <td className="px-5 py-4 text-right">

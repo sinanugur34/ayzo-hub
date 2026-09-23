@@ -1,5 +1,11 @@
 import Link from "next/link";
 
+import type {
+  ReactNode,
+} from "react";
+
+import AdminLocalDateTime from "@/components/admin/AdminLocalDateTime";
+
 import {
   notFound,
 } from "next/navigation";
@@ -11,39 +17,6 @@ import {
 export const dynamic =
   "force-dynamic";
 
-function formatDate(
-  value:
-    string |
-    number |
-    null
-) {
-  if (!value) {
-    return "—";
-  }
-
-  const date =
-    typeof value ===
-    "number"
-      ? new Date(
-          value
-        )
-      : new Date(
-          value
-        );
-
-  return new Intl.DateTimeFormat(
-    "en",
-    {
-      dateStyle:
-        "medium",
-      timeStyle:
-        "short",
-    }
-  ).format(
-    date
-  );
-}
-
 function Card({
   label,
   value,
@@ -52,8 +25,7 @@ function Card({
   label:
     string;
   value:
-    string |
-    number;
+    ReactNode;
   detail?:
     string;
 }) {
@@ -176,10 +148,12 @@ export default async function AdminUserPage({
         <Card
           label="Signup recorded"
           value={
-            formatDate(
-              snapshot.signupSource?.createdAt ??
-              null
-            )
+            <AdminLocalDateTime
+              value={
+                snapshot.signupSource?.createdAt ??
+                null
+              }
+            />
           }
         />
       </section>
@@ -212,22 +186,26 @@ export default async function AdminUserPage({
         <Card
           label="Quota reset"
           value={
-            formatDate(
-              snapshot
-                .quota
-                .resetAt
-            )
+            <AdminLocalDateTime
+              value={
+                snapshot
+                  .quota
+                  .resetAt
+              }
+            />
           }
         />
 
         <Card
           label="Last sign in"
           value={
-            formatDate(
-              snapshot
-                .user
-                .lastSignInAt
-            )
+            <AdminLocalDateTime
+              value={
+                snapshot
+                  .user
+                  .lastSignInAt
+              }
+            />
           }
         />
       </section>
@@ -281,9 +259,11 @@ export default async function AdminUserPage({
                   <Card
                     label="Period end"
                     value={
-                      formatDate(
-                        subscription.current_period_end
-                      )
+                      <AdminLocalDateTime
+                        value={
+                          subscription.current_period_end
+                        }
+                      />
                     }
                   />
                 </div>
@@ -358,9 +338,11 @@ export default async function AdminUserPage({
                       }
                     >
                       <td className="px-4 py-3 text-zinc-500">
-                        {formatDate(
-                          event.created_at
-                        )}
+                        {<AdminLocalDateTime
+                          value={
+                            event.created_at
+                          }
+                        />}
                       </td>
 
                       <td className="px-4 py-3 text-zinc-300">
@@ -401,9 +383,11 @@ export default async function AdminUserPage({
                       </td>
 
                       <td className="px-4 py-3 text-zinc-500">
-                        {formatDate(
-                          event.quota_reset_at
-                        )}
+                        {<AdminLocalDateTime
+                          value={
+                            event.quota_reset_at
+                          }
+                        />}
                       </td>
                     </tr>
                   )
