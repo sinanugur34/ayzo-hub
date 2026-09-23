@@ -7,6 +7,7 @@ import AyzoEntityLabelsPanel from "@/components/AyzoEntityLabelsPanel";
 import HistoricalChangesPanel from "@/components/HistoricalChangesPanel";
 import InvestigationTimelinePanel from "@/components/InvestigationTimelinePanel";
 import AskAyzoPanel from "@/components/AskAyzoPanel";
+import CaseQuickAdd from "@/components/CaseQuickAdd";
 
 import {
   useEffect,
@@ -172,6 +173,14 @@ export default function AnalysisActions({
     setSaved,
   ] =
     useState(false);
+
+  const [
+    savedAnalysisId,
+    setSavedAnalysisId,
+  ] =
+    useState<string | null>(
+      null
+    );
 
   const [
     adding,
@@ -360,12 +369,17 @@ export default function AnalysisActions({
     setMessageType(type);
   }
 
-  async function saveAnalysis() {
+  async function saveAnalysis():
+    Promise<string | null> {
+    if (savedAnalysisId) {
+      return savedAnalysisId;
+    }
+
     if (
       saved ||
       saving
     ) {
-      return;
+      return null;
     }
 
     setSaving(true);
@@ -412,7 +426,7 @@ export default function AnalysisActions({
           "error"
         );
 
-        return;
+        return null;
       }
 
       const body =
@@ -422,7 +436,11 @@ export default function AnalysisActions({
             () => null
           );
 
-      if (!response.ok) {
+      if (
+        !response.ok ||
+        typeof body?.analysis?.id !==
+          "string"
+      ) {
         showMessage(
           typeof body?.error ===
             "string"
@@ -431,8 +449,15 @@ export default function AnalysisActions({
           "error"
         );
 
-        return;
+        return null;
       }
+
+      const id =
+        body.analysis.id;
+
+      setSavedAnalysisId(
+        id
+      );
 
       setSaved(true);
 
@@ -440,11 +465,15 @@ export default function AnalysisActions({
         "Analysis saved to your AYZO account.",
         "success"
       );
+
+      return id;
     } catch {
       showMessage(
         "Unable to save this analysis.",
         "error"
       );
+
+      return null;
     } finally {
       setSaving(false);
     }
@@ -1057,6 +1086,12 @@ export default function AnalysisActions({
           </button>
         </div>
       </div>
+
+      <CaseQuickAdd
+        ensureSavedAnalysis={
+          saveAnalysis
+        }
+      />
 
       <EntityAnnotationPanel
         network={network}
