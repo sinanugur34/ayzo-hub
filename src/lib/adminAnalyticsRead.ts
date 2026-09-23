@@ -331,11 +331,70 @@ export async function getAdminDashboardSnapshot():
       7 * 24 * 60 * 60 * 1000
     ).toISOString();
 
+  const countActivity = (
+    filters: {
+      platform?:
+        "web" |
+        "android";
+
+      outcome?:
+        "completed" |
+        "failed" |
+        "quota_blocked";
+    } = {}
+  ) => {
+    let query =
+      admin
+        .from(
+          "analysis_activity"
+        )
+        .select(
+          "id",
+          {
+            count:
+              "exact",
+            head:
+              true,
+          }
+        )
+        .gte(
+          "created_at",
+          since7d
+        );
+
+    if (
+      filters.platform
+    ) {
+      query =
+        query.eq(
+          "platform",
+          filters.platform
+        );
+    }
+
+    if (
+      filters.outcome
+    ) {
+      query =
+        query.eq(
+          "outcome",
+          filters.outcome
+        );
+    }
+
+    return query;
+  };
+
   const [
     usersResult,
     subscriptionsResult,
     activity24hResult,
     activity7dResult,
+    completed7dResult,
+    failed7dResult,
+    quotaBlocked7dResult,
+    web7dResult,
+    android7dResult,
   ] =
     await Promise.all([
       admin.auth.admin
@@ -372,89 +431,121 @@ export async function getAdminDashboardSnapshot():
           since24h
         ),
 
-      admin
-        .from(
-          "analysis_activity"
-        )
-        .select(
-          "platform,outcome"
-        )
-        .gte(
-          "created_at",
-          since7d
-        )
-        .order(
-          "created_at",
-          {
-            ascending:
-              false,
-          }
-        )
-        .limit(
-          10000
-        ),
+      countActivity(),
+
+      countActivity({
+        outcome:
+          "completed",
+      }),
+
+      countActivity({
+        outcome:
+          "failed",
+      }),
+
+      countActivity({
+        outcome:
+          "quota_blocked",
+      }),
+
+      countActivity({
+        platform:
+          "web",
+      }),
+
+      countActivity({
+        platform:
+          "android",
+      }),
     ]);
 
+  const results = [
+    usersResult.error,
+    subscriptionsResult.error,
+    activity24hResult.error,
+    activity7dResult.error,
+    completed7dResult.error,
+    failed7dResult.error,
+    quotaBlocked7dResult.error,
+    web7dResult.error,
+    android7dResult.error,
+  ];
+
   if (
-    usersResult.error ||
-    subscriptionsResult.error ||
-    activity24hResult.error ||
-    activity7dResult.error
+    results.some(
+      Boolean
+    )
   ) {
     throw new Error(
       "AYZO_ADMIN_DASHBOARD_UNAVAILABLE"
     );
   }
 
+  if (
+    !(
+      "total" in
+      usersResult.data
+    ) ||
+    typeof usersResult
+      .data
+      .total !==
+      "number"
+  ) {
+    throw new Error(
+      "AYZO_ADMIN_USERS_TOTAL_UNAVAILABLE"
+    );
+  }
+
+  const usersTotal =
+    usersResult.data.total;
+
   const subscriptions =
     subscriptionsResult.data ??
     [];
 
-  const activity =
-    activity7dResult.data ??
-    [];
+  const activeSubscriptions =
+    subscriptions.filter(
+      row =>
+        row.status ===
+          "active" ||
+        row.status ===
+          "canceling"
+    );
 
   return {
     users:
-      usersResult.data.total ??
-      0,
+      usersTotal,
 
     subscriptions: {
       total:
         subscriptions.length,
 
       active:
-        subscriptions.filter(
-          row =>
-            row.status ===
-              "active" ||
-            row.status ===
-              "canceling"
-        ).length,
+        activeSubscriptions.length,
 
       pro:
-        subscriptions.filter(
+        activeSubscriptions.filter(
           row =>
             row.plan_id ===
             "pro"
         ).length,
 
       advanced:
-        subscriptions.filter(
+        activeSubscriptions.filter(
           row =>
             row.plan_id ===
             "advanced"
         ).length,
 
       googlePlay:
-        subscriptions.filter(
+        activeSubscriptions.filter(
           row =>
             row.provider ===
             "google_play"
         ).length,
 
       creem:
-        subscriptions.filter(
+        activeSubscriptions.filter(
           row =>
             row.provider ===
             "creem"
@@ -467,42 +558,28 @@ export async function getAdminDashboardSnapshot():
         0,
 
       last7d:
-        activity.length,
+        activity7dResult.count ??
+        0,
 
       completed7d:
-        activity.filter(
-          row =>
-            row.outcome ===
-            "completed"
-        ).length,
+        completed7dResult.count ??
+        0,
 
       failed7d:
-        activity.filter(
-          row =>
-            row.outcome ===
-            "failed"
-        ).length,
+        failed7dResult.count ??
+        0,
 
       quotaBlocked7d:
-        activity.filter(
-          row =>
-            row.outcome ===
-            "quota_blocked"
-        ).length,
+        quotaBlocked7dResult.count ??
+        0,
 
       web7d:
-        activity.filter(
-          row =>
-            row.platform ===
-            "web"
-        ).length,
+        web7dResult.count ??
+        0,
 
       android7d:
-        activity.filter(
-          row =>
-            row.platform ===
-            "android"
-        ).length,
+        android7dResult.count ??
+        0,
     },
   };
 }

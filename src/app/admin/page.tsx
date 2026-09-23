@@ -43,12 +43,16 @@ export default async function AdminPage() {
   const snapshot =
     await getAdminDashboardSnapshot();
 
+  const resolvedAnalyses =
+    snapshot.activity.completed7d +
+    snapshot.activity.failed7d;
+
   const successRate =
-    snapshot.activity.last7d > 0
+    resolvedAnalyses > 0
       ? Math.round(
           (
             snapshot.activity.completed7d /
-            snapshot.activity.last7d
+            resolvedAnalyses
           ) *
             100
         )
