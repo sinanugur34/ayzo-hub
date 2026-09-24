@@ -2,6 +2,7 @@ import AccountPlanCard from "@/components/account/AccountPlanCard";
 import AlertRulesPanel from "@/components/account/AlertRulesPanel";
 import DeviceSecurityPanel from "@/components/account/DeviceSecurityPanel";
 import CasesPanel from "@/components/account/CasesPanel";
+import EvidenceLockerPanel from "@/components/account/EvidenceLockerPanel";
 import Link from "next/link";
 
 import {
@@ -259,6 +260,8 @@ export default async function AccountPage() {
         </div>
 
         <CasesPanel />
+
+        <EvidenceLockerPanel />
 
         <DeviceSecurityPanel />
 
