@@ -232,7 +232,9 @@ export function selectEligibleProUserIds(
 
     if (
       entitlement.planId ===
-      "pro"
+        "pro" ||
+      entitlement.planId ===
+        "advanced"
     ) {
       eligible.add(
         userId

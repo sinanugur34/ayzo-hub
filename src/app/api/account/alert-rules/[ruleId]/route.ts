@@ -19,6 +19,10 @@ import {
   getServerEntitlement,
 } from "@/lib/billing/entitlement";
 
+import {
+  planHasFeature,
+} from "@/lib/plans/registry";
+
 export const dynamic =
   "force-dynamic";
 
@@ -61,7 +65,7 @@ function noStoreJson(
   );
 }
 
-async function canManagePro(
+async function canManageAlerts(
   expectedUserId:
     string
 ) {
@@ -72,9 +76,10 @@ async function canManagePro(
     result.userId ===
       expectedUserId &&
     result.billingAvailable &&
-    result.entitlement
-      .planId ===
-      "pro"
+    planHasFeature(
+      result.entitlement.planId,
+      "alerts"
+    )
   );
 }
 
@@ -130,7 +135,7 @@ export async function PATCH(
 
   if (
     !(
-      await canManagePro(
+      await canManageAlerts(
         userId
       )
     )
@@ -138,10 +143,10 @@ export async function PATCH(
     return noStoreJson(
       {
         error:
-          "Pro is required to manage alert rules.",
+          "AYZO Pro or Advanced is required to manage alert rules.",
 
         code:
-          "PRO_REQUIRED",
+          "PAID_PLAN_REQUIRED",
       },
       403
     );
@@ -260,7 +265,7 @@ export async function DELETE(
 
   if (
     !(
-      await canManagePro(
+      await canManageAlerts(
         userId
       )
     )
@@ -268,10 +273,10 @@ export async function DELETE(
     return noStoreJson(
       {
         error:
-          "Pro is required to manage alert rules.",
+          "AYZO Pro or Advanced is required to manage alert rules.",
 
         code:
-          "PRO_REQUIRED",
+          "PAID_PLAN_REQUIRED",
       },
       403
     );

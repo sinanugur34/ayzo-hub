@@ -493,6 +493,7 @@ export function evaluateAlertObservation({
   ruleType,
   previousSnapshot,
   observation,
+  minimumNewEvidence = 1,
 }: {
   ruleType:
     BasicAlertRuleType;
@@ -502,6 +503,9 @@ export function evaluateAlertObservation({
 
   observation:
     AlertObservation;
+
+  minimumNewEvidence?:
+    number;
 }): AlertDetectionResult {
   if (
     !validTimestamp(
@@ -510,6 +514,18 @@ export function evaluateAlertObservation({
   ) {
     throw new Error(
       "Invalid alert observation timestamp."
+    );
+  }
+
+  if (
+    !Number.isInteger(
+      minimumNewEvidence
+    ) ||
+    minimumNewEvidence < 1 ||
+    minimumNewEvidence > 20
+  ) {
+    throw new Error(
+      "Invalid alert minimum evidence threshold."
     );
   }
 
@@ -592,10 +608,14 @@ export function evaluateAlertObservation({
    * old evidence may disappear.
    *
    * Losing old evidence is not an alert.
+   *
+   * Advanced custom rules may also
+   * require multiple new evidence
+   * references in one monitoring check.
    */
   if (
-    newEvidence.length ===
-    0
+    newEvidence.length <
+      minimumNewEvidence
   ) {
     return {
       outcome:

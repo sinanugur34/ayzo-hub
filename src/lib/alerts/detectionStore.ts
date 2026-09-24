@@ -1,5 +1,6 @@
 import {
   basicAlertRuleTypes,
+  readAlertRuleMinimumNewEvidence,
   type BasicAlertRuleType,
 } from "@/lib/account/alertRules";
 
@@ -72,7 +73,7 @@ export async function applyAlertObservation({
         "alert_rules"
       )
       .select(
-        "id,user_id,rule_type,enabled"
+        "id,user_id,rule_type,rule_config,enabled"
       )
       .eq(
         "id",
@@ -191,6 +192,11 @@ export async function applyAlertObservation({
       previousSnapshot,
 
       observation,
+
+      minimumNewEvidence:
+        readAlertRuleMinimumNewEvidence(
+          rule.rule_config
+        ),
     });
 
   let eventCreated =
