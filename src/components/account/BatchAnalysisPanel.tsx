@@ -44,6 +44,7 @@ const networks = [
   "bitcoin",
   "dogecoin",
   "tron",
+  "xrp",
 ] as const;
 
 export default function BatchAnalysisPanel() {

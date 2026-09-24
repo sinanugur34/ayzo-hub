@@ -7,11 +7,11 @@ import {
 } from "./registry";
 
 test(
-  "keeps sixteen registered networks live",
+  "keeps seventeen registered networks live",
   () => {
     assert.equal(
       NETWORK_IDS.length,
-      16
+      17
     );
 
     const liveNetworkCount =
@@ -24,7 +24,7 @@ test(
 
     assert.equal(
       liveNetworkCount,
-      16
+      17
     );
 
     assert.equal(
@@ -262,6 +262,37 @@ test(
         .includes(
           "addressFlows"
         )
+    );
+  }
+);
+
+test(
+  "registers XRP Ledger as a live native network",
+  () => {
+    assert.equal(
+      NETWORKS.xrp.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.xrp.family,
+      "xrpl"
+    );
+
+    assert.equal(
+      NETWORKS.xrp.nativeCurrency,
+      "XRP"
+    );
+
+    assert.equal(
+      NETWORKS.xrp.chainId,
+      null
+    );
+
+    assert.ok(
+      NETWORKS.xrp.capabilities.includes(
+        "addressFlows"
+      )
     );
   }
 );

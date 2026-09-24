@@ -7,6 +7,7 @@ export type AskAyzoAdapterId =
   | "evm"
   | "utxo"
   | "tron"
+  | "xrpl"
   | "generic";
 
 export type AskAyzoCapability =
@@ -71,6 +72,12 @@ const CAPABILITIES:
     "contract-type",
   ],
 
+  xrpl: [
+    "summary",
+    "coverage",
+    "transaction-history",
+  ],
+
   generic: [
     "summary",
     "coverage",
@@ -106,6 +113,12 @@ const QUESTIONS:
     "What contract type was observed?",
   ],
 
+  xrpl: [
+    "What are the most important findings?",
+    "How many transactions were observed?",
+    "What coverage is available?",
+  ],
+
   generic: [
     "What are the most important findings?",
     "What coverage is available?",
@@ -129,6 +142,9 @@ function adapterForFamily(
 
     case "tron":
       return "tron";
+
+    case "xrpl":
+      return "xrpl";
 
     default:
       return "generic";

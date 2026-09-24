@@ -42,6 +42,14 @@ import {
 } from "@/lib/intelligence/tron/engine";
 
 import {
+  isXrplClassicAddress,
+} from "@/lib/intelligence/xrpl/address";
+
+import {
+  runXrplIntelligence,
+} from "@/lib/intelligence/xrpl/engine";
+
+import {
   runEvmUnifiedIntelligence,
 } from "@/lib/intelligence/evm/unifiedOrchestrator";
 
@@ -416,6 +424,13 @@ export async function POST(
         !isTronAddress(
           address
         )
+      ) ||
+      (
+        resolution.engine ===
+          "xrpl" &&
+        !isXrplClassicAddress(
+          address
+        )
       );
 
     if (invalid) {
@@ -692,6 +707,18 @@ export async function POST(
       case "tron": {
         const result =
           await runTronIntelligence({
+            address,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "xrpl": {
+        const result =
+          await runXrplIntelligence({
             address,
           });
 

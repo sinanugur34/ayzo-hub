@@ -75,7 +75,7 @@ test(
 
     assert.equal(
       liveNetworks.length,
-      16
+      17
     );
 
     assert.ok(
@@ -83,6 +83,19 @@ test(
         (network) =>
           network.status === "live"
       )
+    );
+  }
+);
+
+test(
+  "maps XRP Ledger evidence to wallet and connection analysis",
+  () => {
+    assert.deepEqual(
+      toolIds("xrp"),
+      [
+        "walletAnalysis",
+        "connections",
+      ]
     );
   }
 );

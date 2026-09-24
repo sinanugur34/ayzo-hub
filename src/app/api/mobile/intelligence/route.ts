@@ -44,6 +44,14 @@ import {
 } from "@/lib/intelligence/tron/engine";
 
 import {
+  isXrplClassicAddress,
+} from "@/lib/intelligence/xrpl/address";
+
+import {
+  runXrplIntelligence,
+} from "@/lib/intelligence/xrpl/engine";
+
+import {
   runEvmUnifiedIntelligence,
 } from "@/lib/intelligence/evm/unifiedOrchestrator";
 
@@ -396,6 +404,27 @@ export async function POST(
       );
     }
 
+    if (
+      resolution.engine ===
+        "xrpl" &&
+      !isXrplClassicAddress(
+        address
+      )
+    ) {
+      return json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid XRP Ledger classic address.",
+          network:
+            resolution.networkId,
+        },
+        400
+      );
+    }
+
     const {
       entitlement,
       billingAvailable,
@@ -709,6 +738,30 @@ export async function POST(
       case "tron": {
         const result =
           await runTronIntelligence({
+            address,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
+        return json(
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
+          result.status
+        );
+      }
+
+      case "xrpl": {
+        const result =
+          await runXrplIntelligence({
             address,
           });
 

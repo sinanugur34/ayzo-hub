@@ -173,6 +173,7 @@ export async function detectMobileAddressNetwork({
       "bitcoin",
       "dogecoin",
       "tron",
+      "xrp",
     ];
 
   if (

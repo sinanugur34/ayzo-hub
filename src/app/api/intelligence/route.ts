@@ -30,6 +30,15 @@ import {
 import {
   runTronIntelligence,
 } from "@/lib/intelligence/tron/engine";
+
+import {
+  isXrplClassicAddress,
+} from "@/lib/intelligence/xrpl/address";
+
+import {
+  runXrplIntelligence,
+} from "@/lib/intelligence/xrpl/engine";
+
 import {
   runEvmUnifiedIntelligence,
 } from "@/lib/intelligence/evm/unifiedOrchestrator";
@@ -213,6 +222,24 @@ export async function POST(request: Request) {
           ok: false,
           code: "INVALID_ADDRESS",
           error: "Invalid Dogecoin address.",
+          network: resolution.networkId,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      resolution.engine === "xrpl" &&
+      !isXrplClassicAddress(
+        address
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          code: "INVALID_ADDRESS",
+          error:
+            "Invalid XRP Ledger classic address.",
           network: resolution.networkId,
         },
         { status: 400 }
@@ -568,6 +595,32 @@ export async function POST(request: Request) {
       case "tron": {
         const result =
           await runTronIntelligence({
+            address,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "xrpl": {
+        const result =
+          await runXrplIntelligence({
             address,
           });
 

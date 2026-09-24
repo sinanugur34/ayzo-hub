@@ -3,7 +3,8 @@ export type NetworkFamily =
   | "evm"
   | "bitcoin"
   | "dogecoin"
-  | "tron";
+  | "tron"
+  | "xrpl";
 
 export type NetworkStatus =
   | "live"

@@ -36,6 +36,11 @@ const TRON_CAPABILITIES = [
   "addressFlows",
 ] as const satisfies readonly NetworkCapability[];
 
+const XRPL_CAPABILITIES = [
+  "addressFlows",
+  "walletRelationships",
+] as const satisfies readonly NetworkCapability[];
+
 export const NETWORKS = {
   solana: {
     id: "solana",
@@ -228,6 +233,18 @@ export const NETWORKS = {
     explorerUrl: "https://tronscan.org",
     capabilities: TRON_CAPABILITIES,
   },
+  xrp: {
+    id: "xrp",
+    name: "XRP Ledger",
+    shortName: "XRP",
+    family: "xrpl",
+    status: "live",
+    chainId: null,
+    nativeCurrency: "XRP",
+    explorerUrl: "https://livenet.xrpl.org",
+    capabilities: XRPL_CAPABILITIES,
+  },
+
 } as const satisfies Record<string, NetworkDefinition>;
 
 export type NetworkId = keyof typeof NETWORKS;

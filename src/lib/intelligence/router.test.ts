@@ -475,3 +475,39 @@ test(
     );
   }
 );
+
+test(
+  "resolves XRP Ledger through the native XRPL engine",
+  () => {
+    const result =
+      resolveIntelligenceNetwork(
+        "xrp"
+      );
+
+    assert.equal(
+      result.ok,
+      true
+    );
+
+    if (!result.ok) {
+      throw new Error(
+        "Expected XRP Ledger to resolve."
+      );
+    }
+
+    assert.equal(
+      result.engine,
+      "xrpl"
+    );
+
+    assert.equal(
+      result.networkId,
+      "xrp"
+    );
+
+    assert.equal(
+      result.network.nativeCurrency,
+      "XRP"
+    );
+  }
+);

@@ -440,7 +440,9 @@ export function buildHistoricalSnapshot(
     network ===
       "dogecoin" ||
     network ===
-      "tron"
+      "tron" ||
+    network ===
+      "xrp"
   ) {
     return utxoSnapshot(
       network,
