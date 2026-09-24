@@ -2,6 +2,7 @@ import AccountPlanCard from "@/components/account/AccountPlanCard";
 import AlertRulesPanel from "@/components/account/AlertRulesPanel";
 import CustomAlertRulesPanel from "@/components/account/CustomAlertRulesPanel";
 import BatchAnalysisPanel from "@/components/account/BatchAnalysisPanel";
+import CustomLabelsNotesPanel from "@/components/account/CustomLabelsNotesPanel";
 import AdvancedWatchlistsPanel from "@/components/account/AdvancedWatchlistsPanel";
 import DeviceSecurityPanel from "@/components/account/DeviceSecurityPanel";
 import CasesPanel from "@/components/account/CasesPanel";
@@ -274,6 +275,8 @@ export default async function AccountPage() {
         <DeviceSecurityPanel />
 
         <BatchAnalysisPanel />
+
+        <CustomLabelsNotesPanel />
 
         <CustomAlertRulesPanel />
 
