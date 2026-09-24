@@ -253,3 +253,24 @@ test(
     );
   }
 );
+
+test(
+  "selects XRP Ledger for detected XRP classic addresses",
+  () => {
+    assert.equal(
+      resolveSelectedNetworkForAddress(
+        "ethereum",
+        "xrp"
+      ),
+      "xrp"
+    );
+
+    assert.equal(
+      resolveSelectedNetworkForAddress(
+        "solana",
+        "xrp"
+      ),
+      "xrp"
+    );
+  }
+);

@@ -38,6 +38,7 @@ export type AddressKind =
   | "bitcoin"
   | "dogecoin"
   | "tron"
+  | "xrp"
   | "invalid";
 
 export function resolveSelectedNetworkForAddress<
@@ -54,6 +55,7 @@ export function resolveSelectedNetworkForAddress<
   | "bitcoin"
   | "dogecoin"
   | "tron"
+  | "xrp"
   | null {
   if (
     addressKind ===
@@ -88,6 +90,13 @@ export function resolveSelectedNetworkForAddress<
     "tron"
   ) {
     return "tron";
+  }
+
+  if (
+    addressKind ===
+    "xrp"
+  ) {
+    return "xrp";
   }
 
   return NETWORKS[

@@ -18,6 +18,10 @@ import {
   isTronAddress,
 } from "@/lib/intelligence/tron/address";
 
+import {
+  isXrplClassicAddress,
+} from "@/lib/intelligence/xrpl/address";
+
 const EVM_ADDRESS =
   /^0x[0-9a-fA-F]{40}$/;
 
@@ -25,6 +29,7 @@ type DetectedNetwork =
   | "bitcoin"
   | "dogecoin"
   | "tron"
+  | "xrp"
   | "solana"
   | "evm"
   | null;
@@ -121,6 +126,13 @@ export async function POST(
   ) {
     network =
       "tron";
+  } else if (
+    isXrplClassicAddress(
+      address
+    )
+  ) {
+    network =
+      "xrp";
   } else if (
     EVM_ADDRESS.test(
       address

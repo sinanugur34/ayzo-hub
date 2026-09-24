@@ -148,3 +148,23 @@ test(
     );
   }
 );
+
+test(
+  "detects checksum-valid XRP Ledger classic addresses",
+  async () => {
+    const result =
+      await detect(
+        "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
+      );
+
+    assert.equal(
+      result.status,
+      200
+    );
+
+    assert.equal(
+      result.body.network,
+      "xrp"
+    );
+  }
+);

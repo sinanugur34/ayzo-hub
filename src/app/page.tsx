@@ -15,6 +15,7 @@ import {
 import BitcoinIntelligenceReport from "@/components/BitcoinIntelligenceReport";
 import DogecoinIntelligenceReport from "@/components/DogecoinIntelligenceReport";
 import TronIntelligenceReport from "@/components/TronIntelligenceReport";
+import XrplIntelligenceReport from "@/components/XrplIntelligenceReport";
 import EvmIntelligenceReport from "@/components/EvmIntelligenceReport";
 import FreePlanStatus from "@/components/FreePlanStatus";
 import IntelligenceReport from "@/components/IntelligenceReport";
@@ -96,6 +97,7 @@ type AddressDetectionResponse =
         | "bitcoin"
         | "dogecoin"
         | "tron"
+        | "xrp"
         | "solana"
         | "evm"
         | null;
@@ -270,6 +272,17 @@ export default function Home() {
       null
     );
 
+  const [
+    xrpAnalysis,
+    setXrpAnalysis,
+  ] =
+    useState<{
+      address:
+        string;
+    } | null>(
+      null
+    );
+
   function resetResult() {
     setSolanaResult(
       null
@@ -288,6 +301,10 @@ export default function Home() {
     );
 
     setTronAnalysis(
+      null
+    );
+
+    setXrpAnalysis(
       null
     );
   }
@@ -417,6 +434,10 @@ export default function Home() {
               null
             );
 
+            setXrpAnalysis(
+              null
+            );
+
             setIsValid(
               null
             );
@@ -463,6 +484,68 @@ export default function Home() {
       setMessage(
         "Enter an address for the selected network."
       );
+
+      return;
+    }
+
+    if (
+      network ===
+        "xrp"
+    ) {
+      const detectionResponse =
+        await fetch(
+          "/api/address-detect",
+          {
+            method:
+              "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify({
+                address:
+                  value,
+              }),
+          }
+        );
+
+      const detection =
+        (
+          await detectionResponse.json()
+        ) as AddressDetectionResponse;
+
+      if (
+        !detectionResponse.ok ||
+        !detection.ok ||
+        detection.network !==
+          "xrp"
+      ) {
+        setIsValid(
+          false
+        );
+
+        setMessage(
+          "This does not look like a valid XRP Ledger classic address."
+        );
+
+        return;
+      }
+
+      setIsValid(
+        true
+      );
+
+      setMessage(
+        "XRP Ledger address accepted. AYZO intelligence is running."
+      );
+
+      setXrpAnalysis({
+        address:
+          value,
+      });
 
       return;
     }
@@ -832,6 +915,8 @@ export default function Home() {
     dogecoinAnalysis !==
       null ||
     tronAnalysis !==
+      null ||
+    xrpAnalysis !==
       null;
 
   return (
@@ -919,6 +1004,7 @@ export default function Home() {
                     "bitcoin",
                     "dogecoin",
                     "tron",
+                    "xrp",
                   ] as const
                 ).map(
                   id => {
@@ -968,7 +1054,7 @@ export default function Home() {
               <details className="group relative z-50 w-full shrink-0 sm:w-52">
                 <summary className="relative flex h-14 cursor-pointer list-none flex-col justify-center rounded-xl border border-violet-500/30 bg-violet-500/[0.06] px-3 pr-10 text-left shadow-[0_0_24px_rgba(139,92,246,0.06)] transition hover:border-violet-400/50 hover:bg-violet-500/[0.09]">
                   <span className="text-[8px] font-semibold tracking-[0.16em] text-violet-400">
-                    ALL NETWORKS · 16 LIVE
+                    ALL NETWORKS · {LIVE_NETWORKS.length} LIVE
                   </span>
 
                   <span className="mt-1 text-xs font-medium text-zinc-100">
@@ -989,7 +1075,7 @@ export default function Home() {
                     </span>
 
                     <span className="text-[9px] text-zinc-600">
-                      16 LIVE
+                      {LIVE_NETWORKS.length} LIVE
                     </span>
                   </div>
 
@@ -1093,7 +1179,10 @@ export default function Home() {
                         : network ===
                             "tron"
                           ? "Paste a TRON address"
-                          : `Paste a ${networkName(network)} token, contract or wallet address`
+                          : network ===
+                              "xrp"
+                            ? "Paste an XRP Ledger classic address"
+                            : `Paste a ${networkName(network)} token, contract or wallet address`
                 }
                 spellCheck={
                   false
@@ -1300,6 +1389,19 @@ export default function Home() {
               }
               address={
                 tronAnalysis.address
+              }
+            />
+          </section>
+        )}
+
+        {xrpAnalysis && (
+          <section className="mt-12 w-full max-w-4xl">
+            <XrplIntelligenceReport
+              key={
+                xrpAnalysis.address
+              }
+              address={
+                xrpAnalysis.address
               }
             />
           </section>
