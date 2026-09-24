@@ -52,6 +52,7 @@ const ADVANCED_PLATFORM_FEATURES = {
   batchAnalysis: true,
   customLabelsNotes: true,
   apiAccess: true,
+  noCodeDashboards: true,
 } as const satisfies Partial<
   Record<
     FeatureId,
@@ -65,7 +66,6 @@ const PRO_ROADMAP_FEATURES = [
 
 const ADVANCED_ROADMAP_FEATURES = [
   ...PRO_ROADMAP_FEATURES,
-  "noCodeDashboards",
   "priorityAnalysis",
 ] as const satisfies readonly FeatureId[];
 

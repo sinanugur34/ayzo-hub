@@ -56,7 +56,7 @@ test(
 );
 
 test(
-  "No-Code Dashboards remains fail-closed before activation",
+  "No-Code Dashboards is activated through the Advanced registry gate",
   () => {
     assert.ok(
       access.includes(
@@ -76,16 +76,38 @@ test(
       )
     );
 
-    assert.equal(
+    assert.ok(
       registry.includes(
         "noCodeDashboards: true"
+      )
+    );
+
+    const roadmapStart =
+      registry.indexOf(
+        "const ADVANCED_ROADMAP_FEATURES"
+      );
+
+    const roadmapEnd =
+      registry.indexOf(
+        "export const PLANS"
+      );
+
+    const roadmap =
+      registry.slice(
+        roadmapStart,
+        roadmapEnd
+      );
+
+    assert.equal(
+      roadmap.includes(
+        '"noCodeDashboards"'
       ),
       false
     );
 
     assert.ok(
-      registry.includes(
-        '"noCodeDashboards"'
+      roadmap.includes(
+        '"priorityAnalysis"'
       )
     );
   }
