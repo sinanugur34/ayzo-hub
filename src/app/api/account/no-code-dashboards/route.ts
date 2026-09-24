@@ -203,8 +203,19 @@ export async function GET() {
       )
     );
 
+  type DashboardAnalysisPayloadRow = {
+    id: string;
+    network: string;
+    subject_type: string;
+    subject_value: string;
+    title: string | null;
+    created_at: string;
+    analysis_payload: unknown;
+  };
+
   let payloads:
-    any[] = [];
+    DashboardAnalysisPayloadRow[] =
+      [];
 
   if (analysisIds.length) {
     const result =
