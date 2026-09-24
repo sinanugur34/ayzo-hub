@@ -1088,6 +1088,122 @@ export default function AnalysisActions({
         </div>
       </div>
 
+      {panelOpen && (
+        <div className="mt-5 rounded-2xl border border-zinc-800 bg-black/30 p-4">
+          {watchlists.length >
+            0 && (
+            <div>
+              <label
+                htmlFor={`watchlist-${network}-${subjectValue}`}
+                className="text-[10px] uppercase tracking-[0.12em] text-zinc-600"
+              >
+                Existing watchlist
+              </label>
+
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                <select
+                  id={`watchlist-${network}-${subjectValue}`}
+                  value={
+                    selectedWatchlistId
+                  }
+                  onChange={
+                    event =>
+                      setSelectedWatchlistId(
+                        event.target.value
+                      )
+                  }
+                  className="h-11 min-w-0 flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-3 text-sm text-zinc-300 outline-none focus:border-violet-500"
+                >
+                  {watchlists.map(
+                    watchlist => (
+                      <option
+                        key={
+                          watchlist.id
+                        }
+                        value={
+                          watchlist.id
+                        }
+                      >
+                        {watchlist.name}
+                      </option>
+                    )
+                  )}
+                </select>
+
+                <button
+                  type="button"
+                  disabled={
+                    adding ||
+                    !selectedWatchlistId
+                  }
+                  onClick={
+                    addToExistingWatchlist
+                  }
+                  className="h-11 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 text-sm font-medium text-violet-200 transition hover:bg-violet-500/20 disabled:opacity-50"
+                >
+                  {adding
+                    ? "Adding..."
+                    : "Add"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div
+            className={
+              watchlists.length >
+              0
+                ? "mt-5 border-t border-zinc-900 pt-5"
+                : ""
+            }
+          >
+            <label
+              htmlFor={`new-watchlist-${network}-${subjectValue}`}
+              className="text-[10px] uppercase tracking-[0.12em] text-zinc-600"
+            >
+              New watchlist
+            </label>
+
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+              <input
+                id={`new-watchlist-${network}-${subjectValue}`}
+                type="text"
+                value={
+                  newWatchlistName
+                }
+                onChange={
+                  event =>
+                    setNewWatchlistName(
+                      event.target.value
+                    )
+                }
+                maxLength={
+                  120
+                }
+                placeholder="e.g. Whale Monitoring"
+                className="h-11 min-w-0 flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-3 text-sm text-zinc-300 outline-none placeholder:text-zinc-700 focus:border-violet-500"
+              />
+
+              <button
+                type="button"
+                disabled={
+                  adding ||
+                  !newWatchlistName.trim()
+                }
+                onClick={
+                  createAndAdd
+                }
+                className="h-11 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 disabled:opacity-50"
+              >
+                {adding
+                  ? "Creating..."
+                  : "Create & Add"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <CaseQuickAdd
         ensureSavedAnalysis={
           saveAnalysis
@@ -1384,122 +1500,6 @@ export default function AnalysisActions({
             </div>
           )}
         </section>
-      )}
-
-      {panelOpen && (
-        <div className="mt-5 rounded-2xl border border-zinc-800 bg-black/30 p-4">
-          {watchlists.length >
-            0 && (
-            <div>
-              <label
-                htmlFor={`watchlist-${network}-${subjectValue}`}
-                className="text-[10px] uppercase tracking-[0.12em] text-zinc-600"
-              >
-                Existing watchlist
-              </label>
-
-              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-                <select
-                  id={`watchlist-${network}-${subjectValue}`}
-                  value={
-                    selectedWatchlistId
-                  }
-                  onChange={
-                    event =>
-                      setSelectedWatchlistId(
-                        event.target.value
-                      )
-                  }
-                  className="h-11 min-w-0 flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-3 text-sm text-zinc-300 outline-none focus:border-violet-500"
-                >
-                  {watchlists.map(
-                    watchlist => (
-                      <option
-                        key={
-                          watchlist.id
-                        }
-                        value={
-                          watchlist.id
-                        }
-                      >
-                        {watchlist.name}
-                      </option>
-                    )
-                  )}
-                </select>
-
-                <button
-                  type="button"
-                  disabled={
-                    adding ||
-                    !selectedWatchlistId
-                  }
-                  onClick={
-                    addToExistingWatchlist
-                  }
-                  className="h-11 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 text-sm font-medium text-violet-200 transition hover:bg-violet-500/20 disabled:opacity-50"
-                >
-                  {adding
-                    ? "Adding..."
-                    : "Add"}
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div
-            className={
-              watchlists.length >
-              0
-                ? "mt-5 border-t border-zinc-900 pt-5"
-                : ""
-            }
-          >
-            <label
-              htmlFor={`new-watchlist-${network}-${subjectValue}`}
-              className="text-[10px] uppercase tracking-[0.12em] text-zinc-600"
-            >
-              New watchlist
-            </label>
-
-            <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-              <input
-                id={`new-watchlist-${network}-${subjectValue}`}
-                type="text"
-                value={
-                  newWatchlistName
-                }
-                onChange={
-                  event =>
-                    setNewWatchlistName(
-                      event.target.value
-                    )
-                }
-                maxLength={
-                  120
-                }
-                placeholder="e.g. Whale Monitoring"
-                className="h-11 min-w-0 flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-3 text-sm text-zinc-300 outline-none placeholder:text-zinc-700 focus:border-violet-500"
-              />
-
-              <button
-                type="button"
-                disabled={
-                  adding ||
-                  !newWatchlistName.trim()
-                }
-                onClick={
-                  createAndAdd
-                }
-                className="h-11 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 disabled:opacity-50"
-              >
-                {adding
-                  ? "Creating..."
-                  : "Create & Add"}
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {message && (
