@@ -326,11 +326,20 @@ export default function XrplIntelligenceReport({
           }
 
           if (
-            !response.ok ||
             !body.ok
           ) {
             setError(
               body.error
+            );
+
+            return;
+          }
+
+          if (
+            !response.ok
+          ) {
+            setError(
+              "XRP Ledger intelligence request failed."
             );
 
             return;
