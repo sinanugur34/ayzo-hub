@@ -45,6 +45,11 @@ import {
   acquireAnalysisLoadGuard,
   type AnalysisLoadLease,
 } from "@/lib/analysisLoadGuard";
+
+import {
+  getWebAnalysisPriority,
+} from "@/lib/analysisPriority";
+
 import { readJsonObjectBody } from "@/lib/requestBody";
 
 import {
@@ -215,10 +220,16 @@ export async function POST(request: Request) {
     }
 
     if (!isDevelopmentTestRequest) {
+      const priorityAnalysis =
+        await getWebAnalysisPriority();
+
       const loadGuard =
         await acquireAnalysisLoadGuard({
           clientKey:
             `web:${clientIp}`,
+
+          priority:
+            priorityAnalysis,
         });
 
       if (!loadGuard.ok) {

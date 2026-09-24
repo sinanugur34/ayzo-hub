@@ -104,11 +104,5 @@ test(
       ),
       false
     );
-
-    assert.ok(
-      roadmap.includes(
-        '"priorityAnalysis"'
-      )
-    );
   }
 );

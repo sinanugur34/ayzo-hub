@@ -13,6 +13,10 @@ import {
   getInternalApiKey,
 } from "@/lib/apiSecurity";
 
+import {
+  resolveAnalysisAdmissionPolicy,
+} from "@/lib/analysisPriorityPolicy";
+
 const ACQUIRE_SCRIPT = `
 local globalKey = KEYS[1]
 local clientKey = KEYS[2]
@@ -120,8 +124,10 @@ export type AnalysisLoadLease = {
 
 export async function acquireAnalysisLoadGuard({
   clientKey,
+  priority = false,
 }: {
   clientKey: string;
+  priority?: boolean;
 }): Promise<
   | {
       ok: true;
@@ -153,6 +159,39 @@ export async function acquireAnalysisLoadGuard({
       1,
       10
     );
+
+  const maxPriorityReserve =
+    Math.max(
+      0,
+      globalLimit - 1
+    );
+
+  const defaultPriorityReserve =
+    Math.min(
+      5,
+      maxPriorityReserve
+    );
+
+  const priorityReserve =
+    boundedInteger(
+      process.env
+        .AYZO_ANALYSIS_PRIORITY_RESERVE,
+      defaultPriorityReserve,
+      0,
+      maxPriorityReserve
+    );
+
+  const admissionPolicy =
+    resolveAnalysisAdmissionPolicy({
+      hardGlobalLimit:
+        globalLimit,
+
+      clientLimit,
+
+      priorityReserve,
+
+      priority,
+    });
 
   const leaseSeconds =
     boundedInteger(
@@ -201,8 +240,14 @@ export async function acquireAnalysisLoadGuard({
         [
           String(now),
           String(expiresAt),
-          String(globalLimit),
-          String(clientLimit),
+          String(
+            admissionPolicy
+              .globalAdmissionLimit
+          ),
+          String(
+            admissionPolicy
+              .clientLimit
+          ),
           token,
           String(
             leaseSeconds * 2

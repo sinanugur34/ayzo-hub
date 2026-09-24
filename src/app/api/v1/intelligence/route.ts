@@ -60,6 +60,10 @@ import {
 } from "@/lib/analysisLoadGuard";
 
 import {
+  planHasPriorityAnalysis,
+} from "@/lib/analysisPriorityPolicy";
+
+import {
   readJsonObjectBody,
 } from "@/lib/requestBody";
 
@@ -264,6 +268,11 @@ export async function POST(
       await acquireAnalysisLoadGuard({
         clientKey:
           `api-user:${userId}`,
+
+        priority:
+          planHasPriorityAnalysis(
+            auth.identity.planId
+          ),
       });
 
     if (!loadGuard.ok) {

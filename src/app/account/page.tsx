@@ -5,6 +5,7 @@ import BatchAnalysisPanel from "@/components/account/BatchAnalysisPanel";
 import CustomLabelsNotesPanel from "@/components/account/CustomLabelsNotesPanel";
 import ApiAccessPanel from "@/components/account/ApiAccessPanel";
 import NoCodeDashboardsPanel from "@/components/account/NoCodeDashboardsPanel";
+import PriorityAnalysisPanel from "@/components/account/PriorityAnalysisPanel";
 import AdvancedWatchlistsPanel from "@/components/account/AdvancedWatchlistsPanel";
 import DeviceSecurityPanel from "@/components/account/DeviceSecurityPanel";
 import CasesPanel from "@/components/account/CasesPanel";
@@ -283,6 +284,8 @@ export default async function AccountPage() {
         <ApiAccessPanel />
 
         <NoCodeDashboardsPanel />
+
+        <PriorityAnalysisPanel />
 
         <CustomAlertRulesPanel />
 
