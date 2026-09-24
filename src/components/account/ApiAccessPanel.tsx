@@ -506,7 +506,7 @@ Content-Type: application/json
 
         <p className="mt-3 text-[11px] leading-5 text-zinc-600">
           Rate limit: 10 requests per minute per API key. API calls also use
-          AYZO's normal analysis load protection and Advanced daily quota.
+          AYZO&apos;s normal analysis load protection and Advanced daily quota.
         </p>
       </div>
     </section>
