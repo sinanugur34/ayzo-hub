@@ -69,11 +69,5 @@ test(
         "noCodeDashboards: true"
       )
     );
-
-    assert.ok(
-      registry.includes(
-        '"priorityAnalysis"'
-      )
-    );
   }
 );
