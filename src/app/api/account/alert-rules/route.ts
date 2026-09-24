@@ -18,6 +18,10 @@ import {
   getServerEntitlement,
 } from "@/lib/billing/entitlement";
 
+import {
+  planHasFeature,
+} from "@/lib/plans/registry";
+
 export const dynamic =
   "force-dynamic";
 
@@ -52,7 +56,7 @@ function noStoreJson(
   );
 }
 
-async function resolveProAccess(
+async function resolveAlertAccess(
   expectedUserId:
     string
 ) {
@@ -64,9 +68,10 @@ async function resolveProAccess(
       result.userId ===
         expectedUserId &&
       result.billingAvailable &&
-      result.entitlement
-        .planId ===
-        "pro",
+      planHasFeature(
+        result.entitlement.planId,
+        "alerts"
+      ),
 
     billingAvailable:
       result.billingAvailable,
@@ -119,7 +124,7 @@ export async function GET() {
         )
         .limit(100),
 
-      resolveProAccess(
+      resolveAlertAccess(
         userId
       ),
     ]);
@@ -193,7 +198,7 @@ export async function POST(
   }
 
   const access =
-    await resolveProAccess(
+    await resolveAlertAccess(
       userId
     );
 
@@ -201,10 +206,10 @@ export async function POST(
     return noStoreJson(
       {
         error:
-          "Pro is required to manage alert rules.",
+          "AYZO Pro or Advanced is required to manage alert rules.",
 
         code:
-          "PRO_REQUIRED",
+          "PAID_PLAN_REQUIRED",
       },
       403
     );

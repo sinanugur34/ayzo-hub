@@ -583,11 +583,11 @@ export default function AlertRulesPanel() {
           ) : (
             <div className="mt-5 rounded-2xl border border-zinc-900 bg-black/20 p-5">
               <div className="text-sm font-medium text-zinc-300">
-                Pro alert-rule management
+                Paid alert-rule management
               </div>
 
               <p className="mt-2 text-xs leading-5 text-zinc-600">
-                Creating, enabling, disabling and deleting monitoring rules requires an active AYZO Pro entitlement.
+                Creating, enabling, disabling and deleting monitoring rules requires an active AYZO Pro or Advanced entitlement.
               </p>
             </div>
           )}

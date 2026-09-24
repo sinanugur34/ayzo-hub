@@ -300,3 +300,120 @@ export function parseAlertRuleToggle(
       value.enabled,
   };
 }
+
+export type CreateCustomAlertRuleInput = {
+  network: string;
+  subjectType:
+    | "wallet"
+    | "token";
+  subjectValue: string;
+  minimumNewEvidence: number;
+  enabled: boolean;
+};
+
+export function parseCreateCustomAlertRule(
+  value: unknown
+): CreateCustomAlertRuleInput | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const network =
+    requiredString(
+      value.network,
+      64
+    );
+
+  const subjectValue =
+    requiredString(
+      value.subjectValue,
+      512
+    );
+
+  if (
+    !network ||
+    !subjectValue
+  ) {
+    return null;
+  }
+
+  if (
+    value.subjectType !==
+      "wallet" &&
+    value.subjectType !==
+      "token"
+  ) {
+    return null;
+  }
+
+  const minimumNewEvidence =
+    value.minimumNewEvidence;
+
+  if (
+    typeof minimumNewEvidence !==
+      "number" ||
+    !Number.isInteger(
+      minimumNewEvidence
+    ) ||
+    minimumNewEvidence < 1 ||
+    minimumNewEvidence > 20
+  ) {
+    return null;
+  }
+
+  let enabled =
+    true;
+
+  if (
+    value.enabled !==
+      undefined
+  ) {
+    if (
+      typeof value.enabled !==
+        "boolean"
+    ) {
+      return null;
+    }
+
+    enabled =
+      value.enabled;
+  }
+
+  return {
+    network,
+    subjectType:
+      value.subjectType,
+    subjectValue,
+    minimumNewEvidence,
+    enabled,
+  };
+}
+
+export function readAlertRuleMinimumNewEvidence(
+  value: unknown
+) {
+  if (
+    !isRecord(value) ||
+    value.mode !==
+      "advanced_custom"
+  ) {
+    return 1;
+  }
+
+  const minimum =
+    value.minimumNewEvidence;
+
+  if (
+    typeof minimum !==
+      "number" ||
+    !Number.isInteger(
+      minimum
+    ) ||
+    minimum < 1 ||
+    minimum > 20
+  ) {
+    return 1;
+  }
+
+  return minimum;
+}

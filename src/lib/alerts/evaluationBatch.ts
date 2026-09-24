@@ -106,7 +106,7 @@ export async function runAlertEvaluationBatch({
 
 
   // ----------------------------------------------
-  // 1. ELIGIBLE PRO USERS FIRST
+  // 1. ELIGIBLE ALERT USERS FIRST
   // ----------------------------------------------
 
   const {
@@ -129,9 +129,12 @@ export async function runAlertEvaluationBatch({
         cancel_at_period_end,
         founding_customer
       `)
-      .eq(
+      .in(
         "plan_id",
-        "pro"
+        [
+          "pro",
+          "advanced",
+        ]
       )
       .in(
         "status",
