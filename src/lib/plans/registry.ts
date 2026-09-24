@@ -53,6 +53,7 @@ const ADVANCED_PLATFORM_FEATURES = {
   customLabelsNotes: true,
   apiAccess: true,
   noCodeDashboards: true,
+  priorityAnalysis: true,
 } as const satisfies Partial<
   Record<
     FeatureId,
@@ -66,7 +67,6 @@ const PRO_ROADMAP_FEATURES = [
 
 const ADVANCED_ROADMAP_FEATURES = [
   ...PRO_ROADMAP_FEATURES,
-  "priorityAnalysis",
 ] as const satisfies readonly FeatureId[];
 
 export const PLANS = {
