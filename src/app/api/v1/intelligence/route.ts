@@ -430,7 +430,7 @@ export async function POST(
 
     quota =
       await consumeApiAnalysisQuota(
-        userId,
+        auth.identity.userId,
         auth.identity
           .planId
       );
