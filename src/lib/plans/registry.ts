@@ -47,6 +47,7 @@ const ADVANCED_PLATFORM_FEATURES = {
   cases: true,
   evidenceLocker: true,
   compareInvestigations: true,
+  advancedWatchlists: true,
 } as const satisfies Partial<
   Record<
     FeatureId,
@@ -62,7 +63,6 @@ const ADVANCED_ROADMAP_FEATURES = [
   ...PRO_ROADMAP_FEATURES,
   "batchAnalysis",
   "customLabelsNotes",
-  "advancedWatchlists",
   "customAlertRules",
   "apiAccess",
   "noCodeDashboards",
