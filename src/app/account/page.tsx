@@ -1,5 +1,6 @@
 import AccountPlanCard from "@/components/account/AccountPlanCard";
 import AlertRulesPanel from "@/components/account/AlertRulesPanel";
+import AdvancedWatchlistsPanel from "@/components/account/AdvancedWatchlistsPanel";
 import DeviceSecurityPanel from "@/components/account/DeviceSecurityPanel";
 import CasesPanel from "@/components/account/CasesPanel";
 import EvidenceLockerPanel from "@/components/account/EvidenceLockerPanel";
@@ -259,6 +260,8 @@ export default async function AccountPage() {
             )}
           </section>
         </div>
+
+        <AdvancedWatchlistsPanel />
 
         <CompareInvestigationsPanel />
 
