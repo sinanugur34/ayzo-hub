@@ -350,6 +350,8 @@ export function parseCreateCustomAlertRule(
     value.minimumNewEvidence;
 
   if (
+    typeof minimumNewEvidence !==
+      "number" ||
     !Number.isInteger(
       minimumNewEvidence
     ) ||
@@ -402,6 +404,8 @@ export function readAlertRuleMinimumNewEvidence(
     value.minimumNewEvidence;
 
   if (
+    typeof minimum !==
+      "number" ||
     !Number.isInteger(
       minimum
     ) ||
