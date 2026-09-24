@@ -7,7 +7,8 @@ import {
 export type AnalysisActivityPlatform =
   | "web"
   | "android"
-  | "ios";
+  | "ios"
+  | "api";
 
 export type AnalysisActivityOutcome =
   | "completed"
