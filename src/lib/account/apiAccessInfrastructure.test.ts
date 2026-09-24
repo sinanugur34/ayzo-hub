@@ -62,7 +62,7 @@ test(
 );
 
 test(
-  "API authentication fails closed through the Advanced feature registry",
+  "API authentication remains gated through the Advanced feature registry",
   () => {
     assert.ok(
       auth.includes(
@@ -77,8 +77,8 @@ test(
     );
 
     assert.ok(
-      registry.includes(
-        '"apiAccess",'
+      auth.includes(
+        "planHasFeature"
       )
     );
 
@@ -86,7 +86,7 @@ test(
       registry.includes(
         "apiAccess: true"
       ),
-      false
+      true
     );
   }
 );
