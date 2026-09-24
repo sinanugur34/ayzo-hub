@@ -49,6 +49,7 @@ const ADVANCED_PLATFORM_FEATURES = {
   compareInvestigations: true,
   advancedWatchlists: true,
   customAlertRules: true,
+  batchAnalysis: true,
 } as const satisfies Partial<
   Record<
     FeatureId,
@@ -62,7 +63,6 @@ const PRO_ROADMAP_FEATURES = [
 
 const ADVANCED_ROADMAP_FEATURES = [
   ...PRO_ROADMAP_FEATURES,
-  "batchAnalysis",
   "customLabelsNotes",
   "apiAccess",
   "noCodeDashboards",
