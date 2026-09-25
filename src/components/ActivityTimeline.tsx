@@ -1,3 +1,10 @@
+"use client";
+
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import type {
   ActivityTimeline as ActivityTimelineData,
   ActivityTimelineDirection,
@@ -196,6 +203,77 @@ export default function ActivityTimeline({
   timeline:
     ActivityTimelineData;
 }) {
+  const [
+    selectedEvidenceRefs,
+    setSelectedEvidenceRefs,
+  ] =
+    useState<
+      readonly string[]
+    >(
+      []
+    );
+
+  useEffect(
+    () => {
+      function handleSelection(
+        event:
+          Event
+      ) {
+        const detail =
+          (
+            event as
+              CustomEvent<{
+                evidenceRefs?:
+                  unknown;
+              }>
+          ).detail;
+
+        if (
+          !Array.isArray(
+            detail?.evidenceRefs
+          )
+        ) {
+          setSelectedEvidenceRefs(
+            []
+          );
+
+          return;
+        }
+
+        setSelectedEvidenceRefs(
+          detail.evidenceRefs.filter(
+            (
+              value
+            ): value is string =>
+              typeof value ===
+              "string"
+          )
+        );
+      }
+
+      window.addEventListener(
+        "ayzo:evidence-selection",
+        handleSelection
+      );
+
+      return () => {
+        window.removeEventListener(
+          "ayzo:evidence-selection",
+          handleSelection
+        );
+      };
+    },
+    []
+  );
+
+  const selectedEvidenceSet =
+    new Set(
+      selectedEvidenceRefs.map(
+        ref =>
+          ref.toLowerCase()
+      )
+    );
+
   return (
     <section id="analysis-timeline" className="scroll-mt-24 rounded-3xl border border-zinc-900 bg-black/20 p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -224,6 +302,14 @@ export default function ActivityTimeline({
         </span>
       </div>
 
+      {selectedEvidenceRefs.length >
+        0 && (
+        <div className="mt-5 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.05] px-4 py-3 text-[10px] leading-5 text-cyan-200">
+          Evidence selected from the graph.
+          Matching transaction activity is highlighted below.
+        </div>
+      )}
+
       {timeline.status ===
       "unavailable" ? (
         <div className="mt-5 rounded-2xl border border-zinc-900 bg-black/20 p-4 text-xs leading-5 text-zinc-600">
@@ -243,12 +329,21 @@ export default function ActivityTimeline({
                   event
                 );
 
+              const highlighted =
+                selectedEvidenceSet.has(
+                  event.transactionHash.toLowerCase()
+                );
+
               return (
                 <article
                   key={
                     event.id
                   }
-                  className="relative rounded-2xl border border-zinc-900 bg-zinc-950/60 p-4 sm:p-5"
+                  className={`relative rounded-2xl border p-4 transition sm:p-5 ${
+                    highlighted
+                      ? "border-cyan-500/40 bg-cyan-500/[0.06] ring-1 ring-cyan-500/10"
+                      : "border-zinc-900 bg-zinc-950/60"
+                  }`}
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                     <div
