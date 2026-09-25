@@ -1,5 +1,7 @@
 "use client";
 
+import AnalysisWorkspaceOverview from "@/components/AnalysisWorkspaceOverview";
+
 import AnalysisLimitCard from "@/components/AnalysisLimitCard";
 
 import WalletTrackRecordPanel from "@/components/WalletTrackRecord";
@@ -8,7 +10,6 @@ import {
 } from "@/lib/intelligence/walletTrackRecord";
 
 import ActivityTimelinePanel from "@/components/ActivityTimeline";
-import VisualEvidenceGraphPanel from "@/components/VisualEvidenceGraph";
 import {
   buildEvmVisualEvidenceGraph,
 } from "@/lib/intelligence/visualEvidenceGraph";
@@ -1565,8 +1566,35 @@ export default function EvmIntelligenceReport({
     data
       .advancedInvestigationSynthesis;
 
+  const visualEvidenceGraph =
+    buildEvmVisualEvidenceGraph({
+      rootAddress:
+        data.address,
+
+      graph,
+
+      funding,
+
+      maxNodes:
+        graphPresentation
+          ?.visualMaxNodes,
+
+      maxEdges:
+        graphPresentation
+          ?.visualMaxEdges,
+    });
+
   return (
     <div className="mt-6 space-y-6 text-left">
+      <AnalysisWorkspaceOverview
+        networkLabel={networkDefinition.name}
+        subject={address}
+        coverage={data.coverage}
+        findings={data.findings}
+        caveats={data.caveats}
+        graph={visualEvidenceGraph}
+      />
+
       <section className="overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-b from-violet-500/10 via-purple-500/5 to-zinc-950/80 shadow-2xl shadow-purple-950/10">
         <div className="p-6 sm:p-8">
           <div className="flex flex-col justify-between gap-5 border-b border-zinc-800/80 pb-6 sm:flex-row sm:items-start">
@@ -3034,27 +3062,6 @@ export default function EvmIntelligenceReport({
           })
         }
         subjectLabel="Analyzed EVM address"
-      />
-
-      <VisualEvidenceGraphPanel
-        graph={
-          buildEvmVisualEvidenceGraph({
-            rootAddress:
-              data.address,
-
-            graph,
-
-            funding,
-
-            maxNodes:
-              graphPresentation
-                ?.visualMaxNodes,
-
-            maxEdges:
-              graphPresentation
-                ?.visualMaxEdges,
-          })
-        }
       />
 
       <ActivityTimelinePanel

@@ -1,5 +1,7 @@
 "use client";
 
+import AnalysisWorkspaceOverview from "@/components/AnalysisWorkspaceOverview";
+
 import AnalysisLimitCard from "@/components/AnalysisLimitCard";
 
 import WalletTrackRecordPanel from "@/components/WalletTrackRecord";
@@ -16,7 +18,6 @@ import {
 import AnalysisActions from "@/components/AnalysisActions";
 import { buildHistoricalSnapshot } from "@/lib/account/historicalSnapshot";
 import ActivityTimelinePanel from "@/components/ActivityTimeline";
-import VisualEvidenceGraphPanel from "@/components/VisualEvidenceGraph";
 import {
   buildBitcoinVisualEvidenceGraph,
 } from "@/lib/intelligence/visualEvidenceGraph";
@@ -527,8 +528,29 @@ export default function BitcoinIntelligenceReport({
   const canonical =
     data.canonicalTransaction;
 
+  const visualEvidenceGraph =
+    buildBitcoinVisualEvidenceGraph({
+      address:
+        data.address,
+
+      history:
+        data.history,
+
+      canonicalTransaction:
+        data.canonicalTransaction,
+    });
+
   return (
     <div className="mt-6 space-y-6 text-left">
+      <AnalysisWorkspaceOverview
+        networkLabel="Bitcoin"
+        subject={address}
+        coverage={data.coverage}
+        findings={data.findings}
+        caveats={data.caveats}
+        graph={visualEvidenceGraph}
+      />
+
       <section className="overflow-hidden rounded-3xl border border-orange-500/20 bg-gradient-to-b from-orange-500/10 via-amber-500/5 to-zinc-950/80">
         <div className="p-6 sm:p-8">
           <div className="flex flex-col justify-between gap-5 border-b border-zinc-800/80 pb-6 sm:flex-row sm:items-start">
@@ -784,21 +806,6 @@ export default function BitcoinIntelligenceReport({
           })
         }
         subjectLabel="Analyzed Bitcoin address"
-      />
-
-      <VisualEvidenceGraphPanel
-        graph={
-          buildBitcoinVisualEvidenceGraph({
-            address:
-              data.address,
-
-            history:
-              data.history,
-
-            canonicalTransaction:
-              data.canonicalTransaction,
-          })
-        }
       />
 
       <ActivityTimelinePanel

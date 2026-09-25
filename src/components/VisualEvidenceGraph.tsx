@@ -253,10 +253,13 @@ export default function VisualEvidenceGraph({
     );
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-b from-violet-500/5 to-zinc-950/70">
+    <section
+      id="visual-evidence-graph"
+      className="scroll-mt-24 overflow-hidden rounded-3xl border border-[#293d57] bg-gradient-to-b from-[#13243a] to-[#101d30]"
+    >
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-zinc-900 p-5 sm:p-6">
         <div>
-          <div className="text-[10px] font-medium tracking-[0.16em] text-violet-400">
+          <div className="text-[10px] font-medium tracking-[0.16em] text-cyan-300">
             VISUAL EVIDENCE GRAPH
           </div>
 
