@@ -142,6 +142,86 @@ function short(
   )}`;
 }
 
+function summarizeObservedAmount(
+  events:
+    readonly {
+      formattedValue:
+        string | null;
+
+      asset:
+        string | null;
+    }[]
+): string | null {
+  const valued =
+    events.filter(
+      event =>
+        typeof event
+          .formattedValue ===
+          "string" &&
+        event.formattedValue
+          .length >
+          0 &&
+        typeof event.asset ===
+          "string" &&
+        event.asset.length >
+          0
+    );
+
+  if (
+    valued.length === 0
+  ) {
+    return null;
+  }
+
+  const asset =
+    valued[0].asset;
+
+  if (
+    !asset ||
+    valued.some(
+      event =>
+        event.asset !==
+        asset
+    )
+  ) {
+    return null;
+  }
+
+  let total =
+    0;
+
+  for (
+    const event of
+      valued
+  ) {
+    const parsed =
+      Number(
+        event.formattedValue
+      );
+
+    if (
+      !Number.isFinite(
+        parsed
+      )
+    ) {
+      return null;
+    }
+
+    total +=
+      parsed;
+  }
+
+  return `${
+    total.toLocaleString(
+      "en-US",
+      {
+        maximumFractionDigits:
+          6,
+      }
+    )
+  } ${asset}`;
+}
+
 export default function AnalysisWorkspaceOverview({
   networkLabel,
   subject,
@@ -302,6 +382,16 @@ export default function AnalysisWorkspaceOverview({
         "outgoing"
     );
 
+  const incomingAmount =
+    summarizeObservedAmount(
+      incomingEvents
+    );
+
+  const outgoingAmount =
+    summarizeObservedAmount(
+      outgoingEvents
+    );
+
   const shareText =
     `I investigated ${networkLabel} on-chain evidence with @IOAYZO.\n\nExplore AYZO → https://app.ayzo.io`;
 
@@ -349,6 +439,30 @@ export default function AnalysisWorkspaceOverview({
             {networkLabel}
           </span>
 
+          <button
+            type="button"
+            className={styles.softButton}
+            onClick={() => {
+              setEvidenceSelection(
+                null
+              );
+
+              window.dispatchEvent(
+                new CustomEvent(
+                  "ayzo:evidence-selection",
+                  {
+                    detail: {
+                      evidenceRefs:
+                        [],
+                    },
+                  }
+                )
+              );
+            }}
+          >
+            General overview
+          </button>
+
           <a
             href={`https://x.com/intent/post?text=${encodeURIComponent(
               shareText
@@ -379,8 +493,16 @@ export default function AnalysisWorkspaceOverview({
           </small>
         </div>
 
-        <span className={styles.subjectTag}>
-          EVIDENCE AVAILABLE
+        <span
+          className={`${styles.subjectTag} ${
+            timelineUnavailable
+              ? styles.subjectTagLimited
+              : ""
+          }`}
+        >
+          {timelineUnavailable
+            ? "TRANSACTION EVIDENCE UNAVAILABLE"
+            : "TRANSACTION EVIDENCE AVAILABLE"}
         </span>
       </div>
 
@@ -390,8 +512,11 @@ export default function AnalysisWorkspaceOverview({
             "Observed incoming",
             timelineUnavailable
               ? "—"
-              : String(
-                  incomingEvents.length
+              : (
+                  incomingAmount ??
+                  String(
+                    incomingEvents.length
+                  )
                 ),
             timelineUnavailable
               ? "Incoming activity evidence unavailable"
@@ -402,8 +527,11 @@ export default function AnalysisWorkspaceOverview({
             "Observed outgoing",
             timelineUnavailable
               ? "—"
-              : String(
-                  outgoingEvents.length
+              : (
+                  outgoingAmount ??
+                  String(
+                    outgoingEvents.length
+                  )
                 ),
             timelineUnavailable
               ? "Outgoing activity evidence unavailable"
@@ -508,28 +636,38 @@ export default function AnalysisWorkspaceOverview({
           aria-live="polite"
           className={`${styles.card} ${styles.panel} ${styles.brief}`}
         >
-          <div>
-            <h3 className={styles.briefTitle}>
-              AYZO Evidence Brief
-            </h3>
+          <div className={styles.panelHead}>
+            <div>
+              <h3 className={styles.briefTitle}>
+                AYZO Evidence Brief
+              </h3>
 
-            <p className={styles.briefSub}>
-              Observation and limitation stay together.
-            </p>
+              <p className={styles.briefSub}>
+                Observation and limitation stay together.
+              </p>
+            </div>
           </div>
 
           <div className={styles.mainFinding}>
             <strong>
               {
                 observations[0]?.title ??
-                "No additional evidence-backed finding"
+                (
+                  timelineUnavailable
+                    ? "Transaction evidence is currently unavailable"
+                    : "No additional evidence-backed finding"
+                )
               }
             </strong>
 
             <p>
               {
                 observations[0]?.summary ??
-                "The current bounded evidence window did not produce an additional finding."
+                (
+                  timelineUnavailable
+                    ? "AYZO could not collect a supported transaction window for this analysis. Other evidence modules may still remain available."
+                    : "The current bounded evidence window did not produce an additional finding."
+                )
               }
             </p>
           </div>
