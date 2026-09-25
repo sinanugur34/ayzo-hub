@@ -584,11 +584,15 @@ function emitSelection(
 
 export default function InteractiveEvidenceGraph({
   graph,
+  subject,
   selection,
   onSelectionChange,
 }: {
   graph:
     VisualEvidenceGraphData;
+
+  subject:
+    string;
 
   selection:
     InteractiveEvidenceSelection;
@@ -693,9 +697,22 @@ export default function InteractiveEvidenceGraph({
 
       {graph.status ===
       "unavailable" ? (
-        <div className="p-6 text-xs leading-5 text-zinc-600">
-          Visual evidence graph is unavailable
-          for the current bounded evidence.
+        <div className="relative min-h-[380px] overflow-hidden border-t border-[#26384f] bg-[radial-gradient(ellipse_at_47%_51%,#1c3551_0%,#101d30_59%)]">
+          <div className="absolute inset-0 opacity-[0.14] [background-image:radial-gradient(#a1c8e8_0.8px,transparent_0.8px)] [background-size:19px_19px]" />
+
+          <div className="absolute left-1/2 top-1/2 z-10 min-w-[180px] -translate-x-1/2 -translate-y-1/2 rounded-[13px] border border-cyan-400 bg-[#153e58] px-5 py-4 text-center shadow-[0_0_0_4px_rgba(99,221,241,.08)]">
+            <div className="text-[9px] font-semibold tracking-[0.12em] text-cyan-300">
+              ANALYZED SUBJECT
+            </div>
+
+            <div className="mt-2 font-mono text-xs font-semibold text-zinc-100">
+              {short(subject)}
+            </div>
+
+            <div className="mt-2 text-[10px] leading-4 text-zinc-400">
+              No supported relationship edges were collected in this evidence window.
+            </div>
+          </div>
         </div>
       ) : (
         <>

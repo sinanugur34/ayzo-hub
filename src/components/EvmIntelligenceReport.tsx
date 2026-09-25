@@ -1,5 +1,9 @@
 "use client";
 
+import AnalysisWorkspaceResearchTools from "@/components/AnalysisWorkspaceResearchTools";
+
+import AnalysisWorkspaceDetails from "@/components/AnalysisWorkspaceDetails";
+
 import AnalysisWorkspaceOverview from "@/components/AnalysisWorkspaceOverview";
 
 import AnalysisLimitCard from "@/components/AnalysisLimitCard";
@@ -1593,7 +1597,10 @@ export default function EvmIntelligenceReport({
         findings={data.findings}
         caveats={data.caveats}
         graph={visualEvidenceGraph}
+        timeline={data.activityTimeline}
       />
+
+      <AnalysisWorkspaceDetails>
 
       <section className="overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-b from-violet-500/10 via-purple-500/5 to-zinc-950/80 shadow-2xl shadow-purple-950/10">
         <div className="p-6 sm:p-8">
@@ -3070,59 +3077,20 @@ export default function EvmIntelligenceReport({
         }
       />
 
-      <AnalysisActions
-        network={network}
-        subjectType="entity"
-        subjectValue={address}
-        title={`${networkDefinition.name} Address Analysis`}
-        analysisPayload={historicalSnapshot}
-        entityEvidencePayload={entityEvidencePayload}
-        askEvidencePayload={askEvidencePayload}
-      />
+      </AnalysisWorkspaceDetails>
+      <AnalysisWorkspaceResearchTools>
+        <AnalysisActions
+                network={network}
+                subjectType="entity"
+                subjectValue={address}
+                title={`${networkDefinition.name} Address Analysis`}
+                analysisPayload={historicalSnapshot}
+                entityEvidencePayload={entityEvidencePayload}
+                askEvidencePayload={askEvidencePayload}
+              />
+      </AnalysisWorkspaceResearchTools>
 
-      <section className="rounded-3xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 to-zinc-950/70 p-6 sm:p-7">
-        <div className="flex flex-wrap items-center justify-between gap-5">
-          <div>
-            <div className="text-[10px] font-medium tracking-[0.18em] text-violet-400">
-              SHARE AYZO
-            </div>
 
-            <h3 className="mt-2 text-lg font-semibold text-zinc-100">
-              Share your investigation
-            </h3>
-
-            <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-500">
-              Evidence-first {data.network.name} intelligence without wallet
-              connection or trading recommendations.
-            </p>
-          </div>
-
-          <a
-            href={`https://x.com/intent/post?text=${encodeURIComponent(
-              `I investigated a ${data.network.name} address with @IOAYZO.\n\nHolder intelligence • Funding provenance • Wallet relationships • Deployment history • Wallet graph\n\nExplore AYZO → https://app.ayzo.io`
-            )}`}
-            target="_blank"
-            rel="noreferrer"
-            onClick={() =>
-              trackEvent(
-                "share_x_clicked",
-                {
-                  feature:
-                    `${network}_intelligence`,
-                }
-              )
-            }
-            className="inline-flex items-center justify-center rounded-xl border border-violet-400/30 bg-violet-500/10 px-5 py-3 text-sm font-medium text-violet-200 transition hover:border-violet-400/50 hover:bg-violet-500/20"
-          >
-            Share Analysis on X ↗
-          </a>
-        </div>
-
-        <p className="mt-4 text-[10px] leading-5 text-zinc-700">
-          AYZO reports observed on-chain evidence and does not classify
-          an asset as safe, fraudulent or suitable for investment.
-        </p>
-      </section>
     </div>
   );
 }

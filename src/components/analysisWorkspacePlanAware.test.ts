@@ -117,7 +117,7 @@ test(
 
     assert.ok(
       frame.includes(
-        "#analysis-timeline"
+        "#analysis-activity"
       )
     );
 

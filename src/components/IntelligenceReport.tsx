@@ -1,5 +1,9 @@
 "use client";
 
+import AnalysisWorkspaceResearchTools from "@/components/AnalysisWorkspaceResearchTools";
+
+import AnalysisWorkspaceDetails from "@/components/AnalysisWorkspaceDetails";
+
 import AnalysisWorkspaceOverview from "@/components/AnalysisWorkspaceOverview";
 
 import AnalysisLimitCard from "@/components/AnalysisLimitCard";
@@ -557,11 +561,46 @@ export default function IntelligenceReport({
     data.coverage === "limited" ||
     data.holders.coverage === "limited";
 
+  const visualEvidenceGraph =
+    buildSolanaVisualEvidenceGraph({
+      tokenAddress:
+        address,
+
+      holders:
+        data.holders,
+
+      relationships:
+        data.relationships,
+
+      funding:
+        data.funding,
+    });
+
+  const activityTimeline =
+    buildSolanaFundingActivityTimeline({
+      funding:
+        data.funding,
+    });
+
   if (limitedCoverage) {
     const finding = data.findings?.[0];
 
     return (
       <div className="mt-6 space-y-4">
+        <AnalysisWorkspaceOverview
+          networkLabel="Solana"
+          subject={address}
+          coverage={
+            data.coverage ??
+            data.holders.coverage ??
+            "limited"
+          }
+          findings={data.findings}
+          graph={visualEvidenceGraph}
+          timeline={activityTimeline}
+        />
+
+        <AnalysisWorkspaceDetails>
         <section className="rounded-3xl border border-amber-500/20 bg-gradient-to-b from-amber-500/5 to-zinc-950/70 p-6 sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -639,14 +678,18 @@ export default function IntelligenceReport({
           </div>
         </section>
 
-        <AnalysisActions
-          network="solana"
-          subjectType="token"
-          subjectValue={address}
-          title="Solana Token Analysis"
-          analysisPayload={historicalSnapshot}
-          askEvidencePayload={askEvidencePayload}
-        />
+        </AnalysisWorkspaceDetails>
+
+        <AnalysisWorkspaceResearchTools>
+          <AnalysisActions
+            network="solana"
+            subjectType="token"
+            subjectValue={address}
+            title="Solana Token Analysis"
+            analysisPayload={historicalSnapshot}
+            askEvidencePayload={askEvidencePayload}
+          />
+        </AnalysisWorkspaceResearchTools>
       </div>
     );
   }
@@ -662,21 +705,6 @@ export default function IntelligenceReport({
       (item) => item.directSolTransferCount > 0
     ) ?? [];
 
-  const visualEvidenceGraph =
-    buildSolanaVisualEvidenceGraph({
-      tokenAddress:
-        address,
-
-      holders:
-        data.holders,
-
-      relationships:
-        data.relationships,
-
-      funding:
-        data.funding,
-    });
-
   return (
     <div className="mt-6 space-y-6">
       <AnalysisWorkspaceOverview
@@ -689,6 +717,7 @@ export default function IntelligenceReport({
         }
         findings={data.findings}
         graph={visualEvidenceGraph}
+        timeline={activityTimeline}
       />
 
       <details className="group rounded-3xl border border-zinc-800 bg-zinc-950/70">
@@ -983,62 +1012,22 @@ export default function IntelligenceReport({
       />
 
       <ActivityTimelinePanel
-        timeline={
-          buildSolanaFundingActivityTimeline({
-            funding:
-              data.funding,
-          })
-        }
+        timeline={activityTimeline}
       />
 
-      <AnalysisActions
-        network="solana"
-        subjectType="token"
-        subjectValue={address}
-        title="Solana Token Analysis"
-        analysisPayload={historicalSnapshot}
-        entityEvidencePayload={entityEvidencePayload}
-        askEvidencePayload={askEvidencePayload}
-      />
+      <AnalysisWorkspaceResearchTools>
+        <AnalysisActions
+                network="solana"
+                subjectType="token"
+                subjectValue={address}
+                title="Solana Token Analysis"
+                analysisPayload={historicalSnapshot}
+                entityEvidencePayload={entityEvidencePayload}
+                askEvidencePayload={askEvidencePayload}
+              />
+      </AnalysisWorkspaceResearchTools>
 
-      <section className="rounded-3xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 to-zinc-950/70 p-6 sm:p-7">
-        <div className="flex flex-wrap items-center justify-between gap-5">
-          <div>
-            <div className="text-[10px] font-medium tracking-[0.18em] text-violet-400">
-              SHARE AYZO
-            </div>
 
-            <h3 className="mt-2 text-lg font-semibold text-zinc-100">
-              Share your investigation
-            </h3>
-
-            <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-500">
-              Help other Solana users discover evidence-first token intelligence.
-            </p>
-          </div>
-
-          <a
-            href={`https://x.com/intent/post?text=${encodeURIComponent(
-              "I investigated a Solana token with @IOAYZO.\n\nHolder intelligence • Wallet relationships • Funding signals\n\nExplore AYZO → https://app.ayzo.io"
-            )}`}
-            target="_blank"
-            rel="noreferrer"
-            onClick={() =>
-              trackEvent("share_x_clicked", {
-                feature: "intelligence_report",
-              })
-            }
-            className="inline-flex items-center justify-center rounded-xl border border-violet-400/30 bg-violet-500/10 px-5 py-3 text-sm font-medium text-violet-200 transition hover:border-violet-400/50 hover:bg-violet-500/20"
-          >
-            Share Analysis on X ↗
-          </a>
-        </div>
-
-        <p className="mt-4 text-[10px] leading-5 text-zinc-700">
-          AYZO reports on-chain evidence and does not classify a token as safe,
-          fraudulent, or suitable for investment.
-        </p>
-      </section>
     </div>
   );
 }
