@@ -83,6 +83,105 @@ const DEFAULT_PROVIDERS:
   etherscanTransactionsProvider,
 ];
 
+type TransactionCursorOwner =
+  | "goldrush"
+  | "alchemy"
+  | "etherscan"
+  | null;
+
+function transactionCursorOwner(
+  cursor:
+    string | null | undefined
+): TransactionCursorOwner {
+  if (!cursor) {
+    return null;
+  }
+
+  if (
+    cursor.startsWith(
+      "alchemy:"
+    )
+  ) {
+    return "alchemy";
+  }
+
+  if (
+    cursor.startsWith(
+      "goldrush:"
+    )
+  ) {
+    return "goldrush";
+  }
+
+  if (
+    cursor.startsWith(
+      "etherscan:"
+    )
+  ) {
+    return "etherscan";
+  }
+
+  /*
+   * Legacy numeric cursors historically
+   * belonged to GoldRush. Keep them
+   * compatible without allowing another
+   * provider to consume ambiguous state.
+   */
+  if (/^\d+$/.test(cursor)) {
+    return "goldrush";
+  }
+
+  return null;
+}
+
+function requestForProvider(
+  request:
+    EvmPaginatedAddressRequest,
+  provider:
+    EvmTransactionsProvider
+): EvmPaginatedAddressRequest {
+  const cursor =
+    request.cursor;
+
+  if (!cursor) {
+    return request;
+  }
+
+  if (
+    provider.id ===
+      "goldrush" &&
+    cursor.startsWith(
+      "goldrush:"
+    )
+  ) {
+    return {
+      ...request,
+      cursor:
+        cursor.slice(
+          "goldrush:".length
+        ),
+    };
+  }
+
+  if (
+    provider.id ===
+      "etherscan" &&
+    cursor.startsWith(
+      "etherscan:"
+    )
+  ) {
+    return {
+      ...request,
+      cursor:
+        cursor.slice(
+          "etherscan:".length
+        ),
+    };
+  }
+
+  return request;
+}
+
 const ROOT_CACHE_TTL_SECONDS =
   60;
 
@@ -737,11 +836,23 @@ export async function getResilientEvmTransactions(
     EvmProviderFailure | null =
       null;
 
+  const cursorOwner =
+    transactionCursorOwner(
+      request.cursor
+    );
+
   try {
     for (
       const provider
       of providers
     ) {
+      if (
+        cursorOwner &&
+        provider.id !==
+          cursorOwner
+      ) {
+        continue;
+      }
       if (
         !provider
           .supportsNetwork(
@@ -765,10 +876,16 @@ export async function getResilientEvmTransactions(
         continue;
       }
 
+      const providerRequest =
+        requestForProvider(
+          request,
+          provider
+        );
+
       const result =
         await provider
           .getTransactions(
-            request
+            providerRequest
           );
 
       if (

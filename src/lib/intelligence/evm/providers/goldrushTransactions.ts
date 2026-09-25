@@ -71,12 +71,21 @@ function parsePage(
     return 0;
   }
 
-  if (!/^\d+$/.test(cursor)) {
+  const normalized =
+    cursor.startsWith(
+      "goldrush:"
+    )
+      ? cursor.slice(
+          "goldrush:".length
+        )
+      : cursor;
+
+  if (!/^\d+$/.test(normalized)) {
     return null;
   }
 
   const page =
-    Number(cursor);
+    Number(normalized);
 
   if (
     !Number.isSafeInteger(page) ||
@@ -566,9 +575,7 @@ export class GoldRushTransactionsProvider
 
           nextCursor:
             hasNext
-              ? String(
-                  currentPage + 1
-                )
+              ? `goldrush:${currentPage + 1}`
               : null,
         },
       };
