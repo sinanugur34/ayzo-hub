@@ -122,6 +122,12 @@ test(
     );
 
     assert.ok(
+      frame.includes(
+        "#analysis-timeline"
+      )
+    );
+
+    assert.ok(
       graph.includes(
         'id="visual-evidence-graph"'
       )
