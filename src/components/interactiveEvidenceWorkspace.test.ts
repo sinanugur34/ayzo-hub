@@ -60,7 +60,7 @@ test(
 
     assert.ok(
       source.includes(
-        "Selected evidence"
+        "Selected item"
       )
     );
 

@@ -680,9 +680,37 @@ export default function AnalysisWorkspaceActivity({
               )}
             </div>
           ) : (
-            <div className={`mt-4 ${styles.emptyActivity}`}>
-              No supported transaction flow was collected
-              for this evidence window.
+            <div className={`mt-4 ${styles.flowRows}`}>
+              {[
+                "Incoming evidence unavailable",
+                "Outgoing evidence unavailable",
+                "Additional flow evidence unavailable",
+              ].map(
+                label => (
+                  <div
+                    key={label}
+                    className={`${styles.flow} ${styles.flowPlaceholder}`}
+                  >
+                    <span className={styles.flowName}>
+                      {label}
+                    </span>
+
+                    <span className={styles.flowBar}>
+                      <i
+                        className={styles.flowBarFill}
+                        style={{
+                          width:
+                            "0%",
+                        }}
+                      />
+                    </span>
+
+                    <span className={styles.flowAmount}>
+                      —
+                    </span>
+                  </div>
+                )
+              )}
             </div>
           )}
 
@@ -871,10 +899,40 @@ export default function AnalysisWorkspaceActivity({
               )}
             </svg>
           ) : (
-            <div className={`mt-4 ${styles.emptyActivity}`}>
-              No comparable value series is available
-              in this bounded evidence window.
-            </div>
+            <svg
+              className={styles.chartSvg}
+              viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+              role="img"
+              aria-label="No comparable observed flow series available"
+            >
+              {[46, 110, 174].map(
+                y => (
+                  <line
+                    key={y}
+                    className={styles.chartGrid}
+                    x1={pad.left}
+                    x2={
+                      chartWidth -
+                      pad.right
+                    }
+                    y1={y}
+                    y2={y}
+                  />
+                )
+              )}
+
+              <text
+                className={styles.chartAxis}
+                x={
+                  chartWidth /
+                  2
+                }
+                y="112"
+                textAnchor="middle"
+              >
+                No comparable value series in this bounded evidence window
+              </text>
+            </svg>
           )}
 
           <div className={styles.chartInfo}>
@@ -988,9 +1046,34 @@ export default function AnalysisWorkspaceActivity({
             )}
           </div>
         ) : (
-          <div className={styles.emptyActivity}>
-            No supported timeline activity was collected
-            for this evidence window.
+          <div className={styles.ledgerList}>
+            {Array.from(
+              {
+                length:
+                  5,
+              },
+              (
+                _,
+                index
+              ) => (
+                <div
+                  key={index}
+                  className={`${styles.event} ${styles.eventPlaceholder}`}
+                >
+                  <time>
+                    —
+                  </time>
+
+                  <strong>
+                    No event
+                  </strong>
+
+                  <span>
+                    Unavailable
+                  </span>
+                </div>
+              )
+            )}
           </div>
         )}
 

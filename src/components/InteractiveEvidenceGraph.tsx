@@ -652,45 +652,24 @@ export default function InteractiveEvidenceGraph({
     >
       <div className="mb-[15px] flex flex-wrap items-start justify-between gap-[10px]">
         <div>
-          <div className="text-[11px] font-semibold tracking-[0.12em] text-cyan-300">
-            VISUAL EVIDENCE GRAPH
-          </div>
-
-          <h3 className="mt-1 text-[18px] font-semibold leading-[1.25] tracking-[-0.015em] text-[#edf5ff]">
-            Relationship map
+          <h3 className="m-0 text-[18px] font-semibold leading-[1.25] tracking-[-0.015em] text-[#edf5ff]">
+            Wallet relationship map
           </h3>
 
           <p className="mt-[3px] max-w-2xl text-[12px] leading-5 text-[#94a8bf]">
-            Select a node or connection to inspect
-            its observed evidence path.
+            Select a node or connection to inspect its observed evidence path.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {selection && (
-            <button
-              type="button"
-              onClick={() =>
-                choose(
-                  null
-                )
-              }
-              className="rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-[10px] font-medium text-zinc-300 transition hover:bg-zinc-800"
-            >
-              General view
-            </button>
-          )}
+        <div className="flex flex-wrap items-center gap-[13px] text-[11px] text-[#bac9dc]">
+          <span className="inline-flex items-center gap-[5px]">
+            <i className="inline-block w-[17px] border-t-[3px] border-cyan-300" />
+            Observed path
+          </span>
 
-          <span className="rounded-full border border-cyan-500/20 bg-cyan-500/[0.06] px-2.5 py-1 text-[9px] font-medium tracking-[0.12em] text-cyan-300">
-            {
-              graph.status ===
-              "complete"
-                ? "SUPPORTED"
-                : graph.status ===
-                    "limited"
-                  ? "BOUNDED"
-                  : "UNAVAILABLE"
-            }
+          <span className="inline-flex items-center gap-[5px]">
+            <i className="inline-block w-[17px] border-t-[3px] border-dashed border-violet-300" />
+            Selected / alternate evidence
           </span>
         </div>
       </div>
@@ -719,7 +698,7 @@ export default function InteractiveEvidenceGraph({
           <div className="overflow-x-auto rounded-[11px] border border-[#293d57] bg-[radial-gradient(ellipse_at_47%_51%,#1c3551_0%,#101d30_59%)]">
             <svg
               viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-              className="min-w-[760px]"
+              className="h-[380px] w-full min-w-[760px]"
               role="img"
               aria-label="Interactive AYZO visual evidence graph"
             >

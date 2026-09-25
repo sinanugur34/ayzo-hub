@@ -115,3 +115,75 @@ test(
     );
   }
 );
+
+test(
+  "primary brief follows the literal concept information hierarchy",
+  () => {
+    const overview =
+      fs.readFileSync(
+        "src/components/AnalysisWorkspaceOverview.tsx",
+        "utf8"
+      );
+
+    for (
+      const token
+      of [
+        "Selected item",
+        "General overview",
+        "Evidence overview",
+        "Incoming / outgoing",
+        "Evidence limit",
+      ]
+    ) {
+      assert.ok(
+        overview.includes(
+          token
+        ),
+        token
+      );
+    }
+
+    assert.equal(
+      overview.includes(
+        "activeCapabilities"
+      ),
+      false
+    );
+  }
+);
+
+test(
+  "unavailable activity keeps concept geometry without fake evidence",
+  () => {
+    const activity =
+      fs.readFileSync(
+        "src/components/AnalysisWorkspaceActivity.tsx",
+        "utf8"
+      );
+
+    assert.ok(
+      activity.includes(
+        "Incoming evidence unavailable"
+      )
+    );
+
+    assert.ok(
+      activity.includes(
+        "No comparable value series in this bounded evidence window"
+      )
+    );
+
+    assert.ok(
+      activity.includes(
+        "No event"
+      )
+    );
+
+    assert.equal(
+      activity.includes(
+        "Binance"
+      ),
+      false
+    );
+  }
+);
