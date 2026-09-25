@@ -152,6 +152,31 @@ function resolveStore(
       : dependencies.store;
 }
 
+function resilienceNamespace() {
+  const vercelEnv =
+    process.env
+      .VERCEL_ENV
+      ?.trim()
+      .toLowerCase();
+
+  if (
+    vercelEnv ===
+      "production" ||
+    vercelEnv ===
+      "preview" ||
+    vercelEnv ===
+      "development"
+  ) {
+    return vercelEnv;
+  }
+
+  return process.env
+    .NODE_ENV ===
+      "production"
+    ? "production"
+    : "development";
+}
+
 function requestDigest(
   request:
     EvmPaginatedAddressRequest
@@ -190,7 +215,7 @@ function cacheKey(
     EvmPaginatedAddressRequest
 ) {
   return (
-    "ayzo:evm:transactions:v2:cache:" +
+    `ayzo:${resilienceNamespace()}:evm:transactions:v2:cache:` +
     requestDigest(
       request
     )
@@ -202,7 +227,7 @@ function lockKey(
     EvmPaginatedAddressRequest
 ) {
   return (
-    "ayzo:evm:transactions:v2:lock:" +
+    `ayzo:${resilienceNamespace()}:evm:transactions:v2:lock:` +
     requestDigest(
       request
     )
@@ -217,6 +242,9 @@ function circuitKey(
 ) {
   return [
     "ayzo",
+
+    resilienceNamespace(),
+
     "evm",
     "transactions",
     "v2",

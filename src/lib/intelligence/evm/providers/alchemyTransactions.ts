@@ -38,16 +38,30 @@ type JsonObject =
 type TransferRequestResult =
   | {
       ok: true;
+
       transfers:
         readonly unknown[];
+
+      pageKey:
+        string | null;
     }
   | {
       ok: false;
+
       code:
         EvmProviderErrorCode;
+
       error:
         string;
     };
+
+type AlchemyTransactionCursor = {
+  incoming:
+    string | null;
+
+  outgoing:
+    string | null;
+};
 
 function asObject(
   value: unknown
@@ -184,6 +198,177 @@ function parseBlockNumber(
     );
   } catch {
     return null;
+  }
+}
+
+function parsePageKey(
+  value: unknown
+): string | null {
+  if (
+    typeof value !==
+      "string"
+  ) {
+    return null;
+  }
+
+  const normalized =
+    value.trim();
+
+  return normalized
+    ? normalized
+    : null;
+}
+
+function encodeCursor(
+  cursor:
+    AlchemyTransactionCursor
+): string | null {
+  if (
+    !cursor.incoming &&
+    !cursor.outgoing
+  ) {
+    return null;
+  }
+
+  return (
+    "alchemy:" +
+    Buffer
+      .from(
+        JSON.stringify({
+          i:
+            cursor.incoming,
+
+          o:
+            cursor.outgoing,
+        }),
+        "utf8"
+      )
+      .toString(
+        "base64url"
+      )
+  );
+}
+
+function parseCursor(
+  value:
+    string | null | undefined
+):
+  | {
+      ok: true;
+
+      cursor:
+        AlchemyTransactionCursor | null;
+    }
+  | {
+      ok: false;
+    } {
+  if (
+    value ===
+      undefined ||
+    value ===
+      null ||
+    value ===
+      ""
+  ) {
+    return {
+      ok:
+        true,
+
+      cursor:
+        null,
+    };
+  }
+
+  if (
+    !value.startsWith(
+      "alchemy:"
+    )
+  ) {
+    return {
+      ok:
+        false,
+    };
+  }
+
+  try {
+    const encoded =
+      value.slice(
+        "alchemy:".length
+      );
+
+    const parsed =
+      JSON.parse(
+        Buffer
+          .from(
+            encoded,
+            "base64url"
+          )
+          .toString(
+            "utf8"
+          )
+      ) as {
+        i?:
+          unknown;
+
+        o?:
+          unknown;
+      };
+
+    const incoming =
+      parsed.i ===
+        null
+        ? null
+        : parsePageKey(
+            parsed.i
+          );
+
+    const outgoing =
+      parsed.o ===
+        null
+        ? null
+        : parsePageKey(
+            parsed.o
+          );
+
+    if (
+      parsed.i !==
+        null &&
+      incoming ===
+        null
+    ) {
+      return {
+        ok:
+          false,
+      };
+    }
+
+    if (
+      parsed.o !==
+        null &&
+      outgoing ===
+        null
+    ) {
+      return {
+        ok:
+          false,
+      };
+    }
+
+    return {
+      ok:
+        true,
+
+      cursor: {
+        incoming,
+
+        outgoing,
+      },
+    };
+  } catch {
+    return {
+      ok:
+        false,
+    };
   }
 }
 
@@ -419,30 +604,29 @@ export class AlchemyTransactionsProvider
       };
     }
 
-    /*
-     * This provider is intentionally a bounded
-     * first-page fallback.
-     *
-     * GoldRush remains the primary paginated source.
-     */
+    const parsedCursor =
+      parseCursor(
+        request.cursor
+      );
+
     if (
-      request.cursor !==
-        undefined &&
-      request.cursor !==
-        null &&
-      request.cursor !==
-        ""
+      !parsedCursor.ok
     ) {
       return {
-        ok: false,
+        ok:
+          false,
+
         providerId:
           this.id,
+
         latencyMs:
           null,
+
         code:
           "UPSTREAM_ERROR",
+
         error:
-          "Alchemy transaction fallback supports the first bounded page only.",
+          "Invalid Alchemy transaction pagination cursor.",
       };
     }
 
@@ -528,10 +712,29 @@ export class AlchemyTransactionsProvider
       async (
         direction:
           "incoming" |
-          "outgoing"
+          "outgoing",
+
+        pageKey:
+          string | null | undefined
       ): Promise<
         TransferRequestResult
       > => {
+        if (
+          pageKey ===
+            null
+        ) {
+          return {
+            ok:
+              true,
+
+            transfers:
+              [],
+
+            pageKey:
+              null,
+          };
+        }
+
         const filter =
           direction ===
             "incoming"
@@ -598,6 +801,15 @@ export class AlchemyTransactionsProvider
 
                         order:
                           "desc",
+
+                        ...(
+                          typeof pageKey ===
+                            "string"
+                            ? {
+                                pageKey,
+                              }
+                            : {}
+                        ),
                       },
                     ],
                   }),
@@ -704,8 +916,14 @@ export class AlchemyTransactionsProvider
           return {
             ok:
               true,
+
             transfers:
               result.transfers,
+
+            pageKey:
+              parsePageKey(
+                result.pageKey
+              ),
           };
         } catch {
           if (
@@ -740,10 +958,17 @@ export class AlchemyTransactionsProvider
       ] =
         await Promise.all([
           requestDirection(
-            "outgoing"
+            "outgoing",
+
+            parsedCursor.cursor
+              ?.outgoing
           ),
+
           requestDirection(
-            "incoming"
+            "incoming",
+
+            parsedCursor.cursor
+              ?.incoming
           ),
         ]);
 
@@ -849,7 +1074,13 @@ export class AlchemyTransactionsProvider
         data: {
           transactions,
           nextCursor:
-            null,
+            encodeCursor({
+              incoming:
+                incoming.pageKey,
+
+              outgoing:
+                outgoing.pageKey,
+            }),
         },
       };
     } finally {

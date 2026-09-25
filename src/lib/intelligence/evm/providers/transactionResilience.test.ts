@@ -504,3 +504,131 @@ test(
     );
   }
 );
+
+test(
+  "preview and production use separate Redis cache namespaces",
+  async () => {
+    const originalVercelEnv =
+      process.env
+        .VERCEL_ENV;
+
+    const calls = {
+      value:
+        0,
+    };
+
+    const store =
+      new MemoryStore();
+
+    const provider =
+      fakeProvider({
+        id:
+          "alchemy",
+
+        result:
+          success(
+            "alchemy"
+          ),
+
+        calls,
+      });
+
+    try {
+      process.env
+        .VERCEL_ENV =
+        "preview";
+
+      const preview =
+        await getResilientEvmTransactions(
+          request(
+            "0x7777777777777777777777777777777777777777"
+          ),
+          {
+            providers: [
+              provider,
+            ],
+
+            store,
+          }
+        );
+
+      assert.equal(
+        preview.ok,
+        true
+      );
+
+      assert.equal(
+        calls.value,
+        1
+      );
+
+      process.env
+        .VERCEL_ENV =
+        "production";
+
+      const production =
+        await getResilientEvmTransactions(
+          request(
+            "0x7777777777777777777777777777777777777777"
+          ),
+          {
+            providers: [
+              provider,
+            ],
+
+            store,
+          }
+        );
+
+      assert.equal(
+        production.ok,
+        true
+      );
+
+      assert.equal(
+        calls.value,
+        2
+      );
+
+      process.env
+        .VERCEL_ENV =
+        "preview";
+
+      const previewAgain =
+        await getResilientEvmTransactions(
+          request(
+            "0x7777777777777777777777777777777777777777"
+          ),
+          {
+            providers: [
+              provider,
+            ],
+
+            store,
+          }
+        );
+
+      assert.equal(
+        previewAgain.ok,
+        true
+      );
+
+      assert.equal(
+        calls.value,
+        2
+      );
+    } finally {
+      if (
+        originalVercelEnv ===
+          undefined
+      ) {
+        delete process.env
+          .VERCEL_ENV;
+      } else {
+        process.env
+          .VERCEL_ENV =
+          originalVercelEnv;
+      }
+    }
+  }
+);
