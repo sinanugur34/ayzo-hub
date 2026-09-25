@@ -1,9 +1,11 @@
 import { isInternalApiRequest } from "@/lib/apiSecurity";
 import { isAddress } from "@solana/kit";
-
-const SIGNATURE_LIMIT = 50;
-const MAX_WALLETS = 5;
-const MAX_SHARED_TX_DETAILS = 25;
+import type {
+  AnalysisDepthPlan,
+} from "@/lib/analysisDepthPolicy";
+import {
+  getSolanaAnalysisPolicy,
+} from "@/lib/intelligence/solana/policy";
 
 type SignatureInfo = {
   signature: string;
@@ -69,6 +71,20 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
+    const analysisPlan:
+      AnalysisDepthPlan =
+        body?.analysisPlan ===
+          "pro" ||
+        body?.analysisPlan ===
+          "advanced"
+          ? body.analysisPlan
+          : "free";
+
+    const policy =
+      getSolanaAnalysisPolicy(
+        analysisPlan
+      );
+
     if (!Array.isArray(body?.addresses)) {
       return Response.json(
         { ok: false, error: "Addresses must be an array." },
@@ -92,9 +108,16 @@ export async function POST(request: Request) {
       );
     }
 
-    if (addresses.length > MAX_WALLETS) {
+    if (
+      addresses.length >
+      policy.walletLimit
+    ) {
       return Response.json(
-        { ok: false, error: `Maximum ${MAX_WALLETS} wallets per alpha analysis.` },
+        {
+          ok: false,
+          error:
+            `Maximum ${policy.walletLimit} wallets for ${analysisPlan} Solana analysis.`,
+        },
         { status: 400 }
       );
     }
@@ -111,7 +134,12 @@ export async function POST(request: Request) {
       addresses.map(async (address) => {
         const signatures = (await rpcCall("getSignaturesForAddress", [
           address,
-          { commitment: "confirmed", limit: SIGNATURE_LIMIT },
+          {
+            commitment:
+              "confirmed",
+            limit:
+              policy.relationshipSignatureLimit,
+          },
         ])) as SignatureInfo[];
 
         return {
@@ -206,7 +234,13 @@ export async function POST(request: Request) {
 
     const targetWallets = new Set(addresses);
 
-    for (const shared of sharedTransactions.slice(0, MAX_SHARED_TX_DETAILS)) {
+    for (
+      const shared of
+        sharedTransactions.slice(
+          0,
+          policy.relationshipSharedTxDetailLimit
+        )
+    ) {
       const transaction = await rpcCall("getTransaction", [
         shared.signature,
         {
@@ -297,8 +331,11 @@ export async function POST(request: Request) {
     return Response.json({
       ok: true,
       network: "solana-mainnet",
-      walletsAnalyzed: addresses.length,
-      transactionsScannedPerWallet: SIGNATURE_LIMIT,
+      analysisPlan,
+      walletsAnalyzed:
+        addresses.length,
+      transactionsScannedPerWallet:
+        policy.relationshipSignatureLimit,
       sharedTransactionsDetected: sharedTransactions.length,
       relationshipsDetected: relations.length,
       relations,
