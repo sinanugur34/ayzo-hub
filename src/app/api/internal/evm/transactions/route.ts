@@ -7,8 +7,8 @@ import {
 } from "@/lib/intelligence/evm/engine";
 
 import {
-  getEvmTransactionsWithFallback,
-} from "@/lib/intelligence/evm/providers/transactionProviderFallback";
+  getResilientEvmTransactions,
+} from "@/lib/intelligence/evm/providers/transactionResilience";
 
 import {
   isNetworkId,
@@ -134,7 +134,7 @@ export async function POST(
   }
 
   const result =
-    await getEvmTransactionsWithFallback({
+    await getResilientEvmTransactions({
       network,
       address,
       cursor,

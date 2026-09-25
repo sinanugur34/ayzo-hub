@@ -18,6 +18,13 @@ export const PROVIDERS = {
     role: "fallback",
   },
 
+  etherscan: {
+    id: "etherscan",
+    name: "Etherscan",
+    kind: "indexed-data",
+    role: "fallback",
+  },
+
   blockchair: {
     id: "blockchair",
     name: "Blockchair",
