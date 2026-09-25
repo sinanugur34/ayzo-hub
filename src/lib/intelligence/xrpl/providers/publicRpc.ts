@@ -114,6 +114,124 @@ function readIssuedAmount(
   };
 }
 
+const TF_PARTIAL_PAYMENT =
+  0x00020000;
+
+function isPartialPayment(
+  tx:
+    Record<string, unknown>
+) {
+  const flags =
+    readNumber(
+      tx.Flags
+    ) ??
+    0;
+
+  return (
+    flags &
+    TF_PARTIAL_PAYMENT
+  ) !==
+    0;
+}
+
+/*
+ * XRP Ledger API v2 renames the Payment
+ * transaction instruction field Amount to
+ * DeliverMax.
+ *
+ * More importantly, DeliverMax is not the
+ * authoritative received amount for partial
+ * payments. For successful Payments, use
+ * metadata.delivered_amount whenever available.
+ *
+ * Fallback to DeliverMax / legacy Amount is
+ * permitted only for successful non-partial
+ * Payments.
+ */
+function readPaymentDeliveredAmount(
+  tx:
+    Record<string, unknown>,
+
+  meta:
+    Record<string, unknown>
+): unknown | null {
+  if (
+    readString(
+      tx.TransactionType
+    ) !==
+      "Payment" ||
+    readString(
+      meta.TransactionResult
+    ) !==
+      "tesSUCCESS"
+  ) {
+    return null;
+  }
+
+  const delivered =
+    meta.delivered_amount;
+
+  if (
+    delivered !==
+      undefined &&
+    delivered !==
+      null &&
+    delivered !==
+      "unavailable"
+  ) {
+    return delivered;
+  }
+
+  /*
+   * Some XRPL responses / historical forms may
+   * expose DeliveredAmount instead.
+   */
+  const legacyDelivered =
+    meta.DeliveredAmount;
+
+  if (
+    legacyDelivered !==
+      undefined &&
+    legacyDelivered !==
+      null &&
+    legacyDelivered !==
+      "unavailable"
+  ) {
+    return legacyDelivered;
+  }
+
+  /*
+   * Never treat DeliverMax as actual received
+   * value for a partial payment.
+   */
+  if (
+    isPartialPayment(
+      tx
+    )
+  ) {
+    return null;
+  }
+
+  if (
+    tx.DeliverMax !==
+      undefined
+  ) {
+    return tx.DeliverMax;
+  }
+
+  /*
+   * Compatibility with API v1-style responses.
+   */
+  if (
+    tx.Amount !==
+      undefined
+  ) {
+    return tx.Amount;
+  }
+
+  return null;
+}
+
 type RpcSuccess = {
   ok: true;
 
@@ -370,7 +488,10 @@ function parseTransaction(
   }
 
   const amountValue =
-    tx.Amount;
+    readPaymentDeliveredAmount(
+      tx,
+      meta
+    );
 
   return {
     transactionHash:
