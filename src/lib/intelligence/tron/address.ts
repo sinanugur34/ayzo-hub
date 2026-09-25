@@ -9,9 +9,12 @@ function decodeBase58(
   value: string
 ): Uint8Array | null {
   let number =
-    BigInt(0);
+    0n;
 
-  for (const character of value) {
+  for (
+    const character of
+    value
+  ) {
     const index =
       BASE58_ALPHABET.indexOf(
         character
@@ -23,7 +26,7 @@ function decodeBase58(
 
     number =
       number *
-        BigInt(58) +
+        58n +
       BigInt(index);
   }
 
@@ -32,17 +35,17 @@ function decodeBase58(
 
   while (
     number >
-    BigInt(0)
+    0n
   ) {
     decoded.push(
       Number(
         number &
-          BigInt(255)
+        255n
       )
     );
 
     number >>=
-      BigInt(8);
+      8n;
   }
 
   decoded.reverse();
@@ -51,8 +54,8 @@ function decodeBase58(
     0;
 
   for (
-    const character
-    of value
+    const character of
+    value
   ) {
     if (
       character !== "1"
@@ -68,28 +71,33 @@ function decodeBase58(
     ...new Array(
       leadingZeroCount
     ).fill(0),
+
     ...decoded,
   ]);
 }
 
 function sha256(
-  value: Uint8Array
+  value:
+    Uint8Array
 ): Uint8Array {
   return createHash(
     "sha256"
   )
-    .update(value)
+    .update(
+      value
+    )
     .digest();
 }
 
-export function isTronAddress(
-  value: unknown
-): value is string {
+function validatedPayload(
+  value:
+    unknown
+): Uint8Array | null {
   if (
     typeof value !==
-    "string"
+      "string"
   ) {
-    return false;
+    return null;
   }
 
   const address =
@@ -102,7 +110,7 @@ export function isTronAddress(
       "T"
     )
   ) {
-    return false;
+    return null;
   }
 
   const decoded =
@@ -115,7 +123,7 @@ export function isTronAddress(
     decoded.length !==
       25
   ) {
-    return false;
+    return null;
   }
 
   const payload =
@@ -131,13 +139,15 @@ export function isTronAddress(
 
   if (
     payload[0] !==
-    0x41
+      0x41
   ) {
-    return false;
+    return null;
   }
 
   const firstHash =
-    sha256(payload);
+    sha256(
+      payload
+    );
 
   const secondHash =
     sha256(
@@ -151,11 +161,51 @@ export function isTronAddress(
   ) {
     if (
       checksum[index] !==
-      secondHash[index]
+        secondHash[index]
     ) {
-      return false;
+      return null;
     }
   }
 
-  return true;
+  return payload;
+}
+
+export function tronAddressToHex(
+  value:
+    unknown
+): string | null {
+  const payload =
+    validatedPayload(
+      value
+    );
+
+  if (!payload) {
+    return null;
+  }
+
+  return Array.from(
+    payload
+  )
+    .map(
+      byte =>
+        byte
+          .toString(16)
+          .padStart(
+            2,
+            "0"
+          )
+    )
+    .join("");
+}
+
+export function isTronAddress(
+  value:
+    unknown
+): value is string {
+  return (
+    tronAddressToHex(
+      value
+    ) !==
+    null
+  );
 }

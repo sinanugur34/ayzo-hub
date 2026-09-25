@@ -426,6 +426,46 @@ const sections:
 
         {
           label:
+            "TRON flow & funding intelligence",
+          detail:
+            "Plan-aware solidified canonical samples are used for bounded native TRX flow and observed inbound funding evidence.",
+          free: AVAILABLE,
+          pro: AVAILABLE,
+          advanced: AVAILABLE,
+        },
+
+        {
+          label:
+            "TRON counterparty & contract intelligence",
+          detail:
+            "Explicit owner/destination and contract-interaction evidence without identity or ownership inference.",
+          free: AVAILABLE,
+          pro: AVAILABLE,
+          advanced: AVAILABLE,
+        },
+
+        {
+          label:
+            "TRON fee, energy & bandwidth evidence",
+          detail:
+            "Bounded canonical fee, energy and net-usage evidence from sampled transactions.",
+          free: AVAILABLE,
+          pro: AVAILABLE,
+          advanced: AVAILABLE,
+        },
+
+        {
+          label:
+            "TRON timeline, track record & visual graph",
+          detail:
+            "Evidence-backed presentation layers built from bounded solidified TRON evidence.",
+          free: AVAILABLE,
+          pro: AVAILABLE,
+          advanced: AVAILABLE,
+        },
+
+        {
+          label:
             "XRP Ledger bounded address history",
           detail:
             "Validated XRP Ledger account and transaction evidence with plan-aware bounded depth.",

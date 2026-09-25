@@ -53,20 +53,22 @@ test(
 );
 
 test(
-  "maps Dogecoin expanded evidence to wallet, funding, and connections tools",
+  "maps Dogecoin and TRON expanded evidence to wallet, funding, and connections tools",
   () => {
+    const expected = [
+      "walletAnalysis",
+      "fundingTrace",
+      "connections",
+    ];
+
     assert.deepEqual(
       toolIds("dogecoin"),
-      [
-        "walletAnalysis",
-        "fundingTrace",
-        "connections",
-      ]
+      expected
     );
 
     assert.deepEqual(
       toolIds("tron"),
-      ["walletAnalysis"]
+      expected
     );
   }
 );
