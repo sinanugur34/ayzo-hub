@@ -3,7 +3,6 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
   useState,
 } from "react";
 
@@ -15,12 +14,12 @@ import AnalysisWorkspaceActivity from "@/components/AnalysisWorkspaceActivity";
 
 import styles from "@/components/AnalysisWorkspaceConcept.module.css";
 
+
 import {
   planHasFeature,
 } from "@/lib/plans/registry";
 
 import type {
-  FeatureId,
   PlanId,
 } from "@/lib/plans/types";
 
@@ -50,20 +49,6 @@ type QuotaStatus = {
   ok: true;
   plan: PlanId;
 };
-
-const CAPABILITIES = [
-  ["visualEvidenceGraph", "Evidence graph"],
-  ["activityTimeline", "Timeline"],
-  ["walletTrackRecord", "Track record"],
-  ["historicalChanges", "Historical changes"],
-  ["askAyzo", "Ask AYZO"],
-  ["marketFlowIntelligence", "Market flow"],
-  ["cases", "Cases"],
-  ["evidenceLocker", "Evidence Locker"],
-] as const satisfies readonly [
-  FeatureId,
-  string,
-][];
 
 function planCopy(
   plan:
@@ -257,27 +242,18 @@ export default function AnalysisWorkspaceOverview({
     ]
   );
 
-  const activeCapabilities =
-    useMemo(
-      () =>
-        plan
-          ? CAPABILITIES.filter(
-              item =>
-                planHasFeature(
-                  plan,
-                  item[0]
-                )
-            )
-          : [],
-      [
-        plan,
-      ]
-    );
-
   const planState =
     planCopy(
       plan
     );
+
+  const visualEvidenceAccess =
+    plan
+      ? planHasFeature(
+          plan,
+          "visualEvidenceGraph"
+        )
+      : null;
 
   const coverageState =
     coverageCopy(
@@ -307,6 +283,11 @@ export default function AnalysisWorkspaceOverview({
     timeline?.events ??
     [];
 
+  const timelineUnavailable =
+    !timeline ||
+    timeline.status ===
+      "unavailable";
+
   const incomingEvents =
     timelineEvents.filter(
       event =>
@@ -327,6 +308,14 @@ export default function AnalysisWorkspaceOverview({
   return (
     <section
       id="analysis-overview"
+      data-evidence-access={
+        visualEvidenceAccess ===
+        null
+          ? "unknown"
+          : visualEvidenceAccess
+            ? "enabled"
+            : "restricted"
+      }
       className={`${styles.workspace} scroll-mt-24`}
     >
       <header className={styles.top}>
@@ -348,7 +337,7 @@ export default function AnalysisWorkspaceOverview({
 
         <div className={styles.topActions}>
           <span
-            className={`${styles.chip} ${planState.className}`}
+            className={styles.chip}
           >
             {planState.name}
           </span>
@@ -379,13 +368,15 @@ export default function AnalysisWorkspaceOverview({
         </span>
 
         <div className={styles.subjectText}>
-          <div className="text-[9px] tracking-[0.08em] text-[#94a8bf]">
-            ANALYZED SUBJECT
-          </div>
+          <strong className="truncate font-mono">
+            Analyzed subject · {short(subject)}
+          </strong>
 
-          <div className="mt-1 truncate font-mono text-xs font-semibold text-[#edf5ff]">
-            {subject}
-          </div>
+          <small>
+            {timelineUnavailable
+              ? "Current transaction evidence window is unavailable."
+              : `${timelineEvents.length} recent evidence record(s) in the current bounded window.`}
+          </small>
         </div>
 
         <span className={styles.subjectTag}>
@@ -397,26 +388,38 @@ export default function AnalysisWorkspaceOverview({
         {[
           [
             "Observed incoming",
-            String(
-              incomingEvents.length
-            ),
-            `${incomingEvents.length} incoming evidence item(s)`,
+            timelineUnavailable
+              ? "—"
+              : String(
+                  incomingEvents.length
+                ),
+            timelineUnavailable
+              ? "Incoming activity evidence unavailable"
+              : `${incomingEvents.length} incoming evidence item(s)`,
             "bg-cyan-300",
           ],
           [
             "Observed outgoing",
-            String(
-              outgoingEvents.length
-            ),
-            `${outgoingEvents.length} outgoing evidence item(s)`,
+            timelineUnavailable
+              ? "—"
+              : String(
+                  outgoingEvents.length
+                ),
+            timelineUnavailable
+              ? "Outgoing activity evidence unavailable"
+              : `${outgoingEvents.length} outgoing evidence item(s)`,
             "bg-violet-300",
           ],
           [
             "Transaction evidence",
-            String(
-              timelineEvents.length
-            ),
-            `${timelineEvents.length} bounded activity record(s)`,
+            timelineUnavailable
+              ? "—"
+              : String(
+                  timelineEvents.length
+                ),
+            timelineUnavailable
+              ? "Transaction evidence unavailable"
+              : `${timelineEvents.length} bounded activity record(s)`,
             "bg-blue-300",
           ],
           [
@@ -515,180 +518,124 @@ export default function AnalysisWorkspaceOverview({
             </p>
           </div>
 
-          {evidenceSelection ? (
-            <>
-              <div className={styles.mainFinding}>
-                <div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#94a8bf]">
-                  Selected evidence
-                </div>
-
-                <div className="mt-2 text-[10px] font-semibold tracking-[0.1em] text-cyan-300">
-                  {
-                    evidenceSelection.subtitle
-                  }
-                </div>
-
-                <div className="mt-2 text-base font-semibold leading-6 text-zinc-100">
-                  {
-                    evidenceSelection.title
-                  }
-                </div>
-
-                {evidenceSelection.detail && (
-                  <p className="mt-2 text-xs leading-5 text-[#c7e2ea]">
-                    {
-                      evidenceSelection.detail
-                    }
-                  </p>
-                )}
-              </div>
-
-              <div className={styles.detailGrid}>
-                <div className="rounded-lg border border-[#26384f] bg-[#10233a] p-3">
-                  <span className="text-[10px] text-[#94a8bf]">
-                    Evidence count
-                  </span>
-
-                  <b className="mt-1 block text-sm text-[#edf5ff]">
-                    {
-                      evidenceSelection.evidenceCount
-                    }
-                  </b>
-                </div>
-
-                <div className="rounded-lg border border-[#26384f] bg-[#10233a] p-3">
-                  <span className="text-[10px] text-[#94a8bf]">
-                    Tx references
-                  </span>
-
-                  <b className="mt-1 block text-sm text-[#edf5ff]">
-                    {
-                      evidenceSelection.evidenceRefs.length
-                    }
-                  </b>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setEvidenceSelection(
-                    null
-                  );
-
-                  window.dispatchEvent(
-                    new CustomEvent(
-                      "ayzo:evidence-selection",
-                      {
-                        detail: {
-                          evidenceRefs:
-                            [],
-                        },
-                      }
-                    )
-                  );
-                }}
-                className="mt-4 rounded-lg border border-[#26384f] bg-[#132239] px-3 py-2 text-xs text-[#bac9dc]"
-              >
-                Return to general overview
-              </button>
-            </>
-          ) : observations.length >
-            0 ? (
-            <div className="mt-4">
-              <div className="rounded-[10px] border-l-[3px] border-cyan-300 bg-[#183246] p-4">
-                <b className="block text-base leading-6 text-[#edf5ff]">
-                  {
-                    observations[0].title
-                  }
-                </b>
-
-                <p className="mt-2 text-xs leading-5 text-[#c7e2ea]">
-                  {
-                    observations[0].summary
-                  }
-                </p>
-              </div>
-
-              {observations
-                .slice(
-                  1
-                )
-                .map(
-                  finding => (
-                    <div
-                      key={
-                        finding.id
-                      }
-                      className="mt-3 rounded-lg border border-[#26384f] bg-[#102237] p-3"
-                    >
-                      <div className="text-xs font-semibold text-zinc-200">
-                        {
-                          finding.title
-                        }
-                      </div>
-
-                      <p className="mt-1 text-[10px] leading-4 text-zinc-500">
-                        {
-                          finding.summary
-                        }
-                      </p>
-                    </div>
-                  )
-                )}
-            </div>
-          ) : (
-            <div className="mt-4 rounded-lg border border-[#26384f] bg-[#102237] p-4 text-xs text-zinc-500">
-              No additional finding was generated from the current bounded evidence.
-            </div>
-          )}
-
-          <div className={styles.limit}>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.08em]">
-              Evidence limit
-            </div>
-
-            <p className="mt-1 text-xs leading-5">
+          <div className={styles.mainFinding}>
+            <strong>
               {
-                limitations[0] ??
-                coverageState.detail
+                observations[0]?.title ??
+                "No additional evidence-backed finding"
+              }
+            </strong>
+
+            <p>
+              {
+                observations[0]?.summary ??
+                "The current bounded evidence window did not produce an additional finding."
               }
             </p>
           </div>
 
-          <div className="mt-4 border-t border-[#26384f] pt-3">
-            <div className="text-[9px] tracking-[0.12em] text-zinc-600">
+          <div className={styles.detailHead}>
+            <strong>
+              Selected item
+            </strong>
+
+            <span>
               {
-                planState.name
-              }{" "}
-              WORKSPACE
+                evidenceSelection
+                  ? evidenceSelection.subtitle
+                  : "General overview"
+              }
+            </span>
+          </div>
+
+          <div className={styles.detailTitle}>
+            {
+              evidenceSelection
+                ? evidenceSelection.title
+                : "Evidence overview"
+            }
+          </div>
+
+          <p className={styles.detailDescription}>
+            {
+              evidenceSelection?.detail ??
+              "Select a node, connection or transaction to inspect the evidence collected behind it."
+            }
+          </p>
+
+          <div className={styles.detailGrid}>
+            <div>
+              <span>
+                Incoming / outgoing
+              </span>
+
+              <b>
+                {
+                  timelineUnavailable
+                    ? "— / —"
+                    : `${incomingEvents.length} / ${outgoingEvents.length}`
+                }
+              </b>
             </div>
 
-            <p className="mt-1 text-[9px] leading-4 text-zinc-600">
-              {
-                planState.description
-              }
-            </p>
+            <div>
+              <span>
+                {
+                  evidenceSelection
+                    ? "Evidence / tx refs"
+                    : "Observed records"
+                }
+              </span>
 
-            {activeCapabilities.length >
-              0 && (
-              <div className="mt-2 flex flex-wrap gap-1">
-                {activeCapabilities.map(
-                  item => (
-                    <span
-                      key={
-                        item[0]
-                      }
-                      className="rounded-md border border-[#26384f] bg-black/20 px-2 py-1 text-[8px] text-zinc-500"
-                    >
-                      {
-                        item[1]
-                      }
-                    </span>
+              <b>
+                {
+                  evidenceSelection
+                    ? `${evidenceSelection.evidenceCount} / ${evidenceSelection.evidenceRefs.length}`
+                    : timelineUnavailable
+                      ? "—"
+                      : timelineEvents.length
+                }
+              </b>
+            </div>
+          </div>
+
+          {evidenceSelection && (
+            <button
+              type="button"
+              onClick={() => {
+                setEvidenceSelection(
+                  null
+                );
+
+                window.dispatchEvent(
+                  new CustomEvent(
+                    "ayzo:evidence-selection",
+                    {
+                      detail: {
+                        evidenceRefs:
+                          [],
+                      },
+                    }
                   )
-                )}
-              </div>
-            )}
+                );
+              }}
+              className={styles.softButton}
+            >
+              Return to general overview
+            </button>
+          )}
+
+          <div className={styles.limit}>
+            <strong>
+              Evidence limit
+            </strong>
+
+            <span>
+              {
+                limitations[0] ??
+                coverageState.detail
+              }
+            </span>
           </div>
         </aside>
       </div>

@@ -1,6 +1,9 @@
 .workspace {
   width: 100%;
   color: #edf5ff;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .top {
@@ -572,5 +575,64 @@
       minmax(90px, 1fr)
       minmax(60px, .7fr)
       minmax(74px, .7fr);
+  }
+}
+
+.detailHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #26384f;
+  padding: 0 0 9px;
+}
+
+.detailHead strong {
+  font-size: 13px;
+}
+
+.detailHead span {
+  font-size: 11px;
+  color: #63ddf1;
+}
+
+.detailTitle {
+  margin: 14px 0 6px;
+  color: #edf5ff;
+  font-size: 19px;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.detailDescription {
+  min-height: 56px;
+  color: #bac9dc;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.flowPlaceholder {
+  cursor: default;
+  opacity: .72;
+}
+
+.flowPlaceholder:hover {
+  border-color: #26384f;
+  background: #102237;
+}
+
+.eventPlaceholder {
+  cursor: default;
+  opacity: .72;
+}
+
+.eventPlaceholder:hover {
+  border-color: #26384f;
+  background: #102237;
+}
+
+@media (max-width: 1130px) {
+  .detailDescription {
+    min-height: 0;
   }
 }
