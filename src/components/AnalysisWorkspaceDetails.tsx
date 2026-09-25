@@ -11,24 +11,20 @@ export default function AnalysisWorkspaceDetails({
   return (
     <details
       id="analysis-details"
-      className="group scroll-mt-24 overflow-hidden rounded-2xl border border-[#26384f] bg-[#0e1a2b]"
+      className="group scroll-mt-24 overflow-hidden rounded-xl border border-[#26384f] bg-[#0b1727]"
     >
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-5 py-4 sm:px-6">
-        <div>
-          <div className="text-[10px] font-semibold tracking-[0.16em] text-cyan-300">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="text-[9px] font-semibold tracking-[0.15em] text-cyan-300">
             DETAILED EVIDENCE
           </div>
 
-          <div className="mt-1 text-sm font-semibold text-zinc-100">
-            Open technical evidence modules
+          <div className="hidden text-[11px] text-zinc-500 sm:block">
+            Technical modules
           </div>
-
-          <p className="mt-1 text-[10px] text-zinc-500">
-            Raw modules, methodology and bounded evidence remain available here.
-          </p>
         </div>
 
-        <span className="text-xl text-zinc-500 transition-transform group-open:rotate-90">
+        <span className="text-base text-zinc-500 transition-transform group-open:rotate-90">
           ›
         </span>
       </summary>

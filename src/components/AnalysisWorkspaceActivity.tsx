@@ -238,18 +238,25 @@ export default function AnalysisWorkspaceActivity({
       null
     );
 
+  const timelineEvents =
+    useMemo(
+      () =>
+        timeline?.events ??
+        [],
+      [
+        timeline,
+      ]
+    );
+
   const events =
     useMemo(
       () =>
-        (
-          timeline?.events ??
-          []
-        ).slice(
+        timelineEvents.slice(
           0,
           5
         ),
       [
-        timeline,
+        timelineEvents,
       ]
     );
 
@@ -307,6 +314,18 @@ export default function AnalysisWorkspaceActivity({
         ) !== null
     );
 
+  const chartValuedEvents =
+    timelineEvents.filter(
+      event =>
+        numericValue(
+          event
+        ) !== null &&
+        typeof event.asset ===
+          "string" &&
+        event.asset.length >
+          0
+    );
+
   const maxValue =
     Math.max(
       1,
@@ -321,16 +340,16 @@ export default function AnalysisWorkspaceActivity({
       )
     );
 
-  const firstValued =
-    valuedEvents[0];
+  const firstChartValued =
+    chartValuedEvents[0];
 
   const chartAsset =
-    firstValued
+    firstChartValued
       ?.asset ??
     null;
 
   const chartEvents =
-    valuedEvents
+    chartValuedEvents
       .filter(
         event =>
           event.asset ===
@@ -587,14 +606,22 @@ export default function AnalysisWorkspaceActivity({
         <div
           className={`${styles.card} ${styles.panel}`}
         >
-          <div>
-            <h3 className={styles.briefTitle}>
-              Incoming and outgoing funds
-            </h3>
+          <div className={styles.panelHead}>
+            <div>
+              <h3 className={styles.briefTitle}>
+                Incoming and outgoing funds
+              </h3>
 
-            <p className={styles.briefSub}>
-              Observed transaction flows collected by AYZO.
-            </p>
+              <p className={styles.briefSub}>
+                Observed transaction flows collected by AYZO.
+              </p>
+            </div>
+
+            <span className={styles.activityStatus}>
+              {events.length > 0
+                ? `${events.length} observed`
+                : "Evidence unavailable"}
+            </span>
           </div>
 
           {events.length >
@@ -680,16 +707,21 @@ export default function AnalysisWorkspaceActivity({
               )}
             </div>
           ) : (
-            <div className={`mt-4 ${styles.flowRows}`}>
+            <div className={styles.flowRows}>
               {[
                 "Incoming evidence unavailable",
+                "Incoming evidence unavailable",
+                "Outgoing evidence unavailable",
                 "Outgoing evidence unavailable",
                 "Additional flow evidence unavailable",
               ].map(
-                label => (
+                (
+                  label,
+                  index
+                ) => (
                   <div
-                    key={label}
-                    className={`${styles.flow} ${styles.flowPlaceholder}`}
+                    key={`${label}:${index}`}
+                    className={`${styles.flow} ${styles.flowPlaceholder} ${styles.flowGhost}`}
                   >
                     <span className={styles.flowName}>
                       {label}
@@ -700,7 +732,13 @@ export default function AnalysisWorkspaceActivity({
                         className={styles.flowBarFill}
                         style={{
                           width:
-                            "0%",
+                            `${[
+                              68,
+                              42,
+                              58,
+                              76,
+                              31,
+                            ][index]}%`,
                         }}
                       />
                     </span>
@@ -728,15 +766,23 @@ export default function AnalysisWorkspaceActivity({
         <div
           className={`${styles.card} ${styles.panel}`}
         >
-          <div>
-            <h3 className={styles.briefTitle}>
-              Flow over time
-            </h3>
+          <div className={styles.panelHead}>
+            <div>
+              <h3 className={styles.briefTitle}>
+                Flow over time
+              </h3>
 
-            <p className={styles.briefSub}>
-              Cumulative observed net flow for one comparable asset.
-              This is not wallet balance.
-            </p>
+              <p className={styles.briefSub}>
+                Cumulative observed net flow for one comparable asset
+                across the full bounded timeline. This is not wallet balance.
+              </p>
+            </div>
+
+            <span className={styles.activityStatus}>
+              {chartAsset
+                ? chartAsset
+                : "Evidence window"}
+            </span>
           </div>
 
           {chartEvents.length >
@@ -942,7 +988,7 @@ export default function AnalysisWorkspaceActivity({
                     selectedEvent
                   )
                 : chartAsset
-                  ? `Observed ${chartAsset} net flow`
+                  ? `Observed ${chartAsset} net flow · ${chartEvents.length} valued event(s) from ${timelineEvents.length} bounded record(s)`
                   : "No comparable flow"}
             </span>
 
@@ -1058,7 +1104,7 @@ export default function AnalysisWorkspaceActivity({
               ) => (
                 <div
                   key={index}
-                  className={`${styles.event} ${styles.eventPlaceholder}`}
+                  className={`${styles.event} ${styles.eventPlaceholder} ${styles.eventGhost}`}
                 >
                   <time>
                     —

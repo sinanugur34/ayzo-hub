@@ -632,7 +632,35 @@ export default function InteractiveEvidenceGraph({
 
       {graph.status ===
       "unavailable" ? (
-        <div className={styles.networkCanvas}>
+        <div
+          className={`${styles.networkCanvas} ${styles.networkUnavailable}`}
+        >
+          <div
+            aria-hidden="true"
+            className={`${styles.graphGhostNode} ${styles.graphGhostSourceA}`}
+          >
+            <span>
+              Source
+            </span>
+
+            <small>
+              Unavailable
+            </small>
+          </div>
+
+          <div
+            aria-hidden="true"
+            className={`${styles.graphGhostNode} ${styles.graphGhostSourceB}`}
+          >
+            <span>
+              Source
+            </span>
+
+            <small>
+              Unavailable
+            </small>
+          </div>
+
           <div
             className={`${styles.graphNode} ${styles.graphNodeRoot} ${styles.graphNodeCentered}`}
           >
@@ -645,10 +673,55 @@ export default function InteractiveEvidenceGraph({
             <small>
               ANALYZED SUBJECT
             </small>
+          </div>
 
-            <small className={styles.graphUnavailableNote}>
-              No supported relationship edges were collected in this evidence window.
+          <div
+            aria-hidden="true"
+            className={`${styles.graphGhostNode} ${styles.graphGhostTargetA}`}
+          >
+            <span>
+              Recipient
+            </span>
+
+            <small>
+              Unavailable
             </small>
+          </div>
+
+          <div
+            aria-hidden="true"
+            className={`${styles.graphGhostNode} ${styles.graphGhostTargetB}`}
+          >
+            <span>
+              Recipient
+            </span>
+
+            <small>
+              Unavailable
+            </small>
+          </div>
+
+          <div
+            aria-hidden="true"
+            className={`${styles.graphGhostNode} ${styles.graphGhostTargetC}`}
+          >
+            <span>
+              Recipient
+            </span>
+
+            <small>
+              Unavailable
+            </small>
+          </div>
+
+          <div className={styles.graphUnavailableMessage}>
+            <strong>
+              Relationship evidence unavailable
+            </strong>
+
+            <span>
+              No supported relationship edges were collected in this evidence window. Layout placeholders only — no relationship is inferred without observed transaction evidence.
+            </span>
           </div>
         </div>
       ) : (
