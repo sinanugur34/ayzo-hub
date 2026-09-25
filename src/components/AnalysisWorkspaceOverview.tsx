@@ -142,6 +142,86 @@ function short(
   )}`;
 }
 
+function summarizeObservedAmount(
+  events:
+    readonly {
+      formattedValue:
+        string | null;
+
+      asset:
+        string | null;
+    }[]
+): string | null {
+  const valued =
+    events.filter(
+      event =>
+        typeof event
+          .formattedValue ===
+          "string" &&
+        event.formattedValue
+          .length >
+          0 &&
+        typeof event.asset ===
+          "string" &&
+        event.asset.length >
+          0
+    );
+
+  if (
+    valued.length === 0
+  ) {
+    return null;
+  }
+
+  const asset =
+    valued[0].asset;
+
+  if (
+    !asset ||
+    valued.some(
+      event =>
+        event.asset !==
+        asset
+    )
+  ) {
+    return null;
+  }
+
+  let total =
+    0;
+
+  for (
+    const event of
+      valued
+  ) {
+    const parsed =
+      Number(
+        event.formattedValue
+      );
+
+    if (
+      !Number.isFinite(
+        parsed
+      )
+    ) {
+      return null;
+    }
+
+    total +=
+      parsed;
+  }
+
+  return `${
+    total.toLocaleString(
+      "en-US",
+      {
+        maximumFractionDigits:
+          6,
+      }
+    )
+  } ${asset}`;
+}
+
 export default function AnalysisWorkspaceOverview({
   networkLabel,
   subject,
@@ -302,6 +382,16 @@ export default function AnalysisWorkspaceOverview({
         "outgoing"
     );
 
+  const incomingAmount =
+    summarizeObservedAmount(
+      incomingEvents
+    );
+
+  const outgoingAmount =
+    summarizeObservedAmount(
+      outgoingEvents
+    );
+
   const shareText =
     `I investigated ${networkLabel} on-chain evidence with @IOAYZO.\n\nExplore AYZO → https://app.ayzo.io`;
 
@@ -422,8 +512,11 @@ export default function AnalysisWorkspaceOverview({
             "Observed incoming",
             timelineUnavailable
               ? "—"
-              : String(
-                  incomingEvents.length
+              : (
+                  incomingAmount ??
+                  String(
+                    incomingEvents.length
+                  )
                 ),
             timelineUnavailable
               ? "Incoming activity evidence unavailable"
@@ -434,8 +527,11 @@ export default function AnalysisWorkspaceOverview({
             "Observed outgoing",
             timelineUnavailable
               ? "—"
-              : String(
-                  outgoingEvents.length
+              : (
+                  outgoingAmount ??
+                  String(
+                    outgoingEvents.length
+                  )
                 ),
             timelineUnavailable
               ? "Outgoing activity evidence unavailable"

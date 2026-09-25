@@ -100,8 +100,8 @@ import {
 } from "./providers/goldrush";
 
 import {
-  goldRushTransactionsProvider,
-} from "./providers/goldrushTransactions";
+  getEvmTransactionsWithFallback,
+} from "./providers/transactionProviderFallback";
 
 import {
   goldRushTransfersProvider,
@@ -223,10 +223,9 @@ const DEFAULT_DEPENDENCIES:
 
   getTransactions:
     request =>
-      goldRushTransactionsProvider
-        .getTransactions(
-          request
-        ),
+      getEvmTransactionsWithFallback(
+        request
+      ),
 
   getTokenTransfers:
     request =>

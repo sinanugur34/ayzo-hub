@@ -7,8 +7,8 @@ import {
 } from "@/lib/intelligence/evm/engine";
 
 import {
-  goldRushTransactionsProvider,
-} from "@/lib/intelligence/evm/providers/goldrushTransactions";
+  getEvmTransactionsWithFallback,
+} from "@/lib/intelligence/evm/providers/transactionProviderFallback";
 
 import {
   isNetworkId,
@@ -134,12 +134,11 @@ export async function POST(
   }
 
   const result =
-    await goldRushTransactionsProvider
-      .getTransactions({
-        network,
-        address,
-        cursor,
-      });
+    await getEvmTransactionsWithFallback({
+      network,
+      address,
+      cursor,
+    });
 
   const status =
     result.ok
@@ -160,7 +159,7 @@ export async function POST(
       ok: result.ok,
       network: networkId,
       provider:
-        goldRushTransactionsProvider.id,
+        result.providerId,
       result,
     },
     { status }
