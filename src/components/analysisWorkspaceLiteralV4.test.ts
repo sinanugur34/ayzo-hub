@@ -31,8 +31,15 @@ test(
 
     assert.ok(
       page.includes(
-        "w-[min(1616px,100vw)]"
+        "w-[calc(100vw-16px)]"
       )
+    );
+
+    assert.equal(
+      page.includes(
+        "relative left-1/2 mt-12 w-[min(1616px,100vw)]"
+      ),
+      false
     );
   }
 );
