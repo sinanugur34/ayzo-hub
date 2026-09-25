@@ -1,4 +1,5 @@
 import AccountPlanCard from "@/components/account/AccountPlanCard";
+import AccountUsageCard from "@/components/account/AccountUsageCard";
 import AlertRulesPanel from "@/components/account/AlertRulesPanel";
 import CustomAlertRulesPanel from "@/components/account/CustomAlertRulesPanel";
 import BatchAnalysisPanel from "@/components/account/BatchAnalysisPanel";
