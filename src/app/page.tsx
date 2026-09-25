@@ -1235,7 +1235,7 @@ export default function Home() {
         <FreePlanStatus />
 
         {solanaResult && (
-          <section className="mt-12 w-full max-w-[1540px] text-left">
+          <section className="relative left-1/2 mt-12 w-[min(1616px,100vw)] max-w-none -translate-x-1/2 text-left">
             <AnalysisWorkspaceFrame>
             <div className="rounded-3xl border border-zinc-800 bg-zinc-950/70 p-6 shadow-2xl shadow-purple-950/10 backdrop-blur-xl sm:p-8">
               <div className="flex flex-col justify-between gap-5 border-b border-zinc-900 pb-6 sm:flex-row sm:items-center">
@@ -1345,7 +1345,7 @@ export default function Home() {
         )}
 
         {evmAnalysis && (
-          <section className="mt-12 w-full max-w-[1540px]">
+          <section className="relative left-1/2 mt-12 w-[min(1616px,100vw)] max-w-none -translate-x-1/2">
             <AnalysisWorkspaceFrame>
             <EvmIntelligenceReport
               key={`${evmAnalysis.network}:${evmAnalysis.address}`}
@@ -1361,7 +1361,7 @@ export default function Home() {
         )}
 
         {bitcoinAnalysis && (
-          <section className="mt-12 w-full max-w-[1540px]">
+          <section className="relative left-1/2 mt-12 w-[min(1616px,100vw)] max-w-none -translate-x-1/2">
             <AnalysisWorkspaceFrame>
             <BitcoinIntelligenceReport
               key={
@@ -1376,7 +1376,7 @@ export default function Home() {
         )}
 
         {dogecoinAnalysis && (
-          <section className="mt-12 w-full max-w-[1540px]">
+          <section className="relative left-1/2 mt-12 w-[min(1616px,100vw)] max-w-none -translate-x-1/2">
             <AnalysisWorkspaceFrame>
             <DogecoinIntelligenceReport
               key={
@@ -1391,7 +1391,7 @@ export default function Home() {
         )}
 
         {tronAnalysis && (
-          <section className="mt-12 w-full max-w-[1540px]">
+          <section className="relative left-1/2 mt-12 w-[min(1616px,100vw)] max-w-none -translate-x-1/2">
             <AnalysisWorkspaceFrame>
             <TronIntelligenceReport
               key={
@@ -1406,7 +1406,7 @@ export default function Home() {
         )}
 
         {xrpAnalysis && (
-          <section className="mt-12 w-full max-w-[1540px]">
+          <section className="relative left-1/2 mt-12 w-[min(1616px,100vw)] max-w-none -translate-x-1/2">
             <AnalysisWorkspaceFrame>
             <XrplIntelligenceReport
               key={

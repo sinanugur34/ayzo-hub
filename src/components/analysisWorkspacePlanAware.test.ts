@@ -156,7 +156,7 @@ test(
     assert.ok(
       (
         page.match(
-          /max-w-\[1540px\]/g
+          /w-\[min\(1616px,100vw\)\]/g
         ) ??
         []
       ).length >= 6

@@ -648,21 +648,21 @@ export default function InteractiveEvidenceGraph({
   return (
     <section
       id="visual-evidence-graph"
-      className="scroll-mt-24 overflow-hidden rounded-3xl border border-[#293d57] bg-gradient-to-b from-[#13243a] to-[#101d30]"
+      className="scroll-mt-24 overflow-hidden rounded-[14px] border border-[#26384f] bg-gradient-to-br from-[#13243a] to-[#101d30] p-[18px]"
     >
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#26384f] p-5 sm:p-6">
+      <div className="mb-[15px] flex flex-wrap items-start justify-between gap-[10px]">
         <div>
-          <div className="text-[10px] font-semibold tracking-[0.16em] text-cyan-300">
+          <div className="text-[11px] font-semibold tracking-[0.12em] text-cyan-300">
             VISUAL EVIDENCE GRAPH
           </div>
 
-          <h3 className="mt-2 text-lg font-semibold text-zinc-100">
-            Evidence-backed relationship map
+          <h3 className="mt-1 text-[18px] font-semibold leading-[1.25] tracking-[-0.015em] text-[#edf5ff]">
+            Relationship map
           </h3>
 
-          <p className="mt-2 max-w-2xl text-xs leading-5 text-zinc-500">
+          <p className="mt-[3px] max-w-2xl text-[12px] leading-5 text-[#94a8bf]">
             Select a node or connection to inspect
-            the evidence behind it.
+            its observed evidence path.
           </p>
         </div>
 
@@ -697,7 +697,7 @@ export default function InteractiveEvidenceGraph({
 
       {graph.status ===
       "unavailable" ? (
-        <div className="relative min-h-[380px] overflow-hidden border-t border-[#26384f] bg-[radial-gradient(ellipse_at_47%_51%,#1c3551_0%,#101d30_59%)]">
+        <div className="relative min-h-[380px] overflow-hidden rounded-[11px] border border-[#293d57] bg-[radial-gradient(ellipse_at_47%_51%,#1c3551_0%,#101d30_59%)]">
           <div className="absolute inset-0 opacity-[0.14] [background-image:radial-gradient(#a1c8e8_0.8px,transparent_0.8px)] [background-size:19px_19px]" />
 
           <div className="absolute left-1/2 top-1/2 z-10 min-w-[180px] -translate-x-1/2 -translate-y-1/2 rounded-[13px] border border-cyan-400 bg-[#153e58] px-5 py-4 text-center shadow-[0_0_0_4px_rgba(99,221,241,.08)]">
@@ -716,7 +716,7 @@ export default function InteractiveEvidenceGraph({
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto border-b border-[#26384f]">
+          <div className="overflow-x-auto rounded-[11px] border border-[#293d57] bg-[radial-gradient(ellipse_at_47%_51%,#1c3551_0%,#101d30_59%)]">
             <svg
               viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
               className="min-w-[760px]"
@@ -1049,111 +1049,21 @@ export default function InteractiveEvidenceGraph({
             </svg>
           </div>
 
-          {graph.edges.length >
-            0 && (
-            <div className="p-5 sm:p-6">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-[10px] font-semibold tracking-[0.14em] text-zinc-500">
-                  OBSERVED CONNECTIONS
-                </div>
-
-                <span className="text-[9px] text-zinc-700">
-                  {
-                    graph.edges
-                      .length
-                  }{" "}
-                  connection(s)
-                </span>
-              </div>
-
-              <div className="mt-3 grid gap-2 lg:grid-cols-2">
-                {graph.edges
-                  .slice(
-                    0,
-                    8
-                  )
-                  .map(
-                    edge => {
-                      const active =
-                        selection
-                          ?.type ===
-                          "edge" &&
-                        selection.id ===
-                          edge.id;
-
-                      return (
-                        <button
-                          key={
-                            edge.id
-                          }
-                          type="button"
-                          onClick={() =>
-                            selectEdge(
-                              edge
-                            )
-                          }
-                          className={`rounded-xl border p-3 text-left transition ${
-                            active
-                              ? "border-cyan-500/30 bg-cyan-500/[0.07]"
-                              : "border-zinc-800 bg-black/20 hover:border-[#466582] hover:bg-[#183246]"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-[10px] font-medium text-zinc-300">
-                              {
-                                edgeKindLabel(
-                                  edge
-                                )
-                              }
-                            </span>
-
-                            <span className="rounded-full border border-emerald-500/20 bg-emerald-500/[0.05] px-2 py-0.5 text-[8px] font-medium text-emerald-300">
-                              SUPPORTED
-                            </span>
-                          </div>
-
-                          <div className="mt-2 text-xs text-zinc-500">
-                            {
-                              edge.label
-                            }
-                          </div>
-
-                          <div className="mt-2 text-[9px] text-zinc-700">
-                            {
-                              edge.evidenceCount
-                            }{" "}
-                            evidence item(s)
-                          </div>
-                        </button>
-                      );
-                    }
-                  )}
-              </div>
-            </div>
-          )}
-
-          <div className="border-t border-[#26384f] px-5 py-4 text-[10px] leading-5 text-zinc-600 sm:px-6">
-            {
-              graph.limitation ??
-              "Only observed, evidence-backed relationships are shown."
-            }
-          </div>
-
-          <div className="border-t border-[#26384f] px-5 py-3 text-[9px] text-zinc-700 sm:px-6">
-            Ownership inference: OFF · Max{" "}
-            {
-              graph.coverage
-                .maxNodes
-            }{" "}
-            nodes · Max{" "}
-            {
-              graph.coverage
-                .maxEdges
-            }{" "}
-            edges
-          </div>
         </>
       )}
+
+      <div className="mt-[11px] flex flex-wrap justify-between gap-[10px] text-[11px] text-[#94a8bf]">
+        <span>
+          {
+            graph.limitation ??
+            "Arrow direction represents observed evidence direction."
+          }
+        </span>
+
+        <strong className="font-semibold text-[#bac9dc]">
+          Connection ≠ common ownership
+        </strong>
+      </div>
     </section>
   );
 }
