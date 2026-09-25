@@ -587,14 +587,22 @@ export default function AnalysisWorkspaceActivity({
         <div
           className={`${styles.card} ${styles.panel}`}
         >
-          <div>
-            <h3 className={styles.briefTitle}>
-              Incoming and outgoing funds
-            </h3>
+          <div className={styles.panelHead}>
+            <div>
+              <h3 className={styles.briefTitle}>
+                Incoming and outgoing funds
+              </h3>
 
-            <p className={styles.briefSub}>
-              Observed transaction flows collected by AYZO.
-            </p>
+              <p className={styles.briefSub}>
+                Observed transaction flows collected by AYZO.
+              </p>
+            </div>
+
+            <span className={styles.activityStatus}>
+              {events.length > 0
+                ? `${events.length} observed`
+                : "Evidence unavailable"}
+            </span>
           </div>
 
           {events.length >
@@ -680,37 +688,18 @@ export default function AnalysisWorkspaceActivity({
               )}
             </div>
           ) : (
-            <div className={`mt-4 ${styles.flowRows}`}>
-              {[
-                "Incoming evidence unavailable",
-                "Outgoing evidence unavailable",
-                "Additional flow evidence unavailable",
-              ].map(
-                label => (
-                  <div
-                    key={label}
-                    className={`${styles.flow} ${styles.flowPlaceholder}`}
-                  >
-                    <span className={styles.flowName}>
-                      {label}
-                    </span>
+            <div className={styles.emptyActivityCompact}>
+              <div className={styles.emptyActivityIcon}>
+                ↔
+              </div>
 
-                    <span className={styles.flowBar}>
-                      <i
-                        className={styles.flowBarFill}
-                        style={{
-                          width:
-                            "0%",
-                        }}
-                      />
-                    </span>
+              <strong>
+                Incoming evidence unavailable · Outgoing evidence unavailable
+              </strong>
 
-                    <span className={styles.flowAmount}>
-                      —
-                    </span>
-                  </div>
-                )
-              )}
+              <span>
+                No supported transaction flow was collected for this bounded evidence window.
+              </span>
             </div>
           )}
 
@@ -728,15 +717,23 @@ export default function AnalysisWorkspaceActivity({
         <div
           className={`${styles.card} ${styles.panel}`}
         >
-          <div>
-            <h3 className={styles.briefTitle}>
-              Flow over time
-            </h3>
+          <div className={styles.panelHead}>
+            <div>
+              <h3 className={styles.briefTitle}>
+                Flow over time
+              </h3>
 
-            <p className={styles.briefSub}>
-              Cumulative observed net flow for one comparable asset.
-              This is not wallet balance.
-            </p>
+              <p className={styles.briefSub}>
+                Cumulative observed net flow for one comparable asset.
+                This is not wallet balance.
+              </p>
+            </div>
+
+            <span className={styles.activityStatus}>
+              {chartAsset
+                ? chartAsset
+                : "Evidence window"}
+            </span>
           </div>
 
           {chartEvents.length >
@@ -1046,34 +1043,20 @@ export default function AnalysisWorkspaceActivity({
             )}
           </div>
         ) : (
-          <div className={styles.ledgerList}>
-            {Array.from(
-              {
-                length:
-                  5,
-              },
-              (
-                _,
-                index
-              ) => (
-                <div
-                  key={index}
-                  className={`${styles.event} ${styles.eventPlaceholder}`}
-                >
-                  <time>
-                    —
-                  </time>
+          <div className={styles.ledgerEmpty}>
+            <div className={styles.emptyActivityIcon}>
+              ▤
+            </div>
 
-                  <strong>
-                    No event
-                  </strong>
+            <div>
+              <strong>
+                No event
+              </strong>
 
-                  <span>
-                    Unavailable
-                  </span>
-                </div>
-              )
-            )}
+              <span>
+                Transaction evidence is unavailable for this bounded window.
+              </span>
+            </div>
           </div>
         )}
 

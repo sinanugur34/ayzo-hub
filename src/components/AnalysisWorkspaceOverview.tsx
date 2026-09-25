@@ -379,8 +379,16 @@ export default function AnalysisWorkspaceOverview({
           </small>
         </div>
 
-        <span className={styles.subjectTag}>
-          EVIDENCE AVAILABLE
+        <span
+          className={`${styles.subjectTag} ${
+            timelineUnavailable
+              ? styles.subjectTagLimited
+              : ""
+          }`}
+        >
+          {timelineUnavailable
+            ? "TRANSACTION EVIDENCE LIMITED"
+            : "TRANSACTION EVIDENCE AVAILABLE"}
         </span>
       </div>
 
@@ -508,14 +516,16 @@ export default function AnalysisWorkspaceOverview({
           aria-live="polite"
           className={`${styles.card} ${styles.panel} ${styles.brief}`}
         >
-          <div>
-            <h3 className={styles.briefTitle}>
-              AYZO Evidence Brief
-            </h3>
+          <div className={styles.panelHead}>
+            <div>
+              <h3 className={styles.briefTitle}>
+                AYZO Evidence Brief
+              </h3>
 
-            <p className={styles.briefSub}>
-              Observation and limitation stay together.
-            </p>
+              <p className={styles.briefSub}>
+                Observation and limitation stay together.
+              </p>
+            </div>
           </div>
 
           <div className={styles.mainFinding}>

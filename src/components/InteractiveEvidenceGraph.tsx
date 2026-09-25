@@ -634,6 +634,11 @@ export default function InteractiveEvidenceGraph({
       "unavailable" ? (
         <div className={styles.networkCanvas}>
           <div
+            aria-hidden="true"
+            className={styles.graphUnavailableHalo}
+          />
+
+          <div
             className={`${styles.graphNode} ${styles.graphNodeRoot} ${styles.graphNodeCentered}`}
           >
             <span>
@@ -645,10 +650,16 @@ export default function InteractiveEvidenceGraph({
             <small>
               ANALYZED SUBJECT
             </small>
+          </div>
 
-            <small className={styles.graphUnavailableNote}>
+          <div className={styles.graphUnavailableMessage}>
+            <strong>
+              Relationship evidence unavailable
+            </strong>
+
+            <span>
               No supported relationship edges were collected in this evidence window.
-            </small>
+            </span>
           </div>
         </div>
       ) : (
