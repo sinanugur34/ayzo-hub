@@ -145,3 +145,50 @@ test(
     );
   }
 );
+
+test(
+  "v6 flow chart uses full bounded timeline while list remains capped at five",
+  () => {
+    const activity =
+      fs.readFileSync(
+        "src/components/AnalysisWorkspaceActivity.tsx",
+        "utf8"
+      );
+
+    assert.ok(
+      activity.includes(
+        "const timelineEvents ="
+      )
+    );
+
+    assert.ok(
+      activity.includes(
+        "timelineEvents.slice("
+      )
+    );
+
+    assert.ok(
+      activity.includes(
+        "const chartValuedEvents ="
+      )
+    );
+
+    assert.ok(
+      activity.includes(
+        "timelineEvents.filter("
+      )
+    );
+
+    assert.ok(
+      activity.includes(
+        "const chartEvents ="
+      )
+    );
+
+    assert.ok(
+      activity.includes(
+        "chartValuedEvents"
+      )
+    );
+  }
+);

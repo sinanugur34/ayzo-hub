@@ -238,18 +238,25 @@ export default function AnalysisWorkspaceActivity({
       null
     );
 
+  const timelineEvents =
+    useMemo(
+      () =>
+        timeline?.events ??
+        [],
+      [
+        timeline,
+      ]
+    );
+
   const events =
     useMemo(
       () =>
-        (
-          timeline?.events ??
-          []
-        ).slice(
+        timelineEvents.slice(
           0,
           5
         ),
       [
-        timeline,
+        timelineEvents,
       ]
     );
 
@@ -307,6 +314,18 @@ export default function AnalysisWorkspaceActivity({
         ) !== null
     );
 
+  const chartValuedEvents =
+    timelineEvents.filter(
+      event =>
+        numericValue(
+          event
+        ) !== null &&
+        typeof event.asset ===
+          "string" &&
+        event.asset.length >
+          0
+    );
+
   const maxValue =
     Math.max(
       1,
@@ -321,16 +340,16 @@ export default function AnalysisWorkspaceActivity({
       )
     );
 
-  const firstValued =
-    valuedEvents[0];
+  const firstChartValued =
+    chartValuedEvents[0];
 
   const chartAsset =
-    firstValued
+    firstChartValued
       ?.asset ??
     null;
 
   const chartEvents =
-    valuedEvents
+    chartValuedEvents
       .filter(
         event =>
           event.asset ===
