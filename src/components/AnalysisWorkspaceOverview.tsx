@@ -587,7 +587,11 @@ export default function AnalysisWorkspaceOverview({
           {evidenceSelection ? (
             <>
               <div className="mt-4 rounded-[10px] border-l-[3px] border-cyan-300 bg-[#183246] p-4">
-                <div className="text-[10px] font-semibold tracking-[0.1em] text-cyan-300">
+                <div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#94a8bf]">
+                  Selected evidence
+                </div>
+
+                <div className="mt-2 text-[10px] font-semibold tracking-[0.1em] text-cyan-300">
                   {
                     evidenceSelection.subtitle
                   }
@@ -655,7 +659,7 @@ export default function AnalysisWorkspaceOverview({
                 }}
                 className="mt-4 rounded-lg border border-[#26384f] bg-[#132239] px-3 py-2 text-xs text-[#bac9dc]"
               >
-                General view
+                Return to general overview
               </button>
             </>
           ) : observations.length >
