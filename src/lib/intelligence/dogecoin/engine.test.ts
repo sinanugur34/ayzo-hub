@@ -161,7 +161,7 @@ test(
     assert.equal(
       result.data.modules
         .addressHistory.status,
-      "complete"
+      "limited"
     );
 
     assert.equal(
