@@ -31,6 +31,9 @@ test(
       NETWORKS.tron.capabilities,
       [
         "addressFlows",
+        "walletRelationships",
+        "fundingIntelligence",
+        "fundingProvenance",
       ]
     );
   }
