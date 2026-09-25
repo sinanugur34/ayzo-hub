@@ -1,5 +1,7 @@
 "use client";
 
+import AnalysisWorkspaceOverview from "@/components/AnalysisWorkspaceOverview";
+
 import AnalysisLimitCard from "@/components/AnalysisLimitCard";
 
 import WalletTrackRecordPanel from "@/components/WalletTrackRecord";
@@ -11,7 +13,6 @@ import { useEffect, useMemo, useState } from "react";
 import AnalysisActions from "@/components/AnalysisActions";
 import { buildHistoricalSnapshot } from "@/lib/account/historicalSnapshot";
 import ActivityTimelinePanel from "@/components/ActivityTimeline";
-import VisualEvidenceGraphPanel from "@/components/VisualEvidenceGraph";
 import {
   buildSolanaVisualEvidenceGraph,
 } from "@/lib/intelligence/visualEvidenceGraph";
@@ -661,8 +662,35 @@ export default function IntelligenceReport({
       (item) => item.directSolTransferCount > 0
     ) ?? [];
 
+  const visualEvidenceGraph =
+    buildSolanaVisualEvidenceGraph({
+      tokenAddress:
+        address,
+
+      holders:
+        data.holders,
+
+      relationships:
+        data.relationships,
+
+      funding:
+        data.funding,
+    });
+
   return (
     <div className="mt-6 space-y-6">
+      <AnalysisWorkspaceOverview
+        networkLabel="Solana"
+        subject={address}
+        coverage={
+          data.coverage ??
+          data.holders.coverage ??
+          "limited"
+        }
+        findings={data.findings}
+        graph={visualEvidenceGraph}
+      />
+
       <details className="group rounded-3xl border border-zinc-800 bg-zinc-950/70">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-6 p-6 sm:p-7">
           <div>
@@ -952,24 +980,6 @@ export default function IntelligenceReport({
           })
         }
         subjectLabel="Analyzed holder-wallet set"
-      />
-
-      <VisualEvidenceGraphPanel
-        graph={
-          buildSolanaVisualEvidenceGraph({
-            tokenAddress:
-              address,
-
-            holders:
-              data.holders,
-
-            relationships:
-              data.relationships,
-
-            funding:
-              data.funding,
-          })
-        }
       />
 
       <ActivityTimelinePanel

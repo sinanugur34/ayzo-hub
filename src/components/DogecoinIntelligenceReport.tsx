@@ -1,10 +1,11 @@
 "use client";
 
+import AnalysisWorkspaceOverview from "@/components/AnalysisWorkspaceOverview";
+
 import AnalysisLimitCard from "@/components/AnalysisLimitCard";
 import DogecoinExpandedAnalysis from "@/components/DogecoinExpandedAnalysis";
 import ActivityTimeline from "@/components/ActivityTimeline";
 import WalletTrackRecordPanel from "@/components/WalletTrackRecord";
-import VisualEvidenceGraph from "@/components/VisualEvidenceGraph";
 
 import {
   buildDogecoinActivityTimeline,
@@ -543,6 +544,15 @@ export default function DogecoinIntelligenceReport({
 
   return (
     <div className="mt-6 space-y-6 text-left">
+      <AnalysisWorkspaceOverview
+        networkLabel="Dogecoin"
+        subject={address}
+        coverage={data.coverage}
+        findings={data.findings}
+        caveats={data.caveats}
+        graph={visualEvidenceGraph}
+      />
+
       <section className="overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-b from-amber-500/10 via-yellow-500/5 to-zinc-950/80">
         <div className="p-6 sm:p-8">
           <div className="flex flex-col justify-between gap-5 border-b border-zinc-800/80 pb-6 sm:flex-row sm:items-start">
@@ -783,12 +793,6 @@ export default function DogecoinIntelligenceReport({
         <WalletTrackRecordPanel
           record={walletTrackRecord}
           subjectLabel="Dogecoin address"
-        />
-      )}
-
-      {visualEvidenceGraph && (
-        <VisualEvidenceGraph
-          graph={visualEvidenceGraph}
         />
       )}
 

@@ -197,7 +197,7 @@ export default function ActivityTimeline({
     ActivityTimelineData;
 }) {
   return (
-    <section className="rounded-3xl border border-zinc-900 bg-black/20 p-5 sm:p-6">
+    <section id="analysis-timeline" className="scroll-mt-24 rounded-3xl border border-zinc-900 bg-black/20 p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="text-[10px] font-medium tracking-[0.16em] text-violet-400">

@@ -1,9 +1,10 @@
 "use client";
 
+import AnalysisWorkspaceOverview from "@/components/AnalysisWorkspaceOverview";
+
 import AnalysisLimitCard from "@/components/AnalysisLimitCard";
 import ActivityTimeline from "@/components/ActivityTimeline";
 import TronExpandedAnalysis from "@/components/TronExpandedAnalysis";
-import VisualEvidenceGraph from "@/components/VisualEvidenceGraph";
 import WalletTrackRecordPanel from "@/components/WalletTrackRecord";
 
 import {
@@ -551,6 +552,15 @@ export default function TronIntelligenceReport({
 
   return (
     <div className="mt-6 overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950/70 text-left">
+      <AnalysisWorkspaceOverview
+        networkLabel="TRON"
+        subject={address}
+        coverage={data.coverage}
+        findings={data.findings}
+        caveats={data.caveats}
+        graph={visualEvidenceGraph}
+      />
+
       <div className="border-b border-zinc-900 p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -792,12 +802,6 @@ export default function TronIntelligenceReport({
         <WalletTrackRecordPanel
           record={walletTrackRecord}
           subjectLabel="TRON address"
-        />
-      )}
-
-      {visualEvidenceGraph && (
-        <VisualEvidenceGraph
-          graph={visualEvidenceGraph}
         />
       )}
 
