@@ -608,20 +608,20 @@ const sections:
           label:
             "Browser notifications",
           detail:
-            "Not enabled yet.",
+            "Not currently supported.",
           free: NONE,
-          pro: SOON,
-          advanced: SOON,
+          pro: NONE,
+          advanced: NONE,
         },
 
         {
           label:
             "Telegram notifications",
           detail:
-            "Not enabled yet.",
+            "Not currently supported.",
           free: NONE,
-          pro: SOON,
-          advanced: SOON,
+          pro: NONE,
+          advanced: NONE,
         },
 
         featureRow(
