@@ -100,7 +100,9 @@ export async function POST(
       "__INVALID__" ||
     (
       cursor !== null &&
-      !/^\d+$/.test(cursor)
+      !/^(?:\d+|goldrush:\d+|etherscan:\d+|alchemy:[A-Za-z0-9_-]+)$/.test(
+        cursor
+      )
     )
   ) {
     return Response.json(
@@ -109,7 +111,7 @@ export async function POST(
         code:
           "INVALID_CURSOR",
         error:
-          "Transaction cursor must be a non-negative page number.",
+          "Transaction cursor must be a valid provider-scoped continuation cursor.",
       },
       { status: 400 }
     );

@@ -210,3 +210,122 @@ test(
     }
   }
 );
+
+test(
+  "etherscan transaction provider emits provider-scoped continuation cursor",
+  async () => {
+    const originalFetch =
+      globalThis.fetch;
+
+    const originalKey =
+      process.env
+        .ETHERSCAN_API_KEY;
+
+    process.env
+      .ETHERSCAN_API_KEY =
+      "unit-test-key";
+
+    globalThis.fetch =
+      async () => {
+        const result =
+          Array.from(
+            { length: 2 },
+            (
+              _,
+              index
+            ) => ({
+              blockNumber:
+                String(
+                  200 -
+                    index
+                ),
+
+              timeStamp:
+                "1758800000",
+
+              hash:
+                `0x${String(
+                  index + 1
+                ).repeat(
+                  64
+                )}`,
+
+              from:
+                "0x1111111111111111111111111111111111111111",
+
+              to:
+                "0x9999999999999999999999999999999999999999",
+
+              value:
+                "1",
+
+              isError:
+                "0",
+            })
+          );
+
+        return new Response(
+          JSON.stringify({
+            status: "1",
+            message: "OK",
+            result,
+          }),
+          {
+            status: 200,
+            headers: {
+              "content-type":
+                "application/json",
+            },
+          }
+        );
+      };
+
+    try {
+      const response =
+        await etherscanTransactionsProvider
+          .getTransactions({
+            network:
+              NETWORK,
+
+            address:
+              "0x9999999999999999999999999999999999999999",
+
+            cursor:
+              null,
+
+            limit:
+              2,
+          });
+
+      assert.equal(
+        response.ok,
+        true
+      );
+
+      if (!response.ok) {
+        return;
+      }
+
+      assert.equal(
+        response.data
+          .nextCursor,
+        "etherscan:1"
+      );
+    } finally {
+      globalThis.fetch =
+        originalFetch;
+
+      if (
+        originalKey ===
+        undefined
+      ) {
+        delete process.env
+          .ETHERSCAN_API_KEY;
+      } else {
+        process.env
+          .ETHERSCAN_API_KEY =
+          originalKey;
+      }
+    }
+  }
+);

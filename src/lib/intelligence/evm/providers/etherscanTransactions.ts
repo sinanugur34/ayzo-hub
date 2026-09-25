@@ -69,12 +69,21 @@ function parsePageIndex(
     return 0;
   }
 
-  if (!/^\d+$/.test(cursor)) {
+  const normalized =
+    cursor.startsWith(
+      "etherscan:"
+    )
+      ? cursor.slice(
+          "etherscan:".length
+        )
+      : cursor;
+
+  if (!/^\d+$/.test(normalized)) {
     return null;
   }
 
   const parsed =
-    Number(cursor);
+    Number(normalized);
 
   return (
     Number.isSafeInteger(
@@ -771,10 +780,7 @@ export class EtherscanTransactionsProvider
           nextCursor:
             result.length >=
               offset
-              ? String(
-                  pageIndex +
-                    1
-                )
+              ? `etherscan:${pageIndex + 1}`
               : null,
         },
       };

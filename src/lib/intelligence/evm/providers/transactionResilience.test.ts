@@ -632,3 +632,267 @@ test(
     }
   }
 );
+
+test(
+  "alchemy continuation cursor routes only to Alchemy",
+  async () => {
+    const calls = {
+      goldrush: 0,
+      alchemy: 0,
+      etherscan: 0,
+    };
+
+    let receivedCursor:
+      string | null | undefined =
+      null;
+
+    const providers:
+      EvmTransactionsProvider[] = [
+      {
+        id: "goldrush",
+        capabilities: ["transactions"],
+        supportsNetwork: () => true,
+        supportsCapability: () => true,
+        async getTransactions() {
+          calls.goldrush += 1;
+          return success("goldrush");
+        },
+      },
+      {
+        id: "alchemy",
+        capabilities: ["transactions"],
+        supportsNetwork: () => true,
+        supportsCapability: () => true,
+        async getTransactions(
+          request
+        ) {
+          calls.alchemy += 1;
+          receivedCursor =
+            request.cursor;
+          return success("alchemy");
+        },
+      },
+      {
+        id: "etherscan",
+        capabilities: ["transactions"],
+        supportsNetwork: () => true,
+        supportsCapability: () => true,
+        async getTransactions() {
+          calls.etherscan += 1;
+          return success("etherscan");
+        },
+      },
+    ];
+
+    const result =
+      await getResilientEvmTransactions(
+        {
+          network: NETWORK,
+          address:
+            "0x9999999999999999999999999999999999999999",
+          cursor:
+            "alchemy:eyJpIjoicGFnZS0yIiwibyI6bnVsbH0",
+        },
+        {
+          providers,
+          store: null,
+        }
+      );
+
+    assert.equal(
+      result.ok,
+      true
+    );
+
+    assert.equal(
+      result.providerId,
+      "alchemy"
+    );
+
+    assert.equal(
+      calls.goldrush,
+      0
+    );
+
+    assert.equal(
+      calls.alchemy,
+      1
+    );
+
+    assert.equal(
+      calls.etherscan,
+      0
+    );
+
+    assert.equal(
+      receivedCursor,
+      "alchemy:eyJpIjoicGFnZS0yIiwibyI6bnVsbH0"
+    );
+  }
+);
+
+test(
+  "GoldRush scoped continuation routes only to GoldRush and strips prefix",
+  async () => {
+    let receivedCursor:
+      string | null | undefined =
+      null;
+
+    let alchemyCalls =
+      0;
+
+    const goldrush:
+      EvmTransactionsProvider = {
+      id: "goldrush",
+      capabilities: ["transactions"],
+      supportsNetwork: () => true,
+      supportsCapability: () => true,
+      async getTransactions(
+        request
+      ) {
+        receivedCursor =
+          request.cursor;
+
+        return success(
+          "goldrush"
+        );
+      },
+    };
+
+    const alchemy:
+      EvmTransactionsProvider = {
+      id: "alchemy",
+      capabilities: ["transactions"],
+      supportsNetwork: () => true,
+      supportsCapability: () => true,
+      async getTransactions() {
+        alchemyCalls += 1;
+
+        return success(
+          "alchemy"
+        );
+      },
+    };
+
+    const result =
+      await getResilientEvmTransactions(
+        {
+          network: NETWORK,
+          address:
+            "0x9999999999999999999999999999999999999999",
+          cursor:
+            "goldrush:3",
+        },
+        {
+          providers: [
+            goldrush,
+            alchemy,
+          ],
+          store: null,
+        }
+      );
+
+    assert.equal(
+      result.ok,
+      true
+    );
+
+    assert.equal(
+      result.providerId,
+      "goldrush"
+    );
+
+    assert.equal(
+      receivedCursor,
+      "3"
+    );
+
+    assert.equal(
+      alchemyCalls,
+      0
+    );
+  }
+);
+
+test(
+  "Etherscan scoped continuation routes only to Etherscan and strips prefix",
+  async () => {
+    let receivedCursor:
+      string | null | undefined =
+      null;
+
+    let goldrushCalls =
+      0;
+
+    const goldrush:
+      EvmTransactionsProvider = {
+      id: "goldrush",
+      capabilities: ["transactions"],
+      supportsNetwork: () => true,
+      supportsCapability: () => true,
+      async getTransactions() {
+        goldrushCalls += 1;
+
+        return success(
+          "goldrush"
+        );
+      },
+    };
+
+    const etherscan:
+      EvmTransactionsProvider = {
+      id: "etherscan",
+      capabilities: ["transactions"],
+      supportsNetwork: () => true,
+      supportsCapability: () => true,
+      async getTransactions(
+        request
+      ) {
+        receivedCursor =
+          request.cursor;
+
+        return success(
+          "etherscan"
+        );
+      },
+    };
+
+    const result =
+      await getResilientEvmTransactions(
+        {
+          network: NETWORK,
+          address:
+            "0x9999999999999999999999999999999999999999",
+          cursor:
+            "etherscan:4",
+        },
+        {
+          providers: [
+            goldrush,
+            etherscan,
+          ],
+          store: null,
+        }
+      );
+
+    assert.equal(
+      result.ok,
+      true
+    );
+
+    assert.equal(
+      result.providerId,
+      "etherscan"
+    );
+
+    assert.equal(
+      receivedCursor,
+      "4"
+    );
+
+    assert.equal(
+      goldrushCalls,
+      0
+    );
+  }
+);
