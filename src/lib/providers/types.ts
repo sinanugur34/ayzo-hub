@@ -3,6 +3,7 @@ import type { NetworkId } from "@/lib/networks/registry";
 export type ProviderId =
   | "goldrush"
   | "alchemy"
+  | "etherscan"
   | "blockchair"
   | "mempool"
   | "blockcypher"
