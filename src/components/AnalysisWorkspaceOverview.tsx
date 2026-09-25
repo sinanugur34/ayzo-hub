@@ -349,6 +349,30 @@ export default function AnalysisWorkspaceOverview({
             {networkLabel}
           </span>
 
+          <button
+            type="button"
+            className={styles.softButton}
+            onClick={() => {
+              setEvidenceSelection(
+                null
+              );
+
+              window.dispatchEvent(
+                new CustomEvent(
+                  "ayzo:evidence-selection",
+                  {
+                    detail: {
+                      evidenceRefs:
+                        [],
+                    },
+                  }
+                )
+              );
+            }}
+          >
+            General overview
+          </button>
+
           <a
             href={`https://x.com/intent/post?text=${encodeURIComponent(
               shareText
@@ -387,7 +411,7 @@ export default function AnalysisWorkspaceOverview({
           }`}
         >
           {timelineUnavailable
-            ? "TRANSACTION EVIDENCE LIMITED"
+            ? "TRANSACTION EVIDENCE UNAVAILABLE"
             : "TRANSACTION EVIDENCE AVAILABLE"}
         </span>
       </div>
@@ -532,14 +556,22 @@ export default function AnalysisWorkspaceOverview({
             <strong>
               {
                 observations[0]?.title ??
-                "No additional evidence-backed finding"
+                (
+                  timelineUnavailable
+                    ? "Transaction evidence is currently unavailable"
+                    : "No additional evidence-backed finding"
+                )
               }
             </strong>
 
             <p>
               {
                 observations[0]?.summary ??
-                "The current bounded evidence window did not produce an additional finding."
+                (
+                  timelineUnavailable
+                    ? "AYZO could not collect a supported transaction window for this analysis. Other evidence modules may still remain available."
+                    : "The current bounded evidence window did not produce an additional finding."
+                )
               }
             </p>
           </div>

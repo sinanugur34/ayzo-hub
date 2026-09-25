@@ -688,18 +688,48 @@ export default function AnalysisWorkspaceActivity({
               )}
             </div>
           ) : (
-            <div className={styles.emptyActivityCompact}>
-              <div className={styles.emptyActivityIcon}>
-                ↔
-              </div>
+            <div className={styles.flowRows}>
+              {[
+                "Incoming evidence unavailable",
+                "Incoming evidence unavailable",
+                "Outgoing evidence unavailable",
+                "Outgoing evidence unavailable",
+                "Additional flow evidence unavailable",
+              ].map(
+                (
+                  label,
+                  index
+                ) => (
+                  <div
+                    key={`${label}:${index}`}
+                    className={`${styles.flow} ${styles.flowPlaceholder} ${styles.flowGhost}`}
+                  >
+                    <span className={styles.flowName}>
+                      {label}
+                    </span>
 
-              <strong>
-                Incoming evidence unavailable · Outgoing evidence unavailable
-              </strong>
+                    <span className={styles.flowBar}>
+                      <i
+                        className={styles.flowBarFill}
+                        style={{
+                          width:
+                            `${[
+                              68,
+                              42,
+                              58,
+                              76,
+                              31,
+                            ][index]}%`,
+                        }}
+                      />
+                    </span>
 
-              <span>
-                No supported transaction flow was collected for this bounded evidence window.
-              </span>
+                    <span className={styles.flowAmount}>
+                      —
+                    </span>
+                  </div>
+                )
+              )}
             </div>
           )}
 
@@ -1043,20 +1073,34 @@ export default function AnalysisWorkspaceActivity({
             )}
           </div>
         ) : (
-          <div className={styles.ledgerEmpty}>
-            <div className={styles.emptyActivityIcon}>
-              ▤
-            </div>
+          <div className={styles.ledgerList}>
+            {Array.from(
+              {
+                length:
+                  5,
+              },
+              (
+                _,
+                index
+              ) => (
+                <div
+                  key={index}
+                  className={`${styles.event} ${styles.eventPlaceholder} ${styles.eventGhost}`}
+                >
+                  <time>
+                    —
+                  </time>
 
-            <div>
-              <strong>
-                No event
-              </strong>
+                  <strong>
+                    No event
+                  </strong>
 
-              <span>
-                Transaction evidence is unavailable for this bounded window.
-              </span>
-            </div>
+                  <span>
+                    Unavailable
+                  </span>
+                </div>
+              )
+            )}
           </div>
         )}
 

@@ -1305,3 +1305,185 @@
     align-items: flex-start;
   }
 }
+
+/* =========================================================
+   AYZO ANALYSIS WORKSPACE V6
+   Literal concept density without fabricated evidence
+========================================================= */
+
+.networkUnavailable {
+  background:
+    radial-gradient(
+      ellipse at 47% 51%,
+      #1c3551 0%,
+      #101d30 59%
+    );
+}
+
+.graphGhostNode {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  display: flex;
+  min-width: 93px;
+  min-height: 62px;
+  padding: 7px 9px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #7890a8;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  background:
+    linear-gradient(
+      160deg,
+      rgba(35, 48, 76, .58),
+      rgba(26, 48, 73, .40)
+    );
+  border: 1px dashed #445a70;
+  border-radius: 13px;
+  opacity: .72;
+}
+
+.graphGhostNode small {
+  margin-top: 2px;
+  color: #70869b;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.graphGhostSourceA {
+  left: 12%;
+  top: 34%;
+}
+
+.graphGhostSourceB {
+  left: 12%;
+  top: 72%;
+}
+
+.graphGhostTargetA {
+  left: 85%;
+  top: 24%;
+}
+
+.graphGhostTargetB {
+  left: 85%;
+  top: 51%;
+}
+
+.graphGhostTargetC {
+  left: 85%;
+  top: 78%;
+}
+
+.graphNodeCentered {
+  left: 47%;
+  top: 51%;
+}
+
+.graphUnavailableMessage {
+  bottom: 18px;
+  color: #7890a8;
+}
+
+.flowRows {
+  margin-top: 5px;
+}
+
+.flowGhost {
+  cursor: default;
+  border-style: dashed;
+  opacity: .68;
+}
+
+.flowGhost:hover {
+  background: #102237;
+  border-color: #26384f;
+}
+
+.flowGhost .flowBarFill {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(99, 221, 241, .30),
+      rgba(98, 167, 255, .13)
+    );
+}
+
+.flowGhost:nth-child(n+3) .flowBarFill {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(172, 150, 251, .30),
+      rgba(137, 121, 225, .13)
+    );
+}
+
+.eventGhost {
+  min-height: 76px;
+  cursor: default;
+  border-style: dashed;
+  opacity: .68;
+}
+
+.eventGhost:hover {
+  background: #102237;
+  border-color: #26384f;
+}
+
+.ledgerList {
+  align-items: stretch;
+}
+
+.ledger {
+  min-height: 146px;
+}
+
+.lower > .card {
+  min-height: 305px;
+}
+
+.chartSvg {
+  height: 221px;
+}
+
+@media (max-width: 540px) {
+  .graphGhostSourceA {
+    left: 25%;
+    top: 21%;
+  }
+
+  .graphGhostSourceB {
+    left: 75%;
+    top: 21%;
+  }
+
+  .graphNodeCentered {
+    left: 50%;
+    top: 47%;
+  }
+
+  .graphGhostTargetA {
+    left: 19%;
+    top: 76%;
+  }
+
+  .graphGhostTargetB {
+    left: 50%;
+    top: 76%;
+  }
+
+  .graphGhostTargetC {
+    left: 81%;
+    top: 76%;
+  }
+
+  .graphGhostNode {
+    min-width: 84px;
+    min-height: 56px;
+    padding: 5px;
+    font-size: 11px;
+  }
+}
