@@ -481,7 +481,7 @@ export default function AlertRulesPanel() {
         </div>
 
         <p className="mt-2 text-[10px] leading-5 text-zinc-600">
-          AYZO checks enabled monitoring rules on a scheduled basis and sends email notifications when supported alert conditions are detected. Browser and Telegram notifications are not enabled yet.
+          AYZO checks enabled monitoring rules on a scheduled basis and sends email notifications when supported alert conditions are detected. Browser and Telegram notifications are not currently supported.
         </p>
       </div>
 
