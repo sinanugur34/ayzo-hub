@@ -11,6 +11,12 @@ test(
         "utf8"
       );
 
+    const css =
+      fs.readFileSync(
+        "src/components/AnalysisWorkspaceConcept.module.css",
+        "utf8"
+      );
+
     const page =
       fs.readFileSync(
         "src/app/page.tsx",
@@ -19,13 +25,25 @@ test(
 
     assert.ok(
       frame.includes(
-        "grid-cols-[76px_minmax(0,1fr)]"
+        "styles.layout"
       )
     );
 
     assert.ok(
       frame.includes(
-        "max-w-[1540px]"
+        "styles.rail"
+      )
+    );
+
+    assert.ok(
+      css.includes(
+        "grid-template-columns: 76px minmax(0, 1fr)"
+      )
+    );
+
+    assert.ok(
+      css.includes(
+        "max-width: 1540px"
       )
     );
 
@@ -184,6 +202,96 @@ test(
         "Binance"
       ),
       false
+    );
+  }
+);
+
+test(
+  "relationship map uses literal node cards and curved paths",
+  () => {
+    const graph =
+      fs.readFileSync(
+        "src/components/InteractiveEvidenceGraph.tsx",
+        "utf8"
+      );
+
+    const css =
+      fs.readFileSync(
+        "src/components/AnalysisWorkspaceConcept.module.css",
+        "utf8"
+      );
+
+    assert.ok(
+      graph.includes(
+        "styles.graphNode"
+      )
+    );
+
+    assert.ok(
+      graph.includes(
+        "styles.graphEdge"
+      )
+    );
+
+    assert.ok(
+      graph.includes(
+        "C ${source.x + dx * .47}"
+      )
+    );
+
+    assert.ok(
+      css.includes(
+        "position: absolute"
+      )
+    );
+
+    assert.equal(
+      graph.includes(
+        "Binance"
+      ),
+      false
+    );
+
+    assert.equal(
+      graph.includes(
+        "Kraken"
+      ),
+      false
+    );
+  }
+);
+
+test(
+  "rail follows prototype desktop and mobile geometry",
+  () => {
+    const css =
+      fs.readFileSync(
+        "src/components/AnalysisWorkspaceConcept.module.css",
+        "utf8"
+      );
+
+    assert.ok(
+      css.includes(
+        "grid-template-columns: 76px minmax(0, 1fr)"
+      )
+    );
+
+    assert.ok(
+      css.includes(
+        "height: 100vh"
+      )
+    );
+
+    assert.ok(
+      css.includes(
+        "@media (max-width: 800px)"
+      )
+    );
+
+    assert.ok(
+      css.includes(
+        "flex-direction: row"
+      )
     );
   }
 );

@@ -1,3 +1,268 @@
+
+.layout {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  min-height: 100vh;
+  width: 100%;
+  background: #080f1d;
+}
+
+.rail {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  height: 100vh;
+  flex-direction: column;
+  align-items: center;
+  gap: 13px;
+  padding: 24px 12px;
+  background: #0a1424;
+  border-right: 1px solid #26384f;
+}
+
+.brand {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.brand i {
+  color: #63ddf1;
+  font-style: normal;
+}
+
+.railLink {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  color: #94a8bf;
+  border-radius: 12px;
+  font-size: 20px;
+  transition:
+    background .18s,
+    color .18s;
+}
+
+.railLink:hover,
+.railActive {
+  color: #63ddf1;
+  background: #18334a;
+}
+
+.railSpacer {
+  flex: 1;
+}
+
+.railHint {
+  color: #94a8bf;
+  font-size: 10px;
+  letter-spacing: .15em;
+  writing-mode: vertical-rl;
+}
+
+.mainShell {
+  min-width: 0;
+  width: 100%;
+  max-width: 1540px;
+  margin: 0 auto;
+  padding: 25px clamp(16px, 3vw, 44px) 45px;
+}
+
+.panelHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.panelHead p {
+  margin-top: 3px;
+  color: #94a8bf;
+  font-size: 12px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 13px;
+  color: #bac9dc;
+  font-size: 11px;
+}
+
+.legendLine {
+  display: inline-block;
+  width: 17px;
+  margin-right: 5px;
+  border-top: 3px solid #63ddf1;
+  vertical-align: middle;
+}
+
+.legendSwap {
+  border-color: #ac96fb;
+  border-top-style: dashed;
+}
+
+.networkCanvas {
+  position: relative;
+  min-height: 380px;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      ellipse at 47% 51%,
+      #1c3551 0%,
+      #101d30 59%
+    );
+  border: 1px solid #293d57;
+  border-radius: 11px;
+}
+
+.networkCanvas::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  opacity: .17;
+  background-image:
+    radial-gradient(
+      #a1c8e8 .8px,
+      transparent .8px
+    );
+  background-size: 19px 19px;
+  pointer-events: none;
+}
+
+.networkSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.graphEdge {
+  fill: none;
+  stroke: #61829a;
+  stroke-width: 2.2;
+  opacity: .46;
+  cursor: pointer;
+  transition:
+    stroke .2s,
+    opacity .2s,
+    stroke-width .2s;
+}
+
+.graphEdge:hover {
+  opacity: .9;
+}
+
+.graphEdgeObserved {
+  stroke: #ac96fb;
+  stroke-dasharray: 6 5;
+}
+
+.graphEdgeSelected {
+  stroke: #63ddf1;
+  stroke-width: 3.7;
+  opacity: 1;
+  filter:
+    drop-shadow(
+      0 0 6px
+      rgba(99, 221, 241, .67)
+    );
+}
+
+.graphNode {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  display: flex;
+  min-width: 93px;
+  min-height: 62px;
+  padding: 7px 9px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #edf5ff;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  background: #1a3049;
+  border: 1px solid #536d89;
+  border-radius: 13px;
+  cursor: pointer;
+  transition:
+    box-shadow .18s,
+    border-color .18s,
+    background .18s;
+}
+
+.graphNode:hover {
+  background: #224761;
+  border-color: #63ddf1;
+}
+
+.graphNode small {
+  max-width: 150px;
+  margin-top: 2px;
+  overflow: hidden;
+  color: #bcd0e5;
+  font-size: 11px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.graphNodeRoot {
+  min-width: 104px;
+  min-height: 75px;
+  background: #153e58;
+  border-color: #63ddf1;
+}
+
+.graphNodeFunding {
+  background: #23304c;
+}
+
+.graphNodeTransaction {
+  background: #183553;
+  border-color: #62a7ff;
+}
+
+.graphNodeEvidence {
+  background: #182235;
+}
+
+.graphNodeSelected {
+  background: #16506a;
+  border-color: #63ddf1;
+  box-shadow:
+    0 0 0 4px rgba(99, 221, 241, .15),
+    0 0 26px rgba(99, 221, 241, .33);
+}
+
+.graphNodeCentered {
+  left: 50%;
+  top: 50%;
+  min-width: 220px;
+}
+
+.networkFoot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 11px;
+  color: #94a8bf;
+  font-size: 11px;
+}
+
+.networkFoot strong {
+  color: #bac9dc;
+  font-weight: 600;
+}
+
 .workspace {
   width: 100%;
   color: #edf5ff;
@@ -205,7 +470,7 @@
   border-radius: 10px;
   background: #183246;
   border-left: 3px solid #63ddf1;
-  margin: 18px 0;
+  margin: 4px 0 18px;
 }
 
 .mainFinding strong {
@@ -288,10 +553,6 @@
 }
 
 @media (max-width: 800px) {
-  .workspace {
-    padding-left: 15px;
-    padding-right: 15px;
-  }
 
   .top {
     flex-wrap: wrap;
@@ -307,9 +568,6 @@
 }
 
 @media (max-width: 540px) {
-  .workspace {
-    padding: 19px 12px 26px;
-  }
 
   .topActions {
     width: 100%;
@@ -635,4 +893,73 @@
   .detailDescription {
     min-height: 0;
   }
+}
+
+
+@media (max-width: 800px) {
+  .layout {
+    display: block;
+  }
+
+  .rail {
+    position: static;
+    width: 100%;
+    height: auto;
+    padding: 8px 15px;
+    flex-direction: row;
+    justify-content: space-between;
+    border-right: 0;
+    border-bottom: 1px solid #26384f;
+  }
+
+  .railLink {
+    width: 38px;
+    height: 38px;
+  }
+
+  .railSpacer,
+  .railHint {
+    display: none;
+  }
+
+  .mainShell {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+}
+
+@media (max-width: 540px) {
+  .mainShell {
+    padding: 19px 12px 26px;
+  }
+
+  .networkCanvas {
+    min-height: 475px;
+  }
+
+  .graphNode {
+    min-width: 84px;
+    min-height: 56px;
+    padding: 5px;
+    font-size: 11px;
+  }
+
+  .graphNodeRoot {
+    min-width: 92px;
+    min-height: 66px;
+  }
+
+  .networkFoot {
+    flex-direction: column;
+  }
+}
+
+.graphNodeCentered .graphUnavailableNote {
+  max-width: 200px;
+  margin-top: 5px;
+  color: #94a8bf;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: normal;
 }
