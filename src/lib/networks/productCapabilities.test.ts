@@ -94,6 +94,7 @@ test(
       toolIds("xrp"),
       [
         "walletAnalysis",
+        "fundingTrace",
         "connections",
       ]
     );
