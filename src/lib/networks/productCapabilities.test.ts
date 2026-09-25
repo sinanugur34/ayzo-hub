@@ -53,11 +53,15 @@ test(
 );
 
 test(
-  "maps Dogecoin and TRON address flows to wallet analysis only",
+  "maps Dogecoin expanded evidence to wallet, funding, and connections tools",
   () => {
     assert.deepEqual(
       toolIds("dogecoin"),
-      ["walletAnalysis"]
+      [
+        "walletAnalysis",
+        "fundingTrace",
+        "connections",
+      ]
     );
 
     assert.deepEqual(

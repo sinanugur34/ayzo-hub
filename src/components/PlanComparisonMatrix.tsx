@@ -186,7 +186,7 @@ const sections:
           label:
             "Live network coverage",
           detail:
-            "AYZO currently supports 16 live networks.",
+            "AYZO currently supports 17 live networks.",
           free: {
             kind: "value",
             label: "17 networks",
@@ -369,6 +369,36 @@ const sections:
         {
           label:
             "Dogecoin canonical transaction evidence",
+          free: AVAILABLE,
+          pro: AVAILABLE,
+          advanced: AVAILABLE,
+        },
+
+        {
+          label:
+            "Dogecoin flow & funding intelligence",
+          detail:
+            "Plan-aware canonical UTXO samples are used for bounded incoming/outgoing flow and observed source evidence.",
+          free: AVAILABLE,
+          pro: AVAILABLE,
+          advanced: AVAILABLE,
+        },
+
+        {
+          label:
+            "Dogecoin counterparty intelligence",
+          detail:
+            "Only explicit input/output address relationships are shown; change ownership and unresolved sources are not inferred.",
+          free: AVAILABLE,
+          pro: AVAILABLE,
+          advanced: AVAILABLE,
+        },
+
+        {
+          label:
+            "Dogecoin timeline, track record & visual graph",
+          detail:
+            "Evidence-backed presentation layers built from bounded canonical Dogecoin evidence.",
           free: AVAILABLE,
           pro: AVAILABLE,
           advanced: AVAILABLE,

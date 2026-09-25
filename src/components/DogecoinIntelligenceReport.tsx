@@ -1,6 +1,20 @@
 "use client";
 
 import AnalysisLimitCard from "@/components/AnalysisLimitCard";
+import DogecoinExpandedAnalysis from "@/components/DogecoinExpandedAnalysis";
+import ActivityTimeline from "@/components/ActivityTimeline";
+import WalletTrackRecordPanel from "@/components/WalletTrackRecord";
+import VisualEvidenceGraph from "@/components/VisualEvidenceGraph";
+
+import {
+  buildDogecoinActivityTimeline,
+  buildDogecoinVisualEvidenceGraph,
+  buildDogecoinWalletTrackRecord,
+} from "@/lib/intelligence/dogecoin/presentation";
+
+import type {
+  DogecoinIntelligence,
+} from "@/lib/intelligence/dogecoin/engine";
 
 import {
   useEffect,
@@ -11,9 +25,6 @@ import {
 import AnalysisActions from "@/components/AnalysisActions";
 import { buildHistoricalSnapshot } from "@/lib/account/historicalSnapshot";
 
-import type {
-  DogecoinTransactionEvidence,
-} from "@/lib/intelligence/dogecoin/types";
 
 type Finding = {
   id: string;
@@ -43,53 +54,7 @@ type ModuleState = {
     string | null;
 };
 
-type DogecoinSuccess = {
-  ok: true;
-
-  network:
-    "dogecoin";
-
-  address:
-    string;
-
-  coverage:
-    | "partial"
-    | "limited";
-
-  history: {
-    transactions:
-      readonly {
-        transactionHash:
-          string;
-
-        blockHeight:
-          number | null;
-
-        timestamp:
-          string | null;
-      }[];
-
-    nextCursor:
-      string | null;
-  };
-
-  canonicalTransaction:
-    DogecoinTransactionEvidence | null;
-
-  modules: {
-    addressHistory:
-      ModuleState;
-
-    canonicalTransactionEvidence:
-      ModuleState;
-  };
-
-  findings:
-    readonly Finding[];
-
-  caveats:
-    readonly string[];
-};
+type DogecoinSuccess = DogecoinIntelligence;
 
 type DogecoinFailure = {
   ok: false;
@@ -383,6 +348,39 @@ export default function DogecoinIntelligenceReport({
     address,
   ]);
 
+  const activityTimeline =
+    useMemo(
+      () =>
+        data
+          ? buildDogecoinActivityTimeline(
+              data
+            )
+          : null,
+      [data]
+    );
+
+  const walletTrackRecord =
+    useMemo(
+      () =>
+        data
+          ? buildDogecoinWalletTrackRecord(
+              data
+            )
+          : null,
+      [data]
+    );
+
+  const visualEvidenceGraph =
+    useMemo(
+      () =>
+        data
+          ? buildDogecoinVisualEvidenceGraph(
+              data
+            )
+          : null,
+      [data]
+    );
+
   const historicalSnapshot =
     useMemo(
       () =>
@@ -438,6 +436,36 @@ export default function DogecoinIntelligenceReport({
                         ),
                     }
                   : null,
+
+              canonicalTransactions:
+                data.canonicalTransactions
+                  .slice(
+                    0,
+                    5
+                  )
+                  .map(
+                    transaction => ({
+                      ...transaction,
+
+                      inputs:
+                        transaction.inputs.slice(
+                          0,
+                          20
+                        ),
+
+                      outputs:
+                        transaction.outputs.slice(
+                          0,
+                          20
+                        ),
+                    })
+                  ),
+
+              derived:
+                data.derived,
+
+              evidenceCoverage:
+                data.evidenceCoverage,
 
               modules:
                 data.modules,
@@ -739,6 +767,29 @@ export default function DogecoinIntelligenceReport({
             )}
           </div>
         </section>
+      )}
+
+      <DogecoinExpandedAnalysis
+        data={data}
+      />
+
+      {activityTimeline && (
+        <ActivityTimeline
+          timeline={activityTimeline}
+        />
+      )}
+
+      {walletTrackRecord && (
+        <WalletTrackRecordPanel
+          record={walletTrackRecord}
+          subjectLabel="Dogecoin address"
+        />
+      )}
+
+      {visualEvidenceGraph && (
+        <VisualEvidenceGraph
+          graph={visualEvidenceGraph}
+        />
       )}
 
       <AnalysisActions

@@ -370,6 +370,21 @@ function utxoSnapshot(
       transactions[0]
     );
 
+  const derived =
+    record(
+      root.derived
+    );
+
+  const flow =
+    record(
+      derived?.flow
+    );
+
+  const counterparties =
+    record(
+      derived?.counterparties
+    );
+
   return {
     version: 1,
     capturedAt:
@@ -398,6 +413,16 @@ function utxoSnapshot(
       latestBlockHeight:
         numberValue(
           latest?.blockHeight
+        ),
+
+      relationshipsDetected:
+        numberValue(
+          counterparties?.count
+        ),
+
+      incomingTransfersDetected:
+        numberValue(
+          flow?.incomingTransactionCount
         ),
     },
 

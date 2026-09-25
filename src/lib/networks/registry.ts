@@ -30,6 +30,9 @@ const BITCOIN_CAPABILITIES = [
 
 const DOGECOIN_CAPABILITIES = [
   "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
 ] as const satisfies readonly NetworkCapability[];
 
 const TRON_CAPABILITIES = [

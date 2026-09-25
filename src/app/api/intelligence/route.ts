@@ -570,6 +570,7 @@ export async function POST(request: Request) {
         const result =
           await runDogecoinIntelligence({
             address,
+            analysisPlan,
           });
 
         await refundAnalysisQuotaOnFailure(
