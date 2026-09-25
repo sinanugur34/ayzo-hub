@@ -715,6 +715,9 @@ export async function POST(
         const result =
           await runDogecoinIntelligence({
             address,
+
+            analysisPlan:
+              entitlement.planId,
           });
 
         await refundOnFailure(

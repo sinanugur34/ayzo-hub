@@ -1,7 +1,16 @@
 import type {
+  AnalysisDepthPlan,
+} from "@/lib/analysisDepthPolicy";
+
+import type {
   IntelligenceEngineResult,
   IntelligenceFinding,
 } from "@/lib/intelligence/types";
+
+import {
+  buildDogecoinDerivedAnalysis,
+  type DogecoinDerivedAnalysis,
+} from "./analysis";
 
 import {
   isDogecoinMainnetAddress,
@@ -10,6 +19,10 @@ import {
 import {
   getDogecoinAddressHistoryWithFallback,
 } from "./historyFallback";
+
+import {
+  getDogecoinAnalysisPolicy,
+} from "./policy";
 
 import {
   alchemyDogecoinRpcProvider,
@@ -32,14 +45,13 @@ const DOGECOIN_NETWORK:
   DogecoinNetworkContext = {
     networkId:
       "dogecoin",
+
     name:
       "Dogecoin",
+
     nativeCurrency:
       "DOGE",
   };
-
-const HISTORY_LIMIT =
-  5;
 
 export type DogecoinIntelligenceModuleState = {
   status:
@@ -52,13 +64,17 @@ export type DogecoinIntelligenceModuleState = {
 };
 
 export type DogecoinIntelligence = {
-  ok: true;
+  ok:
+    true;
 
   network:
     "dogecoin";
 
   address:
     string;
+
+  analysisPlan:
+    AnalysisDepthPlan;
 
   coverage:
     | "partial"
@@ -67,14 +83,45 @@ export type DogecoinIntelligence = {
   history:
     DogecoinAddressHistoryPage;
 
+  /*
+   * Kept for backward-compatible report/actions.
+   * This is the newest successfully verified
+   * canonical transaction in the bounded sample.
+   */
   canonicalTransaction:
     DogecoinTransactionEvidence | null;
+
+  canonicalTransactions:
+    readonly DogecoinTransactionEvidence[];
+
+  derived:
+    DogecoinDerivedAnalysis;
+
+  evidenceCoverage: {
+    historyLimit:
+      number;
+
+    canonicalSampleLimit:
+      number;
+
+    historyHasMore:
+      boolean;
+  };
 
   modules: {
     addressHistory:
       DogecoinIntelligenceModuleState;
 
     canonicalTransactionEvidence:
+      DogecoinIntelligenceModuleState;
+
+    flow:
+      DogecoinIntelligenceModuleState;
+
+    counterparties:
+      DogecoinIntelligenceModuleState;
+
+    funding:
       DogecoinIntelligenceModuleState;
   };
 
@@ -173,11 +220,65 @@ function intelligenceErrorCode(
   }
 }
 
+function emptyDerived(
+  requested:
+    number
+): DogecoinDerivedAnalysis {
+  return {
+    flow: {
+      incomingTransactionCount:
+        0,
+
+      outgoingTransactionCount:
+        0,
+
+      selfTransactionCount:
+        0,
+
+      observedTransactionCount:
+        0,
+
+      incomingKoinu:
+        "0",
+
+      outgoingNonTargetKoinu:
+        "0",
+    },
+
+    counterparties: {
+      count:
+        0,
+
+      items:
+        [],
+    },
+
+    observedFunding:
+      null,
+
+    canonicalCoverage: {
+      requested,
+
+      verified:
+        0,
+
+      unavailable:
+        requested,
+    },
+  };
+}
+
 export async function runDogecoinIntelligence(
   {
     address,
+    analysisPlan =
+      "free",
   }: {
-    address: string;
+    address:
+      string;
+
+    analysisPlan?:
+      AnalysisDepthPlan;
   },
 
   deps:
@@ -187,19 +288,30 @@ export async function runDogecoinIntelligence(
   IntelligenceEngineResult<
     | DogecoinIntelligence
     | {
-        ok: false;
+        ok:
+          false;
+
         code:
           | "INVALID_ADDRESS"
           | "NETWORK_NOT_AVAILABLE"
           | "RATE_LIMITED"
           | "UPSTREAM_ERROR";
-        error: string;
-        network: "dogecoin";
+
+        error:
+          string;
+
+        network:
+          "dogecoin";
       }
   >
 > {
   const normalizedAddress =
     address.trim();
+
+  const policy =
+    getDogecoinAnalysisPolicy(
+      analysisPlan
+    );
 
   if (
     !isDogecoinMainnetAddress(
@@ -236,10 +348,12 @@ export async function runDogecoinIntelligence(
           normalizedAddress,
 
         limit:
-          HISTORY_LIMIT,
+          policy.historyLimit,
       });
 
-  if (!historyResult.ok) {
+  if (
+    !historyResult.ok
+  ) {
     return {
       status:
         providerFailureStatus(
@@ -270,19 +384,27 @@ export async function runDogecoinIntelligence(
   const history =
     historyResult.data;
 
-  const firstTransaction =
-    history.transactions[0];
-
   const findings:
     IntelligenceFinding[] =
       [];
 
   const caveats = [
     "AYZO reports observed Dogecoin on-chain evidence and does not establish ownership, identity, intent, or control.",
-    "Dogecoin transaction history is bounded to the requested provider page and must not be interpreted as exhaustive address history.",
+    "Dogecoin transaction history and canonical verification are intentionally bounded according to the current analysis plan.",
+    "UTXO inputs without resolved previous-output addresses are not assigned an inferred source address.",
+    "Observed non-target outputs are transaction outputs and must not be interpreted as net spend or beneficial ownership.",
   ];
 
-  if (!firstTransaction) {
+  const requestedTransactions =
+    history.transactions.slice(
+      0,
+      policy.canonicalSampleLimit
+    );
+
+  if (
+    requestedTransactions.length ===
+      0
+  ) {
     findings.push({
       id:
         "dogecoin-no-history-observed",
@@ -320,6 +442,8 @@ export async function runDogecoinIntelligence(
         address:
           normalizedAddress,
 
+        analysisPlan,
+
         coverage:
           "limited",
 
@@ -327,6 +451,26 @@ export async function runDogecoinIntelligence(
 
         canonicalTransaction:
           null,
+
+        canonicalTransactions:
+          [],
+
+        derived:
+          emptyDerived(
+            0
+          ),
+
+        evidenceCoverage: {
+          historyLimit:
+            policy.historyLimit,
+
+          canonicalSampleLimit:
+            policy.canonicalSampleLimit,
+
+          historyHasMore:
+            history.nextCursor !==
+            null,
+        },
 
         modules: {
           addressHistory: {
@@ -344,6 +488,30 @@ export async function runDogecoinIntelligence(
             error:
               "No transaction was available for canonical evidence verification.",
           },
+
+          flow: {
+            status:
+              "unavailable",
+
+            error:
+              "No canonical transaction evidence was available.",
+          },
+
+          counterparties: {
+            status:
+              "unavailable",
+
+            error:
+              "No canonical transaction evidence was available.",
+          },
+
+          funding: {
+            status:
+              "unavailable",
+
+            error:
+              "No canonical transaction evidence was available.",
+          },
         },
 
         findings,
@@ -353,18 +521,97 @@ export async function runDogecoinIntelligence(
     };
   }
 
-  const evidenceResult =
-    await deps
-      .getTransactionEvidence({
-        network:
-          DOGECOIN_NETWORK,
+  const canonicalTransactions:
+    DogecoinTransactionEvidence[] =
+      [];
 
-        transactionHash:
-          firstTransaction
-            .transactionHash,
-      });
+  const canonicalErrors:
+    string[] =
+      [];
 
-  if (!evidenceResult.ok) {
+  /*
+   * Resolve sequentially instead of fan-out.
+   * This keeps provider pressure bounded and
+   * predictable while still allowing plan-aware
+   * canonical depth.
+   */
+  for (
+    const transaction of
+    requestedTransactions
+  ) {
+    const evidenceResult =
+      await deps
+        .getTransactionEvidence({
+          network:
+            DOGECOIN_NETWORK,
+
+          transactionHash:
+            transaction
+              .transactionHash,
+        });
+
+    if (
+      !evidenceResult.ok
+    ) {
+      canonicalErrors.push(
+        evidenceResult.error
+      );
+
+      continue;
+    }
+
+    const evidence =
+      evidenceResult.data;
+
+    if (
+      evidence.transactionHash !==
+        transaction.transactionHash
+          .toLowerCase()
+    ) {
+      return {
+        status:
+          502,
+
+        data: {
+          ok:
+            false,
+
+          code:
+            "UPSTREAM_ERROR",
+
+          error:
+            "Dogecoin provider evidence did not match the discovered transaction.",
+
+          network:
+            "dogecoin",
+        },
+      };
+    }
+
+    canonicalTransactions.push(
+      evidence
+    );
+  }
+
+  const derived =
+    buildDogecoinDerivedAnalysis({
+      address:
+        normalizedAddress,
+
+      canonicalTransactions,
+
+      requestedCanonicalCount:
+        requestedTransactions.length,
+    });
+
+  const canonicalTransaction =
+    canonicalTransactions[0] ??
+    null;
+
+  if (
+    canonicalTransactions.length ===
+      0
+  ) {
     findings.push({
       id:
         "dogecoin-canonical-evidence-unavailable",
@@ -382,110 +629,98 @@ export async function runDogecoinIntelligence(
         "high",
 
       summary:
-        "Address history was available, but canonical transaction evidence could not be resolved for the sampled transaction.",
+        "Address history was available, but canonical transaction evidence could not be resolved for the sampled transactions.",
 
       caveat:
         "This is a provider coverage limitation and is not evidence of suspicious activity.",
     });
+  } else {
+    findings.push({
+      id:
+        "dogecoin-bounded-history",
 
-    return {
-      status:
-        200,
+      category:
+        "coverage",
 
-      data: {
-        ok:
-          true,
+      title:
+        "Dogecoin history sampled",
 
-        network:
-          "dogecoin",
+      severity:
+        "informational",
 
-        address:
-          normalizedAddress,
+      confidence:
+        "high",
 
-        coverage:
-          "limited",
+      summary:
+        `AYZO sampled ${history.transactions.length} recent Dogecoin transaction(s) and verified ${canonicalTransactions.length}/${requestedTransactions.length} canonical transaction sample(s) using ${analysisPlan} analysis depth.`,
 
-        history,
-
-        canonicalTransaction:
-          null,
-
-        modules: {
-          addressHistory: {
-            status:
-              "complete",
-
-            error:
-              null,
-          },
-
-          canonicalTransactionEvidence: {
-            status:
-              "unavailable",
-
-            error:
-              evidenceResult.error,
-          },
-        },
-
-        findings,
-
-        caveats,
-      },
-    };
+      caveat:
+        "The analysis intentionally bounds both address history and canonical verification to protect latency and provider reliability.",
+    });
   }
-
-  const evidence =
-    evidenceResult.data;
 
   if (
-    evidence.transactionHash !==
-      firstTransaction
-        .transactionHash
-        .toLowerCase()
+    derived.counterparties.count >
+    0
   ) {
-    return {
-      status:
-        502,
+    findings.push({
+      id:
+        "dogecoin-observed-counterparties",
 
-      data: {
-        ok:
-          false,
+      category:
+        "relationship",
 
-        code:
-          "UPSTREAM_ERROR",
+      title:
+        "Dogecoin counterparty evidence observed",
 
-        error:
-          "Dogecoin provider evidence did not match the discovered transaction.",
+      severity:
+        "informational",
 
-        network:
-          "dogecoin",
-      },
-    };
+      confidence:
+        "high",
+
+      summary:
+        `AYZO observed ${derived.counterparties.count} distinct address relationship(s) in the canonical UTXO sample.`,
+
+      caveat:
+        "Transaction co-occurrence does not establish common ownership, identity, intent, or control.",
+    });
   }
 
-  findings.push({
-    id:
-      "dogecoin-bounded-history",
+  if (
+    derived.observedFunding
+  ) {
+    findings.push({
+      id:
+        "dogecoin-observed-funding",
 
-    category:
-      "coverage",
+      category:
+        "funding",
 
-    title:
-      "Dogecoin history sampled",
+      title:
+        "Observed Dogecoin funding evidence",
 
-    severity:
-      "informational",
+      severity:
+        "informational",
 
-    confidence:
-      "high",
+      confidence:
+        "high",
 
-    summary:
-      `AYZO sampled ${history.transactions.length} recent Dogecoin transaction(s) and verified canonical evidence for the newest transaction.`,
+      summary:
+        `AYZO observed inbound canonical evidence from ${derived.observedFunding.sourceAddress}.`,
 
-    caveat:
-      "The current analysis intentionally bounds transaction history to protect latency and provider reliability.",
-  });
+      caveat:
+        "This is an observed source address inside the bounded canonical sample, not a claim of original funding provenance or ownership.",
+    });
+  }
+
+  const canonicalComplete =
+    canonicalTransactions.length ===
+      requestedTransactions.length;
+
+  const hasCanonical =
+    canonicalTransactions.length >
+      0;
 
   return {
     status:
@@ -501,29 +736,99 @@ export async function runDogecoinIntelligence(
       address:
         normalizedAddress,
 
+      analysisPlan,
+
       coverage:
-        "partial",
+        hasCanonical
+          ? "partial"
+          : "limited",
 
       history,
 
-      canonicalTransaction:
-        evidence,
+      canonicalTransaction,
+
+      canonicalTransactions,
+
+      derived,
+
+      evidenceCoverage: {
+        historyLimit:
+          policy.historyLimit,
+
+        canonicalSampleLimit:
+          policy.canonicalSampleLimit,
+
+        historyHasMore:
+          history.nextCursor !==
+          null,
+      },
 
       modules: {
         addressHistory: {
           status:
-            "complete",
+            history.nextCursor
+              ? "limited"
+              : "complete",
 
           error:
-            null,
+            history.nextCursor
+              ? "Additional Dogecoin history pages may exist."
+              : null,
         },
 
         canonicalTransactionEvidence: {
           status:
-            "complete",
+            canonicalComplete
+              ? "complete"
+              : hasCanonical
+                ? "limited"
+                : "unavailable",
 
           error:
-            null,
+            canonicalComplete
+              ? null
+              : canonicalErrors[0] ??
+                "Canonical evidence was only partially available.",
+        },
+
+        flow: {
+          status:
+            hasCanonical
+              ? "limited"
+              : "unavailable",
+
+          error:
+            hasCanonical
+              ? "Flow is derived from the bounded canonical transaction sample."
+              : "Canonical transaction evidence was unavailable.",
+        },
+
+        counterparties: {
+          status:
+            hasCanonical
+              ? "limited"
+              : "unavailable",
+
+          error:
+            hasCanonical
+              ? "Counterparties are derived only from explicit input/output address evidence."
+              : "Canonical transaction evidence was unavailable.",
+        },
+
+        funding: {
+          status:
+            derived.observedFunding
+              ? "limited"
+              : hasCanonical
+                ? "limited"
+                : "unavailable",
+
+          error:
+            derived.observedFunding
+              ? "Funding evidence is bounded to resolved source addresses in the canonical sample."
+              : hasCanonical
+                ? "No explicit inbound source address was resolved in the bounded canonical sample."
+                : "Canonical transaction evidence was unavailable.",
         },
       },
 

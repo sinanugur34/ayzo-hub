@@ -696,6 +696,10 @@ export async function POST(
         const result =
           await runDogecoinIntelligence({
             address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
           });
 
         return finish(

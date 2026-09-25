@@ -969,7 +969,7 @@ export default function Home() {
         <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
           <span className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-3.5 py-2 text-[11px] font-medium text-zinc-300 shadow-[0_0_24px_rgba(16,185,129,0.04)] sm:text-xs">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]" />
-            16 live networks
+            {LIVE_NETWORKS.length} live networks
           </span>
 
           <span className="flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/[0.06] px-3.5 py-2 text-[11px] font-medium text-zinc-300 sm:text-xs">

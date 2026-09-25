@@ -361,3 +361,454 @@ test(
     );
   }
 );
+
+test(
+  "uses Advanced Dogecoin analysis depth",
+  async () => {
+    let requestedLimit:
+      number | undefined;
+
+    const deps:
+      DogecoinEngineDependencies = {
+        async getAddressTransactions(
+          request
+        ) {
+          requestedLimit =
+            request.limit;
+
+          return {
+            ok: true,
+            providerId:
+              "alchemy",
+            latencyMs:
+              10,
+            data: {
+              transactions:
+                [],
+              nextCursor:
+                null,
+            },
+          };
+        },
+
+        async getTransactionEvidence() {
+          throw new Error(
+            "Canonical provider must not run without history."
+          );
+        },
+      };
+
+    const result =
+      await runDogecoinIntelligence(
+        {
+          address:
+            ADDRESS,
+
+          analysisPlan:
+            "advanced",
+        },
+        deps
+      );
+
+    assert.equal(
+      result.status,
+      200
+    );
+
+    if (
+      !result.data.ok
+    ) {
+      assert.fail(
+        result.data.error
+      );
+    }
+
+    assert.equal(
+      requestedLimit,
+      20
+    );
+
+    assert.equal(
+      result.data.analysisPlan,
+      "advanced"
+    );
+  }
+);
+test(
+  "builds Dogecoin flow and counterparties from canonical samples",
+  async () => {
+    const target =
+      ADDRESS;
+
+    const source =
+      "DSource1111111111111111111111111111";
+
+    const destination =
+      "DDestination111111111111111111111111";
+
+    const hashes = [
+      "1".repeat(64),
+      "2".repeat(64),
+      "3".repeat(64),
+    ];
+
+    const history = {
+      transactions:
+        hashes.map(
+          transactionHash => ({
+            transactionHash,
+            blockHeight:
+              null,
+            timestamp:
+              null,
+          })
+        ),
+
+      nextCursor:
+        "20",
+    };
+
+    const evidenceByHash =
+      new Map([
+        [
+          hashes[0],
+          {
+            transactionHash:
+              hashes[0],
+
+            blockHash:
+              null,
+
+            blockHeight:
+              1,
+
+            confirmed:
+              true,
+
+            confirmations:
+              10,
+
+            timestamp:
+              "2026-01-03T00:00:00Z",
+
+            valueKoinu:
+              "500000000",
+
+            valueInKoinu:
+              "500000000",
+
+            feesKoinu:
+              "0",
+
+            inputs: [
+              {
+                previousTransactionHash:
+                  "a".repeat(64),
+
+                previousOutputIndex:
+                  0,
+
+                valueKoinu:
+                  "500000000",
+
+                addresses: [
+                  source,
+                ],
+
+                coinbase:
+                  false,
+              },
+            ],
+
+            outputs: [
+              {
+                index:
+                  0,
+
+                valueKoinu:
+                  "500000000",
+
+                scriptHex:
+                  null,
+
+                addresses: [
+                  target,
+                ],
+              },
+            ],
+          },
+        ],
+
+        [
+          hashes[1],
+          {
+            transactionHash:
+              hashes[1],
+
+            blockHash:
+              null,
+
+            blockHeight:
+              2,
+
+            confirmed:
+              true,
+
+            confirmations:
+              9,
+
+            timestamp:
+              "2026-01-02T00:00:00Z",
+
+            valueKoinu:
+              "300000000",
+
+            valueInKoinu:
+              "300000000",
+
+            feesKoinu:
+              "0",
+
+            inputs: [
+              {
+                previousTransactionHash:
+                  "b".repeat(64),
+
+                previousOutputIndex:
+                  0,
+
+                valueKoinu:
+                  "300000000",
+
+                addresses: [
+                  target,
+                ],
+
+                coinbase:
+                  false,
+              },
+            ],
+
+            outputs: [
+              {
+                index:
+                  0,
+
+                valueKoinu:
+                  "200000000",
+
+                scriptHex:
+                  null,
+
+                addresses: [
+                  destination,
+                ],
+              },
+
+              {
+                index:
+                  1,
+
+                valueKoinu:
+                  "100000000",
+
+                scriptHex:
+                  null,
+
+                addresses: [
+                  target,
+                ],
+              },
+            ],
+          },
+        ],
+
+        [
+          hashes[2],
+          {
+            transactionHash:
+              hashes[2],
+
+            blockHash:
+              null,
+
+            blockHeight:
+              3,
+
+            confirmed:
+              true,
+
+            confirmations:
+              8,
+
+            timestamp:
+              "2026-01-01T00:00:00Z",
+
+            valueKoinu:
+              "100000000",
+
+            valueInKoinu:
+              "100000000",
+
+            feesKoinu:
+              "0",
+
+            inputs: [
+              {
+                previousTransactionHash:
+                  "c".repeat(64),
+
+                previousOutputIndex:
+                  0,
+
+                valueKoinu:
+                  "100000000",
+
+                addresses: [
+                  target,
+                ],
+
+                coinbase:
+                  false,
+              },
+            ],
+
+            outputs: [
+              {
+                index:
+                  0,
+
+                valueKoinu:
+                  "100000000",
+
+                scriptHex:
+                  null,
+
+                addresses: [
+                  target,
+                ],
+              },
+            ],
+          },
+        ],
+      ]);
+
+    const deps:
+      DogecoinEngineDependencies = {
+        async getAddressTransactions(
+          request
+        ) {
+          assert.equal(
+            request.limit,
+            20
+          );
+
+          return {
+            ok:
+              true,
+
+            providerId:
+              "alchemy",
+
+            latencyMs:
+              1,
+
+            data:
+              history,
+          };
+        },
+
+        async getTransactionEvidence(
+          request
+        ) {
+          const evidence =
+            evidenceByHash.get(
+              request.transactionHash
+            );
+
+          assert.ok(
+            evidence
+          );
+
+          return {
+            ok:
+              true,
+
+            providerId:
+              "alchemy",
+
+            latencyMs:
+              1,
+
+            data:
+              evidence,
+          };
+        },
+      };
+
+    const result =
+      await runDogecoinIntelligence(
+        {
+          address:
+            target,
+
+          analysisPlan:
+            "advanced",
+        },
+        deps
+      );
+
+    assert.equal(
+      result.status,
+      200
+    );
+
+    if (
+      !result.data.ok
+    ) {
+      assert.fail(
+        result.data.error
+      );
+    }
+
+    assert.equal(
+      result.data.canonicalTransactions.length,
+      3
+    );
+
+    assert.equal(
+      result.data.derived.flow.incomingTransactionCount,
+      1
+    );
+
+    assert.equal(
+      result.data.derived.flow.outgoingTransactionCount,
+      1
+    );
+
+    assert.equal(
+      result.data.derived.flow.selfTransactionCount,
+      1
+    );
+
+    assert.equal(
+      result.data.derived.flow.incomingKoinu,
+      "500000000"
+    );
+
+    assert.equal(
+      result.data.derived.counterparties.count,
+      2
+    );
+
+    assert.equal(
+      result.data.derived.observedFunding?.sourceAddress,
+      source
+    );
+
+    assert.equal(
+      result.data.derived.canonicalCoverage.verified,
+      3
+    );
+  }
+);
