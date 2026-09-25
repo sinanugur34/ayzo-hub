@@ -763,6 +763,8 @@ export async function POST(
         const result =
           await runXrplIntelligence({
             address,
+            analysisPlan:
+              entitlement.planId,
           });
 
         await refundOnFailure(

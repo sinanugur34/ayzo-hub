@@ -8,6 +8,20 @@ import {
 
 import AnalysisActions from "@/components/AnalysisActions";
 import AnalysisLimitCard from "@/components/AnalysisLimitCard";
+import XrplExpandedAnalysis from "@/components/XrplExpandedAnalysis";
+import ActivityTimeline from "@/components/ActivityTimeline";
+import WalletTrackRecordPanel from "@/components/WalletTrackRecord";
+import VisualEvidenceGraph from "@/components/VisualEvidenceGraph";
+
+import {
+  buildXrplActivityTimeline,
+  buildXrplVisualEvidenceGraph,
+  buildXrplWalletTrackRecord,
+} from "@/lib/intelligence/xrpl/presentation";
+
+import type {
+  XrplIntelligence,
+} from "@/lib/intelligence/xrpl/engine";
 
 import {
   buildHistoricalSnapshot,
@@ -23,112 +37,7 @@ type ModuleState = {
     string | null;
 };
 
-type XrplSuccess = {
-  ok: true;
-
-  network:
-    "xrp";
-
-  address:
-    string;
-
-  coverage:
-    | "partial"
-    | "limited";
-
-  account: {
-    exists:
-      boolean;
-
-    balanceDrops:
-      string | null;
-
-    sequence:
-      number | null;
-
-    ownerCount:
-      number | null;
-
-    flags:
-      number | null;
-
-    ledgerIndex:
-      number | null;
-  };
-
-  history: {
-    transactions:
-      readonly {
-        transactionHash:
-          string;
-
-        ledgerIndex:
-          number | null;
-
-        timestamp:
-          string | null;
-
-        validated:
-          boolean;
-
-        transactionType:
-          string | null;
-
-        source:
-          string | null;
-
-        destination:
-          string | null;
-
-        amountDrops:
-          string | null;
-
-        feeDrops:
-          string | null;
-
-        result:
-          string | null;
-      }[];
-
-    nextCursor:
-      string | null;
-  };
-
-  modules: {
-    accountState:
-      ModuleState;
-
-    transactionHistory:
-      ModuleState;
-  };
-
-  findings:
-    readonly {
-      id:
-        string;
-
-      category:
-        string;
-
-      title:
-        string;
-
-      severity:
-        string;
-
-      confidence:
-        string;
-
-      summary:
-        string;
-
-      caveat:
-        string;
-    }[];
-
-  caveats:
-    readonly string[];
-};
+type XrplSuccess = XrplIntelligence;
 
 type XrplFailure = {
   ok:
@@ -376,6 +285,45 @@ export default function XrplIntelligenceReport({
       address,
     ]
   );
+
+  const activityTimeline =
+    useMemo(
+      () =>
+        data
+          ? buildXrplActivityTimeline(
+              data
+            )
+          : null,
+      [
+        data,
+      ]
+    );
+
+  const walletTrackRecord =
+    useMemo(
+      () =>
+        data
+          ? buildXrplWalletTrackRecord(
+              data
+            )
+          : null,
+      [
+        data,
+      ]
+    );
+
+  const visualEvidenceGraph =
+    useMemo(
+      () =>
+        data
+          ? buildXrplVisualEvidenceGraph(
+              data
+            )
+          : null,
+      [
+        data,
+      ]
+    );
 
   const historicalSnapshot =
     useMemo(
@@ -666,6 +614,37 @@ export default function XrplIntelligenceReport({
               )
             )}
           </div>
+        </div>
+      )}
+
+      <div className="border-t border-zinc-900 p-6 sm:p-8">
+        <XrplExpandedAnalysis
+          data={data}
+        />
+      </div>
+
+      {activityTimeline && (
+        <div className="border-t border-zinc-900 p-6 sm:p-8">
+          <ActivityTimeline
+            timeline={activityTimeline}
+          />
+        </div>
+      )}
+
+      {walletTrackRecord && (
+        <div className="border-t border-zinc-900 p-6 sm:p-8">
+          <WalletTrackRecordPanel
+            record={walletTrackRecord}
+            subjectLabel="XRP Ledger account"
+          />
+        </div>
+      )}
+
+      {visualEvidenceGraph && (
+        <div className="border-t border-zinc-900 p-6 sm:p-8">
+          <VisualEvidenceGraph
+            graph={visualEvidenceGraph}
+          />
         </div>
       )}
 

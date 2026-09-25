@@ -189,15 +189,15 @@ const sections:
             "AYZO currently supports 16 live networks.",
           free: {
             kind: "value",
-            label: "16 networks",
+            label: "17 networks",
           },
           pro: {
             kind: "value",
-            label: "16 networks",
+            label: "17 networks",
           },
           advanced: {
             kind: "value",
-            label: "16 networks",
+            label: "17 networks",
           },
         },
 
@@ -389,6 +389,46 @@ const sections:
             "TRON canonical transaction evidence",
           detail:
             "Solidified canonical transaction evidence is verified for sampled TRON activity where available.",
+          free: AVAILABLE,
+          pro: AVAILABLE,
+          advanced: AVAILABLE,
+        },
+
+        {
+          label:
+            "XRP Ledger bounded address history",
+          detail:
+            "Validated XRP Ledger account and transaction evidence with plan-aware bounded depth.",
+          free: AVAILABLE,
+          pro: AVAILABLE,
+          advanced: AVAILABLE,
+        },
+
+        {
+          label:
+            "XRP Ledger funding & flow intelligence",
+          detail:
+            "Observed inbound funding, money-flow and counterparty evidence without ownership or identity inference.",
+          free: AVAILABLE,
+          pro: AVAILABLE,
+          advanced: AVAILABLE,
+        },
+
+        {
+          label:
+            "XRP Ledger trust lines & issued assets",
+          detail:
+            "Observed trust-line, issued-currency and account-object evidence where available.",
+          free: AVAILABLE,
+          pro: AVAILABLE,
+          advanced: AVAILABLE,
+        },
+
+        {
+          label:
+            "XRP Ledger signer / multisig evidence",
+          detail:
+            "Validated signer-list and multisign configuration evidence where present.",
           free: AVAILABLE,
           pro: AVAILABLE,
           advanced: AVAILABLE,

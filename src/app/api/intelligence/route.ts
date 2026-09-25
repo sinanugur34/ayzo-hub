@@ -622,6 +622,7 @@ export async function POST(request: Request) {
         const result =
           await runXrplIntelligence({
             address,
+            analysisPlan,
           });
 
         await refundAnalysisQuotaOnFailure(

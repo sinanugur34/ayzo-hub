@@ -39,6 +39,7 @@ const TRON_CAPABILITIES = [
 const XRPL_CAPABILITIES = [
   "addressFlows",
   "walletRelationships",
+  "fundingIntelligence",
 ] as const satisfies readonly NetworkCapability[];
 
 export const NETWORKS = {
