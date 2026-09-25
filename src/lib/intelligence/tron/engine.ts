@@ -1,11 +1,24 @@
 import type {
+  AnalysisDepthPlan,
+} from "@/lib/analysisDepthPolicy";
+
+import type {
   IntelligenceEngineResult,
   IntelligenceFinding,
 } from "@/lib/intelligence/types";
 
 import {
+  buildTronDerivedAnalysis,
+  type TronDerivedAnalysis,
+} from "./analysis";
+
+import {
   isTronAddress,
 } from "./address";
+
+import {
+  getTronAnalysisPolicy,
+} from "./policy";
 
 import {
   tronGridProvider,
@@ -30,12 +43,15 @@ import type {
 
 const TRON_NETWORK:
   TronNetworkContext = {
-    networkId: "tron",
-    name: "TRON",
-    nativeCurrency: "TRX",
-  };
+    networkId:
+      "tron",
 
-const HISTORY_LIMIT = 5;
+    name:
+      "TRON",
+
+    nativeCurrency:
+      "TRX",
+  };
 
 export type TronIntelligenceModuleState = {
   status:
@@ -43,15 +59,22 @@ export type TronIntelligenceModuleState = {
     | "limited"
     | "unavailable";
 
-  error: string | null;
+  error:
+    string | null;
 };
 
 export type TronIntelligence = {
-  ok: true;
+  ok:
+    true;
 
-  network: "tron";
+  network:
+    "tron";
 
-  address: string;
+  address:
+    string;
+
+  analysisPlan:
+    AnalysisDepthPlan;
 
   coverage:
     | "partial"
@@ -60,14 +83,50 @@ export type TronIntelligence = {
   history:
     TronAddressHistoryPage;
 
+  /*
+   * Backward-compatible newest canonical
+   * transaction for existing report surfaces.
+   */
   canonicalTransaction:
     TronTransactionEvidence | null;
+
+  canonicalTransactions:
+    readonly TronTransactionEvidence[];
+
+  derived:
+    TronDerivedAnalysis;
+
+  evidenceCoverage: {
+    historyLimit:
+      number;
+
+    canonicalSampleLimit:
+      number;
+
+    historyHasMore:
+      boolean;
+  };
 
   modules: {
     addressHistory:
       TronIntelligenceModuleState;
 
     canonicalTransactionEvidence:
+      TronIntelligenceModuleState;
+
+    flow:
+      TronIntelligenceModuleState;
+
+    counterparties:
+      TronIntelligenceModuleState;
+
+    funding:
+      TronIntelligenceModuleState;
+
+    contractInteractions:
+      TronIntelligenceModuleState;
+
+    resources:
       TronIntelligenceModuleState;
   };
 
@@ -79,7 +138,8 @@ export type TronIntelligence = {
 };
 
 type TronIntelligenceError = {
-  ok: false;
+  ok:
+    false;
 
   code:
     | "INVALID_ADDRESS"
@@ -87,9 +147,11 @@ type TronIntelligenceError = {
     | "RATE_LIMITED"
     | "UPSTREAM_ERROR";
 
-  error: string;
+  error:
+    string;
 
-  network: "tron";
+  network:
+    "tron";
 };
 
 export type TronEngineDependencies = {
@@ -181,11 +243,94 @@ function intelligenceErrorCode(
   }
 }
 
+function emptyDerived(
+  requested:
+    number
+): TronDerivedAnalysis {
+  return {
+    flow: {
+      incomingTransactionCount:
+        0,
+
+      outgoingTransactionCount:
+        0,
+
+      selfTransactionCount:
+        0,
+
+      contractInteractionCount:
+        0,
+
+      observedTransactionCount:
+        0,
+
+      incomingSun:
+        "0",
+
+      outgoingSun:
+        "0",
+    },
+
+    counterparties: {
+      count:
+        0,
+
+      items:
+        [],
+    },
+
+    observedFunding:
+      null,
+
+    contractTypes:
+      [],
+
+    resources: {
+      feeSun:
+        "0",
+
+      energyFeeSun:
+        "0",
+
+      netFeeSun:
+        "0",
+
+      energyUsageTotal:
+        0,
+
+      netUsage:
+        0,
+
+      successfulCanonicalCount:
+        0,
+
+      unsuccessfulCanonicalCount:
+        0,
+    },
+
+    canonicalCoverage: {
+      requested,
+
+      verified:
+        0,
+
+      unavailable:
+        requested,
+    },
+  };
+}
+
 export async function runTronIntelligence(
   {
     address,
+    analysisPlan =
+      "free",
   }: {
-    address: string;
+    address:
+      string;
+
+    analysisPlan?:
+      AnalysisDepthPlan;
   },
 
   deps:
@@ -200,20 +345,32 @@ export async function runTronIntelligence(
   const normalizedAddress =
     address.trim();
 
+  const policy =
+    getTronAnalysisPolicy(
+      analysisPlan
+    );
+
   if (
     !isTronAddress(
       normalizedAddress
     )
   ) {
     return {
-      status: 400,
+      status:
+        400,
 
       data: {
-        ok: false,
-        code: "INVALID_ADDRESS",
+        ok:
+          false,
+
+        code:
+          "INVALID_ADDRESS",
+
         error:
           "Invalid TRON address.",
-        network: "tron",
+
+        network:
+          "tron",
       },
     };
   }
@@ -228,10 +385,12 @@ export async function runTronIntelligence(
           normalizedAddress,
 
         limit:
-          HISTORY_LIMIT,
+          policy.historyLimit,
       });
 
-  if (!historyResult.ok) {
+  if (
+    !historyResult.ok
+  ) {
     return {
       status:
         providerFailureStatus(
@@ -239,7 +398,8 @@ export async function runTronIntelligence(
         ),
 
       data: {
-        ok: false,
+        ok:
+          false,
 
         code:
           intelligenceErrorCode(
@@ -252,7 +412,8 @@ export async function runTronIntelligence(
             ? "Invalid TRON address."
             : "TRON address history is temporarily unavailable.",
 
-        network: "tron",
+        network:
+          "tron",
       },
     };
   }
@@ -260,19 +421,28 @@ export async function runTronIntelligence(
   const history =
     historyResult.data;
 
-  const firstTransaction =
-    history.transactions[0];
-
   const findings:
-    IntelligenceFinding[] = [];
+    IntelligenceFinding[] =
+      [];
 
   const caveats = [
     "AYZO reports observed TRON on-chain evidence and does not establish ownership, identity, intent, or control.",
-    "TRON transaction history is intentionally bounded to the requested provider page and must not be interpreted as exhaustive address history.",
-    "Canonical evidence is sampled from the newest transaction returned by the bounded history query.",
+    "TRON history and canonical verification are intentionally bounded according to the current analysis plan.",
+    "Native TRX flow is counted only from successful canonical TransferContract or TriggerSmartContract call-value evidence.",
+    "Failed or reverted canonical transactions remain transaction evidence but are not counted as executed TRX flow.",
+    "Contract interaction evidence does not establish beneficial ownership, identity, intent, or control of a contract address.",
   ];
 
-  if (!firstTransaction) {
+  const requestedTransactions =
+    history.transactions.slice(
+      0,
+      policy.canonicalSampleLimit
+    );
+
+  if (
+    requestedTransactions.length ===
+      0
+  ) {
     findings.push({
       id:
         "tron-no-history-observed",
@@ -297,54 +467,210 @@ export async function runTronIntelligence(
     });
 
     return {
-      status: 200,
+      status:
+        200,
 
       data: {
-        ok: true,
-        network: "tron",
+        ok:
+          true,
+
+        network:
+          "tron",
+
         address:
           normalizedAddress,
+
+        analysisPlan,
+
         coverage:
           "limited",
+
         history,
 
         canonicalTransaction:
           null,
 
+        canonicalTransactions:
+          [],
+
+        derived:
+          emptyDerived(
+            0
+          ),
+
+        evidenceCoverage: {
+          historyLimit:
+            policy.historyLimit,
+
+          canonicalSampleLimit:
+            policy.canonicalSampleLimit,
+
+          historyHasMore:
+            history.nextCursor !==
+            null,
+        },
+
         modules: {
           addressHistory: {
             status:
-              "complete",
+              history.nextCursor
+                ? "limited"
+                : "complete",
+
             error:
-              null,
+              history.nextCursor
+                ? "Additional TRON history pages may exist."
+                : null,
           },
 
           canonicalTransactionEvidence: {
             status:
               "limited",
+
             error:
               "No transaction was available for canonical evidence verification.",
+          },
+
+          flow: {
+            status:
+              "unavailable",
+
+            error:
+              "No canonical transaction evidence was available.",
+          },
+
+          counterparties: {
+            status:
+              "unavailable",
+
+            error:
+              "No canonical transaction evidence was available.",
+          },
+
+          funding: {
+            status:
+              "unavailable",
+
+            error:
+              "No canonical transaction evidence was available.",
+          },
+
+          contractInteractions: {
+            status:
+              "unavailable",
+
+            error:
+              "No canonical transaction evidence was available.",
+          },
+
+          resources: {
+            status:
+              "unavailable",
+
+            error:
+              "No canonical transaction evidence was available.",
           },
         },
 
         findings,
+
         caveats,
       },
     };
   }
 
-  const evidenceResult =
-    await deps
-      .getTransactionEvidence({
-        network:
-          TRON_NETWORK,
+  const canonicalTransactions:
+    TronTransactionEvidence[] =
+      [];
 
-        transactionHash:
-          firstTransaction
-            .transactionHash,
-      });
+  const canonicalErrors:
+    string[] =
+      [];
 
-  if (!evidenceResult.ok) {
+  for (
+    const transaction of
+    requestedTransactions
+  ) {
+    const evidenceResult =
+      await deps
+        .getTransactionEvidence({
+          network:
+            TRON_NETWORK,
+
+          transactionHash:
+            transaction
+              .transactionHash,
+        });
+
+    if (
+      !evidenceResult.ok
+    ) {
+      canonicalErrors.push(
+        evidenceResult.error
+      );
+
+      continue;
+    }
+
+    const evidence =
+      evidenceResult.data;
+
+    if (
+      evidence.transactionHash !==
+        transaction.transactionHash
+          .toLowerCase()
+    ) {
+      return {
+        status:
+          502,
+
+        data: {
+          ok:
+            false,
+
+          code:
+            "UPSTREAM_ERROR",
+
+          error:
+            "TRON provider evidence did not match the discovered transaction.",
+
+          network:
+            "tron",
+        },
+      };
+    }
+
+    canonicalTransactions.push(
+      evidence
+    );
+  }
+
+  const derived =
+    buildTronDerivedAnalysis({
+      address:
+        normalizedAddress,
+
+      canonicalTransactions,
+
+      requestedCanonicalCount:
+        requestedTransactions.length,
+    });
+
+  const canonicalTransaction =
+    canonicalTransactions[0] ??
+    null;
+
+  const hasCanonical =
+    canonicalTransactions.length >
+      0;
+
+  const canonicalComplete =
+    canonicalTransactions.length ===
+      requestedTransactions.length;
+
+  if (
+    !hasCanonical
+  ) {
     findings.push({
       id:
         "tron-canonical-evidence-unavailable",
@@ -362,128 +688,255 @@ export async function runTronIntelligence(
         "high",
 
       summary:
-        "Confirmed address history was available, but solidified canonical evidence could not be resolved for the sampled transaction.",
+        "Confirmed address history was available, but solidified canonical evidence could not be resolved for the sampled transactions.",
 
       caveat:
         "This is a provider or evidence-coverage limitation and is not evidence of suspicious activity.",
     });
+  } else {
+    findings.push({
+      id:
+        "tron-bounded-history",
 
-    return {
-      status: 200,
+      category:
+        "coverage",
 
-      data: {
-        ok: true,
-        network: "tron",
-        address:
-          normalizedAddress,
-        coverage:
-          "limited",
-        history,
+      title:
+        "TRON history sampled",
 
-        canonicalTransaction:
-          null,
+      severity:
+        "informational",
 
-        modules: {
-          addressHistory: {
-            status:
-              "complete",
-            error:
-              null,
-          },
+      confidence:
+        "high",
 
-          canonicalTransactionEvidence: {
-            status:
-              "unavailable",
-            error:
-              evidenceResult.error,
-          },
-        },
+      summary:
+        `AYZO sampled ${history.transactions.length} recent confirmed TRON transaction(s) and verified ${canonicalTransactions.length}/${requestedTransactions.length} solidified canonical transaction sample(s) using ${analysisPlan} analysis depth.`,
 
-        findings,
-        caveats,
-      },
-    };
+      caveat:
+        "The analysis intentionally bounds transaction history and canonical verification to protect latency and provider reliability.",
+    });
   }
-
-  const evidence =
-    evidenceResult.data;
 
   if (
-    evidence.transactionHash !==
-      firstTransaction
-        .transactionHash
-        .toLowerCase()
+    derived.counterparties.count >
+    0
   ) {
-    return {
-      status: 502,
+    findings.push({
+      id:
+        "tron-observed-counterparties",
 
-      data: {
-        ok: false,
-        code:
-          "UPSTREAM_ERROR",
-        error:
-          "TRON provider evidence did not match the discovered transaction.",
-        network:
-          "tron",
-      },
-    };
+      category:
+        "relationship",
+
+      title:
+        "TRON counterparty evidence observed",
+
+      severity:
+        "informational",
+
+      confidence:
+        "high",
+
+      summary:
+        `AYZO observed ${derived.counterparties.count} explicit owner/destination relationship(s) in the canonical sample.`,
+
+      caveat:
+        "Transaction relationships do not establish common ownership, identity, intent, or control.",
+    });
   }
 
-  findings.push({
-    id:
-      "tron-bounded-history",
+  if (
+    derived.observedFunding
+  ) {
+    findings.push({
+      id:
+        "tron-observed-funding",
 
-    category:
-      "coverage",
+      category:
+        "funding",
 
-    title:
-      "TRON history sampled",
+      title:
+        "Observed TRON funding evidence",
 
-    severity:
-      "informational",
+      severity:
+        "informational",
 
-    confidence:
-      "high",
+      confidence:
+        "high",
 
-    summary:
-      `AYZO sampled ${history.transactions.length} recent confirmed TRON transaction(s) and verified solidified canonical evidence for the newest transaction.`,
+      summary:
+        `AYZO observed successful inbound TRX evidence from ${derived.observedFunding.sourceAddressHex}.`,
 
-    caveat:
-      "The analysis intentionally bounds transaction history to protect latency and provider reliability.",
-  });
+      caveat:
+        "This is bounded incoming canonical evidence, not a claim about original funding provenance or source identity.",
+    });
+  }
+
+  if (
+    derived.flow.contractInteractionCount >
+    0
+  ) {
+    findings.push({
+      id:
+        "tron-contract-interactions",
+
+      category:
+        "relationship",
+
+      title:
+        "TRON contract interaction evidence observed",
+
+      severity:
+        "informational",
+
+      confidence:
+        "high",
+
+      summary:
+        `AYZO observed ${derived.flow.contractInteractionCount} contract interaction(s) in the canonical sample.`,
+
+      caveat:
+        "A contract interaction alone does not establish intent, ownership, or risk.",
+    });
+  }
 
   return {
-    status: 200,
+    status:
+      200,
 
     data: {
-      ok: true,
-      network: "tron",
+      ok:
+        true,
+
+      network:
+        "tron",
+
       address:
         normalizedAddress,
+
+      analysisPlan,
+
       coverage:
-        "partial",
+        hasCanonical
+          ? "partial"
+          : "limited",
+
       history,
 
-      canonicalTransaction:
-        evidence,
+      canonicalTransaction,
+
+      canonicalTransactions,
+
+      derived,
+
+      evidenceCoverage: {
+        historyLimit:
+          policy.historyLimit,
+
+        canonicalSampleLimit:
+          policy.canonicalSampleLimit,
+
+        historyHasMore:
+          history.nextCursor !==
+          null,
+      },
 
       modules: {
         addressHistory: {
           status:
-            "complete",
+            history.nextCursor
+              ? "limited"
+              : "complete",
+
           error:
-            null,
+            history.nextCursor
+              ? "Additional TRON history pages may exist."
+              : null,
         },
 
         canonicalTransactionEvidence: {
           status:
-            "complete",
+            canonicalComplete
+              ? "complete"
+              : hasCanonical
+                ? "limited"
+                : "unavailable",
+
           error:
-            null,
+            canonicalComplete
+              ? null
+              : canonicalErrors[0] ??
+                "Canonical evidence was only partially available.",
+        },
+
+        flow: {
+          status:
+            hasCanonical
+              ? "limited"
+              : "unavailable",
+
+          error:
+            hasCanonical
+              ? "TRX flow is bounded to successful canonical samples."
+              : "Canonical transaction evidence was unavailable.",
+        },
+
+        counterparties: {
+          status:
+            hasCanonical
+              ? "limited"
+              : "unavailable",
+
+          error:
+            hasCanonical
+              ? "Relationships are bounded to explicit canonical owner/destination evidence."
+              : "Canonical transaction evidence was unavailable.",
+        },
+
+        funding: {
+          status:
+            derived.observedFunding
+              ? "limited"
+              : hasCanonical
+                ? "limited"
+                : "unavailable",
+
+          error:
+            derived.observedFunding
+              ? "Funding evidence is bounded to successful canonical inbound native TRX evidence."
+              : hasCanonical
+                ? "No explicit successful inbound native TRX source was observed in the bounded canonical sample."
+                : "Canonical transaction evidence was unavailable.",
+        },
+
+        contractInteractions: {
+          status:
+            hasCanonical
+              ? "limited"
+              : "unavailable",
+
+          error:
+            hasCanonical
+              ? "Contract interaction coverage is bounded to canonical samples."
+              : "Canonical transaction evidence was unavailable.",
+        },
+
+        resources: {
+          status:
+            hasCanonical
+              ? "limited"
+              : "unavailable",
+
+          error:
+            hasCanonical
+              ? "Fee, energy and bandwidth totals cover only the canonical transaction sample."
+              : "Canonical transaction evidence was unavailable.",
         },
       },
 
       findings,
+
       caveats,
     },
   };

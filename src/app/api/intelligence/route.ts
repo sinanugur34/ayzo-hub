@@ -597,6 +597,7 @@ export async function POST(request: Request) {
         const result =
           await runTronIntelligence({
             address,
+            analysisPlan,
           });
 
         await refundAnalysisQuotaOnFailure(

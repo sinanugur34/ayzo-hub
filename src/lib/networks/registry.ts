@@ -37,6 +37,9 @@ const DOGECOIN_CAPABILITIES = [
 
 const TRON_CAPABILITIES = [
   "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
 ] as const satisfies readonly NetworkCapability[];
 
 const XRPL_CAPABILITIES = [

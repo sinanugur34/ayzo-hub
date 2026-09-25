@@ -1,6 +1,10 @@
 "use client";
 
 import AnalysisLimitCard from "@/components/AnalysisLimitCard";
+import ActivityTimeline from "@/components/ActivityTimeline";
+import TronExpandedAnalysis from "@/components/TronExpandedAnalysis";
+import VisualEvidenceGraph from "@/components/VisualEvidenceGraph";
+import WalletTrackRecordPanel from "@/components/WalletTrackRecord";
 
 import {
   useEffect,
@@ -14,75 +18,19 @@ import {
   buildHistoricalSnapshot,
 } from "@/lib/account/historicalSnapshot";
 
+import {
+  buildTronActivityTimeline,
+  buildTronVisualEvidenceGraph,
+  buildTronWalletTrackRecord,
+} from "@/lib/intelligence/tron/presentation";
+
 import type {
-  TronTransactionEvidence,
-} from "@/lib/intelligence/tron/types";
+  TronIntelligence,
+  TronIntelligenceModuleState,
+} from "@/lib/intelligence/tron/engine";
 
-type Finding = {
-  id: string;
-  category: string;
-  title: string;
-  severity:
-    | "attention"
-    | "informational";
-  confidence:
-    | "low"
-    | "medium"
-    | "high";
-  summary: string;
-  caveat: string;
-};
-
-type ModuleState = {
-  status:
-    | "complete"
-    | "limited"
-    | "unavailable";
-  error: string | null;
-};
-
-type TronSuccess = {
-  ok: true;
-  network: "tron";
-  address: string;
-
-  coverage:
-    | "partial"
-    | "limited";
-
-  history: {
-    transactions:
-      readonly {
-        transactionHash:
-          string;
-        blockHeight:
-          number | null;
-        timestamp:
-          string | null;
-        confirmed:
-          boolean;
-      }[];
-
-    nextCursor:
-      string | null;
-  };
-
-  canonicalTransaction:
-    TronTransactionEvidence | null;
-
-  modules: {
-    addressHistory:
-      ModuleState;
-    canonicalTransactionEvidence:
-      ModuleState;
-  };
-
-  findings:
-    readonly Finding[];
-
-  caveats:
-    readonly string[];
-};
+type TronSuccess =
+  TronIntelligence;
 
 type TronFailure = {
   ok: false;
@@ -112,7 +60,7 @@ function short(
 
 function statusLabel(
   status:
-    ModuleState["status"]
+    TronIntelligenceModuleState["status"]
 ) {
   switch (status) {
     case "complete":
@@ -397,6 +345,39 @@ export default function TronIntelligenceReport({
     address,
   ]);
 
+  const activityTimeline =
+    useMemo(
+      () =>
+        data
+          ? buildTronActivityTimeline(
+              data
+            )
+          : null,
+      [data]
+    );
+
+  const walletTrackRecord =
+    useMemo(
+      () =>
+        data
+          ? buildTronWalletTrackRecord(
+              data
+            )
+          : null,
+      [data]
+    );
+
+  const visualEvidenceGraph =
+    useMemo(
+      () =>
+        data
+          ? buildTronVisualEvidenceGraph(
+              data
+            )
+          : null,
+      [data]
+    );
+
   const historicalSnapshot =
     useMemo(
       () =>
@@ -468,20 +449,22 @@ export default function TronIntelligenceReport({
                         data.canonicalTransaction.signatureCount,
 
                       contract:
-                        data.canonicalTransaction.contract
-                          ? {
-                              type:
-                                data.canonicalTransaction.contract.type,
-
-                              amountSun:
-                                data.canonicalTransaction.contract.amountSun,
-
-                              callValueSun:
-                                data.canonicalTransaction.contract.callValueSun,
-                            }
-                          : null,
+                        data.canonicalTransaction.contract,
                     }
                   : null,
+
+              canonicalTransactions:
+                data.canonicalTransactions
+                  .slice(
+                    0,
+                    5
+                  ),
+
+              derived:
+                data.derived,
+
+              evidenceCoverage:
+                data.evidenceCoverage,
 
               modules:
                 data.modules,
@@ -791,6 +774,31 @@ export default function TronIntelligenceReport({
             )}
           </div>
         </div>
+      )}
+
+      <div className="border-t border-zinc-900 p-6 sm:p-8">
+        <TronExpandedAnalysis
+          data={data}
+        />
+      </div>
+
+      {activityTimeline && (
+        <ActivityTimeline
+          timeline={activityTimeline}
+        />
+      )}
+
+      {walletTrackRecord && (
+        <WalletTrackRecordPanel
+          record={walletTrackRecord}
+          subjectLabel="TRON address"
+        />
+      )}
+
+      {visualEvidenceGraph && (
+        <VisualEvidenceGraph
+          graph={visualEvidenceGraph}
+        />
       )}
 
       <div className="border-t border-zinc-900 p-6 sm:p-8">

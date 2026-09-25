@@ -438,6 +438,108 @@ function utxoSnapshot(
   };
 }
 
+function tronSnapshot(
+  network:
+    string,
+  root:
+    JsonRecord
+): HistoricalSnapshotV1 {
+  const history =
+    record(
+      root.history
+    );
+
+  const transactions =
+    Array.isArray(
+      history?.transactions
+    )
+      ? history.transactions
+      : [];
+
+  const latest =
+    record(
+      transactions[0]
+    );
+
+  const derived =
+    record(
+      root.derived
+    );
+
+  const flow =
+    record(
+      derived?.flow
+    );
+
+  const counterparties =
+    record(
+      derived?.counterparties
+    );
+
+  return {
+    version:
+      1,
+
+    capturedAt:
+      new Date().toISOString(),
+
+    network,
+
+    coverage:
+      text(
+        root.coverage
+      ),
+
+    subjectKind:
+      "wallet",
+
+    metrics: {
+      transactionCount:
+        transactions.length,
+
+      latestTransactionHash:
+        text(
+          latest
+            ?.transactionHash
+        ),
+
+      latestTransactionTimestamp:
+        text(
+          latest
+            ?.timestamp
+        ),
+
+      latestBlockHeight:
+        numberValue(
+          latest
+            ?.blockHeight
+        ),
+
+      relationshipsDetected:
+        numberValue(
+          counterparties
+            ?.count
+        ),
+
+      incomingTransfersDetected:
+        numberValue(
+          flow
+            ?.incomingTransactionCount
+        ),
+    },
+
+    modules:
+      moduleSnapshot(
+        root.modules
+      ),
+
+    findings:
+      findingSnapshot(
+        root.findings
+      ),
+  };
+}
+
 export function buildHistoricalSnapshot(
   network: string,
   value: unknown
@@ -465,11 +567,19 @@ export function buildHistoricalSnapshot(
     network ===
       "dogecoin" ||
     network ===
-      "tron" ||
-    network ===
       "xrp"
   ) {
     return utxoSnapshot(
+      network,
+      root
+    );
+  }
+
+  if (
+    network ===
+      "tron"
+  ) {
+    return tronSnapshot(
       network,
       root
     );
