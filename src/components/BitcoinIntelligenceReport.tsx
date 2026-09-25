@@ -1,5 +1,9 @@
 "use client";
 
+import AnalysisWorkspaceResearchTools from "@/components/AnalysisWorkspaceResearchTools";
+
+import AnalysisWorkspaceDetails from "@/components/AnalysisWorkspaceDetails";
+
 import AnalysisWorkspaceOverview from "@/components/AnalysisWorkspaceOverview";
 
 import AnalysisLimitCard from "@/components/AnalysisLimitCard";
@@ -540,6 +544,15 @@ export default function BitcoinIntelligenceReport({
         data.canonicalTransaction,
     });
 
+  const activityTimeline =
+    buildBitcoinActivityTimeline({
+      transactions:
+        data.history.transactions,
+
+      nextCursor:
+        data.history.nextCursor,
+    });
+
   return (
     <div className="mt-6 space-y-6 text-left">
       <AnalysisWorkspaceOverview
@@ -549,7 +562,10 @@ export default function BitcoinIntelligenceReport({
         findings={data.findings}
         caveats={data.caveats}
         graph={visualEvidenceGraph}
+        timeline={activityTimeline}
       />
+
+      <AnalysisWorkspaceDetails>
 
       <section className="overflow-hidden rounded-3xl border border-orange-500/20 bg-gradient-to-b from-orange-500/10 via-amber-500/5 to-zinc-950/80">
         <div className="p-6 sm:p-8">
@@ -809,27 +825,20 @@ export default function BitcoinIntelligenceReport({
       />
 
       <ActivityTimelinePanel
-        timeline={
-          buildBitcoinActivityTimeline({
-            transactions:
-              data.history
-                .transactions,
-
-            nextCursor:
-              data.history
-                .nextCursor,
-          })
-        }
+        timeline={activityTimeline}
       />
 
-      <AnalysisActions
-        network="bitcoin"
-        subjectType="wallet"
-        subjectValue={address}
-        title="Bitcoin Address Analysis"
-        analysisPayload={historicalSnapshot}
-        askEvidencePayload={askEvidencePayload}
-      />
+      </AnalysisWorkspaceDetails>
+      <AnalysisWorkspaceResearchTools>
+        <AnalysisActions
+                network="bitcoin"
+                subjectType="wallet"
+                subjectValue={address}
+                title="Bitcoin Address Analysis"
+                analysisPayload={historicalSnapshot}
+                askEvidencePayload={askEvidencePayload}
+              />
+      </AnalysisWorkspaceResearchTools>
 
       <section className="rounded-3xl border border-zinc-900 bg-black/20 p-5">
         <div className="text-[10px] font-medium tracking-[0.14em] text-zinc-600">

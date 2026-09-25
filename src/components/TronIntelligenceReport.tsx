@@ -1,5 +1,9 @@
 "use client";
 
+import AnalysisWorkspaceResearchTools from "@/components/AnalysisWorkspaceResearchTools";
+
+import AnalysisWorkspaceDetails from "@/components/AnalysisWorkspaceDetails";
+
 import AnalysisWorkspaceOverview from "@/components/AnalysisWorkspaceOverview";
 
 import AnalysisLimitCard from "@/components/AnalysisLimitCard";
@@ -559,7 +563,10 @@ export default function TronIntelligenceReport({
         findings={data.findings}
         caveats={data.caveats}
         graph={visualEvidenceGraph}
+        timeline={activityTimeline}
       />
+
+      <AnalysisWorkspaceDetails>
 
       <div className="border-b border-zinc-900 p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -805,15 +812,18 @@ export default function TronIntelligenceReport({
         />
       )}
 
+      </AnalysisWorkspaceDetails>
       <div className="border-t border-zinc-900 p-6 sm:p-8">
+        <AnalysisWorkspaceResearchTools>
         <AnalysisActions
-          network="tron"
-          subjectType="wallet"
-          subjectValue={address}
-          title="TRON Address Analysis"
-          analysisPayload={historicalSnapshot}
-          askEvidencePayload={askEvidencePayload}
-        />
+                  network="tron"
+                  subjectType="wallet"
+                  subjectValue={address}
+                  title="TRON Address Analysis"
+                  analysisPayload={historicalSnapshot}
+                  askEvidencePayload={askEvidencePayload}
+                />
+      </AnalysisWorkspaceResearchTools>
       </div>
 
       {data.caveats.length >

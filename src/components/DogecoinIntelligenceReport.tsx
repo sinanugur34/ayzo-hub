@@ -1,5 +1,9 @@
 "use client";
 
+import AnalysisWorkspaceResearchTools from "@/components/AnalysisWorkspaceResearchTools";
+
+import AnalysisWorkspaceDetails from "@/components/AnalysisWorkspaceDetails";
+
 import AnalysisWorkspaceOverview from "@/components/AnalysisWorkspaceOverview";
 
 import AnalysisLimitCard from "@/components/AnalysisLimitCard";
@@ -25,25 +29,6 @@ import {
 
 import AnalysisActions from "@/components/AnalysisActions";
 import { buildHistoricalSnapshot } from "@/lib/account/historicalSnapshot";
-
-
-type Finding = {
-  id: string;
-  category: string;
-  title: string;
-
-  severity:
-    | "attention"
-    | "informational";
-
-  confidence:
-    | "low"
-    | "medium"
-    | "high";
-
-  summary: string;
-  caveat: string;
-};
 
 type ModuleState = {
   status:
@@ -551,7 +536,10 @@ export default function DogecoinIntelligenceReport({
         findings={data.findings}
         caveats={data.caveats}
         graph={visualEvidenceGraph}
+        timeline={activityTimeline}
       />
+
+      <AnalysisWorkspaceDetails>
 
       <section className="overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-b from-amber-500/10 via-yellow-500/5 to-zinc-950/80">
         <div className="p-6 sm:p-8">
@@ -796,14 +784,17 @@ export default function DogecoinIntelligenceReport({
         />
       )}
 
-      <AnalysisActions
-        network="dogecoin"
-        subjectType="wallet"
-        subjectValue={address}
-        title="Dogecoin Address Analysis"
-        analysisPayload={historicalSnapshot}
-        askEvidencePayload={askEvidencePayload}
-      />
+      </AnalysisWorkspaceDetails>
+      <AnalysisWorkspaceResearchTools>
+        <AnalysisActions
+                network="dogecoin"
+                subjectType="wallet"
+                subjectValue={address}
+                title="Dogecoin Address Analysis"
+                analysisPayload={historicalSnapshot}
+                askEvidencePayload={askEvidencePayload}
+              />
+      </AnalysisWorkspaceResearchTools>
 
       <section className="rounded-3xl border border-zinc-900 bg-black/20 p-5">
         <div className="text-[10px] font-medium tracking-[0.14em] text-zinc-600">

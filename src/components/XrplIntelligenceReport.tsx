@@ -1,5 +1,9 @@
 "use client";
 
+import AnalysisWorkspaceResearchTools from "@/components/AnalysisWorkspaceResearchTools";
+
+import AnalysisWorkspaceDetails from "@/components/AnalysisWorkspaceDetails";
+
 import AnalysisWorkspaceOverview from "@/components/AnalysisWorkspaceOverview";
 
 import {
@@ -442,7 +446,10 @@ export default function XrplIntelligenceReport({
         findings={data.findings}
         caveats={data.caveats}
         graph={visualEvidenceGraph}
+        timeline={activityTimeline}
       />
+
+      <AnalysisWorkspaceDetails>
 
       <div className="border-b border-zinc-900 p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -650,15 +657,18 @@ export default function XrplIntelligenceReport({
         </div>
       )}
 
+      </AnalysisWorkspaceDetails>
       <div className="border-t border-zinc-900 p-6 sm:p-8">
+        <AnalysisWorkspaceResearchTools>
         <AnalysisActions
-          network="xrp"
-          subjectType="wallet"
-          subjectValue={address}
-          title="XRP Ledger Address Analysis"
-          analysisPayload={historicalSnapshot}
-          askEvidencePayload={askEvidencePayload}
-        />
+                  network="xrp"
+                  subjectType="wallet"
+                  subjectValue={address}
+                  title="XRP Ledger Address Analysis"
+                  analysisPayload={historicalSnapshot}
+                  askEvidencePayload={askEvidencePayload}
+                />
+      </AnalysisWorkspaceResearchTools>
       </div>
 
       {data.caveats.length >
