@@ -55,7 +55,9 @@ export default function AccountUsageCard() {
           });
 
         if (!response.ok) {
-          throw new Error("Quota request failed.");
+          throw new Error(
+            "Quota status request failed."
+          );
         }
 
         const data =
@@ -94,7 +96,8 @@ export default function AccountUsageCard() {
     status?.remaining ?? null;
 
   const used =
-    status && remaining !== null
+    status &&
+    remaining !== null
       ? Math.max(
           0,
           status.limit - remaining

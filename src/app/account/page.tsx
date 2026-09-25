@@ -132,7 +132,7 @@ export default async function AccountPage() {
             Account
           </h1>
 
-          <div className="mt-7 grid gap-3 sm:grid-cols-2">
+          <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-2xl border border-zinc-900 bg-black/30 p-5">
               <div className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
                 Signed in as
@@ -144,6 +144,9 @@ export default async function AccountPage() {
             </div>
 
             <AccountPlanCard />
+
+
+            <AccountUsageCard />
           </div>
         </section>
 
