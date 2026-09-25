@@ -326,7 +326,7 @@ export default function PricingPlans() {
                 <p className="mt-3 text-xs leading-5 text-zinc-500">
                   {currentAdvanced
                     ? "Your AYZO Advanced access is active."
-                    : "Includes every live Pro capability. Additional Advanced workflows remain clearly marked as roadmap until released."}
+                    : "Includes every live Pro capability plus live Advanced investigation workflows."}
                 </p>
               </div>
 
