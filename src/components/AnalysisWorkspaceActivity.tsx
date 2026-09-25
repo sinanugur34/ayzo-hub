@@ -773,8 +773,8 @@ export default function AnalysisWorkspaceActivity({
               </h3>
 
               <p className={styles.briefSub}>
-                Cumulative observed net flow for one comparable asset.
-                This is not wallet balance.
+                Cumulative observed net flow for one comparable asset
+                across the full bounded timeline. This is not wallet balance.
               </p>
             </div>
 
@@ -988,7 +988,7 @@ export default function AnalysisWorkspaceActivity({
                     selectedEvent
                   )
                 : chartAsset
-                  ? `Observed ${chartAsset} net flow`
+                  ? `Observed ${chartAsset} net flow · ${chartEvents.length} valued event(s) from ${timelineEvents.length} bounded record(s)`
                   : "No comparable flow"}
             </span>
 

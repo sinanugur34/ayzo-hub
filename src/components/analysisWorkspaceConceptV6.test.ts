@@ -192,3 +192,33 @@ test(
     );
   }
 );
+
+
+test(
+  "v6 flow chart explains full bounded evidence scope",
+  () => {
+    const activity =
+      fs.readFileSync(
+        "src/components/AnalysisWorkspaceActivity.tsx",
+        "utf8"
+      );
+
+    assert.ok(
+      activity.includes(
+        "across the full bounded timeline"
+      )
+    );
+
+    assert.ok(
+      activity.includes(
+        "valued event(s) from"
+      )
+    );
+
+    assert.ok(
+      activity.includes(
+        "bounded record(s)"
+      )
+    );
+  }
+);
