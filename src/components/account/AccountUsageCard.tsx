@@ -73,7 +73,13 @@ export default function AccountUsageCard() {
     }, []);
 
   useEffect(() => {
-    void loadStatus();
+    const initialLoad =
+      window.setTimeout(
+        () => {
+          void loadStatus();
+        },
+        0
+      );
 
     const refresh = () => {
       void loadStatus();
@@ -85,6 +91,10 @@ export default function AccountUsageCard() {
     );
 
     return () => {
+      window.clearTimeout(
+        initialLoad
+      );
+
       window.removeEventListener(
         "ayzo:quota-updated",
         refresh
