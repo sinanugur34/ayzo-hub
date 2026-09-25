@@ -506,3 +506,122 @@ test(
     );
   }
 );
+
+test(
+  "uses plan-aware Bitcoin history depth without multiplying canonical evidence",
+  async () => {
+    const cases = [
+      ["free", 5],
+      ["pro", 10],
+      ["advanced", 20],
+    ] as const;
+
+    for (
+      const [
+        analysisPlan,
+        expectedLimit,
+      ] of cases
+    ) {
+      let observedLimit:
+        number | undefined;
+
+      let evidenceCalls =
+        0;
+
+      const deps:
+        BitcoinEngineDependencies = {
+          async getAddressTransactions(
+            request
+          ) {
+            observedLimit =
+              request.limit;
+
+            return {
+              ok:
+                true,
+
+              providerId:
+                "goldrush",
+
+              latencyMs:
+                10,
+
+              data:
+                HISTORY,
+            };
+          },
+
+          async getTransactionEvidence() {
+            evidenceCalls +=
+              1;
+
+            return {
+              ok:
+                true,
+
+              providerId:
+                "alchemy",
+
+              latencyMs:
+                20,
+
+              data:
+                EVIDENCE,
+            };
+          },
+        };
+
+      const result =
+        await runBitcoinIntelligence(
+          {
+            address:
+              "34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo",
+
+            analysisPlan,
+          },
+
+          deps
+        );
+
+      assert.equal(
+        result.status,
+        200
+      );
+
+      assert.equal(
+        observedLimit,
+        expectedLimit
+      );
+
+      assert.equal(
+        evidenceCalls,
+        1
+      );
+
+      if (!result.data.ok) {
+        throw new Error(
+          result.data.error
+        );
+      }
+
+      assert.equal(
+        result.data.analysisPlan,
+        analysisPlan
+      );
+
+      assert.equal(
+        result.data
+          .evidenceCoverage
+          .historyLimit,
+        expectedLimit
+      );
+
+      assert.equal(
+        result.data
+          .evidenceCoverage
+          .canonicalSampleLimit,
+        1
+      );
+    }
+  }
+);

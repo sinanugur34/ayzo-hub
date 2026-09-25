@@ -546,6 +546,7 @@ export async function POST(request: Request) {
         const result =
           await runBitcoinIntelligence({
             address,
+            analysisPlan,
           });
 
         await refundAnalysisQuotaOnFailure(

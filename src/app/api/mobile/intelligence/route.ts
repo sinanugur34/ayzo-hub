@@ -637,6 +637,8 @@ export async function POST(
             address,
             requestUrl:
               request.url,
+            analysisPlan:
+              entitlement.planId,
             testFailure:
               null,
           });
@@ -691,6 +693,8 @@ export async function POST(
         const result =
           await runBitcoinIntelligence({
             address,
+            analysisPlan:
+              entitlement.planId,
           });
 
         await refundOnFailure(
