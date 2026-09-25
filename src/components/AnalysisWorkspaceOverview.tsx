@@ -11,6 +11,10 @@ import InteractiveEvidenceGraph, {
   type InteractiveEvidenceSelection,
 } from "@/components/InteractiveEvidenceGraph";
 
+import AnalysisWorkspaceActivity from "@/components/AnalysisWorkspaceActivity";
+
+import styles from "@/components/AnalysisWorkspaceConcept.module.css";
+
 import {
   planHasFeature,
 } from "@/lib/plans/registry";
@@ -26,7 +30,6 @@ import type {
 
 import type {
   ActivityTimeline as ActivityTimelineData,
-  ActivityTimelineEvent,
 } from "@/lib/intelligence/activityTimeline";
 
 type Finding = {
@@ -152,69 +155,6 @@ function short(
   )}...${value.slice(
     -6
   )}`;
-}
-
-function eventTitle(
-  event:
-    ActivityTimelineEvent
-) {
-  const direction =
-    event.direction ===
-      "incoming"
-      ? "Incoming"
-      : event.direction ===
-          "outgoing"
-        ? "Outgoing"
-        : event.direction ===
-            "self"
-          ? "Self"
-          : "Observed";
-
-  const kind =
-    event.kind ===
-      "native_transfer"
-      ? "native transfer"
-      : event.kind ===
-          "token_transfer"
-        ? "token transfer"
-        : event.kind ===
-            "funding_transfer"
-          ? "funding transfer"
-          : "transaction";
-
-  return `${direction} ${kind}`;
-}
-
-function eventTime(
-  value:
-    string | null
-) {
-  if (!value) {
-    return "Time unavailable";
-  }
-
-  const date =
-    new Date(value);
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-    return "Time unavailable";
-  }
-
-  return date.toLocaleString(
-    "en-US",
-    {
-      timeZone: "UTC",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }
-  ) + " UTC";
 }
 
 export default function AnalysisWorkspaceOverview({
@@ -363,32 +303,23 @@ export default function AnalysisWorkspaceOverview({
       )
     );
 
-  const attentionCount =
-    findings.filter(
-      finding =>
-        finding.severity ===
-        "attention"
-    ).length;
-
-  const edges =
-    graph?.edges ??
+  const timelineEvents =
+    timeline?.events ??
     [];
 
-  const maxEvidence =
-    Math.max(
-      1,
-      ...edges.map(
-        edge =>
-          edge.evidenceCount
-      )
+  const incomingEvents =
+    timelineEvents.filter(
+      event =>
+        event.direction ===
+        "incoming"
     );
 
-  const recentEvents =
-    timeline?.events.slice(
-      0,
-      5
-    ) ??
-    [];
+  const outgoingEvents =
+    timelineEvents.filter(
+      event =>
+        event.direction ===
+        "outgoing"
+    );
 
   const shareText =
     `I investigated ${networkLabel} on-chain evidence with @IOAYZO.\n\nExplore AYZO → https://app.ayzo.io`;
@@ -396,33 +327,33 @@ export default function AnalysisWorkspaceOverview({
   return (
     <section
       id="analysis-overview"
-      className="scroll-mt-24"
+      className={`${styles.workspace} scroll-mt-24`}
     >
-      <header className="flex flex-wrap items-start justify-between gap-5">
+      <header className={styles.top}>
         <div>
-          <div className="text-[10px] font-semibold tracking-[0.18em] text-cyan-300">
+          <div className={styles.eyebrow}>
             AYZO · ON-CHAIN INTELLIGENCE
           </div>
 
-          <h2 className="mt-2 text-3xl font-semibold tracking-[-0.045em] text-[#edf5ff] sm:text-4xl">
+          <h2 className={styles.title}>
             Follow the evidence.
           </h2>
 
-          <p className="mt-2 max-w-2xl text-xs leading-5 text-[#94a8bf] sm:text-sm">
+          <p className={styles.sub}>
             See the finding first, then inspect
             addresses, observed connections and
             transaction evidence behind it.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={styles.topActions}>
           <span
-            className={`rounded-lg border px-3 py-2 text-[10px] font-semibold tracking-[0.12em] ${planState.className}`}
+            className={`${styles.chip} ${planState.className}`}
           >
             {planState.name}
           </span>
 
-          <span className="rounded-lg border border-[#26384f] bg-[#132239] px-3 py-2 text-[10px] font-semibold text-[#bac9dc]">
+          <span className={styles.chip}>
             <span className="mr-1 text-emerald-300">
               ●
             </span>
@@ -435,19 +366,19 @@ export default function AnalysisWorkspaceOverview({
             )}`}
             target="_blank"
             rel="noreferrer"
-            className="rounded-lg border border-[#26384f] bg-[#132239] px-3 py-2 text-[10px] font-semibold text-[#bac9dc] transition hover:border-[#466582] hover:bg-[#1b334d]"
+            className={styles.softButton}
           >
             Share evidence ↗
           </a>
         </div>
       </header>
 
-      <div className="mt-6 flex min-h-[58px] items-center gap-3 rounded-[13px] border border-[#26384f] bg-[#0e1a2b] px-4 py-3">
-        <span className="text-xl text-cyan-300">
+      <div className={styles.subjectBar}>
+        <span className={styles.subjectSymbol}>
           ⌕
         </span>
 
-        <div className="min-w-0 flex-1">
+        <div className={styles.subjectText}>
           <div className="text-[9px] tracking-[0.08em] text-[#94a8bf]">
             ANALYZED SUBJECT
           </div>
@@ -457,35 +388,35 @@ export default function AnalysisWorkspaceOverview({
           </div>
         </div>
 
-        <span className="hidden rounded-full border border-emerald-500/20 bg-[#11382c] px-3 py-1 text-[9px] font-medium text-emerald-300 sm:inline-flex">
+        <span className={styles.subjectTag}>
           EVIDENCE AVAILABLE
         </span>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className={styles.metrics}>
         {[
           [
-            "Observations",
+            "Observed incoming",
             String(
-              findings.length
+              incomingEvents.length
             ),
-            "Evidence-backed findings",
+            `${incomingEvents.length} incoming evidence item(s)`,
             "bg-cyan-300",
           ],
           [
-            "Attention",
+            "Observed outgoing",
             String(
-              attentionCount
+              outgoingEvents.length
             ),
-            "Worth examining",
+            `${outgoingEvents.length} outgoing evidence item(s)`,
             "bg-violet-300",
           ],
           [
-            "Graph evidence",
+            "Transaction evidence",
             String(
-              edges.length
+              timelineEvents.length
             ),
-            "Observed connections",
+            `${timelineEvents.length} bounded activity record(s)`,
             "bg-blue-300",
           ],
           [
@@ -507,28 +438,28 @@ export default function AnalysisWorkspaceOverview({
               key={
                 label
               }
-              className="relative min-h-[112px] overflow-hidden rounded-[14px] border border-[#26384f] bg-gradient-to-br from-[#13243a] to-[#101d30] p-4"
+              className={styles.metric}
             >
               <span
-                className={`absolute right-4 top-4 h-2 w-2 rounded-full ${dot}`}
+                className={`${styles.metricDot} ${dot}`}
               />
 
-              <div className="text-[9px] uppercase tracking-[0.1em] text-[#94a8bf]">
+              <div className={styles.metricLabel}>
                 {label}
               </div>
 
               <div
-                className={`mt-2 text-2xl font-semibold ${
+                className={`${styles.metricValue} ${
                   label ===
                   "Data coverage"
-                    ? coverageState.className
-                    : "text-[#edf5ff]"
+                    ? `${styles.metricValueCoverage} ${coverageState.className}`
+                    : ""
                 }`}
               >
                 {value}
               </div>
 
-              <div className="mt-1 text-[10px] text-[#bac9dc]">
+              <div className={styles.metricDetail}>
                 {detail}
               </div>
             </div>
@@ -536,7 +467,7 @@ export default function AnalysisWorkspaceOverview({
         )}
       </div>
 
-      <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1.78fr)_minmax(320px,.82fr)]">
+      <div className={styles.sectionGrid}>
         <div className="min-w-0">
           {graph ? (
             <InteractiveEvidenceGraph
@@ -572,21 +503,21 @@ export default function AnalysisWorkspaceOverview({
 
         <aside
           aria-live="polite"
-          className="flex min-h-[495px] flex-col rounded-[14px] border border-[#26384f] bg-gradient-to-br from-[#13243a] to-[#101d30] p-[18px]"
+          className={`${styles.card} ${styles.panel} ${styles.brief}`}
         >
           <div>
-            <h3 className="text-lg font-semibold text-[#edf5ff]">
+            <h3 className={styles.briefTitle}>
               AYZO Evidence Brief
             </h3>
 
-            <p className="mt-1 text-xs text-[#94a8bf]">
+            <p className={styles.briefSub}>
               Observation and limitation stay together.
             </p>
           </div>
 
           {evidenceSelection ? (
             <>
-              <div className="mt-4 rounded-[10px] border-l-[3px] border-cyan-300 bg-[#183246] p-4">
+              <div className={styles.mainFinding}>
                 <div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#94a8bf]">
                   Selected evidence
                 </div>
@@ -612,7 +543,7 @@ export default function AnalysisWorkspaceOverview({
                 )}
               </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-2">
+              <div className={styles.detailGrid}>
                 <div className="rounded-lg border border-[#26384f] bg-[#10233a] p-3">
                   <span className="text-[10px] text-[#94a8bf]">
                     Evidence count
@@ -712,7 +643,7 @@ export default function AnalysisWorkspaceOverview({
             </div>
           )}
 
-          <div className="mt-auto rounded-[9px] bg-[#302a32] p-3 text-[#f5d8bf]">
+          <div className={styles.limit}>
             <div className="text-[10px] font-semibold uppercase tracking-[0.08em]">
               Evidence limit
             </div>
@@ -762,157 +693,16 @@ export default function AnalysisWorkspaceOverview({
         </aside>
       </div>
 
-      <section
-        id="analysis-activity"
-        className="mt-3 grid scroll-mt-24 gap-3 lg:grid-cols-2"
-      >
-        <div className="rounded-[14px] border border-[#26384f] bg-gradient-to-br from-[#13243a] to-[#101d30] p-[18px]">
-          <h3 className="text-lg font-semibold text-[#edf5ff]">
-            Observed evidence flows
-          </h3>
+      <AnalysisWorkspaceActivity
+        timeline={timeline}
+        subject={subject}
+        selectedEvidenceRefs={
+          evidenceSelection?.evidenceRefs ??
+          []
+        }
+      />
 
-          <p className="mt-1 text-xs text-[#94a8bf]">
-            Evidence-backed connections collected in this analysis.
-          </p>
-
-          {edges.length >
-          0 ? (
-            <div className="mt-4 space-y-2">
-              {edges
-                .slice(
-                  0,
-                  5
-                )
-                .map(
-                  edge => (
-                    <div
-                      key={
-                        edge.id
-                      }
-                      className="grid min-h-10 grid-cols-[minmax(100px,1fr)_minmax(70px,1.1fr)_70px] items-center gap-2 rounded-lg border border-[#26384f] bg-[#102237] px-3 py-2"
-                    >
-                      <span className="truncate text-[10px] text-[#bac9dc]">
-                        {
-                          edge.label
-                        }
-                      </span>
-
-                      <span className="h-2 overflow-hidden rounded-full bg-[#274058]">
-                        <i
-                          className="block h-full rounded-full bg-gradient-to-r from-cyan-300 to-blue-400"
-                          style={{
-                            width:
-                              `${
-                                Math.max(
-                                  8,
-                                  Math.round(
-                                    edge.evidenceCount /
-                                    maxEvidence *
-                                    100
-                                  )
-                                )
-                              }%`,
-                          }}
-                        />
-                      </span>
-
-                      <span className="text-right text-[10px] font-semibold text-zinc-200">
-                        {
-                          edge.evidenceCount
-                        }{" "}
-                        evidence
-                      </span>
-                    </div>
-                  )
-                )}
-            </div>
-          ) : (
-            <div className="mt-4 rounded-lg border border-[#26384f] bg-[#102237] p-4 text-xs text-zinc-500">
-              No supported relationship flow was observed in this evidence window.
-            </div>
-          )}
-
-          <div className="mt-4 border-t border-[#26384f] pt-3 text-[10px] text-zinc-600">
-            Connection ≠ common ownership
-          </div>
-        </div>
-
-        <div className="rounded-[14px] border border-[#26384f] bg-gradient-to-br from-[#13243a] to-[#101d30] p-[18px]">
-          <h3 className="text-lg font-semibold text-[#edf5ff]">
-            Evidence timeline
-          </h3>
-
-          <p className="mt-1 text-xs text-[#94a8bf]">
-            Recent activity already collected by AYZO.
-          </p>
-
-          {recentEvents.length >
-          0 ? (
-            <div className="mt-4 grid grid-cols-2 gap-2 xl:grid-cols-3">
-              {recentEvents.map(
-                event => {
-                  const active =
-                    evidenceSelection
-                      ?.evidenceRefs
-                      .some(
-                        ref =>
-                          ref.toLowerCase() ===
-                          event.transactionHash.toLowerCase()
-                      ) ??
-                    false;
-
-                  return (
-                    <div
-                      key={
-                        event.id
-                      }
-                      className={`min-w-0 rounded-[10px] border p-3 ${
-                        active
-                          ? "border-cyan-500/40 bg-[#173a53]"
-                          : "border-[#26384f] bg-[#102237]"
-                      }`}
-                    >
-                      <time className="text-[9px] text-[#94a8bf]">
-                        {
-                          eventTime(
-                            event.timestamp
-                          )
-                        }
-                      </time>
-
-                      <strong className="mt-1 block truncate text-[10px] text-zinc-200">
-                        {
-                          eventTitle(
-                            event
-                          )
-                        }
-                      </strong>
-
-                      <span className="mt-1 block truncate font-mono text-[9px] text-zinc-500">
-                        {
-                          short(
-                            event.transactionHash
-                          )
-                        }
-                      </span>
-                    </div>
-                  );
-                }
-              )}
-            </div>
-          ) : (
-            <div className="mt-4 rounded-lg border border-[#26384f] bg-[#102237] p-4 text-xs text-zinc-500">
-              No supported timeline activity was collected for this evidence window.
-            </div>
-          )}
-
-          <div className="mt-4 border-t border-[#26384f] pt-3 text-[10px] text-zinc-600">
-            Only the bounded evidence collected by AYZO is shown.
-          </div>
-        </div>
-      </section>
-
-      <p className="mt-4 text-[10px] leading-5 text-zinc-600">
+      <p className={styles.disclaimer}>
         AYZO presents observed on-chain evidence. Connections do not establish identity,
         common ownership, intent or control.
       </p>

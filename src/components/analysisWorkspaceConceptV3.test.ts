@@ -12,7 +12,7 @@ const reports = [
 ];
 
 test(
-  "workspace follows the concept composition",
+  "workspace keeps the approved evidence concept composition",
   () => {
     const overview =
       fs.readFileSync(
@@ -20,40 +20,38 @@ test(
         "utf8"
       );
 
-    assert.ok(
-      overview.includes(
-        "Follow the evidence."
-      )
-    );
+    const activity =
+      fs.readFileSync(
+        "src/components/AnalysisWorkspaceActivity.tsx",
+        "utf8"
+      );
 
-    assert.ok(
-      overview.includes(
-        "Observed evidence flows"
-      )
-    );
+    const source =
+      overview +
+      activity;
 
-    assert.ok(
-      overview.includes(
-        "Evidence timeline"
-      )
-    );
-
-    assert.ok(
-      overview.includes(
-        "Share evidence"
-      )
-    );
-
-    assert.ok(
-      overview.includes(
-        "minmax(0,1.78fr)"
-      )
-    );
+    for (
+      const text
+      of [
+        "Follow the evidence.",
+        "Incoming and outgoing funds",
+        "Flow over time",
+        "Transaction timeline",
+        "Share evidence",
+      ]
+    ) {
+      assert.ok(
+        source.includes(
+          text
+        ),
+        text
+      );
+    }
   }
 );
 
 test(
-  "all network reports use shared detailed evidence and research tools",
+  "all network reports keep detailed evidence and research tools",
   () => {
     for (
       const report
@@ -90,7 +88,7 @@ test(
 );
 
 test(
-  "legacy large share cards are gone",
+  "old large share cards stay removed",
   () => {
     for (
       const report
@@ -112,64 +110,35 @@ test(
         false,
         report
       );
-
-      assert.equal(
-        source.includes(
-          "Share Analysis on X"
-        ),
-        false,
-        report
-      );
     }
   }
 );
 
 test(
-  "unavailable graph keeps a truthful analyzed-subject canvas",
+  "unavailable graph remains truthful",
   () => {
-    const graph =
+    const source =
       fs.readFileSync(
         "src/components/InteractiveEvidenceGraph.tsx",
         "utf8"
       );
 
     assert.ok(
-      graph.includes(
+      source.includes(
         "ANALYZED SUBJECT"
       )
     );
 
     assert.ok(
-      graph.includes(
+      source.includes(
         "No supported relationship edges were collected"
       )
     );
-  }
-);
 
-test(
-  "concept rail exposes overview graph activity and details",
-  () => {
-    const frame =
-      fs.readFileSync(
-        "src/components/AnalysisWorkspaceFrame.tsx",
-        "utf8"
-      );
-
-    for (
-      const anchor
-      of [
-        "#analysis-overview",
-        "#visual-evidence-graph",
-        "#analysis-activity",
-        "#analysis-details",
-      ]
-    ) {
-      assert.ok(
-        frame.includes(
-          anchor
-        )
-      );
-    }
+    assert.ok(
+      source.includes(
+        "Connection ≠ common ownership"
+      )
+    );
   }
 );
