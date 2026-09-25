@@ -291,7 +291,7 @@ export default function AlertRulesPanel() {
       );
 
       setNotice(
-        "Alert rule definition saved. Automated delivery is not active yet."
+        "Alert rule saved. AYZO will evaluate enabled supported rules on the scheduled monitoring cycle and send email when a supported alert condition is detected."
       );
     } catch (
       caught

@@ -640,9 +640,9 @@ const sections:
 
       rows: [
         featureRow(
-          "Entity & Wallet Labels",
+          "AYZO Entity Labels · Solana + EVM V1",
           "entityLabels",
-          "Separate from today's private personal annotations."
+          "Evidence-backed entity roles currently resolve on supported Solana and EVM analysis evidence. Separate from private personal annotations."
         ),
 
         featureRow(
@@ -651,8 +651,9 @@ const sections:
         ),
 
         featureRow(
-          "Market & Flow Intelligence",
-          "marketFlowIntelligence"
+          "EVM Market & Flow Intelligence",
+          "marketFlowIntelligence",
+          "Dedicated Pro market-flow module for supported EVM analyses. Other networks may expose separate evidence-backed flow modules."
         ),
 
         featureRow(

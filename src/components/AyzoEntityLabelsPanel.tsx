@@ -399,7 +399,27 @@ export default function AyzoEntityLabelsPanel({
     state ===
     "unsupported"
   ) {
-    return null;
+    return (
+      <div className="mt-5 rounded-2xl border border-zinc-800 bg-black/30 p-4">
+        <div className="text-[10px] font-medium tracking-[0.16em] text-zinc-500">
+          AYZO ENTITY LABELS
+        </div>
+
+        <div className="mt-2 text-sm font-medium text-zinc-200">
+          Not supported for this network
+        </div>
+
+        <p className="mt-2 text-xs leading-5 text-zinc-600">
+          AYZO Entity Labels V1 currently resolves evidence-backed roles for supported Solana and EVM analyses.
+        </p>
+
+        {result?.limitation && (
+          <p className="mt-3 text-[10px] leading-5 text-zinc-700">
+            {result.limitation}
+          </p>
+        )}
+      </div>
+    );
   }
 
   if (
