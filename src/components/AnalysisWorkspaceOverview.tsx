@@ -7,7 +7,9 @@ import {
   useState,
 } from "react";
 
-import VisualEvidenceGraph from "@/components/VisualEvidenceGraph";
+import InteractiveEvidenceGraph, {
+  type InteractiveEvidenceSelection,
+} from "@/components/InteractiveEvidenceGraph";
 
 import {
   planHasFeature,
@@ -233,6 +235,16 @@ export default function AnalysisWorkspaceOverview({
     useState<
       PlanId | null
     >(null);
+
+  const [
+    evidenceSelection,
+    setEvidenceSelection,
+  ] =
+    useState<
+      InteractiveEvidenceSelection
+    >(
+      null
+    );
 
   const loadPlan =
     useCallback(
@@ -504,8 +516,12 @@ export default function AnalysisWorkspaceOverview({
       <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1.75fr)_minmax(320px,.75fr)]">
         <div className="min-w-0">
           {graph ? (
-            <VisualEvidenceGraph
+            <InteractiveEvidenceGraph
               graph={graph}
+              selection={evidenceSelection}
+              onSelectionChange={
+                setEvidenceSelection
+              }
             />
           ) : (
             <div className="flex min-h-[420px] items-center justify-center rounded-3xl border border-[#26384f] bg-[#101d30] p-6 text-center text-xs text-zinc-600">
@@ -522,17 +538,131 @@ export default function AnalysisWorkspaceOverview({
             </div>
 
             <h3 className="mt-2 text-lg font-semibold text-zinc-100">
-              What we observed
+              {evidenceSelection
+                ? "Selected evidence"
+                : "What we observed"}
             </h3>
 
             <p className="mt-1 text-[10px] text-zinc-500">
-              Observation and limitation
-              stay together.
+              {evidenceSelection
+                ? "Inspect the selected relationship without leaving the investigation."
+                : "Observation and limitation stay together."}
             </p>
           </div>
 
-          {observations.length >
-          0 ? (
+          {evidenceSelection ? (
+            <div className="mt-5">
+              <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.06] p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[9px] font-semibold tracking-[0.12em] text-cyan-300">
+                    {
+                      evidenceSelection.subtitle
+                    }
+                  </span>
+
+                  <span className="rounded-full border border-emerald-500/20 bg-emerald-500/[0.05] px-2 py-0.5 text-[8px] font-medium text-emerald-300">
+                    SUPPORTED
+                  </span>
+                </div>
+
+                <div className="mt-3 break-words text-base font-semibold leading-6 text-zinc-100">
+                  {
+                    evidenceSelection.title
+                  }
+                </div>
+
+                {evidenceSelection.detail && (
+                  <p className="mt-2 break-words text-xs leading-5 text-zinc-500">
+                    {
+                      evidenceSelection.detail
+                    }
+                  </p>
+                )}
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="rounded-xl border border-[#26384f] bg-[#10233a] p-3">
+                  <div className="text-[9px] text-zinc-600">
+                    EVIDENCE COUNT
+                  </div>
+
+                  <div className="mt-1 text-sm font-semibold text-zinc-200">
+                    {
+                      evidenceSelection.evidenceCount
+                    }
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-[#26384f] bg-[#10233a] p-3">
+                  <div className="text-[9px] text-zinc-600">
+                    TX REFERENCES
+                  </div>
+
+                  <div className="mt-1 text-sm font-semibold text-zinc-200">
+                    {
+                      evidenceSelection.evidenceRefs.length
+                    }
+                  </div>
+                </div>
+              </div>
+
+              {evidenceSelection.related.length >
+                0 && (
+                <div className="mt-4">
+                  <div className="text-[9px] font-semibold tracking-[0.12em] text-zinc-600">
+                    CONNECTED EVIDENCE
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {evidenceSelection.related
+                      .slice(
+                        0,
+                        5
+                      )
+                      .map(
+                        item => (
+                          <span
+                            key={
+                              item
+                            }
+                            className="max-w-full truncate rounded-lg border border-zinc-800 bg-black/20 px-2 py-1 font-mono text-[9px] text-zinc-500"
+                          >
+                            {
+                              item
+                            }
+                          </span>
+                        )
+                      )}
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setEvidenceSelection(
+                    null
+                  );
+
+                  window.dispatchEvent(
+                    new CustomEvent(
+                      "ayzo:evidence-selection",
+                      {
+                        detail: {
+                          evidenceRefs:
+                            [],
+                        },
+                      }
+                    )
+                  );
+                }}
+                className="mt-4 w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800"
+              >
+                Return to general overview
+              </button>
+            </div>
+          ) : observations.length >
+            0 ? (
             <div className="mt-5 space-y-3">
               {observations.map(
                 (
