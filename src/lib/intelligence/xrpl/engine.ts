@@ -1,11 +1,24 @@
 import type {
+  AnalysisDepthPlan,
+} from "@/lib/analysisDepthPolicy";
+
+import type {
   IntelligenceEngineResult,
   IntelligenceFinding,
 } from "@/lib/intelligence/types";
 
 import {
+  buildXrplDerivedAnalysis,
+  type XrplDerivedAnalysis,
+} from "./analysis";
+
+import {
   isXrplClassicAddress,
 } from "./address";
+
+import {
+  getXrplAnalysisPolicy,
+} from "./policy";
 
 import {
   getXrplAccountEvidence,
@@ -36,6 +49,9 @@ export type XrplIntelligence = {
   address:
     string;
 
+  analysisPlan:
+    AnalysisDepthPlan;
+
   coverage:
     | "partial"
     | "limited";
@@ -51,11 +67,47 @@ export type XrplIntelligence = {
       string | null;
   };
 
+  trustLines:
+    XrplAccountEvidence["trustLines"];
+
+  accountObjects:
+    XrplAccountEvidence["accountObjects"];
+
+  signerLists:
+    XrplAccountEvidence["signerLists"];
+
+  firstObservedFunding:
+    XrplAccountEvidence["firstObservedFunding"];
+
+  derived:
+    XrplDerivedAnalysis;
+
+  evidenceCoverage:
+    XrplAccountEvidence["coverage"];
+
   modules: {
     accountState:
       ModuleState;
 
     transactionHistory:
+      ModuleState;
+
+    trustLines:
+      ModuleState;
+
+    accountObjects:
+      ModuleState;
+
+    funding:
+      ModuleState;
+
+    flow:
+      ModuleState;
+
+    counterparties:
+      ModuleState;
+
+    signerConfiguration:
       ModuleState;
   };
 
@@ -86,6 +138,9 @@ export type XrplEngineDependencies = {
     input: {
       address:
         string;
+
+      analysisPlan:
+        AnalysisDepthPlan;
     }
   ): Promise<
     XrplProviderResult<
@@ -122,9 +177,14 @@ function statusForFailure(
 export async function runXrplIntelligence(
   {
     address,
+    analysisPlan =
+      "free",
   }: {
     address:
       string;
+
+    analysisPlan?:
+      AnalysisDepthPlan;
   },
 
   deps:
@@ -168,6 +228,8 @@ export async function runXrplIntelligence(
     await deps.loadEvidence({
       address:
         normalized,
+
+      analysisPlan,
     });
 
   if (
@@ -205,8 +267,23 @@ export async function runXrplIntelligence(
     account,
     transactions,
     nextCursor,
+    trustLines,
+    accountObjects,
+    signerLists,
+    firstObservedFunding,
+    availability,
+    coverage,
   } =
     evidence.data;
+
+  const derived =
+    buildXrplDerivedAnalysis({
+      address:
+        normalized,
+
+      evidence:
+        evidence.data,
+    });
 
   const findings:
     IntelligenceFinding[] =
@@ -255,12 +332,101 @@ export async function runXrplIntelligence(
         "high",
 
       summary:
-        `AYZO observed validated account state and sampled ${transactions.length} recent XRP Ledger transaction(s).`,
+        `AYZO observed validated account state and sampled ${transactions.length} recent XRP Ledger transaction(s) using ${analysisPlan} analysis depth.`,
 
       caveat:
         "The transaction query is intentionally bounded and is not exhaustive account history.",
     });
   }
+
+  if (
+    firstObservedFunding
+  ) {
+    findings.push({
+      id:
+        "xrpl-observed-funding",
+
+      category:
+        "funding",
+
+      title:
+        "Observed incoming funding evidence",
+
+      severity:
+        "informational",
+
+      confidence:
+        "high",
+
+      summary:
+        `AYZO observed an early successful inbound XRP Ledger payment from ${firstObservedFunding.source}.`,
+
+      caveat:
+        "This is the earliest funding observation in the bounded forward history page collected by AYZO, not a claim of ultimate origin or ownership.",
+    });
+  }
+
+  if (
+    derived.signer
+      .multisignConfigured
+  ) {
+    findings.push({
+      id:
+        "xrpl-multisign",
+
+      category:
+        "account",
+
+      title:
+        "Signer list observed",
+
+      severity:
+        "informational",
+
+      confidence:
+        "high",
+
+      summary:
+        `The account exposes ${derived.signer.signerCount} signer entry or entries across ${derived.signer.signerListCount} signer list(s).`,
+
+      caveat:
+        "Signer configuration is on-ledger authorization evidence and does not establish real-world identity.",
+    });
+  }
+
+  if (
+    derived.trustLines
+      .trustLineCount >
+    0
+  ) {
+    findings.push({
+      id:
+        "xrpl-trust-lines",
+
+      category:
+        "asset",
+
+      title:
+        "XRPL trust-line evidence observed",
+
+      severity:
+        "informational",
+
+      confidence:
+        "high",
+
+      summary:
+        `AYZO observed ${derived.trustLines.trustLineCount} trust line(s) spanning ${derived.trustLines.currencyCount} currency code(s).`,
+
+      caveat:
+        "Trust lines describe XRPL ledger relationships and issued-asset balances; they do not establish endorsement, beneficial ownership, or intent.",
+    });
+  }
+
+  const policy =
+    getXrplAnalysisPolicy(
+      analysisPlan
+    );
 
   return {
     status:
@@ -276,6 +442,8 @@ export async function runXrplIntelligence(
       address:
         normalized,
 
+      analysisPlan,
+
       coverage:
         account.exists
           ? "partial"
@@ -287,6 +455,19 @@ export async function runXrplIntelligence(
         transactions,
         nextCursor,
       },
+
+      trustLines,
+
+      accountObjects,
+
+      signerLists,
+
+      firstObservedFunding,
+
+      derived,
+
+      evidenceCoverage:
+        coverage,
 
       modules: {
         accountState: {
@@ -304,13 +485,105 @@ export async function runXrplIntelligence(
         transactionHistory: {
           status:
             account.exists
-              ? "complete"
+              ? (
+                  coverage.historyHasMore
+                    ? "limited"
+                    : "complete"
+                )
               : "limited",
+
+          error:
+            coverage.historyHasMore
+              ? `History is bounded to ${policy.historyLimit} recent transactions for the current plan.`
+              : null,
+        },
+
+        trustLines: {
+          status:
+            availability.trustLines
+              ? (
+                  coverage.trustLinesHaveMore
+                    ? "limited"
+                    : "complete"
+                )
+              : "unavailable",
+
+          error:
+            availability.trustLines
+              ? (
+                  coverage.trustLinesHaveMore
+                    ? "Additional trust-line pages may exist."
+                    : null
+                )
+              : "Trust-line evidence was unavailable.",
+        },
+
+        accountObjects: {
+          status:
+            availability.accountObjects
+              ? (
+                  coverage.accountObjectsHaveMore
+                    ? "limited"
+                    : "complete"
+                )
+              : "unavailable",
+
+          error:
+            availability.accountObjects
+              ? (
+                  coverage.accountObjectsHaveMore
+                    ? "Additional account-object pages may exist."
+                    : null
+                )
+              : "Account-object evidence was unavailable.",
+        },
+
+        funding: {
+          status:
+            availability.earliestHistory
+              ? "limited"
+              : "unavailable",
+
+          error:
+            availability.earliestHistory
+              ? "Funding evidence is bounded to the earliest forward history page collected by AYZO."
+              : "Earliest-history evidence was unavailable.",
+        },
+
+        flow: {
+          status:
+            account.exists
+              ? "limited"
+              : "unavailable",
+
+          error:
+            account.exists
+              ? "Flow intelligence is derived from the bounded transaction window."
+              : "No funded account state was observed.",
+        },
+
+        counterparties: {
+          status:
+            account.exists
+              ? "limited"
+              : "unavailable",
+
+          error:
+            account.exists
+              ? "Counterparties are derived from bounded transaction and trust-line evidence."
+              : "No funded account state was observed.",
+        },
+
+        signerConfiguration: {
+          status:
+            account.exists
+              ? "complete"
+              : "unavailable",
 
           error:
             account.exists
               ? null
-              : "Transaction history is unavailable for an unfunded account.",
+              : "No funded account state was observed.",
         },
       },
 
@@ -318,8 +591,9 @@ export async function runXrplIntelligence(
 
       caveats: [
         "AYZO reports observed XRP Ledger evidence and does not establish ownership, identity, intent, or control.",
-        "Transaction history is intentionally bounded to protect latency and provider reliability.",
-        "Issued-currency Amount objects are not converted into XRP.",
+        "Transaction, funding, relationship and flow evidence is intentionally bounded according to the current plan.",
+        "Issued-currency Amount objects are preserved separately and are not converted into XRP.",
+        "Trust lines and account objects are ledger relationships, not endorsements or ownership claims.",
       ],
     },
   };

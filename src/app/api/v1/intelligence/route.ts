@@ -720,6 +720,10 @@ export async function POST(
         const result =
           await runXrplIntelligence({
             address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
           });
 
         return finish(
