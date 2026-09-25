@@ -1,6 +1,12 @@
 import { getVercelOidcToken } from "@vercel/oidc";
 import { getInternalApiKey } from "@/lib/apiSecurity";
 import type { IntelligenceEngineResult } from "@/lib/intelligence/types";
+import type {
+  AnalysisDepthPlan,
+} from "@/lib/analysisDepthPolicy";
+import {
+  getSolanaAnalysisPolicy,
+} from "@/lib/intelligence/solana/policy";
 
 type JsonObject = Record<string, unknown>;
 
@@ -91,20 +97,32 @@ export type SolanaIntelligenceTestFailure =
 type RunSolanaIntelligenceInput = {
   address: string;
   requestUrl: string;
+  analysisPlan?: AnalysisDepthPlan;
   testFailure: SolanaIntelligenceTestFailure;
 };
 
 export async function runSolanaIntelligence({
   address,
   requestUrl,
+  analysisPlan = "free",
   testFailure,
 }: RunSolanaIntelligenceInput): Promise<IntelligenceEngineResult> {
   const origin = new URL(requestUrl).origin;
   const pipelineStartedAt = performance.now();
 
+  const policy =
+    getSolanaAnalysisPolicy(
+      analysisPlan
+    );
+
+  const cacheKey =
+    `${analysisPlan}:${address}`;
+
   const cached = testFailure
     ? undefined
-    : intelligenceCache.get(address);
+    : intelligenceCache.get(
+        cacheKey
+      );
 
   if (cached && cached.expiresAt > Date.now()) {
     return {
@@ -124,7 +142,9 @@ export async function runSolanaIntelligence({
   }
 
   if (cached) {
-    intelligenceCache.delete(address);
+    intelligenceCache.delete(
+      cacheKey
+    );
   }
 
   // 1. Holder data is fetched ONCE.
@@ -150,7 +170,10 @@ export async function runSolanaIntelligence({
 
   const wallets = Array.isArray(holders.owners)
     ? holders.owners
-        .slice(0, 5)
+        .slice(
+          0,
+          policy.walletLimit
+        )
         .map((item: { owner?: string }) => item.owner)
         .filter(
           (value: unknown): value is string =>
@@ -187,6 +210,11 @@ export async function runSolanaIntelligence({
       ok: true,
       network: "solana-mainnet",
       address,
+      analysisPlan,
+      evidenceCoverage: {
+        walletLimit:
+          policy.walletLimit,
+      },
       coverage: holderCoverageLimited
         ? "limited"
         : "partial",
@@ -231,10 +259,13 @@ export async function runSolanaIntelligence({
     };
 
     if (!testFailure) {
-      intelligenceCache.set(address, {
+      intelligenceCache.set(
+        cacheKey,
+        {
         expiresAt: Date.now() + CACHE_TTL_MS,
-        data: payload,
-      });
+          data: payload,
+        }
+      );
     }
 
     return {
@@ -265,7 +296,10 @@ export async function runSolanaIntelligence({
       relationships = await postInternal(
         origin,
         "/api/solana/relationships",
-        { addresses: wallets }
+        {
+          addresses: wallets,
+          analysisPlan,
+        }
       );
     } catch {
       relationships = {
@@ -297,7 +331,10 @@ export async function runSolanaIntelligence({
       funding = await postInternal(
         origin,
         "/api/solana/funding",
-        { addresses: wallets }
+        {
+          addresses: wallets,
+          analysisPlan,
+        }
       );
     } catch {
       funding = {
@@ -456,6 +493,11 @@ export async function runSolanaIntelligence({
     ok: true,
     network: "solana-mainnet",
     address,
+    analysisPlan,
+    evidenceCoverage: {
+      walletLimit:
+        policy.walletLimit,
+    },
     coverage: "full",
     wallets,
     holders,
@@ -510,10 +552,15 @@ export async function runSolanaIntelligence({
   };
 
   if (!testFailure) {
-    intelligenceCache.set(address, {
-      expiresAt: Date.now() + CACHE_TTL_MS,
-      data: payload,
-    });
+    intelligenceCache.set(
+      cacheKey,
+      {
+        expiresAt:
+          Date.now() +
+          CACHE_TTL_MS,
+        data: payload,
+      }
+    );
   }
 
   return {

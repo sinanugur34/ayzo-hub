@@ -170,7 +170,11 @@ export async function POST(request: Request) {
 
     const result = await runSolanaIntelligence({
       address,
-      requestUrl: request.url,
+      requestUrl:
+        request.url,
+      analysisPlan:
+        quota?.plan ??
+        "free",
       testFailure,
     });
 

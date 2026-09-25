@@ -1,8 +1,11 @@
 import { isInternalApiRequest } from "@/lib/apiSecurity";
 import { isAddress } from "@solana/kit";
-
-const MAX_WALLETS = 5;
-const TX_DETAIL_LIMIT_PER_WALLET = 12;
+import type {
+  AnalysisDepthPlan,
+} from "@/lib/analysisDepthPolicy";
+import {
+  getSolanaAnalysisPolicy,
+} from "@/lib/intelligence/solana/policy";
 
 type ParsedInstruction = {
   program?: string;
@@ -120,6 +123,20 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
+    const analysisPlan:
+      AnalysisDepthPlan =
+        body?.analysisPlan ===
+          "pro" ||
+        body?.analysisPlan ===
+          "advanced"
+          ? body.analysisPlan
+          : "free";
+
+    const policy =
+      getSolanaAnalysisPolicy(
+        analysisPlan
+      );
+
     if (!Array.isArray(body?.addresses)) {
       return Response.json(
         { ok: false, error: "Addresses must be an array." },
@@ -145,11 +162,15 @@ export async function POST(request: Request) {
       );
     }
 
-    if (addresses.length > MAX_WALLETS) {
+    if (
+      addresses.length >
+      policy.walletLimit
+    ) {
       return Response.json(
         {
           ok: false,
-          error: `Maximum ${MAX_WALLETS} wallets per alpha analysis.`,
+          error:
+            `Maximum ${policy.walletLimit} wallets for ${analysisPlan} Solana analysis.`,
         },
         { status: 400 }
       );
@@ -180,7 +201,8 @@ export async function POST(request: Request) {
             wallet,
             {
               transactionDetails: "full",
-              limit: TX_DETAIL_LIMIT_PER_WALLET,
+              limit:
+                policy.fundingTransactionLimitPerWallet,
               sortOrder: "desc",
               commitment: "confirmed",
               encoding: "jsonParsed",
@@ -317,7 +339,11 @@ export async function POST(request: Request) {
           value.wallets.size >= 3 || value.transferCount >= 4
             ? "high"
             : "medium",
-        transfers: value.transfers.slice(0, 10),
+        transfers:
+          value.transfers.slice(
+            0,
+            policy.fundingSharedSourceTransferLimit
+          ),
       }))
       .sort((a, b) => {
         if (a.walletCount !== b.walletCount) {
@@ -336,7 +362,11 @@ export async function POST(request: Request) {
 
       return {
         wallet,
-        recentIncomingTransfers: transfers.slice(0, 5),
+        recentIncomingTransfers:
+          transfers.slice(
+            0,
+            policy.fundingRecentTransferLimitPerWallet
+          ),
         uniqueRecentSources: new Set(
           transfers.map((transfer) => transfer.source)
         ).size,
@@ -346,10 +376,13 @@ export async function POST(request: Request) {
     return Response.json({
       ok: true,
       network: "solana-mainnet",
-      walletsAnalyzed: addresses.length,
+      analysisPlan,
+      walletsAnalyzed:
+        addresses.length,
       historyMethod: "getTransactionsForAddress",
       historyRequests: addresses.length,
-      transactionsExpandedPerWallet: TX_DETAIL_LIMIT_PER_WALLET,
+      transactionsExpandedPerWallet:
+        policy.fundingTransactionLimitPerWallet,
       incomingTransfersDetected: incomingTransfers.length,
       sharedFundingSourcesDetected: sharedSources.length,
       sharedSources,
