@@ -682,7 +682,7 @@ const sections:
         "ADVANCED INVESTIGATION",
 
       description:
-        "Advanced includes every live Pro capability. Additional Advanced workflows remain clearly marked as roadmap until released.",
+        "Advanced includes every live Pro capability plus live Advanced investigation workflows.",
 
       rows: [
         featureRow(
