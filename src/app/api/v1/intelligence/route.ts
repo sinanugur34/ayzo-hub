@@ -651,6 +651,10 @@ export async function POST(
             requestUrl:
               request.url,
 
+            analysisPlan:
+              auth.identity
+                .planId,
+
             testFailure:
               null,
           });
@@ -684,6 +688,10 @@ export async function POST(
         const result =
           await runBitcoinIntelligence({
             address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
           });
 
         return finish(

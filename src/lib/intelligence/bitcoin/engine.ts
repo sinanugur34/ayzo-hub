@@ -3,6 +3,14 @@ import type {
   IntelligenceFinding,
 } from "@/lib/intelligence/types";
 
+import type {
+  AnalysisDepthPlan,
+} from "@/lib/analysisDepthPolicy";
+
+import {
+  getBitcoinAnalysisPolicy,
+} from "./policy";
+
 import {
   isBitcoinMainnetAddress,
 } from "./address";
@@ -35,8 +43,6 @@ const BITCOIN_NETWORK:
     nativeCurrency: "BTC",
   };
 
-const HISTORY_LIMIT = 5;
-
 export type BitcoinIntelligenceModuleState = {
   status:
     | "complete"
@@ -51,6 +57,20 @@ export type BitcoinIntelligence = {
   ok: true;
   network: "bitcoin";
   address: string;
+
+  analysisPlan:
+    AnalysisDepthPlan;
+
+  evidenceCoverage: {
+    historyLimit:
+      number;
+
+    canonicalSampleLimit:
+      number;
+
+    historyHasMore:
+      boolean;
+  };
 
   coverage:
     | "partial"
@@ -168,8 +188,11 @@ function intelligenceErrorCode(
 export async function runBitcoinIntelligence(
   {
     address,
+    analysisPlan = "free",
   }: {
     address: string;
+    analysisPlan?:
+      AnalysisDepthPlan;
   },
 
   deps:
@@ -192,6 +215,11 @@ export async function runBitcoinIntelligence(
 > {
   const normalizedAddress =
     address.trim();
+
+  const policy =
+    getBitcoinAnalysisPolicy(
+      analysisPlan
+    );
 
   if (
     !isBitcoinMainnetAddress(
@@ -228,7 +256,7 @@ export async function runBitcoinIntelligence(
           normalizedAddress,
 
         limit:
-          HISTORY_LIMIT,
+          policy.historyLimit,
       });
 
   if (!historyResult.ok) {
@@ -309,6 +337,20 @@ export async function runBitcoinIntelligence(
 
         address:
           normalizedAddress,
+
+        analysisPlan,
+
+        evidenceCoverage: {
+          historyLimit:
+            policy.historyLimit,
+
+          canonicalSampleLimit:
+            policy.canonicalSampleLimit,
+
+          historyHasMore:
+            history.nextCursor !==
+            null,
+        },
 
         coverage:
           "limited",
@@ -391,6 +433,20 @@ export async function runBitcoinIntelligence(
 
         address:
           normalizedAddress,
+
+        analysisPlan,
+
+        evidenceCoverage: {
+          historyLimit:
+            policy.historyLimit,
+
+          canonicalSampleLimit:
+            policy.canonicalSampleLimit,
+
+          historyHasMore:
+            history.nextCursor !==
+            null,
+        },
 
         coverage:
           "limited",
@@ -497,6 +553,20 @@ export async function runBitcoinIntelligence(
 
       address:
         normalizedAddress,
+
+      analysisPlan,
+
+      evidenceCoverage: {
+        historyLimit:
+          policy.historyLimit,
+
+        canonicalSampleLimit:
+          policy.canonicalSampleLimit,
+
+        historyHasMore:
+          history.nextCursor !==
+          null,
+      },
 
       coverage:
         "partial",

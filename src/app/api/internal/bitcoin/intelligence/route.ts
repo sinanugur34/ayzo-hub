@@ -52,6 +52,14 @@ export async function POST(
     return parsedBody.response;
   }
 
+  const analysisPlan =
+    parsedBody.body.analysisPlan ===
+      "pro" ||
+    parsedBody.body.analysisPlan ===
+      "advanced"
+      ? parsedBody.body.analysisPlan
+      : "free";
+
   const address =
     typeof parsedBody
       .body
@@ -92,6 +100,7 @@ export async function POST(
   const result =
     await runBitcoinIntelligence({
       address,
+      analysisPlan,
     });
 
   return Response.json(
