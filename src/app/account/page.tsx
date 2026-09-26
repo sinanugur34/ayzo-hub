@@ -24,6 +24,18 @@ import {
   getAuthenticatedAccountContext,
 } from "@/lib/account/auth";
 
+import {
+  getServerEntitlement,
+} from "@/lib/billing/entitlement";
+
+import {
+  planHasFeature,
+} from "@/lib/plans/registry";
+
+import type {
+  FeatureId,
+} from "@/lib/plans/types";
+
 export const dynamic =
   "force-dynamic";
 
@@ -47,6 +59,23 @@ export default async function AccountPage() {
   const email =
     userEmail ??
     "Authenticated user";
+
+  const {
+    entitlement,
+    billingAvailable,
+  } =
+    await getServerEntitlement();
+
+  const accountFeatureEnabled =
+    (
+      feature:
+        FeatureId
+    ) =>
+      billingAvailable &&
+      planHasFeature(
+        entitlement.planId,
+        feature
+      );
 
   const [
     savedResult,
@@ -271,27 +300,67 @@ export default async function AccountPage() {
           </section>
         </div>
 
-        <AdvancedWatchlistsPanel />
+        {accountFeatureEnabled(
+          "advancedWatchlists"
+        ) && (
+          <AdvancedWatchlistsPanel />
+        )}
 
-        <CompareInvestigationsPanel />
+        {accountFeatureEnabled(
+          "compareInvestigations"
+        ) && (
+          <CompareInvestigationsPanel />
+        )}
 
-        <CasesPanel />
+        {accountFeatureEnabled(
+          "cases"
+        ) && (
+          <CasesPanel />
+        )}
 
-        <EvidenceLockerPanel />
+        {accountFeatureEnabled(
+          "evidenceLocker"
+        ) && (
+          <EvidenceLockerPanel />
+        )}
 
         <DeviceSecurityPanel />
 
-        <BatchAnalysisPanel />
+        {accountFeatureEnabled(
+          "batchAnalysis"
+        ) && (
+          <BatchAnalysisPanel />
+        )}
 
-        <CustomLabelsNotesPanel />
+        {accountFeatureEnabled(
+          "customLabelsNotes"
+        ) && (
+          <CustomLabelsNotesPanel />
+        )}
 
-        <ApiAccessPanel />
+        {accountFeatureEnabled(
+          "apiAccess"
+        ) && (
+          <ApiAccessPanel />
+        )}
 
-        <NoCodeDashboardsPanel />
+        {accountFeatureEnabled(
+          "noCodeDashboards"
+        ) && (
+          <NoCodeDashboardsPanel />
+        )}
 
-        <PriorityAnalysisPanel />
+        {accountFeatureEnabled(
+          "priorityAnalysis"
+        ) && (
+          <PriorityAnalysisPanel />
+        )}
 
-        <CustomAlertRulesPanel />
+        {accountFeatureEnabled(
+          "customAlertRules"
+        ) && (
+          <CustomAlertRulesPanel />
+        )}
 
         <AlertRulesPanel />
 
