@@ -6,10 +6,23 @@ import {
   PLANS,
 } from "@/lib/plans/registry";
 
+import {
+  NETWORKS,
+} from "@/lib/networks/registry";
+
 import type {
   FeatureId,
   PlanId,
 } from "@/lib/plans/types";
+
+const LIVE_NETWORK_COUNT =
+  Object.values(
+    NETWORKS
+  ).filter(
+    network =>
+      network.status ===
+      "live"
+  ).length;
 
 type Cell =
   | {
@@ -186,18 +199,21 @@ const sections:
           label:
             "Live network coverage",
           detail:
-            "AYZO currently supports 17 live networks.",
+            `AYZO currently supports ${LIVE_NETWORK_COUNT} live networks.`,
           free: {
             kind: "value",
-            label: "17 networks",
+            label:
+              `${LIVE_NETWORK_COUNT} networks`,
           },
           pro: {
             kind: "value",
-            label: "17 networks",
+            label:
+              `${LIVE_NETWORK_COUNT} networks`,
           },
           advanced: {
             kind: "value",
-            label: "17 networks",
+            label:
+              `${LIVE_NETWORK_COUNT} networks`,
           },
         },
 

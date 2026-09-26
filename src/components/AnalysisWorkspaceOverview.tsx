@@ -59,27 +59,27 @@ function planCopy(
       return {
         name: "FREE",
         description:
-          "Strong evidence-first core analysis.",
+          "Core Intelligence.",
         className:
-          "border-zinc-700 bg-zinc-900 text-zinc-300",
+          "border-cyan-500/20 bg-cyan-500/[0.06] text-cyan-300",
       };
 
     case "pro":
       return {
         name: "PRO",
         description:
-          "Context, changes and Pro investigation tools.",
+          "Research Workspace.",
         className:
-          "border-cyan-500/25 bg-cyan-500/10 text-cyan-300",
+          "border-violet-500/25 bg-violet-500/[0.08] text-violet-300",
       };
 
     case "advanced":
       return {
         name: "ADVANCED",
         description:
-          "Deep investigation and Advanced case workflows.",
+          "Investigation Workspace.",
         className:
-          "border-violet-500/30 bg-violet-500/10 text-violet-300",
+          "border-purple-500/30 bg-purple-500/[0.08] text-purple-300",
       };
 
     default:
