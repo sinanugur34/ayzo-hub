@@ -187,10 +187,15 @@ export default function DogecoinExpandedAnalysis({
         </div>
 
         <div className="mt-5 space-y-2">
-          {data.derived.counterparties.items
-            .slice(0, 12)
-            .map(
-              counterparty => (
+          {data.derived.counterparties.items.length === 0 ? (
+            <div className="rounded-xl border border-zinc-900 bg-black/20 px-4 py-4 text-xs leading-5 text-zinc-600">
+              No explicit counterparty relationship was resolved in the bounded canonical sample.
+            </div>
+          ) : (
+            data.derived.counterparties.items
+              .slice(0, 12)
+              .map(
+                counterparty => (
                 <div
                   key={counterparty.address}
                   className="grid gap-2 rounded-xl border border-zinc-900 bg-black/20 px-4 py-3 text-xs sm:grid-cols-4"
@@ -216,8 +221,9 @@ export default function DogecoinExpandedAnalysis({
                     {counterparty.observationCount}
                   </div>
                 </div>
+                )
               )
-            )}
+          )}
         </div>
       </section>
 

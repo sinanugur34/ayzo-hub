@@ -452,7 +452,7 @@ export default function ActivityTimeline({
         Evidence window:{" "}
         {timeline.evidenceWindow.transactionCount} transaction(s)
         {" · "}
-        {timeline.evidenceWindow.transferCount} token transfer(s)
+        {timeline.evidenceWindow.transferCount} transfer event(s)
         {" · "}
         showing up to{" "}
         {timeline.evidenceWindow.maxEvents} event(s)

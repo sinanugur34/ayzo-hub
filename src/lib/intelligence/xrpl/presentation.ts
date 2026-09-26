@@ -104,6 +104,15 @@ export function buildXrplActivityTimeline(
   data:
     XrplIntelligence
 ): ActivityTimeline {
+  const maxEvents =
+    Math.max(
+      1,
+      Math.min(
+        data.evidenceCoverage.historyLimit,
+        data.history.transactions.length
+      )
+    );
+
   const events:
     ActivityTimelineEvent[] =
       data.history.transactions.map(
@@ -208,7 +217,7 @@ export function buildXrplActivityTimeline(
     events:
       events.slice(
         0,
-        25
+        maxEvents
       ),
 
     evidenceWindow: {
@@ -224,8 +233,7 @@ export function buildXrplActivityTimeline(
               null
         ).length,
 
-      maxEvents:
-        25,
+      maxEvents,
     },
   };
 }
