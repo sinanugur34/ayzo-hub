@@ -19,6 +19,7 @@ test(
   () => {
     for (
       const anchor of [
+        "#plan-experience",
         "#saved-analyses",
         "#watchlists",
         "#account-essentials",

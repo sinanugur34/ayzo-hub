@@ -1,6 +1,7 @@
 import AccountPlanCard from "@/components/account/AccountPlanCard";
 import AccountUsageCard from "@/components/account/AccountUsageCard";
 import AccountAdvancedWorkspace from "@/components/account/AccountAdvancedWorkspace";
+import AccountPlanExperience from "@/components/account/AccountPlanExperience";
 import AlertRulesPanel from "@/components/account/AlertRulesPanel";
 import CustomAlertRulesPanel from "@/components/account/CustomAlertRulesPanel";
 import BatchAnalysisPanel from "@/components/account/BatchAnalysisPanel";
@@ -183,6 +184,13 @@ export default async function AccountPage() {
             className="mt-5 flex flex-wrap gap-2 border-t border-zinc-900 pt-4"
           >
             <a
+              href="#plan-experience"
+              className="rounded-full border border-zinc-800 bg-black/30 px-3 py-1.5 text-[10px] font-medium text-zinc-500 transition hover:border-zinc-700 hover:text-zinc-200"
+            >
+              Plan capabilities
+            </a>
+
+            <a
               href="#saved-analyses"
               className="rounded-full border border-zinc-800 bg-black/30 px-3 py-1.5 text-[10px] font-medium text-zinc-500 transition hover:border-zinc-700 hover:text-zinc-200"
             >
@@ -215,6 +223,12 @@ export default async function AccountPage() {
             )}
           </nav>
         </section>
+
+        <AccountPlanExperience
+          planId={
+            entitlement.planId
+          }
+        />
 
         <div className="mt-5 grid gap-5 lg:grid-cols-2">
           <section
