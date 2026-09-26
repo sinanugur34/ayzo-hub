@@ -79,3 +79,26 @@ test(
     );
   }
 );
+
+test(
+  "desktop workspace actions align with the primary title row",
+  () => {
+    const css =
+      fs.readFileSync(
+        "src/components/AnalysisWorkspaceConcept.module.css",
+        "utf8"
+      );
+
+    assert.ok(
+      css.includes(
+        "margin-top: 25px;"
+      )
+    );
+
+    assert.ok(
+      css.includes(
+        ".topActions {\n    margin-top: 0;"
+      )
+    );
+  }
+);
