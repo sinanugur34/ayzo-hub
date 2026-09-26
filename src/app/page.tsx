@@ -963,8 +963,9 @@ export default function Home() {
         </h1>
 
         <p className="mt-5 max-w-2xl text-sm leading-6 text-zinc-400 sm:text-base sm:leading-7">
-          Analyze wallets, tokens and transaction evidence across 16
-          live networks — without connecting a wallet.
+          Analyze wallets, tokens and transaction evidence across{" "}
+          {LIVE_NETWORKS.length} live networks — without connecting a
+          wallet.
         </p>
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
