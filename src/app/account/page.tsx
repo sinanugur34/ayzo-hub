@@ -300,6 +300,16 @@ export default async function AccountPage() {
           </section>
         </div>
 
+        <div className="mt-8 border-t border-zinc-900 pt-6">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-600">
+            Account essentials
+          </div>
+
+          <p className="mt-2 max-w-2xl text-xs leading-5 text-zinc-600">
+            Security and monitoring controls that stay available as part of your AYZO account.
+          </p>
+        </div>
+
         <DeviceSecurityPanel />
 
         <AlertRulesPanel />
@@ -307,7 +317,27 @@ export default async function AccountPage() {
         {accountFeatureEnabled(
           "advancedWatchlists"
         ) && (
-          <AdvancedWatchlistsPanel />
+          <>
+            <div className="mt-8 border-t border-violet-500/10 pt-6">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300">
+                    Advanced workspace
+                  </div>
+
+                  <p className="mt-2 max-w-2xl text-xs leading-5 text-zinc-600">
+                    Deeper investigation, automation and account-level research tools.
+                  </p>
+                </div>
+
+                <span className="rounded-full border border-violet-500/20 bg-violet-500/5 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-violet-300">
+                  Advanced
+                </span>
+              </div>
+            </div>
+
+            <AdvancedWatchlistsPanel />
+          </>
         )}
 
         {accountFeatureEnabled(

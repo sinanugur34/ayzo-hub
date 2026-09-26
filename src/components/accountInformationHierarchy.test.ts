@@ -46,3 +46,58 @@ test(
     );
   }
 );
+
+test(
+  "account page visually separates essentials from Advanced workspace",
+  () => {
+    const source =
+      fs.readFileSync(
+        "src/app/account/page.tsx",
+        "utf8"
+      );
+
+    assert.ok(
+      source.includes(
+        "Account essentials"
+      )
+    );
+
+    assert.ok(
+      source.includes(
+        "Advanced workspace"
+      )
+    );
+
+    const essentials =
+      source.indexOf(
+        "Account essentials"
+      );
+
+    const security =
+      source.indexOf(
+        "<DeviceSecurityPanel />"
+      );
+
+    const advancedHeading =
+      source.indexOf(
+        "Advanced workspace"
+      );
+
+    const advancedPanel =
+      source.indexOf(
+        "<AdvancedWatchlistsPanel />"
+      );
+
+    assert.ok(
+      essentials < security
+    );
+
+    assert.ok(
+      security < advancedHeading
+    );
+
+    assert.ok(
+      advancedHeading < advancedPanel
+    );
+  }
+);
