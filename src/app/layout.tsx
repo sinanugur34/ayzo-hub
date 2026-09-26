@@ -4,8 +4,18 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import GoogleAnalytics from "../components/GoogleAnalytics";
 import AskAyzoAssistantProvider from "@/components/AskAyzoAssistantProvider";
+import { NETWORKS } from "@/lib/networks/registry";
 
 import "./globals.css";
+
+const LIVE_NETWORK_COUNT =
+  Object.values(
+    NETWORKS
+  ).filter(
+    network =>
+      network.status ===
+      "live"
+  ).length;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,7 +33,7 @@ export const metadata: Metadata = {
   title: "AYZO | On-chain Intelligence",
 
   description:
-    "AYZO turns on-chain data into evidence-first intelligence across 17 live networks.",
+    `AYZO turns on-chain data into evidence-first intelligence across ${LIVE_NETWORK_COUNT} live networks.`,
 
   alternates: {
     canonical: "/",
@@ -37,7 +47,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "AYZO | On-chain Intelligence",
     description:
-      "Evidence-first token and wallet intelligence across 17 live networks.",
+      `Evidence-first token and wallet intelligence across ${LIVE_NETWORK_COUNT} live networks.`,
     url: "/",
     siteName: "AYZO",
     type: "website",
@@ -47,7 +57,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "AYZO | On-chain Intelligence",
     description:
-      "Evidence-first token and wallet intelligence across 17 live networks.",
+      `Evidence-first token and wallet intelligence across ${LIVE_NETWORK_COUNT} live networks.`,
   },
 };
 
