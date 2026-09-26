@@ -163,9 +163,9 @@ const PLAN_STYLE: Record<
 > = {
   free: {
     border:
-      "border-cyan-500/15",
+      "border-cyan-500/20",
     background:
-      "bg-cyan-500/[0.025]",
+      "bg-gradient-to-br from-cyan-500/[0.04] via-emerald-500/[0.015] to-transparent",
     eyebrow:
       "text-cyan-300",
     badge:
@@ -176,9 +176,9 @@ const PLAN_STYLE: Record<
 
   pro: {
     border:
-      "border-violet-500/20",
+      "border-violet-400/25",
     background:
-      "bg-violet-500/[0.035]",
+      "bg-gradient-to-br from-violet-500/[0.055] via-indigo-500/[0.025] to-transparent",
     eyebrow:
       "text-violet-300",
     badge:
@@ -189,9 +189,9 @@ const PLAN_STYLE: Record<
 
   advanced: {
     border:
-      "border-purple-500/20",
+      "border-purple-400/30",
     background:
-      "bg-gradient-to-br from-purple-500/[0.05] via-violet-500/[0.025] to-cyan-500/[0.025]",
+      "bg-gradient-to-br from-purple-500/[0.075] via-violet-500/[0.04] to-cyan-500/[0.025]",
     eyebrow:
       "text-purple-300",
     badge:

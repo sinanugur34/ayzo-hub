@@ -104,12 +104,13 @@ export default function AccountAdvancedWorkspace({
           </div>
 
           <h2 className="mt-2 text-2xl font-semibold tracking-[-0.025em] text-white">
-            Your advanced research workspace
+            Investigation tools
           </h2>
 
           <p className="mt-2 max-w-2xl text-xs leading-5 text-zinc-500">
-            Open only the tools you need. Investigation, monitoring,
-            automation and developer controls stay organized in one place.
+            Choose the workspace you need. Investigation, monitoring,
+            automation, developer and customization tools stay organized
+            without turning your account into one long page.
           </p>
         </div>
 
@@ -121,7 +122,7 @@ export default function AccountAdvancedWorkspace({
       <div
         role="tablist"
         aria-label="Advanced workspace tools"
-        className="sticky top-3 z-20 mt-5 flex gap-2 overflow-x-auto rounded-2xl border border-zinc-800 bg-black/90 p-2 shadow-2xl shadow-black/30 backdrop-blur"
+        className="sticky top-3 z-20 mt-5 flex gap-2 overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-950/90 p-2 shadow-2xl shadow-black/30 backdrop-blur"
       >
         {tabs.map(
           tab => {
@@ -148,8 +149,8 @@ export default function AccountAdvancedWorkspace({
                 }
                 className={`shrink-0 rounded-xl px-4 py-2.5 text-xs font-medium transition ${
                   selected
-                    ? "border border-violet-500/30 bg-violet-500/10 text-violet-200"
-                    : "border border-transparent text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200"
+                    ? "border border-violet-400/35 bg-violet-500/15 text-violet-100 shadow-sm shadow-violet-950/40"
+                    : "border border-transparent text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
                 }`}
               >
                 {tab.label}
@@ -159,14 +160,14 @@ export default function AccountAdvancedWorkspace({
         )}
       </div>
 
-      <div className="mt-4 rounded-2xl border border-zinc-900 bg-zinc-950/40 px-4 py-3">
-        <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-600">
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 px-1">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-300/80">
           {active.label}
-        </div>
+        </span>
 
-        <p className="mt-1 text-xs leading-5 text-zinc-500">
+        <span className="text-xs leading-5 text-zinc-500">
           {active.description}
-        </p>
+        </span>
       </div>
 
       <div
