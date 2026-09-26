@@ -50,3 +50,32 @@ test(
     );
   }
 );
+
+test(
+  "workspace header keeps a stable content axis",
+  () => {
+    const css =
+      fs.readFileSync(
+        "src/components/AnalysisWorkspaceConcept.module.css",
+        "utf8"
+      );
+
+    assert.ok(
+      css.includes(
+        "width: 100%;"
+      )
+    );
+
+    assert.ok(
+      css.includes(
+        "margin: 0;"
+      )
+    );
+
+    assert.ok(
+      css.includes(
+        "padding: 0;"
+      )
+    );
+  }
+);
