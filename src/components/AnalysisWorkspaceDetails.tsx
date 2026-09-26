@@ -1,3 +1,9 @@
+"use client";
+
+import {
+  useRef,
+} from "react";
+
 import type {
   ReactNode,
 } from "react";
@@ -8,8 +14,36 @@ export default function AnalysisWorkspaceDetails({
   children:
     ReactNode;
 }) {
+  const detailsRef =
+    useRef<HTMLDetailsElement>(
+      null
+    );
+
+  function handleToggle() {
+    const node =
+      detailsRef.current;
+
+    if (!node?.open) {
+      return;
+    }
+
+    window.requestAnimationFrame(
+      () => {
+        node.scrollIntoView({
+          behavior:
+            "smooth",
+
+          block:
+            "start",
+        });
+      }
+    );
+  }
+
   return (
     <details
+      ref={detailsRef}
+      onToggle={handleToggle}
       id="analysis-details"
       className="group scroll-mt-24 overflow-hidden rounded-xl border border-[#26384f] bg-[#0b1727]"
     >
