@@ -567,39 +567,52 @@ export default function NoCodeDashboardsPanel() {
         </div>
       )}
 
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-        <input
-          value={
-            dashboardName
-          }
-          maxLength={
-            120
-          }
-          onChange={
-            event =>
-              setDashboardName(
-                event.target.value
-              )
-          }
-          className="min-w-0 flex-1 rounded-xl border border-zinc-800 bg-black px-4 py-3 text-sm text-zinc-200 outline-none"
-        />
+      <details className="group mt-5 rounded-2xl border border-indigo-500/15 bg-black/20">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-medium text-indigo-200 transition hover:bg-indigo-500/[0.03] [&::-webkit-details-marker]:hidden">
+          <span>Create a dashboard</span>
 
-        <button
-          type="button"
-          disabled={
-            busy ||
-            !dashboardName.trim() ||
-            dashboards.length >=
-              dashboardLimit
-          }
-          onClick={
-            createDashboard
-          }
-          className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-3 text-sm font-semibold text-indigo-200 disabled:opacity-50"
-        >
-          Create dashboard
-        </button>
-      </div>
+          <span
+            aria-hidden="true"
+            className="text-xs text-indigo-300/60 transition group-open:rotate-45"
+          >
+            +
+          </span>
+        </summary>
+
+        <div className="flex flex-col gap-3 border-t border-indigo-500/10 p-4 sm:flex-row">
+          <input
+            value={
+              dashboardName
+            }
+            maxLength={
+              120
+            }
+            onChange={
+              event =>
+                setDashboardName(
+                  event.target.value
+                )
+            }
+            className="min-w-0 flex-1 rounded-xl border border-zinc-800 bg-black px-4 py-3 text-sm text-zinc-200 outline-none"
+          />
+
+          <button
+            type="button"
+            disabled={
+              busy ||
+              !dashboardName.trim() ||
+              dashboards.length >=
+                dashboardLimit
+            }
+            onClick={
+              createDashboard
+            }
+            className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-3 text-sm font-semibold text-indigo-200 disabled:opacity-50"
+          >
+            Create dashboard
+          </button>
+        </div>
+      </details>
 
       {dashboards.length ===
         0 ? (

@@ -408,7 +408,20 @@ export default function BatchAnalysisPanel() {
         </div>
       ) : (
         <>
-          <div className="mt-5 grid gap-3 sm:grid-cols-[220px_1fr]">
+          <details className="group mt-5 rounded-2xl border border-cyan-500/15 bg-black/20">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/[0.03] [&::-webkit-details-marker]:hidden">
+              <span>Run a batch</span>
+
+              <span
+                aria-hidden="true"
+                className="text-xs text-cyan-300/60 transition group-open:rotate-45"
+              >
+                +
+              </span>
+            </summary>
+
+            <div className="border-t border-cyan-500/10 p-4">
+              <div className="grid gap-3 sm:grid-cols-[220px_1fr]">
             <select
               value={
                 network
@@ -457,7 +470,7 @@ export default function BatchAnalysisPanel() {
             </button>
           </div>
 
-          <textarea
+              <textarea
             value={
               input
             }
@@ -475,9 +488,12 @@ export default function BatchAnalysisPanel() {
             className="mt-3 w-full resize-y rounded-xl border border-zinc-800 bg-black px-3 py-3 font-mono text-xs text-zinc-200 outline-none disabled:opacity-50"
           />
 
-          <p className="mt-2 text-[10px] leading-5 text-zinc-600">
+              <p className="mt-2 text-[10px] leading-5 text-zinc-600">
             Each target uses the normal AYZO analysis quota. Requests run one at a time. Authentication, quota, rate-limit, load-guard and failed-analysis refund behavior are not bypassed.
           </p>
+
+            </div>
+          </details>
 
           {results.length >
             0 && (
