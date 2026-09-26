@@ -101,3 +101,41 @@ test(
     );
   }
 );
+
+test(
+  "account summary prioritizes plan and usage before identity",
+  () => {
+    const source =
+      fs.readFileSync(
+        "src/app/account/page.tsx",
+        "utf8"
+      );
+
+    const plan =
+      source.indexOf(
+        "<AccountPlanCard />"
+      );
+
+    const usage =
+      source.indexOf(
+        "<AccountUsageCard />"
+      );
+
+    const identity =
+      source.indexOf(
+        "Signed in as"
+      );
+
+    assert.ok(
+      plan >= 0
+    );
+
+    assert.ok(
+      usage > plan
+    );
+
+    assert.ok(
+      identity > usage
+    );
+  }
+);
