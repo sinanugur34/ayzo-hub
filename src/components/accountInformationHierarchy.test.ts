@@ -78,9 +78,9 @@ test(
         "<DeviceSecurityPanel />"
       );
 
-    const advancedHeading =
+    const advancedWorkspace =
       source.indexOf(
-        "Advanced workspace"
+        "<AccountAdvancedWorkspace"
       );
 
     const advancedPanel =
@@ -93,11 +93,11 @@ test(
     );
 
     assert.ok(
-      security < advancedHeading
+      security < advancedWorkspace
     );
 
     assert.ok(
-      advancedHeading < advancedPanel
+      advancedWorkspace < advancedPanel
     );
   }
 );

@@ -78,11 +78,14 @@ test(
         panel,
       ] of advancedSurfaces
     ) {
+      const gatePattern =
+        new RegExp(
+          `accountFeatureEnabled\\(\\s*"${feature}"\\s*\\)`
+        );
+
       assert.ok(
-        accountPage.includes(
-          `accountFeatureEnabled(
-          "${feature}"
-        )`
+        gatePattern.test(
+          accountPage
         ),
         `${feature} must be gated`
       );

@@ -1,5 +1,6 @@
 import AccountPlanCard from "@/components/account/AccountPlanCard";
 import AccountUsageCard from "@/components/account/AccountUsageCard";
+import AccountAdvancedWorkspace from "@/components/account/AccountAdvancedWorkspace";
 import AlertRulesPanel from "@/components/account/AlertRulesPanel";
 import CustomAlertRulesPanel from "@/components/account/CustomAlertRulesPanel";
 import BatchAnalysisPanel from "@/components/account/BatchAnalysisPanel";
@@ -176,10 +177,50 @@ export default async function AccountPage() {
               </div>
             </div>
           </div>
+
+          <nav
+            aria-label="Account shortcuts"
+            className="mt-5 flex flex-wrap gap-2 border-t border-zinc-900 pt-4"
+          >
+            <a
+              href="#saved-analyses"
+              className="rounded-full border border-zinc-800 bg-black/30 px-3 py-1.5 text-[10px] font-medium text-zinc-500 transition hover:border-zinc-700 hover:text-zinc-200"
+            >
+              Saved analyses
+            </a>
+
+            <a
+              href="#watchlists"
+              className="rounded-full border border-zinc-800 bg-black/30 px-3 py-1.5 text-[10px] font-medium text-zinc-500 transition hover:border-zinc-700 hover:text-zinc-200"
+            >
+              Watchlists
+            </a>
+
+            <a
+              href="#account-essentials"
+              className="rounded-full border border-zinc-800 bg-black/30 px-3 py-1.5 text-[10px] font-medium text-zinc-500 transition hover:border-zinc-700 hover:text-zinc-200"
+            >
+              Security & alerts
+            </a>
+
+            {accountFeatureEnabled(
+              "advancedWatchlists"
+            ) && (
+              <a
+                href="#advanced-workspace"
+                className="rounded-full border border-violet-500/20 bg-violet-500/5 px-3 py-1.5 text-[10px] font-medium text-violet-300 transition hover:bg-violet-500/10"
+              >
+                Advanced workspace
+              </a>
+            )}
+          </nav>
         </section>
 
         <div className="mt-5 grid gap-5 lg:grid-cols-2">
-          <section className="rounded-3xl border border-zinc-800 bg-zinc-950/60 p-6">
+          <section
+            id="saved-analyses"
+            className="scroll-mt-24 rounded-3xl border border-zinc-800 bg-zinc-950/60 p-6"
+          >
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-xs font-medium tracking-[0.16em] text-violet-300">
@@ -239,7 +280,10 @@ export default async function AccountPage() {
             )}
           </section>
 
-          <section className="rounded-3xl border border-zinc-800 bg-zinc-950/60 p-6">
+          <section
+            id="watchlists"
+            className="scroll-mt-24 rounded-3xl border border-zinc-800 bg-zinc-950/60 p-6"
+          >
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-xs font-medium tracking-[0.16em] text-violet-300">
@@ -299,7 +343,10 @@ export default async function AccountPage() {
           </section>
         </div>
 
-        <div className="mt-8 border-t border-zinc-900 pt-6">
+        <div
+          id="account-essentials"
+          className="mt-8 scroll-mt-24 border-t border-zinc-900 pt-6"
+        >
           <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-600">
             Account essentials
           </div>
@@ -316,81 +363,80 @@ export default async function AccountPage() {
         {accountFeatureEnabled(
           "advancedWatchlists"
         ) && (
-          <>
-            <div className="mt-8 border-t border-violet-500/10 pt-6">
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300">
-                    Advanced workspace
-                  </div>
+          <AccountAdvancedWorkspace
+            title="Advanced workspace"
+            investigations={
+              <>
+                <AdvancedWatchlistsPanel />
 
-                  <p className="mt-2 max-w-2xl text-xs leading-5 text-zinc-600">
-                    Deeper investigation, automation and account-level research tools.
-                  </p>
-                </div>
+                {accountFeatureEnabled(
+                  "compareInvestigations"
+                ) && (
+                  <CompareInvestigationsPanel />
+                )}
 
-                <span className="rounded-full border border-violet-500/20 bg-violet-500/5 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-violet-300">
-                  Advanced
-                </span>
-              </div>
-            </div>
+                {accountFeatureEnabled(
+                  "cases"
+                ) && (
+                  <CasesPanel />
+                )}
 
-            <AdvancedWatchlistsPanel />
-          </>
-        )}
+                {accountFeatureEnabled(
+                  "evidenceLocker"
+                ) && (
+                  <EvidenceLockerPanel />
+                )}
+              </>
+            }
+            monitoring={
+              <>
+                {accountFeatureEnabled(
+                  "customAlertRules"
+                ) && (
+                  <CustomAlertRulesPanel />
+                )}
+              </>
+            }
+            automation={
+              <>
+                {accountFeatureEnabled(
+                  "batchAnalysis"
+                ) && (
+                  <BatchAnalysisPanel />
+                )}
 
-        {accountFeatureEnabled(
-          "compareInvestigations"
-        ) && (
-          <CompareInvestigationsPanel />
-        )}
+                {accountFeatureEnabled(
+                  "priorityAnalysis"
+                ) && (
+                  <PriorityAnalysisPanel />
+                )}
+              </>
+            }
+            developer={
+              <>
+                {accountFeatureEnabled(
+                  "apiAccess"
+                ) && (
+                  <ApiAccessPanel />
+                )}
+              </>
+            }
+            customization={
+              <>
+                {accountFeatureEnabled(
+                  "customLabelsNotes"
+                ) && (
+                  <CustomLabelsNotesPanel />
+                )}
 
-        {accountFeatureEnabled(
-          "cases"
-        ) && (
-          <CasesPanel />
-        )}
-
-        {accountFeatureEnabled(
-          "evidenceLocker"
-        ) && (
-          <EvidenceLockerPanel />
-        )}
-
-        {accountFeatureEnabled(
-          "batchAnalysis"
-        ) && (
-          <BatchAnalysisPanel />
-        )}
-
-        {accountFeatureEnabled(
-          "customLabelsNotes"
-        ) && (
-          <CustomLabelsNotesPanel />
-        )}
-
-        {accountFeatureEnabled(
-          "apiAccess"
-        ) && (
-          <ApiAccessPanel />
-        )}
-
-        {accountFeatureEnabled(
-          "noCodeDashboards"
-        ) && (
-          <NoCodeDashboardsPanel />
-        )}
-
-        {accountFeatureEnabled(
-          "priorityAnalysis"
-        ) && (
-          <PriorityAnalysisPanel />
-        )}
-
-        {accountFeatureEnabled(
-          "customAlertRules"
-        ) && (
-          <CustomAlertRulesPanel />
+                {accountFeatureEnabled(
+                  "noCodeDashboards"
+                ) && (
+                  <NoCodeDashboardsPanel />
+                )}
+              </>
+            }
+          />
         )}
 
         <div className="mt-5 rounded-2xl border border-violet-500/10 bg-violet-500/5 px-5 py-4 text-xs leading-5 text-zinc-500">
