@@ -426,7 +426,20 @@ export default function CustomAlertRulesPanel() {
         </div>
       ) : (
         <>
-          <div className="mt-5 grid gap-3 md:grid-cols-4">
+          <details className="group mt-5 rounded-2xl border border-amber-500/15 bg-black/20">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-medium text-amber-200 transition hover:bg-amber-500/[0.03] [&::-webkit-details-marker]:hidden">
+              <span>Create an alert rule</span>
+
+              <span
+                aria-hidden="true"
+                className="text-xs text-amber-300/60 transition group-open:rotate-45"
+              >
+                +
+              </span>
+            </summary>
+
+            <div className="border-t border-amber-500/10 p-4">
+              <div className="grid gap-3 md:grid-cols-4">
             <select
               value={
                 network
@@ -558,6 +571,9 @@ export default function CustomAlertRulesPanel() {
           <p className="mt-2 text-[10px] leading-5 text-zinc-600">
             V1 supports Bitcoin wallet activity and supported EVM wallet/token activity. Threshold range: 1–20 new evidence references per monitoring check.
           </p>
+
+            </div>
+          </details>
 
           <div className="mt-5 space-y-2">
             {rules.map(

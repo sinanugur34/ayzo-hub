@@ -251,58 +251,71 @@ export default function CasesPanel() {
       {!loading &&
         !denied && (
         <>
-          <div className="mt-5 rounded-2xl border border-zinc-800 bg-black/30 p-4">
-            <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-600">
-              New Case
-            </div>
+          <details className="group mt-5 rounded-2xl border border-zinc-800 bg-black/30">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-medium text-zinc-300 transition hover:text-white [&::-webkit-details-marker]:hidden">
+              <span>Create a case</span>
 
-            <div className="mt-3 grid gap-3">
-              <input
-                value={name}
-                onChange={
-                  event =>
-                    setName(
-                      event.target.value
-                    )
-                }
-                maxLength={160}
-                placeholder="Case name"
-                className="h-11 rounded-xl border border-zinc-800 bg-zinc-950 px-3 text-sm text-zinc-200 outline-none placeholder:text-zinc-700 focus:border-purple-500"
-              />
-
-              <textarea
-                value={
-                  description
-                }
-                onChange={
-                  event =>
-                    setDescription(
-                      event.target.value
-                    )
-                }
-                maxLength={5000}
-                rows={3}
-                placeholder="Optional investigation context"
-                className="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300 outline-none placeholder:text-zinc-700 focus:border-purple-500"
-              />
-
-              <button
-                type="button"
-                onClick={
-                  createCase
-                }
-                disabled={
-                  creating ||
-                  !name.trim()
-                }
-                className="inline-flex h-11 items-center justify-center rounded-xl bg-white px-4 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-default disabled:opacity-50"
+              <span
+                aria-hidden="true"
+                className="text-xs text-zinc-600 transition group-open:rotate-45"
               >
-                {creating
-                  ? "Creating..."
-                  : "Create Case"}
-              </button>
+                +
+              </span>
+            </summary>
+
+            <div className="border-t border-zinc-900 p-4">
+              <p className="mb-3 text-xs leading-5 text-zinc-600">
+                Start a focused investigation workspace and attach saved evidence when ready.
+              </p>
+
+              <div className="grid gap-3">
+                <input
+                  value={name}
+                  onChange={
+                    event =>
+                      setName(
+                        event.target.value
+                      )
+                  }
+                  maxLength={160}
+                  placeholder="Case name"
+                  className="h-11 rounded-xl border border-zinc-800 bg-zinc-950 px-3 text-sm text-zinc-200 outline-none placeholder:text-zinc-700 focus:border-purple-500"
+                />
+
+                <textarea
+                  value={
+                    description
+                  }
+                  onChange={
+                    event =>
+                      setDescription(
+                        event.target.value
+                      )
+                  }
+                  maxLength={5000}
+                  rows={3}
+                  placeholder="Optional investigation context"
+                  className="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300 outline-none placeholder:text-zinc-700 focus:border-purple-500"
+                />
+
+                <button
+                  type="button"
+                  onClick={
+                    createCase
+                  }
+                  disabled={
+                    creating ||
+                    !name.trim()
+                  }
+                  className="inline-flex h-11 items-center justify-center rounded-xl bg-white px-4 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-default disabled:opacity-50"
+                >
+                  {creating
+                    ? "Creating..."
+                    : "Create Case"}
+                </button>
+              </div>
             </div>
-          </div>
+          </details>
 
           {error && (
             <div className="mt-4 text-xs text-rose-300">
