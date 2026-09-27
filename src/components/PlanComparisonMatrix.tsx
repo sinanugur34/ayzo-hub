@@ -668,8 +668,9 @@ const sections:
         ),
 
         featureRow(
-          "Ask AYZO",
-          "askAyzo"
+          "Ask AYZO Investigator",
+          "askAyzo",
+          "Evidence-grounded investigation over the current analysis plus bounded server-owned evidence chronology and entity-role context when available."
         ),
 
         featureRow(

@@ -111,6 +111,25 @@ export const ASK_AYZO_SITE_KNOWLEDGE:
   },
 
   {
+    id: "ask-ayzo-investigator",
+    title: "Ask AYZO Investigator",
+    route: "/",
+    description:
+      "Ask AYZO Investigator is the Pro and Advanced evidence-grounded investigation assistant. For a connected analysis it reasons over current AYZO evidence and, when available, bounded server-owned Evidence History, Investigation Timeline changes and evidence-backed entity roles. It does not treat previous chat replies as evidence and does not infer identity, ownership, intent or investment suitability.",
+    directions:
+      "Run a supported analysis, then open Ask AYZO Investigator from the analysis research surface or the floating Ask AYZO control. Ask follow-up or longitudinal questions such as what changed since earlier evidence.",
+    keywords: [
+      "ask ayzo",
+      "ask ayzo investigator",
+      "investigator",
+      "evidence investigator",
+      "investigation assistant",
+      "araştırmacı",
+      "arastirmaci",
+    ],
+  },
+
+  {
     id: "entity-labels",
     title: "Entity Labels",
     route: "/",
