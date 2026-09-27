@@ -1655,6 +1655,12 @@ export default function EvmIntelligenceReport({
                   ),
 
                 detail:
+                  "Contract and asset verification evidence",
+
+                icon:
+                  "asset",
+
+                status:
                   statusLabel(
                     data.modules
                       .assetVerification
@@ -1673,6 +1679,14 @@ export default function EvmIntelligenceReport({
                   relationships
                     ? `${relationships.counterpartyCount} direct counterparties`
                     : "Counterparty evidence unavailable",
+
+                icon:
+                  "activity",
+
+                status:
+                  relationships
+                    ? "OBSERVED"
+                    : "UNAVAILABLE",
               },
 
               {
@@ -1688,6 +1702,16 @@ export default function EvmIntelligenceReport({
                   funding
                     ? `${funding.uniqueFundingTransactionCount} evidence transaction(s)`
                     : "No supported funding summary",
+
+                icon:
+                  "funding",
+
+                status:
+                  statusLabel(
+                    data.modules
+                      .fundingProvenance
+                      .status
+                  ),
               },
 
               {
@@ -1703,6 +1727,16 @@ export default function EvmIntelligenceReport({
                   graph
                     ? `${graph.maxDepthReached} hop(s) observed`
                     : "No supported graph summary",
+
+                icon:
+                  "graph",
+
+                status:
+                  statusLabel(
+                    data.modules
+                      .walletGraph
+                      .status
+                  ),
               },
             ]}
             synthesis={
@@ -1746,6 +1780,76 @@ export default function EvmIntelligenceReport({
                               .signalCount
                           )
                         : "Unavailable",
+
+                    sourceModules:
+                      formatCount(
+                        synthesis
+                          .sourceModuleCount
+                      ),
+
+                    graphNodes:
+                      synthesis
+                        .graph
+                        .available
+                        ? formatCount(
+                            synthesis
+                              .graph
+                              .nodeCount
+                          )
+                        : "Unavailable",
+
+                    graphEdges:
+                      synthesis
+                        .graph
+                        .available
+                        ? formatCount(
+                            synthesis
+                              .graph
+                              .edgeCount
+                          )
+                        : "Unavailable",
+
+                    multiHopCorroborations:
+                      synthesis
+                        .coordination
+                        .available
+                        ? formatCount(
+                            synthesis
+                              .coordination
+                              .multiHopPathCorroborationCount
+                          )
+                        : "Unavailable",
+
+                    deployments:
+                      synthesis
+                        .deployer
+                        .available
+                        ? formatCount(
+                            synthesis
+                              .deployer
+                              .verifiedDeploymentCount
+                          )
+                        : "Unavailable",
+
+                    fundingAvailable:
+                      synthesis
+                        .funding
+                        .available,
+
+                    graphAvailable:
+                      synthesis
+                        .graph
+                        .available,
+
+                    coordinationAvailable:
+                      synthesis
+                        .coordination
+                        .available,
+
+                    deployerAvailable:
+                      synthesis
+                        .deployer
+                        .available,
                   }
                 : null
             }

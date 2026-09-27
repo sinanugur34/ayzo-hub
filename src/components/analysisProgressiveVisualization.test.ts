@@ -81,7 +81,7 @@ test(
         "Top Findings",
         "Evidence modules",
         "EVIDENCE PRESERVED",
-        "ADVANCED INVESTIGATION SYNTHESIS",
+        "AdvancedEvidenceVisualSummary",
       ]
     ) {
       assert.ok(

@@ -221,27 +221,28 @@ export default function AnalysisWorkspaceDetails({
       </summary>
 
       <div className="space-y-4 border-t border-[#26384f] p-4 sm:p-5">
-        <div className="flex flex-col justify-between gap-3 rounded-2xl border border-[#26384f] bg-black/15 px-4 py-4 sm:flex-row sm:items-center">
-          <div>
-            <div className="text-xs font-semibold text-zinc-200">
+        <div
+          data-plan-evidence-strip
+          className="flex flex-col justify-between gap-2 rounded-xl border border-[#26384f] bg-black/10 px-3 py-2.5 sm:flex-row sm:items-center"
+        >
+          <div className="flex min-w-0 items-center gap-3">
+            <span
+              className={`w-fit shrink-0 rounded-full border px-2.5 py-1 text-[8px] font-semibold tracking-[0.12em] ${view.className}`}
+            >
               {
-                view.title
+                view.label
               }
-            </div>
+            </span>
 
-            <p className="mt-1 max-w-3xl text-[10px] leading-5 text-zinc-600">
+            <span className="truncate text-[10px] text-zinc-600">
               {
                 view.description
               }
-            </p>
+            </span>
           </div>
 
-          <span
-            className={`w-fit shrink-0 rounded-full border px-3 py-1.5 text-[8px] font-semibold tracking-[0.12em] ${view.className}`}
-          >
-            {
-              view.label
-            }
+          <span className="shrink-0 text-[8px] uppercase tracking-[0.12em] text-zinc-700">
+            compact first
           </span>
         </div>
 

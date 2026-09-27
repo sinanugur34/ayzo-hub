@@ -1,3 +1,5 @@
+import AdvancedEvidenceVisualSummary from "@/components/AdvancedEvidenceVisualSummary";
+
 type CoverageTone =
   | "full"
   | "partial"
@@ -16,13 +18,31 @@ type SnapshotCard = {
   title: string;
   value: string;
   detail: string;
+
+  icon:
+    | "asset"
+    | "activity"
+    | "funding"
+    | "graph";
+
+  status?:
+    string;
 };
 
 type SynthesisPreview = {
+  sourceModules:
+    string;
+
   evidenceTransactions:
     string;
 
   fundingPaths:
+    string;
+
+  graphNodes:
+    string;
+
+  graphEdges:
     string;
 
   graphDepth:
@@ -30,6 +50,24 @@ type SynthesisPreview = {
 
   coordinationSignals:
     string;
+
+  multiHopCorroborations:
+    string;
+
+  deployments:
+    string;
+
+  fundingAvailable:
+    boolean;
+
+  graphAvailable:
+    boolean;
+
+  coordinationAvailable:
+    boolean;
+
+  deployerAvailable:
+    boolean;
 };
 
 function coverageClass(
@@ -60,6 +98,73 @@ function confidenceClass(
   }
 
   return "border-zinc-700 bg-zinc-900 text-zinc-400";
+}
+
+function statusClass(
+  status:
+    string | undefined
+) {
+  if (
+    status ===
+      "VERIFIED" ||
+    status ===
+      "OBSERVED"
+  ) {
+    return "border-emerald-500/15 bg-emerald-500/[0.07] text-emerald-300";
+  }
+
+  if (
+    status ===
+    "ANALYZED"
+  ) {
+    return "border-violet-500/15 bg-violet-500/[0.07] text-violet-300";
+  }
+
+  if (
+    status ===
+    "UNAVAILABLE"
+  ) {
+    return "border-amber-500/15 bg-amber-500/[0.06] text-amber-300";
+  }
+
+  return "border-zinc-700 bg-zinc-900 text-zinc-500";
+}
+
+function ModuleGlyph({
+  kind,
+}: {
+  kind:
+    SnapshotCard["icon"];
+}) {
+  const glyph =
+    kind === "asset"
+      ? "◇"
+      : kind ===
+          "activity"
+        ? "↔"
+        : kind ===
+            "funding"
+          ? "↙"
+          : "⌘";
+
+  return (
+    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-500/15 bg-cyan-500/[0.055] text-sm font-semibold text-cyan-300">
+      {glyph}
+    </span>
+  );
+}
+
+function MetricGlyph({
+  children,
+}: {
+  children:
+    string;
+}) {
+  return (
+    <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[#30425b] bg-black/20 text-[10px] font-semibold text-cyan-300">
+      {children}
+    </span>
+  );
 }
 
 export default function AnalysisEvidenceSnapshot({
@@ -130,17 +235,11 @@ export default function AnalysisEvidenceSnapshot({
       </div>
 
       <div className="grid gap-2 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
-        <div className="rounded-xl border border-[#26384f] bg-[#0d1c2f] p-4">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <div className="text-[9px] uppercase tracking-[0.14em] text-zinc-500">
-                Coverage
-              </div>
-
-              <div className="mt-1 text-lg font-semibold text-zinc-100">
-                {coverage}
-              </div>
-            </div>
+        <div className="rounded-xl border border-[#26384f] bg-gradient-to-br from-[#10243a] to-[#0b192a] p-4">
+          <div className="flex items-start justify-between gap-3">
+            <MetricGlyph>
+              ◫
+            </MetricGlyph>
 
             <span
               className={`rounded-full border px-2 py-1 text-[8px] font-medium ${coverageClass(
@@ -151,13 +250,25 @@ export default function AnalysisEvidenceSnapshot({
             </span>
           </div>
 
+          <div className="mt-4 text-[9px] uppercase tracking-[0.14em] text-zinc-500">
+            Coverage
+          </div>
+
+          <div className="mt-1 text-lg font-semibold text-zinc-100">
+            {coverage}
+          </div>
+
           <p className="mt-2 text-[10px] text-zinc-600">
             Current bounded evidence scope
           </p>
         </div>
 
-        <div className="rounded-xl border border-[#26384f] bg-[#0d1c2f] p-4">
-          <div className="text-[9px] uppercase tracking-[0.14em] text-zinc-500">
+        <div className="rounded-xl border border-[#26384f] bg-gradient-to-br from-[#10243a] to-[#0b192a] p-4">
+          <MetricGlyph>
+            ↔
+          </MetricGlyph>
+
+          <div className="mt-4 text-[9px] uppercase tracking-[0.14em] text-zinc-500">
             Transactions
           </div>
 
@@ -172,8 +283,12 @@ export default function AnalysisEvidenceSnapshot({
           </p>
         </div>
 
-        <div className="rounded-xl border border-[#26384f] bg-[#0d1c2f] p-4">
-          <div className="text-[9px] uppercase tracking-[0.14em] text-zinc-500">
+        <div className="rounded-xl border border-[#26384f] bg-gradient-to-br from-[#10243a] to-[#0b192a] p-4">
+          <MetricGlyph>
+            ↙
+          </MetricGlyph>
+
+          <div className="mt-4 text-[9px] uppercase tracking-[0.14em] text-zinc-500">
             Funding Sources
           </div>
 
@@ -191,8 +306,12 @@ export default function AnalysisEvidenceSnapshot({
           </p>
         </div>
 
-        <div className="rounded-xl border border-[#26384f] bg-[#0d1c2f] p-4">
-          <div className="text-[9px] uppercase tracking-[0.14em] text-zinc-500">
+        <div className="rounded-xl border border-[#26384f] bg-gradient-to-br from-[#10243a] to-[#0b192a] p-4">
+          <MetricGlyph>
+            ◇
+          </MetricGlyph>
+
+          <div className="mt-4 text-[9px] uppercase tracking-[0.14em] text-zinc-500">
             Modules
           </div>
 
@@ -286,30 +405,64 @@ export default function AnalysisEvidenceSnapshot({
       ) : null}
 
       <div className="border-t border-[#26384f] px-4 py-4 sm:px-5">
-        <div className="mb-3 text-[10px] font-semibold text-zinc-200">
-          Evidence modules
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <div className="text-[10px] font-semibold text-zinc-200">
+              Evidence modules
+            </div>
+
+            <div className="mt-1 text-[9px] text-zinc-600">
+              Existing evidence grouped for faster scanning
+            </div>
+          </div>
+
+          <span className="text-[8px] uppercase tracking-[0.12em] text-zinc-700">
+            compact view
+          </span>
         </div>
 
-        <div className="grid gap-2 md:grid-cols-2">
+        <div className="mt-3 grid gap-2 md:grid-cols-2">
           {cards.map(
             card => (
               <div
                 key={
                   card.title
                 }
-                className="flex items-center justify-between gap-4 rounded-xl border border-[#26384f] bg-[#0d1c2f] px-4 py-3"
+                className="group flex min-h-[86px] items-center justify-between gap-4 rounded-xl border border-[#26384f] bg-gradient-to-r from-[#0d1c2f] to-[#0b1727] px-4 py-3 transition hover:border-cyan-500/20 hover:bg-cyan-500/[0.025]"
               >
-                <div className="min-w-0">
-                  <div className="text-xs font-medium text-zinc-200">
-                    {
-                      card.title
+                <div className="flex min-w-0 items-center gap-3">
+                  <ModuleGlyph
+                    kind={
+                      card.icon
                     }
-                  </div>
+                  />
 
-                  <div className="mt-1 text-[10px] text-zinc-600">
-                    {
-                      card.detail
-                    }
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="text-xs font-medium text-zinc-200">
+                        {
+                          card.title
+                        }
+                      </div>
+
+                      {card.status ? (
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-[7px] font-medium tracking-[0.08em] ${statusClass(
+                            card.status
+                          )}`}
+                        >
+                          {
+                            card.status
+                          }
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="mt-1 text-[10px] text-zinc-600">
+                      {
+                        card.detail
+                      }
+                    </div>
                   </div>
                 </div>
 
@@ -325,60 +478,48 @@ export default function AnalysisEvidenceSnapshot({
       </div>
 
       {synthesis ? (
-        <div className="border-t border-violet-500/15 bg-violet-500/[0.035] px-4 py-4 sm:px-5">
-          <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
-            <div>
-              <div className="text-[9px] font-semibold tracking-[0.15em] text-violet-300">
-                ADVANCED INVESTIGATION SYNTHESIS
-              </div>
-
-              <div className="mt-1 text-[10px] text-zinc-600">
-                Existing synthesis evidence summarized without adding
-                inference.
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
-              {[
-                [
-                  "Evidence TX",
-                  synthesis.evidenceTransactions,
-                ],
-                [
-                  "Funding paths",
-                  synthesis.fundingPaths,
-                ],
-                [
-                  "Graph depth",
-                  synthesis.graphDepth,
-                ],
-                [
-                  "Coordination",
-                  synthesis.coordinationSignals,
-                ],
-              ].map(
-                item => (
-                  <div
-                    key={
-                      item[0]
-                    }
-                  >
-                    <div className="text-[8px] uppercase tracking-[0.12em] text-zinc-600">
-                      {
-                        item[0]
-                      }
-                    </div>
-
-                    <div className="mt-0.5 text-xs font-semibold text-violet-200">
-                      {
-                        item[1]
-                      }
-                    </div>
-                  </div>
-                )
-              )}
-            </div>
-          </div>
+        <div className="border-t border-violet-500/15 bg-violet-500/[0.02] p-4 sm:p-5">
+          <AdvancedEvidenceVisualSummary
+            sourceModules={
+              synthesis.sourceModules
+            }
+            evidenceTransactions={
+              synthesis.evidenceTransactions
+            }
+            fundingPaths={
+              synthesis.fundingPaths
+            }
+            graphNodes={
+              synthesis.graphNodes
+            }
+            graphEdges={
+              synthesis.graphEdges
+            }
+            graphDepth={
+              synthesis.graphDepth
+            }
+            coordinationSignals={
+              synthesis.coordinationSignals
+            }
+            multiHopCorroborations={
+              synthesis.multiHopCorroborations
+            }
+            deployments={
+              synthesis.deployments
+            }
+            fundingAvailable={
+              synthesis.fundingAvailable
+            }
+            graphAvailable={
+              synthesis.graphAvailable
+            }
+            coordinationAvailable={
+              synthesis.coordinationAvailable
+            }
+            deployerAvailable={
+              synthesis.deployerAvailable
+            }
+          />
         </div>
       ) : null}
     </section>
