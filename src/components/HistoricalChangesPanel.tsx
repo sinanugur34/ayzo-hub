@@ -347,6 +347,31 @@ function formatDate(
   );
 }
 
+type EvidenceChangeSummaryStatus =
+  | "loading"
+  | "locked"
+  | "no-baseline"
+  | "ready";
+
+function publishEvidenceChangeSummary(
+  status:
+    EvidenceChangeSummaryStatus,
+  changeCount:
+    number | null = null
+) {
+  window.dispatchEvent(
+    new CustomEvent(
+      "ayzo:evidence-change-summary",
+      {
+        detail: {
+          status,
+          changeCount,
+        },
+      }
+    )
+  );
+}
+
 export default function HistoricalChangesPanel({
   network,
   subjectType,
@@ -385,12 +410,20 @@ export default function HistoricalChangesPanel({
       if (
         !currentSnapshot
       ) {
+        publishEvidenceChangeSummary(
+          "no-baseline"
+        );
+
         setState(
           "no-baseline"
         );
 
         return;
       }
+
+      publishEvidenceChangeSummary(
+        "loading"
+      );
 
       setState(
         "loading"
@@ -446,6 +479,10 @@ export default function HistoricalChangesPanel({
           body?.code ===
             "PLAN_REQUIRED"
         ) {
+          publishEvidenceChangeSummary(
+            "locked"
+          );
+
           setState(
             "locked"
           );
@@ -465,6 +502,10 @@ export default function HistoricalChangesPanel({
           !body?.available ||
           !body.comparison
         ) {
+          publishEvidenceChangeSummary(
+            "no-baseline"
+          );
+
           setState(
             "no-baseline"
           );
@@ -481,6 +522,11 @@ export default function HistoricalChangesPanel({
 
         setComparison(
           body.comparison
+        );
+
+        publishEvidenceChangeSummary(
+          "ready",
+          body.comparison.changeCount
         );
 
         setState(
@@ -517,11 +563,11 @@ export default function HistoricalChangesPanel({
     return (
       <div className="mt-5 rounded-2xl border border-zinc-900 bg-black/20 p-4">
         <div className="text-[10px] font-medium tracking-[0.14em] text-violet-400">
-          HISTORICAL CHANGES
+          EVIDENCE CHANGE
         </div>
 
         <p className="mt-2 text-xs text-zinc-600">
-          Checking previous AYZO evidence…
+          Checking your latest saved evidence baseline…
         </p>
       </div>
     );
@@ -534,15 +580,15 @@ export default function HistoricalChangesPanel({
     return (
       <div className="mt-5 rounded-2xl border border-zinc-900 bg-black/20 p-4">
         <div className="text-[10px] font-medium tracking-[0.14em] text-violet-400">
-          PRO · HISTORICAL CHANGES
+          PRO · EVIDENCE CHANGE
         </div>
 
         <div className="mt-2 text-sm font-medium text-zinc-300">
-          Track what changed between analyses
+          See what changed since your last saved analysis
         </div>
 
         <p className="mt-2 text-xs leading-5 text-zinc-600">
-          Historical comparison is available with AYZO Pro and Advanced.
+          Evidence Change compares the current bounded evidence with your latest saved baseline. Available with AYZO Pro and Advanced.
         </p>
       </div>
     );
@@ -563,16 +609,16 @@ export default function HistoricalChangesPanel({
     return (
       <div className="mt-5 rounded-2xl border border-zinc-900 bg-black/20 p-4">
         <div className="text-[10px] font-medium tracking-[0.14em] text-violet-400">
-          HISTORICAL CHANGES
+          EVIDENCE CHANGE
         </div>
 
         <div className="mt-2 text-sm font-medium text-zinc-300">
-          No previous snapshot yet
+          Capture your first baseline
         </div>
 
         <p className="mt-2 text-xs leading-5 text-zinc-600">
-          Save this analysis. When you analyze the same subject again later,
-          AYZO can compare the new evidence with the saved baseline.
+          Save this analysis as a baseline. When you analyze the same subject again,
+          AYZO will surface evidence changes here.
         </p>
       </div>
     );
@@ -594,11 +640,11 @@ export default function HistoricalChangesPanel({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="text-[10px] font-medium tracking-[0.14em] text-violet-400">
-            PRO · HISTORICAL CHANGES
+            PRO · EVIDENCE CHANGE
           </div>
 
           <div className="mt-2 text-sm font-medium text-zinc-200">
-            Changes since previous analysis
+            Since your last saved analysis
           </div>
         </div>
 
@@ -622,7 +668,7 @@ export default function HistoricalChangesPanel({
       {!comparison.hasChanges ? (
         <div className="mt-4 rounded-xl border border-zinc-900 bg-zinc-950/60 p-4">
           <div className="text-xs text-zinc-400">
-            No tracked evidence changes were detected.
+            No tracked evidence changes were detected since the saved baseline.
           </div>
         </div>
       ) : (
