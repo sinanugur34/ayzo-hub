@@ -230,6 +230,22 @@ export default function AnalysisWorkspaceResearchTools({
       </summary>
 
       <div className="border-t border-[#26384f] p-4 sm:p-5">
+        <div className="mb-4 flex flex-col justify-between gap-3 rounded-2xl border border-violet-500/15 bg-violet-500/[0.035] px-4 py-4 sm:flex-row sm:items-center">
+          <div>
+            <div className="text-[10px] font-semibold tracking-[0.14em] text-violet-300">
+              QUICK RESEARCH ACTIONS
+            </div>
+
+            <p className="mt-1 text-[10px] leading-5 text-zinc-600">
+              Save, report or monitor first. Deeper investigation tools stay grouped in the full research workspace.
+            </p>
+          </div>
+
+          <span className="w-fit rounded-full border border-violet-500/15 bg-violet-500/[0.06] px-3 py-1.5 text-[8px] font-medium tracking-[0.12em] text-violet-300">
+            TOOLS PRESERVED
+          </span>
+        </div>
+
         {children}
       </div>
     </details>

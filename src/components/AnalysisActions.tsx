@@ -1205,6 +1205,27 @@ export default function AnalysisActions({
         </div>
       )}
 
+      <details
+        data-full-research-workspace
+        className="group mt-5 overflow-hidden rounded-2xl border border-violet-500/15 bg-black/20"
+      >
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 transition hover:bg-violet-500/[0.035]">
+          <div>
+            <div className="text-[10px] font-semibold tracking-[0.14em] text-violet-300">
+              OPEN FULL RESEARCH WORKSPACE
+            </div>
+
+            <div className="mt-1 text-[10px] leading-5 text-zinc-600">
+              Alerts · Cases · Evidence Locker · Labels · Ask AYZO · Evidence Change · Investigation Timeline
+            </div>
+          </div>
+
+          <span className="text-base text-zinc-500 transition-transform group-open:rotate-90">
+            ›
+          </span>
+        </summary>
+
+        <div className="border-t border-violet-500/10 p-4 sm:p-5">
       <SmartAlertQuickAdd
         network={network}
         subjectType={subjectType}
@@ -1267,6 +1288,8 @@ export default function AnalysisActions({
         subjectValue={subjectValue}
         currentSnapshot={analysisPayload}
       />
+        </div>
+      </details>
 
       {(reportError || report) && (
         <section className="mt-5 rounded-2xl border border-violet-500/20 bg-black/30 p-4 sm:p-5">

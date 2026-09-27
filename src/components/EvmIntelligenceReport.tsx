@@ -6,6 +6,8 @@ import AnalysisWorkspaceDetails from "@/components/AnalysisWorkspaceDetails";
 
 import AnalysisWorkspaceOverview from "@/components/AnalysisWorkspaceOverview";
 
+import AnalysisEvidenceSnapshot from "@/components/AnalysisEvidenceSnapshot";
+
 import AnalysisLimitCard from "@/components/AnalysisLimitCard";
 
 import WalletTrackRecordPanel from "@/components/WalletTrackRecord";
@@ -1605,7 +1607,151 @@ export default function EvmIntelligenceReport({
         }
       />
 
-      <AnalysisWorkspaceDetails>
+      <AnalysisWorkspaceDetails
+        summary={
+          <AnalysisEvidenceSnapshot
+            coverage={
+              coverageLabel(
+                data.coverage
+              )
+            }
+            coverageTone={
+              data.coverage
+            }
+            transactionCount={
+              data.activityTimeline
+                .events.length
+            }
+            fundingSourceCount={
+              funding
+                ? funding
+                    .fundingSourceCount
+                : null
+            }
+            moduleReadyCount={
+              data.moduleSummary
+                .complete +
+              data.moduleSummary
+                .limited
+            }
+            moduleTotal={
+              data.moduleSummary
+                .total
+            }
+            findings={
+              data.findings.slice(
+                0,
+                3
+              )
+            }
+            cards={[
+              {
+                title:
+                  "Asset & verification",
+
+                value:
+                  assetKindLabel(
+                    data.assetKind
+                  ),
+
+                detail:
+                  statusLabel(
+                    data.modules
+                      .assetVerification
+                      .status
+                  ),
+              },
+
+              {
+                title:
+                  "Activity snapshot",
+
+                value:
+                  `${data.activityTimeline.events.length} records`,
+
+                detail:
+                  relationships
+                    ? `${relationships.counterpartyCount} direct counterparties`
+                    : "Counterparty evidence unavailable",
+              },
+
+              {
+                title:
+                  "Funding snapshot",
+
+                value:
+                  funding
+                    ? `${funding.fundingSourceCount} sources`
+                    : "Unavailable",
+
+                detail:
+                  funding
+                    ? `${funding.uniqueFundingTransactionCount} evidence transaction(s)`
+                    : "No supported funding summary",
+              },
+
+              {
+                title:
+                  "Relationship graph",
+
+                value:
+                  graph
+                    ? `${graph.nodeCount} nodes · ${graph.edgeCount} edges`
+                    : "Unavailable",
+
+                detail:
+                  graph
+                    ? `${graph.maxDepthReached} hop(s) observed`
+                    : "No supported graph summary",
+              },
+            ]}
+            synthesis={
+              synthesis
+                ? {
+                    evidenceTransactions:
+                      formatCount(
+                        synthesis
+                          .evidenceTransactionCount
+                      ),
+
+                    fundingPaths:
+                      synthesis
+                        .funding
+                        .available
+                        ? formatCount(
+                            synthesis
+                              .funding
+                              .pathCount
+                          )
+                        : "Unavailable",
+
+                    graphDepth:
+                      synthesis
+                        .graph
+                        .available
+                        ? `${formatCount(
+                            synthesis
+                              .graph
+                              .maxDepthReached
+                          )} hop(s)`
+                        : "Unavailable",
+
+                    coordinationSignals:
+                      synthesis
+                        .coordination
+                        .available
+                        ? formatCount(
+                            synthesis
+                              .coordination
+                              .signalCount
+                          )
+                        : "Unavailable",
+                  }
+                : null
+            }
+          />
+        }
+      >
 
       <section className="overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-b from-violet-500/10 via-purple-500/5 to-zinc-950/80 shadow-2xl shadow-purple-950/10">
         <div className="p-6 sm:p-8">
@@ -1940,6 +2086,32 @@ export default function EvmIntelligenceReport({
               />
             </div>
 
+            <div className="mt-4 rounded-xl border border-violet-500/15 bg-violet-500/[0.035] px-4 py-3 text-[10px] leading-5 text-zinc-500">
+              Bounded evidence only · no ownership, identity, intent or
+              risk-score inference is introduced by this synthesis.
+            </div>
+
+            <details
+              data-full-synthesis
+              className="group mt-4 overflow-hidden rounded-xl border border-zinc-800 bg-black/20"
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 text-xs transition hover:bg-white/[0.02]">
+                <div>
+                  <div className="text-[9px] font-semibold tracking-[0.14em] text-violet-300">
+                    OPEN FULL SYNTHESIS
+                  </div>
+
+                  <div className="mt-1 text-[10px] text-zinc-600">
+                    Cross-module highlights and complete evidence limitation.
+                  </div>
+                </div>
+
+                <span className="text-base text-zinc-500 transition-transform group-open:rotate-90">
+                  ›
+                </span>
+              </summary>
+
+              <div className="border-t border-zinc-800 p-4">
             {synthesis
               .highlights
               .length > 0 ? (
@@ -1987,6 +2159,8 @@ export default function EvmIntelligenceReport({
                   .limitation
               }
             </p>
+              </div>
+            </details>
           </div>
         </section>
       ) : null}
