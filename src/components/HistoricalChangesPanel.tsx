@@ -66,10 +66,22 @@ type HistoricalResponse = {
   baseline?: {
     id: string;
     createdAt: string;
+
+    source?:
+      | "automatic"
+      | "saved";
   } | null;
 
   comparison?:
     Comparison | null;
+
+  tracking?: {
+    active?:
+      boolean;
+
+    captured?:
+      boolean;
+  };
 
   code?:
     string;
@@ -357,7 +369,9 @@ function publishEvidenceChangeSummary(
   status:
     EvidenceChangeSummaryStatus,
   changeCount:
-    number | null = null
+    number | null = null,
+  trackingActive:
+    boolean = false
 ) {
   window.dispatchEvent(
     new CustomEvent(
@@ -366,6 +380,7 @@ function publishEvidenceChangeSummary(
         detail: {
           status,
           changeCount,
+          trackingActive,
         },
       }
     )
@@ -400,6 +415,24 @@ export default function HistoricalChangesPanel({
   ] =
     useState<
       Comparison | null
+    >(null);
+
+  const [
+    trackingActive,
+    setTrackingActive,
+  ] =
+    useState(
+      false
+    );
+
+  const [
+    baselineSource,
+    setBaselineSource,
+  ] =
+    useState<
+      "automatic" |
+      "saved" |
+      null
     >(null);
 
   useEffect(() => {
@@ -473,6 +506,14 @@ export default function HistoricalChangesPanel({
           return;
         }
 
+        const automaticTracking =
+          body?.tracking
+            ?.active === true;
+
+        setTrackingActive(
+          automaticTracking
+        );
+
         if (
           response.status ===
             403 &&
@@ -480,7 +521,9 @@ export default function HistoricalChangesPanel({
             "PLAN_REQUIRED"
         ) {
           publishEvidenceChangeSummary(
-            "locked"
+            "locked",
+            null,
+            false
           );
 
           setState(
@@ -503,7 +546,9 @@ export default function HistoricalChangesPanel({
           !body.comparison
         ) {
           publishEvidenceChangeSummary(
-            "no-baseline"
+            "no-baseline",
+            null,
+            automaticTracking
           );
 
           setState(
@@ -520,13 +565,26 @@ export default function HistoricalChangesPanel({
           )
         );
 
+        setBaselineSource(
+          body.baseline
+            ?.source ===
+              "automatic"
+            ? "automatic"
+            : body.baseline
+                ?.source ===
+                  "saved"
+              ? "saved"
+              : null
+        );
+
         setComparison(
           body.comparison
         );
 
         publishEvidenceChangeSummary(
           "ready",
-          body.comparison.changeCount
+          body.comparison.changeCount,
+          automaticTracking
         );
 
         setState(
@@ -567,7 +625,7 @@ export default function HistoricalChangesPanel({
         </div>
 
         <p className="mt-2 text-xs text-zinc-600">
-          Checking your latest saved evidence baseline…
+          Checking your latest evidence baseline…
         </p>
       </div>
     );
@@ -584,11 +642,11 @@ export default function HistoricalChangesPanel({
         </div>
 
         <div className="mt-2 text-sm font-medium text-zinc-300">
-          See what changed since your last saved analysis
+          See what changed since your last analysis
         </div>
 
         <p className="mt-2 text-xs leading-5 text-zinc-600">
-          Evidence Change compares the current bounded evidence with your latest saved baseline. Available with AYZO Pro and Advanced.
+          Evidence Change automatically compares bounded evidence across your analyses. Available with AYZO Pro and Advanced.
         </p>
       </div>
     );
@@ -612,13 +670,24 @@ export default function HistoricalChangesPanel({
           EVIDENCE CHANGE
         </div>
 
-        <div className="mt-2 text-sm font-medium text-zinc-300">
-          Capture your first baseline
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <div className="text-sm font-medium text-zinc-300">
+            {trackingActive
+              ? "Tracking automatically"
+              : "Capture your first baseline"}
+          </div>
+
+          {trackingActive && (
+            <span className="rounded-full border border-emerald-500/20 bg-emerald-500/[0.07] px-2 py-1 text-[8px] font-semibold tracking-[0.12em] text-emerald-300">
+              ACTIVE
+            </span>
+          )}
         </div>
 
         <p className="mt-2 text-xs leading-5 text-zinc-600">
-          Save this analysis as a baseline. When you analyze the same subject again,
-          AYZO will surface evidence changes here.
+          {trackingActive
+            ? "AYZO captured this bounded evidence baseline automatically. Analyze the same subject again later to see what changed."
+            : "Save this analysis as a baseline. When you analyze the same subject again, AYZO will surface evidence changes here."}
         </p>
       </div>
     );
@@ -644,7 +713,7 @@ export default function HistoricalChangesPanel({
           </div>
 
           <div className="mt-2 text-sm font-medium text-zinc-200">
-            Since your last saved analysis
+            Since your last analysis
           </div>
         </div>
 
@@ -659,16 +728,28 @@ export default function HistoricalChangesPanel({
       </div>
 
       {baselineDate && (
-        <p className="mt-2 text-[10px] text-zinc-600">
-          Baseline saved{" "}
-          {baselineDate}
-        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-zinc-600">
+          <span>
+            {baselineSource ===
+              "automatic"
+              ? "Automatic baseline"
+              : "Saved baseline"}
+            {" · "}
+            {baselineDate}
+          </span>
+
+          {trackingActive && (
+            <span className="rounded-full border border-emerald-500/15 bg-emerald-500/[0.05] px-2 py-0.5 text-[8px] font-semibold tracking-[0.1em] text-emerald-300">
+              TRACKING
+            </span>
+          )}
+        </div>
       )}
 
       {!comparison.hasChanges ? (
         <div className="mt-4 rounded-xl border border-zinc-900 bg-zinc-950/60 p-4">
           <div className="text-xs text-zinc-400">
-            No tracked evidence changes were detected since the saved baseline.
+            No tracked evidence changes were detected since the previous baseline.
           </div>
         </div>
       ) : (

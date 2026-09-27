@@ -15,6 +15,11 @@ import {
 } from "@/lib/account/historicalChanges";
 
 import {
+  evidenceSnapshotDedupeBucket,
+  evidenceSnapshotFingerprint,
+} from "@/lib/account/evidenceSnapshots";
+
+import {
   isRecord,
   readRequiredString,
   readSubjectType,
@@ -29,12 +34,18 @@ import {
   planHasFeature,
 } from "@/lib/plans/registry";
 
+import {
+  createAdminClient,
+} from "@/lib/supabase/admin";
+
 export const dynamic =
   "force-dynamic";
 
 function noStoreJson(
-  body: unknown,
-  status = 200
+  body:
+    unknown,
+  status =
+    200
 ) {
   return NextResponse.json(
     body,
@@ -50,7 +61,8 @@ function noStoreJson(
 }
 
 export async function POST(
-  request: Request
+  request:
+    Request
 ) {
   if (
     requestTooLarge(
@@ -154,7 +166,9 @@ export async function POST(
   }
 
   let currentSnapshot:
-    unknown =
+    ReturnType<
+      typeof parseHistoricalSnapshot
+    > =
       null;
 
   if (
@@ -186,50 +200,96 @@ export async function POST(
       parsed;
   }
 
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        "saved_analyses"
-      )
-      .select(
-        "id,created_at,analysis_payload"
-      )
-      .eq(
-        "user_id",
-        userId
-      )
-      .eq(
-        "network",
-        network
-      )
-      .eq(
-        "subject_type",
-        subjectType
-      )
-      .eq(
-        "subject_value",
-        subjectValue
-      )
-      .not(
-        "analysis_payload",
-        "is",
-        null
-      )
-      .order(
-        "created_at",
-        {
-          ascending:
-            true,
-        }
-      )
-      .limit(
-        20
-      );
+  const admin =
+    createAdminClient();
 
-  if (error) {
+  const [
+    automaticResult,
+    savedResult,
+  ] =
+    await Promise.all([
+      admin
+        .from(
+          "evidence_snapshots"
+        )
+        .select(`
+          id,
+          created_at,
+          snapshot,
+          snapshot_hash,
+          dedupe_bucket
+        `)
+        .eq(
+          "user_id",
+          userId
+        )
+        .eq(
+          "network",
+          network
+        )
+        .eq(
+          "subject_type",
+          subjectType
+        )
+        .eq(
+          "subject_value",
+          subjectValue
+        )
+        .order(
+          "captured_at",
+          {
+            ascending:
+              true,
+          }
+        )
+        .limit(
+          20
+        ),
+
+      supabase
+        .from(
+          "saved_analyses"
+        )
+        .select(
+          "id,created_at,analysis_payload"
+        )
+        .eq(
+          "user_id",
+          userId
+        )
+        .eq(
+          "network",
+          network
+        )
+        .eq(
+          "subject_type",
+          subjectType
+        )
+        .eq(
+          "subject_value",
+          subjectValue
+        )
+        .not(
+          "analysis_payload",
+          "is",
+          null
+        )
+        .order(
+          "created_at",
+          {
+            ascending:
+              true,
+          }
+        )
+        .limit(
+          20
+        ),
+    ]);
+
+  if (
+    automaticResult.error &&
+    savedResult.error
+  ) {
     return noStoreJson(
       {
         error:
@@ -239,9 +299,67 @@ export async function POST(
     );
   }
 
+  const currentHash =
+    currentSnapshot
+      ? evidenceSnapshotFingerprint(
+          currentSnapshot
+        )
+      : null;
+
+  const currentBucket =
+    evidenceSnapshotDedupeBucket();
+
+  const automaticSnapshots =
+    !automaticResult.error &&
+    Array.isArray(
+      automaticResult.data
+    )
+      ? automaticResult.data.flatMap(
+          row => {
+            /*
+             * HistoricalChangesPanel may
+             * already have persisted the
+             * currently rendered analysis.
+             * Keep it represented as NOW,
+             * not twice in the timeline.
+             */
+            if (
+              currentHash &&
+              row.snapshot_hash ===
+                currentHash &&
+              Number(
+                row.dedupe_bucket
+              ) ===
+                currentBucket
+            ) {
+              return [];
+            }
+
+            return [
+              {
+                id:
+                  row.id,
+
+                createdAt:
+                  row.created_at,
+
+                analysisPayload:
+                  row.snapshot,
+
+                kind:
+                  "automatic_baseline" as const,
+              },
+            ];
+          }
+        )
+      : [];
+
   const savedSnapshots =
-    Array.isArray(data)
-      ? data.map(
+    !savedResult.error &&
+    Array.isArray(
+      savedResult.data
+    )
+      ? savedResult.data.map(
           row => ({
             id:
               row.id,
@@ -251,6 +369,9 @@ export async function POST(
 
             analysisPayload:
               row.analysis_payload,
+
+            kind:
+              "saved_analysis" as const,
           })
         )
       : [];
@@ -258,7 +379,12 @@ export async function POST(
   const timeline =
     buildInvestigationTimeline({
       network,
-      savedSnapshots,
+
+      savedSnapshots: [
+        ...automaticSnapshots,
+        ...savedSnapshots,
+      ],
+
       currentSnapshot,
     });
 

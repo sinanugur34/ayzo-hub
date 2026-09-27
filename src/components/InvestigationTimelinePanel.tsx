@@ -34,6 +34,7 @@ type TimelineEntry = {
 
   kind:
     | "saved_analysis"
+    | "automatic_baseline"
     | "current_analysis";
 
   capturedAt:
@@ -61,6 +62,12 @@ type InvestigationTimeline = {
   status:
     | "ready"
     | "no-history";
+
+  historySnapshotCount:
+    number;
+
+  automaticSnapshotCount:
+    number;
 
   savedSnapshotCount:
     number;
@@ -341,7 +348,7 @@ export default function InvestigationTimelinePanel({
         </div>
 
         <p className="mt-2 text-xs text-zinc-600">
-          Building your saved research chronology…
+          Building your evidence chronology…
         </p>
       </div>
     );
@@ -358,7 +365,7 @@ export default function InvestigationTimelinePanel({
         </div>
 
         <div className="mt-2 text-sm font-medium text-zinc-300">
-          Follow an investigation across saved analyses
+          Follow an investigation across evidence history
         </div>
 
         <p className="mt-2 text-xs leading-5 text-zinc-600">
@@ -387,12 +394,12 @@ export default function InvestigationTimelinePanel({
         </div>
 
         <div className="mt-2 text-sm font-medium text-zinc-300">
-          No saved investigation history yet
+          No evidence history yet
         </div>
 
         <p className="mt-2 text-xs leading-5 text-zinc-600">
-          Save this analysis to establish the first research milestone.
-          Future saved analyses can then be compared chronologically.
+          Automatic tracking is ready. Analyze this subject again later
+          to build a bounded evidence chronology automatically.
         </p>
       </div>
     );
@@ -411,17 +418,17 @@ export default function InvestigationTimelinePanel({
           </div>
 
           <p className="mt-1 text-[10px] leading-5 text-zinc-600">
-            Saved AYZO analyses for this exact subject, newest first.
+            Automatic baselines and Saved Analyses for this exact subject, newest first.
           </p>
         </div>
 
         <div className="rounded-full border border-zinc-800 px-3 py-1 text-[10px] text-zinc-500">
-          {timeline.savedSnapshotCount}
+          {timeline.historySnapshotCount}
           {" "}
-          {timeline.savedSnapshotCount ===
+          {timeline.historySnapshotCount ===
           1
-            ? "SAVED SNAPSHOT"
-            : "SAVED SNAPSHOTS"}
+            ? "HISTORY POINT"
+            : "HISTORY POINTS"}
         </div>
       </div>
 
@@ -461,7 +468,10 @@ export default function InvestigationTimelinePanel({
                     {entry.kind ===
                     "current_analysis"
                       ? "NOW"
-                      : "✓"}
+                      : entry.kind ===
+                          "automatic_baseline"
+                        ? "A"
+                        : "✓"}
                   </div>
 
                   <div className="min-w-0 flex-1">
@@ -471,7 +481,10 @@ export default function InvestigationTimelinePanel({
                           {entry.kind ===
                           "current_analysis"
                             ? "Current analysis"
-                            : "Saved analysis"}
+                            : entry.kind ===
+                                "automatic_baseline"
+                              ? "Automatic baseline"
+                              : "Saved analysis"}
                         </div>
 
                         <div className="mt-1 text-[10px] text-zinc-600">
@@ -545,15 +558,21 @@ export default function InvestigationTimelinePanel({
                     ) : (
                       <div className="mt-3 text-[10px] leading-5 text-zinc-600">
                         {entry.kind ===
-                          "saved_analysis"
-                          ? "Baseline or no tracked evidence change from the previous saved analysis."
-                          : "No tracked evidence change from the latest saved analysis."}
+                          "current_analysis"
+                          ? "No tracked evidence change from the latest baseline."
+                          : entry.kind ===
+                              "automatic_baseline"
+                            ? "Automatic baseline or no tracked evidence change from the previous history point."
+                            : "Saved baseline or no tracked evidence change from the previous history point."}
                       </div>
                     )}
 
                     {entry.savedAt && (
                       <div className="mt-3 text-[9px] text-zinc-700">
-                        Saved{" "}
+                        {entry.kind ===
+                          "automatic_baseline"
+                          ? "Captured"
+                          : "Saved"}{" "}
                         {formatDate(
                           entry.savedAt
                         )}

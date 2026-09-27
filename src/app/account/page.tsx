@@ -14,6 +14,7 @@ import DeviceSecurityPanel from "@/components/account/DeviceSecurityPanel";
 import CasesPanel from "@/components/account/CasesPanel";
 import EvidenceLockerPanel from "@/components/account/EvidenceLockerPanel";
 import CompareInvestigationsPanel from "@/components/account/CompareInvestigationsPanel";
+import EvidenceHistoryPanel from "@/components/account/EvidenceHistoryPanel";
 import Link from "next/link";
 
 import {
@@ -79,6 +80,11 @@ export default async function AccountPage() {
         feature
       );
 
+  const evidenceHistoryEnabled =
+    accountFeatureEnabled(
+      "historicalChanges"
+    );
+
   const [
     savedResult,
     watchlistsResult,
@@ -140,6 +146,45 @@ export default async function AccountPage() {
     watchlistsResult.data ??
     [];
 
+  const evidenceResult =
+    evidenceHistoryEnabled
+      ? await supabase
+          .from(
+            "evidence_snapshots"
+          )
+          .select(`
+            id,
+            network,
+            subject_type,
+            subject_value,
+            captured_at,
+            created_at
+          `)
+          .eq(
+            "user_id",
+            userId
+          )
+          .order(
+            "captured_at",
+            {
+              ascending:
+                false,
+            }
+          )
+          .limit(
+            12
+          )
+      : {
+          data:
+            [],
+          error:
+            null,
+        };
+
+  const evidenceSnapshots =
+    evidenceResult.data ??
+    [];
+
   return (
     <main className="min-h-screen bg-black px-4 py-12 text-white">
       <div className="mx-auto w-full max-w-5xl">
@@ -190,6 +235,15 @@ export default async function AccountPage() {
               Plan capabilities
             </a>
 
+            {evidenceHistoryEnabled && (
+              <a
+                href="#evidence-history"
+                className="rounded-full border border-violet-500/15 bg-violet-500/[0.04] px-3 py-1.5 text-[10px] font-medium text-violet-300 transition hover:bg-violet-500/[0.08]"
+              >
+                Evidence history
+              </a>
+            )}
+
             <a
               href="#saved-analyses"
               className="rounded-full border border-zinc-800 bg-black/30 px-3 py-1.5 text-[10px] font-medium text-zinc-500 transition hover:border-zinc-700 hover:text-zinc-200"
@@ -229,6 +283,19 @@ export default async function AccountPage() {
             entitlement.planId
           }
         />
+
+        {evidenceHistoryEnabled && (
+          <EvidenceHistoryPanel
+            snapshots={
+              evidenceSnapshots
+            }
+            unavailable={
+              Boolean(
+                evidenceResult.error
+              )
+            }
+          />
+        )}
 
         <div className="mt-5 grid gap-5 lg:grid-cols-2">
           <section
