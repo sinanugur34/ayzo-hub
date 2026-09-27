@@ -29,7 +29,12 @@ test(
 
     assert.match(
       migration,
-      /user_id = auth\.uid\(\)/
+      /user_id = \(select auth\.uid\(\)\)/
+    );
+
+    assert.doesNotMatch(
+      migration,
+      /= auth\.uid\(\)/
     );
   }
 );

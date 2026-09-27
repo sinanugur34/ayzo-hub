@@ -115,11 +115,11 @@ on public.evidence_snapshots
 for select
 to authenticated
 using (
-  user_id = auth.uid()
+  user_id = (select auth.uid())
   and exists (
     select 1
     from public.subscriptions s
-    where s.user_id = auth.uid()
+    where s.user_id = (select auth.uid())
       and s.plan_id in (
         'pro',
         'advanced'
