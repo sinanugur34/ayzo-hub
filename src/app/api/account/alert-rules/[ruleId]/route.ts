@@ -23,6 +23,22 @@ import {
   planHasFeature,
 } from "@/lib/plans/registry";
 
+import {
+  classifySmartAlertRuntime,
+} from "@/lib/alerts/liveSupport";
+
+import {
+  isResendAlertProviderReady,
+} from "@/lib/alerts/resendProvider";
+
+import {
+  isAlertDeliveryEnabled,
+} from "@/lib/alerts/deliveryPolicy";
+
+import {
+  isAlertSchedulerEnabled,
+} from "@/lib/alerts/schedulerPolicy";
+
 export const dynamic =
   "force-dynamic";
 
@@ -219,12 +235,62 @@ export async function PATCH(
     );
   }
 
+  const runtimeStatus =
+    classifySmartAlertRuntime({
+      watchlistId:
+        data.watchlist_id,
+
+      network:
+        data.network,
+
+      subjectType:
+        data.subject_type,
+
+      ruleType:
+        data.rule_type,
+    });
+
+  const schedulerReady =
+    isAlertSchedulerEnabled(
+      process.env
+        .AYZO_ALERT_SCHEDULER_ENABLED
+    );
+
+  const deliveryReady =
+    schedulerReady &&
+    isAlertDeliveryEnabled(
+      process.env
+        .AYZO_ALERT_DELIVERY_ENABLED
+    ) &&
+    isResendAlertProviderReady();
+
   return noStoreJson({
-    rule:
-      data,
+    rule: {
+      ...data,
+
+      runtimeStatus,
+
+      evaluationLive:
+        runtimeStatus ===
+          "live" &&
+        schedulerReady,
+
+      deliveryLive:
+        runtimeStatus ===
+          "live" &&
+        deliveryReady,
+    },
+
+    monitoringLive:
+      schedulerReady,
 
     deliveryLive:
-      false,
+      runtimeStatus ===
+        "live" &&
+      deliveryReady,
+
+    foundationStatus:
+      "smart_alerts_v2",
   });
 }
 

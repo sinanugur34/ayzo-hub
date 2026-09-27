@@ -2,11 +2,19 @@
 
 import {
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
+import {
+  SMART_ALERT_NETWORK_OPTIONS,
+  getLiveSmartAlertRuleTypes,
+  type SmartAlertRuntimeStatus,
+} from "@/lib/alerts/liveSupport";
+
 type AlertRule = {
-  id: string;
+  id:
+    string;
 
   watchlist_id:
     string | null;
@@ -23,6 +31,12 @@ type AlertRule = {
   rule_type:
     string;
 
+  rule_config:
+    Record<
+      string,
+      unknown
+    > | null;
+
   delivery_channel:
     string;
 
@@ -34,11 +48,21 @@ type AlertRule = {
 
   updated_at:
     string;
-};
 
-type Watchlist = {
-  id: string;
-  name: string;
+  runtimeStatus:
+    SmartAlertRuntimeStatus;
+
+  evaluationLive:
+    boolean;
+
+  deliveryLive:
+    boolean;
+
+  lastCheckedAt:
+    string | null;
+
+  lastEvidenceChangeAt:
+    string | null;
 };
 
 const ruleLabels:
@@ -50,21 +74,105 @@ const ruleLabels:
     "New Activity",
 
   funding_movement:
-    "Funding Movement",
+    "Funding Changed",
 
   relationship_change:
-    "Relationship Change",
+    "Relationships Changed",
 
   contract_activity:
-    "Contract Activity",
+    "Contract / Deployment Changed",
 };
 
-const ruleOptions = [
-  "new_activity",
-  "funding_movement",
-  "relationship_change",
-  "contract_activity",
-] as const;
+function shortSubject(
+  value:
+    string | null
+) {
+  if (!value) {
+    return "Watchlist definition";
+  }
+
+  if (
+    value.length <=
+    30
+  ) {
+    return value;
+  }
+
+  return `${value.slice(
+    0,
+    14
+  )}…${value.slice(
+    -10
+  )}`;
+}
+
+function formatDate(
+  value:
+    string | null
+) {
+  if (!value) {
+    return "Not checked yet";
+  }
+
+  const date =
+    new Date(
+      value
+    );
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return "Unavailable";
+  }
+
+  return new Intl.DateTimeFormat(
+    "en-US",
+    {
+      month:
+        "short",
+
+      day:
+        "numeric",
+
+      hour:
+        "2-digit",
+
+      minute:
+        "2-digit",
+    }
+  ).format(
+    date
+  );
+}
+
+function runtimeLabel(
+  rule:
+    Pick<
+      AlertRule,
+      "runtimeStatus" |
+      "evaluationLive"
+    >
+) {
+  if (
+    rule.runtimeStatus ===
+    "definition_only"
+  ) {
+    return "DEFINITION ONLY";
+  }
+
+  if (
+    rule.runtimeStatus ===
+    "unsupported"
+  ) {
+    return "NOT LIVE";
+  }
+
+  return rule.evaluationLive
+    ? "LIVE"
+    : "PAUSED";
+}
 
 export default function AlertRulesPanel() {
   const [
@@ -76,16 +184,20 @@ export default function AlertRulesPanel() {
     >([]);
 
   const [
-    watchlists,
-    setWatchlists,
-  ] =
-    useState<
-      Watchlist[]
-    >([]);
-
-  const [
     canManage,
     setCanManage,
+  ] =
+    useState(false);
+
+  const [
+    monitoringLive,
+    setMonitoringLive,
+  ] =
+    useState(false);
+
+  const [
+    deliveryLive,
+    setDeliveryLive,
   ] =
     useState(false);
 
@@ -118,8 +230,37 @@ export default function AlertRulesPanel() {
     >(null);
 
   const [
-    watchlistId,
-    setWatchlistId,
+    network,
+    setNetwork,
+  ] =
+    useState(
+      SMART_ALERT_NETWORK_OPTIONS
+        .find(
+          item =>
+            item.id ===
+            "ethereum"
+        )
+        ?.id ??
+      SMART_ALERT_NETWORK_OPTIONS[
+        0
+      ]?.id ??
+      "bitcoin"
+    );
+
+  const [
+    subjectType,
+    setSubjectType,
+  ] =
+    useState<
+      "wallet" |
+      "token"
+    >(
+      "wallet"
+    );
+
+  const [
+    subjectValue,
+    setSubjectValue,
   ] =
     useState("");
 
@@ -127,13 +268,49 @@ export default function AlertRulesPanel() {
     ruleType,
     setRuleType,
   ] =
-    useState<
-      (
-        typeof ruleOptions
-      )[number]
-    >(
+    useState(
       "new_activity"
     );
+
+  const selectedNetwork =
+    SMART_ALERT_NETWORK_OPTIONS
+      .find(
+        item =>
+          item.id ===
+          network
+      );
+
+  const effectiveSubjectType =
+    selectedNetwork
+      ?.family ===
+      "bitcoin"
+      ? "wallet"
+      : subjectType;
+
+  const availableRuleTypes =
+    getLiveSmartAlertRuleTypes(
+      network,
+      effectiveSubjectType
+    );
+
+  /*
+   * Do not synchronize this derived value
+   * through an effect. If a network or
+   * subject change makes the selected rule
+   * invalid, render and submit the first
+   * live supported rule directly.
+   */
+  const effectiveRuleType =
+    availableRuleTypes.some(
+      option =>
+        option ===
+        ruleType
+    )
+      ? ruleType
+      : availableRuleTypes[
+          0
+        ] ??
+        "new_activity";
 
   useEffect(
     () => {
@@ -142,43 +319,29 @@ export default function AlertRulesPanel() {
 
       async function load() {
         try {
-          const [
-            alertResponse,
-            watchlistResponse,
-          ] =
-            await Promise.all([
-              fetch(
-                "/api/account/alert-rules",
-                {
-                  cache:
-                    "no-store",
-                }
-              ),
+          const response =
+            await fetch(
+              "/api/account/alert-rules",
+              {
+                cache:
+                  "no-store",
 
-              fetch(
-                "/api/account/watchlists",
-                {
-                  cache:
-                    "no-store",
-                }
-              ),
-            ]);
+                credentials:
+                  "same-origin",
+              }
+            );
 
-          const alertBody =
-            await alertResponse
-              .json();
+          const body =
+            await response
+              .json()
+              .catch(
+                () => null
+              );
 
-          const watchlistBody =
-            await watchlistResponse
-              .json();
-
-          if (
-            !alertResponse.ok
-          ) {
+          if (!response.ok) {
             throw new Error(
-              alertBody
-                ?.error ??
-                "Unable to load alert rules."
+              body?.error ??
+              "Unable to load Smart Alerts."
             );
           }
 
@@ -188,26 +351,25 @@ export default function AlertRulesPanel() {
 
           setRules(
             Array.isArray(
-              alertBody
-                ?.rules
+              body?.rules
             )
-              ? alertBody.rules
+              ? body.rules
               : []
           );
 
           setCanManage(
-            alertBody
-              ?.canManage ===
-              true
+            body?.canManage ===
+            true
           );
 
-          setWatchlists(
-            Array.isArray(
-              watchlistBody
-                ?.watchlists
-            )
-              ? watchlistBody.watchlists
-              : []
+          setMonitoringLive(
+            body?.monitoringLive ===
+            true
+          );
+
+          setDeliveryLive(
+            body?.deliveryLive ===
+            true
           );
         } catch (
           caught
@@ -217,7 +379,7 @@ export default function AlertRulesPanel() {
               caught instanceof
                 Error
                 ? caught.message
-                : "Unable to load alert rules."
+                : "Unable to load Smart Alerts."
             );
           }
         } finally {
@@ -240,9 +402,16 @@ export default function AlertRulesPanel() {
   );
 
   async function createRule() {
+    const target =
+      subjectValue
+        .trim();
+
     if (
-      !watchlistId ||
-      busy
+      !target ||
+      busy ||
+      availableRuleTypes
+        .length ===
+        0
     ) {
       return;
     }
@@ -259,6 +428,9 @@ export default function AlertRulesPanel() {
             method:
               "POST",
 
+            credentials:
+              "same-origin",
+
             headers: {
               "Content-Type":
                 "application/json",
@@ -266,20 +438,49 @@ export default function AlertRulesPanel() {
 
             body:
               JSON.stringify({
-                watchlistId,
-                ruleType,
+                watchlistId:
+                  null,
+
+                network,
+
+                subjectType:
+                  effectiveSubjectType,
+
+                subjectValue:
+                  target,
+
+                ruleType:
+                  effectiveRuleType,
+
+                enabled:
+                  true,
               }),
           }
         );
 
       const body =
         await response
-          .json();
+          .json()
+          .catch(
+            () => null
+          );
+
+      if (
+        response.status ===
+          409 &&
+        body?.rule
+      ) {
+        setNotice(
+          "This subject is already monitored with that Smart Alert."
+        );
+
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(
           body?.error ??
-            "Unable to create alert rule."
+          "Unable to create Smart Alert."
         );
       }
 
@@ -290,8 +491,23 @@ export default function AlertRulesPanel() {
         ]
       );
 
+      setSubjectValue("");
+
+      setMonitoringLive(
+        body?.monitoringLive ===
+        true
+      );
+
+      setDeliveryLive(
+        body?.deliveryLive ===
+        true
+      );
+
       setNotice(
-        "Alert rule saved. AYZO will evaluate enabled supported rules on the scheduled monitoring cycle and send email when a supported alert condition is detected."
+        body?.monitoringLive ===
+          true
+          ? "Smart Alert enabled. AYZO will evaluate supported evidence on the scheduled monitoring cycle."
+          : "Smart Alert saved. Scheduled monitoring is currently paused."
       );
     } catch (
       caught
@@ -300,7 +516,7 @@ export default function AlertRulesPanel() {
         caught instanceof
           Error
           ? caught.message
-          : "Unable to create alert rule."
+          : "Unable to create Smart Alert."
       );
     } finally {
       setBusy(false);
@@ -330,6 +546,9 @@ export default function AlertRulesPanel() {
             method:
               "PATCH",
 
+            credentials:
+              "same-origin",
+
             headers: {
               "Content-Type":
                 "application/json",
@@ -345,12 +564,18 @@ export default function AlertRulesPanel() {
 
       const body =
         await response
-          .json();
+          .json()
+          .catch(
+            () => null
+          );
 
-      if (!response.ok) {
+      if (
+        !response.ok ||
+        !body?.rule
+      ) {
         throw new Error(
           body?.error ??
-            "Unable to update alert rule."
+          "Unable to update Smart Alert."
         );
       }
 
@@ -360,7 +585,10 @@ export default function AlertRulesPanel() {
             item =>
               item.id ===
                 rule.id
-                ? body.rule
+                ? {
+                    ...item,
+                    ...body.rule,
+                  }
                 : item
           )
       );
@@ -371,7 +599,7 @@ export default function AlertRulesPanel() {
         caught instanceof
           Error
           ? caught.message
-          : "Unable to update alert rule."
+          : "Unable to update Smart Alert."
       );
     } finally {
       setBusy(false);
@@ -400,17 +628,23 @@ export default function AlertRulesPanel() {
           {
             method:
               "DELETE",
+
+            credentials:
+              "same-origin",
           }
         );
 
       const body =
         await response
-          .json();
+          .json()
+          .catch(
+            () => null
+          );
 
       if (!response.ok) {
         throw new Error(
           body?.error ??
-            "Unable to delete alert rule."
+          "Unable to delete Smart Alert."
         );
       }
 
@@ -429,274 +663,539 @@ export default function AlertRulesPanel() {
         caught instanceof
           Error
           ? caught.message
-          : "Unable to delete alert rule."
+          : "Unable to delete Smart Alert."
       );
     } finally {
       setBusy(false);
     }
   }
 
-  function watchlistName(
-    id:
-      string | null
-  ) {
-    if (!id) {
-      return "Direct subject";
-    }
-
-    return (
-      watchlists.find(
-        item =>
-          item.id === id
-      )?.name ??
-      "Watchlist"
+  const liveRules =
+    rules.filter(
+      rule =>
+        rule.evaluationLive &&
+        rule.enabled
     );
-  }
+
+  const definitionRules =
+    rules.filter(
+      rule =>
+        rule.runtimeStatus ===
+        "definition_only"
+    );
+
+  const latestCheckedAt =
+    useMemo(
+      () => {
+        const timestamps =
+          rules
+            .map(
+              rule =>
+                rule.lastCheckedAt
+            )
+            .filter(
+              (
+                value
+              ): value is string =>
+                typeof value ===
+                "string"
+            )
+            .sort(
+              (
+                left,
+                right
+              ) =>
+                Date.parse(
+                  right
+                ) -
+                Date.parse(
+                  left
+                )
+            );
+
+        return (
+          timestamps[0] ??
+          null
+        );
+      },
+      [
+        rules,
+      ]
+    );
 
   return (
-    <section className="mt-5 rounded-3xl border border-violet-500/20 bg-zinc-950/60 p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="text-xs font-medium tracking-[0.16em] text-violet-300">
-            MONITORING
+    <section className="mt-5 overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-br from-violet-500/[0.08] via-zinc-950/80 to-black">
+      <div className="p-6 sm:p-7">
+        <div className="flex flex-wrap items-start justify-between gap-5">
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300">
+              SMART ALERTS
+            </div>
+
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-zinc-100">
+              Evidence monitoring
+            </h2>
+
+            <p className="mt-2 max-w-2xl text-xs leading-5 text-zinc-500">
+              Monitor direct Bitcoin and EVM subjects for new activity, funding evidence, relationship evidence and supported contract or authority changes.
+            </p>
           </div>
 
-          <h2 className="mt-2 text-xl font-semibold">
-            Alert Rules
-          </h2>
+          <span
+            className={
+              monitoringLive
+                ? "rounded-full border border-emerald-500/20 bg-emerald-500/[0.07] px-3 py-1.5 text-[9px] font-semibold tracking-[0.12em] text-emerald-300"
+                : "rounded-full border border-amber-500/20 bg-amber-500/[0.06] px-3 py-1.5 text-[9px] font-semibold tracking-[0.12em] text-amber-300"
+            }
+          >
+            {monitoringLive
+              ? "LIVE"
+              : "PAUSED"}
+          </span>
+        </div>
 
-          <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-600">
-            Save evidence-monitoring rule definitions for AYZO watchlists.
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-zinc-800/80 bg-black/30 p-4">
+            <div className="text-[9px] uppercase tracking-[0.13em] text-zinc-600">
+              Monitoring
+            </div>
+
+            <div className="mt-2 text-lg font-semibold text-zinc-200">
+              {liveRules.length}
+            </div>
+
+            <div className="mt-1 text-[9px] text-zinc-600">
+              active direct rules
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-zinc-800/80 bg-black/30 p-4">
+            <div className="text-[9px] uppercase tracking-[0.13em] text-zinc-600">
+              Last checked
+            </div>
+
+            <div className="mt-2 text-xs font-medium text-zinc-300">
+              {formatDate(
+                latestCheckedAt
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-zinc-800/80 bg-black/30 p-4">
+            <div className="text-[9px] uppercase tracking-[0.13em] text-zinc-600">
+              Email delivery
+            </div>
+
+            <div
+              className={
+                deliveryLive
+                  ? "mt-2 text-xs font-medium text-emerald-300"
+                  : "mt-2 text-xs font-medium text-amber-300"
+              }
+            >
+              {deliveryLive
+                ? "Active"
+                : "Unavailable"}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.04] p-4">
+          <div
+            className={
+              monitoringLive
+                ? "text-xs font-medium text-emerald-300"
+                : "text-xs font-medium text-amber-300"
+            }
+          >
+            {monitoringLive
+              ? "Scheduled evidence monitoring active"
+              : "Scheduled evidence monitoring paused"}
+          </div>
+
+          <p className="mt-2 text-[10px] leading-5 text-zinc-600">
+            {monitoringLive
+              ? "AYZO evaluates enabled supported rules on the scheduled monitoring cycle. The first successful observation establishes a baseline; only newly supported evidence can create an alert event."
+              : "Your Smart Alert definitions remain saved, but scheduled evaluation is not currently active."}
+            {" "}
+            Browser and Telegram notifications are not currently supported.
           </p>
         </div>
 
-        <span className="rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1 text-[9px] font-medium tracking-[0.12em] text-emerald-300">
-          LIVE
-        </span>
-      </div>
+        {loading ? (
+          <p className="mt-5 text-xs text-zinc-600">
+            Loading Smart Alerts…
+          </p>
+        ) : (
+          <>
+            {canManage ? (
+              <div className="mt-5 rounded-2xl border border-zinc-900 bg-black/25 p-4">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                  New direct Smart Alert
+                </div>
 
-      <div className="mt-5 rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-4">
-        <div className="text-xs font-medium text-emerald-300">
-          Monitoring & email delivery active
-        </div>
-
-        <p className="mt-2 text-[10px] leading-5 text-zinc-600">
-          AYZO checks enabled monitoring rules on a scheduled basis and sends email notifications when supported alert conditions are detected. Browser and Telegram notifications are not currently supported.
-        </p>
-      </div>
-
-      {loading ? (
-        <p className="mt-5 text-xs text-zinc-600">
-          Loading alert rules…
-        </p>
-      ) : (
-        <>
-          {canManage ? (
-            <div className="mt-5 grid gap-3 rounded-2xl border border-zinc-900 bg-black/20 p-4 md:grid-cols-[1fr_1fr_auto]">
-              <select
-                value={
-                  watchlistId
-                }
-                onChange={
-                  event =>
-                    setWatchlistId(
-                      event
-                        .target
-                        .value
-                    )
-                }
-                className="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-xs text-zinc-300 outline-none"
-              >
-                <option value="">
-                  Select watchlist
-                </option>
-
-                {watchlists.map(
-                  watchlist => (
-                    <option
-                      key={
-                        watchlist.id
-                      }
-                      value={
-                        watchlist.id
-                      }
-                    >
-                      {
-                        watchlist.name
-                      }
-                    </option>
-                  )
-                )}
-              </select>
-
-              <select
-                value={
-                  ruleType
-                }
-                onChange={
-                  event =>
-                    setRuleType(
-                      event
-                        .target
-                        .value as
-                        (
-                          typeof ruleOptions
-                        )[number]
-                    )
-                }
-                className="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-xs text-zinc-300 outline-none"
-              >
-                {ruleOptions.map(
-                  option => (
-                    <option
-                      key={
-                        option
-                      }
-                      value={
-                        option
-                      }
-                    >
-                      {
-                        ruleLabels[
-                          option
-                        ]
-                      }
-                    </option>
-                  )
-                )}
-              </select>
-
-              <button
-                type="button"
-                disabled={
-                  busy ||
-                  !watchlistId
-                }
-                onClick={
-                  createRule
-                }
-                className="rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-2.5 text-xs font-medium text-violet-300 transition hover:bg-violet-500/15 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Create Rule
-              </button>
-            </div>
-          ) : (
-            <div className="mt-5 rounded-2xl border border-zinc-900 bg-black/20 p-5">
-              <div className="text-sm font-medium text-zinc-300">
-                Paid alert-rule management
-              </div>
-
-              <p className="mt-2 text-xs leading-5 text-zinc-600">
-                Creating, enabling, disabling and deleting monitoring rules requires an active AYZO Pro or Advanced entitlement.
-              </p>
-            </div>
-          )}
-
-          {error && (
-            <p className="mt-4 text-xs text-rose-300">
-              {error}
-            </p>
-          )}
-
-          {notice && (
-            <p className="mt-4 text-xs text-emerald-300">
-              {notice}
-            </p>
-          )}
-
-          {rules.length ===
-          0 ? (
-            <div className="mt-5 rounded-2xl border border-dashed border-zinc-800 p-5">
-              <div className="text-sm text-zinc-300">
-                No alert rules yet.
-              </div>
-
-              <p className="mt-2 text-xs leading-5 text-zinc-600">
-                Monitoring definitions will appear here.
-              </p>
-            </div>
-          ) : (
-            <div className="mt-5 space-y-2">
-              {rules.map(
-                rule => (
-                  <div
-                    key={
-                      rule.id
+                <div className="mt-3 grid gap-3 lg:grid-cols-[0.9fr_0.8fr_1.5fr_1.15fr_auto]">
+                  <select
+                    value={
+                      network
                     }
-                    className="rounded-2xl border border-zinc-900 bg-black/30 p-4"
+                    onChange={
+                      event => {
+                        setNetwork(
+                          event
+                            .target
+                            .value
+                        );
+
+                        const selected =
+                          SMART_ALERT_NETWORK_OPTIONS
+                            .find(
+                              item =>
+                                item.id ===
+                                event
+                                  .target
+                                  .value
+                            );
+
+                        if (
+                          selected
+                            ?.family ===
+                          "bitcoin"
+                        ) {
+                          setSubjectType(
+                            "wallet"
+                          );
+                        }
+                      }
+                    }
+                    className="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-xs text-zinc-300 outline-none focus:border-violet-500"
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <div className="text-sm font-medium text-zinc-200">
+                    {SMART_ALERT_NETWORK_OPTIONS.map(
+                      option => (
+                        <option
+                          key={
+                            option.id
+                          }
+                          value={
+                            option.id
+                          }
+                        >
+                          {option.name}
+                        </option>
+                      )
+                    )}
+                  </select>
+
+                  <select
+                    value={
+                      effectiveSubjectType
+                    }
+                    disabled={
+                      selectedNetwork
+                        ?.family ===
+                      "bitcoin"
+                    }
+                    onChange={
+                      event =>
+                        setSubjectType(
+                          event
+                            .target
+                            .value as
+                            "wallet" |
+                            "token"
+                        )
+                    }
+                    className="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-xs text-zinc-300 outline-none disabled:opacity-60"
+                  >
+                    <option value="wallet">
+                      Wallet
+                    </option>
+
+                    {selectedNetwork
+                      ?.family ===
+                      "evm" && (
+                      <option value="token">
+                        Token
+                      </option>
+                    )}
+                  </select>
+
+                  <input
+                    value={
+                      subjectValue
+                    }
+                    onChange={
+                      event =>
+                        setSubjectValue(
+                          event
+                            .target
+                            .value
+                        )
+                    }
+                    maxLength={
+                      512
+                    }
+                    placeholder={
+                      selectedNetwork
+                        ?.family ===
+                      "bitcoin"
+                        ? "Bitcoin wallet address"
+                        : "0x wallet or token address"
+                    }
+                    className="min-w-0 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 font-mono text-xs text-zinc-300 outline-none placeholder:text-zinc-700 focus:border-violet-500"
+                  />
+
+                  <select
+                    value={
+                      effectiveRuleType
+                    }
+                    onChange={
+                      event =>
+                        setRuleType(
+                          event
+                            .target
+                            .value
+                        )
+                    }
+                    className="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-xs text-zinc-300 outline-none focus:border-violet-500"
+                  >
+                    {availableRuleTypes.map(
+                      option => (
+                        <option
+                          key={
+                            option
+                          }
+                          value={
+                            option
+                          }
+                        >
                           {ruleLabels[
+                            option
+                          ]}
+                        </option>
+                      )
+                    )}
+                  </select>
+
+                  <button
+                    type="button"
+                    disabled={
+                      busy ||
+                      !subjectValue
+                        .trim() ||
+                      availableRuleTypes
+                        .length ===
+                        0
+                    }
+                    onClick={
+                      createRule
+                    }
+                    className="rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-2.5 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/15 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {busy
+                      ? "Saving…"
+                      : "Monitor"}
+                  </button>
+                </div>
+
+                <p className="mt-3 text-[9px] leading-4 text-zinc-700">
+                  Live scheduled monitoring currently covers Bitcoin wallets and EVM wallet/token subjects. Unsupported networks are not presented as live.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-5 rounded-2xl border border-violet-500/15 bg-violet-500/[0.04] p-4">
+                <div className="text-sm font-medium text-zinc-300">
+                  Smart Alerts requires AYZO Pro or Advanced
+                </div>
+
+                <p className="mt-2 text-xs leading-5 text-zinc-600">
+                  Free accounts keep normal analysis access without filling the workspace with locked monitoring controls.
+                </p>
+              </div>
+            )}
+
+            {error && (
+              <p className="mt-4 text-xs text-rose-300">
+                {error}
+              </p>
+            )}
+
+            {notice && (
+              <p className="mt-4 text-xs text-emerald-300">
+                {notice}
+              </p>
+            )}
+
+            {definitionRules.length >
+              0 && (
+              <div className="mt-5 rounded-2xl border border-amber-500/10 bg-amber-500/[0.03] p-4">
+                <div className="text-xs font-medium text-amber-200">
+                  {definitionRules.length}
+                  {" "}
+                  legacy watchlist
+                  {" "}
+                  {definitionRules.length ===
+                  1
+                    ? "definition"
+                    : "definitions"}
+                </div>
+
+                <p className="mt-2 text-[10px] leading-5 text-zinc-600">
+                  These definitions are preserved, but watchlist-wide scheduled evaluation is not live yet. They are never presented as active Smart Alert monitoring.
+                </p>
+              </div>
+            )}
+
+            {rules.length ===
+            0 ? (
+              <div className="mt-5 rounded-2xl border border-dashed border-zinc-800 p-5">
+                <div className="text-sm text-zinc-300">
+                  No Smart Alerts yet.
+                </div>
+
+                <p className="mt-2 text-xs leading-5 text-zinc-600">
+                  Add a direct supported subject above. The first observation establishes its monitoring baseline.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-5 grid gap-3 lg:grid-cols-2">
+                {rules.map(
+                  rule => (
+                    <article
+                      key={
+                        rule.id
+                      }
+                      className="rounded-2xl border border-zinc-900 bg-black/30 p-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-zinc-200">
+                            {ruleLabels[
+                              rule
+                                .rule_type
+                            ] ??
+                              rule.rule_type}
+                          </div>
+
+                          <div className="mt-1 truncate font-mono text-[10px] text-zinc-600">
+                            {shortSubject(
+                              rule.subject_value
+                            )}
+                          </div>
+
+                          <div className="mt-2 text-[9px] uppercase tracking-[0.12em] text-zinc-700">
+                            {rule.network ??
+                              "watchlist"}
+                            {" · "}
+                            {rule.subject_type ??
+                              "definition"}
+                          </div>
+                        </div>
+
+                        <span
+                          className={
+                            rule.evaluationLive
+                              ? "rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-2.5 py-1 text-[8px] font-semibold tracking-[0.1em] text-emerald-300"
+                              : rule.runtimeStatus ===
+                                "definition_only"
+                                ? "rounded-full border border-amber-500/15 bg-amber-500/[0.04] px-2.5 py-1 text-[8px] font-semibold tracking-[0.1em] text-amber-300"
+                                : "rounded-full border border-zinc-800 px-2.5 py-1 text-[8px] font-semibold tracking-[0.1em] text-zinc-500"
+                          }
+                        >
+                          {runtimeLabel(
                             rule
-                              .rule_type
-                          ] ??
-                            rule.rule_type}
-                        </div>
-
-                        <div className="mt-1 text-[10px] uppercase tracking-[0.12em] text-zinc-600">
-                          {watchlistName(
-                            rule.watchlist_id
                           )}
-                          {" · "}
-                          {
-                            rule.enabled
-                              ? "enabled"
-                              : "disabled"
-                          }
+                        </span>
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        <div className="rounded-xl border border-zinc-900 bg-black/20 p-3">
+                          <div className="text-[8px] uppercase tracking-[0.12em] text-zinc-700">
+                            Last checked
+                          </div>
+
+                          <div className="mt-1 text-[10px] text-zinc-400">
+                            {formatDate(
+                              rule.lastCheckedAt
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="rounded-xl border border-zinc-900 bg-black/20 p-3">
+                          <div className="text-[8px] uppercase tracking-[0.12em] text-zinc-700">
+                            Last evidence change
+                          </div>
+
+                          <div className="mt-1 text-[10px] text-zinc-400">
+                            {rule.lastEvidenceChangeAt
+                              ? formatDate(
+                                  rule.lastEvidenceChangeAt
+                                )
+                              : "None detected"}
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          disabled={
-                            busy ||
-                            !canManage
-                          }
-                          onClick={
-                            () =>
-                              toggleRule(
-                                rule
-                              )
-                          }
-                          className="rounded-lg border border-zinc-800 px-3 py-1.5 text-[10px] text-zinc-400 transition hover:text-zinc-200 disabled:opacity-40"
-                        >
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                        <div className="text-[9px] text-zinc-600">
                           {rule.enabled
-                            ? "Disable"
-                            : "Enable"}
-                        </button>
+                            ? "Enabled"
+                            : "Disabled"}
+                          {" · "}
+                          {rule.deliveryLive
+                            ? "Email active"
+                            : rule.runtimeStatus ===
+                              "live"
+                              ? "Email unavailable"
+                              : "No live delivery"}
+                        </div>
 
-                        <button
-                          type="button"
-                          disabled={
-                            busy ||
-                            !canManage
-                          }
-                          onClick={
-                            () =>
-                              deleteRule(
-                                rule.id
-                              )
-                          }
-                          className="rounded-lg border border-rose-500/20 px-3 py-1.5 text-[10px] text-rose-300 transition hover:bg-rose-500/5 disabled:opacity-40"
-                        >
-                          Delete
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            disabled={
+                              busy ||
+                              !canManage
+                            }
+                            onClick={
+                              () =>
+                                toggleRule(
+                                  rule
+                                )
+                            }
+                            className="rounded-lg border border-zinc-800 px-3 py-1.5 text-[10px] text-zinc-400 transition hover:text-zinc-200 disabled:opacity-40"
+                          >
+                            {rule.enabled
+                              ? "Disable"
+                              : "Enable"}
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={
+                              busy ||
+                              !canManage
+                            }
+                            onClick={
+                              () =>
+                                deleteRule(
+                                  rule.id
+                                )
+                            }
+                            className="rounded-lg border border-rose-500/20 px-3 py-1.5 text-[10px] text-rose-300 transition hover:bg-rose-500/5 disabled:opacity-40"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
-                    </div>
-
-                    <p className="mt-3 text-[10px] leading-5 text-zinc-700">
-                      Email notifications enabled for supported detections.
-                    </p>
-                  </div>
-                )
-              )}
-            </div>
-          )}
-        </>
-      )}
+                    </article>
+                  )
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </section>
   );
 }

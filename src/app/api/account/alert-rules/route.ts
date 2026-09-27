@@ -22,8 +22,39 @@ import {
   planHasFeature,
 } from "@/lib/plans/registry";
 
+import {
+  classifySmartAlertRuntime,
+} from "@/lib/alerts/liveSupport";
+
+import {
+  isBitcoinMainnetAddress,
+} from "@/lib/intelligence/bitcoin/address";
+
+import {
+  resolveIntelligenceNetwork,
+} from "@/lib/intelligence/router";
+
+import {
+  isResendAlertProviderReady,
+} from "@/lib/alerts/resendProvider";
+
+import {
+  isAlertDeliveryEnabled,
+} from "@/lib/alerts/deliveryPolicy";
+
+import {
+  isAlertSchedulerEnabled,
+} from "@/lib/alerts/schedulerPolicy";
+
+import {
+  createAdminClient,
+} from "@/lib/supabase/admin";
+
 export const dynamic =
   "force-dynamic";
+
+const EVM_ADDRESS =
+  /^0x[0-9a-fA-F]{40}$/;
 
 const selectFields = `
   id,
@@ -40,8 +71,10 @@ const selectFields = `
 `;
 
 function noStoreJson(
-  body: unknown,
-  status = 200
+  body:
+    unknown,
+  status =
+    200
 ) {
   return NextResponse.json(
     body,
@@ -79,6 +112,56 @@ async function resolveAlertAccess(
     planId:
       result.entitlement
         .planId,
+  };
+}
+
+function runtimeForRule(
+  rule: {
+    watchlist_id:
+      string | null;
+
+    network:
+      string | null;
+
+    subject_type:
+      string | null;
+
+    rule_type:
+      string;
+  },
+  schedulerReady:
+    boolean,
+  deliveryReady:
+    boolean
+) {
+  const runtimeStatus =
+    classifySmartAlertRuntime({
+      watchlistId:
+        rule.watchlist_id,
+
+      network:
+        rule.network,
+
+      subjectType:
+        rule.subject_type,
+
+      ruleType:
+        rule.rule_type,
+    });
+
+  return {
+    runtimeStatus,
+
+    evaluationLive:
+      runtimeStatus ===
+        "live" &&
+      schedulerReady,
+
+    deliveryLive:
+      runtimeStatus ===
+        "live" &&
+      schedulerReady &&
+      deliveryReady,
   };
 }
 
@@ -122,7 +205,9 @@ export async function GET() {
               false,
           }
         )
-        .limit(100),
+        .limit(
+          100
+        ),
 
       resolveAlertAccess(
         userId
@@ -141,10 +226,179 @@ export async function GET() {
     );
   }
 
+  const rules =
+    rulesResult.data ??
+    [];
+
+  const ruleIds =
+    rules.map(
+      rule =>
+        rule.id
+    );
+
+  const checkedAt =
+    new Map<
+      string,
+      string
+    >();
+
+  const changedAt =
+    new Map<
+      string,
+      string
+    >();
+
+  if (
+    ruleIds.length >
+    0
+  ) {
+    const admin =
+      createAdminClient();
+
+    const [
+      stateResult,
+      eventResult,
+    ] =
+      await Promise.all([
+        admin
+          .from(
+            "alert_detection_state"
+          )
+          .select(
+            "alert_rule_id,observed_at"
+          )
+          .eq(
+            "user_id",
+            userId
+          )
+          .in(
+            "alert_rule_id",
+            ruleIds
+          ),
+
+        admin
+          .from(
+            "alert_events"
+          )
+          .select(
+            "alert_rule_id,detected_at"
+          )
+          .eq(
+            "user_id",
+            userId
+          )
+          .in(
+            "alert_rule_id",
+            ruleIds
+          )
+          .order(
+            "detected_at",
+            {
+              ascending:
+                false,
+            }
+          )
+          .limit(
+            200
+          ),
+      ]);
+
+    if (
+      !stateResult.error
+    ) {
+      for (
+        const state of
+        stateResult.data ??
+        []
+      ) {
+        if (
+          typeof state
+            .alert_rule_id ===
+            "string" &&
+          typeof state
+            .observed_at ===
+            "string"
+        ) {
+          checkedAt.set(
+            state.alert_rule_id,
+            state.observed_at
+          );
+        }
+      }
+    }
+
+    if (
+      !eventResult.error
+    ) {
+      for (
+        const event of
+        eventResult.data ??
+        []
+      ) {
+        if (
+          typeof event
+            .alert_rule_id !==
+            "string" ||
+          typeof event
+            .detected_at !==
+            "string" ||
+          changedAt.has(
+            event.alert_rule_id
+          )
+        ) {
+          continue;
+        }
+
+        changedAt.set(
+          event.alert_rule_id,
+          event.detected_at
+        );
+      }
+    }
+  }
+
+  const schedulerReady =
+    isAlertSchedulerEnabled(
+      process.env
+        .AYZO_ALERT_SCHEDULER_ENABLED
+    );
+
+  const deliveryReady =
+    schedulerReady &&
+    isAlertDeliveryEnabled(
+      process.env
+        .AYZO_ALERT_DELIVERY_ENABLED
+    ) &&
+    isResendAlertProviderReady();
+
+  const enrichedRules =
+    rules.map(
+      rule => ({
+        ...rule,
+
+        ...runtimeForRule(
+          rule,
+          schedulerReady,
+          deliveryReady
+        ),
+
+        lastCheckedAt:
+          checkedAt.get(
+            rule.id
+          ) ??
+          null,
+
+        lastEvidenceChangeAt:
+          changedAt.get(
+            rule.id
+          ) ??
+          null,
+      })
+    );
+
   return noStoreJson({
     rules:
-      rulesResult.data ??
-      [],
+      enrichedRules,
 
     canManage:
       access.canManage,
@@ -155,16 +409,20 @@ export async function GET() {
     billingAvailable:
       access.billingAvailable,
 
+    monitoringLive:
+      schedulerReady,
+
     deliveryLive:
-      false,
+      deliveryReady,
 
     foundationStatus:
-      "definition_only",
+      "smart_alerts_v2",
   });
 }
 
 export async function POST(
-  request: Request
+  request:
+    Request
 ) {
   if (
     requestTooLarge(
@@ -206,7 +464,7 @@ export async function POST(
     return noStoreJson(
       {
         error:
-          "AYZO Pro or Advanced is required to manage alert rules.",
+          "AYZO Pro or Advanced is required to manage Smart Alerts.",
 
         code:
           "PAID_PLAN_REQUIRED",
@@ -231,7 +489,7 @@ export async function POST(
     return noStoreJson(
       {
         error:
-          "Invalid alert rule.",
+          "Invalid Smart Alert.",
       },
       400
     );
@@ -277,6 +535,206 @@ export async function POST(
     }
   }
 
+  const runtimeStatus =
+    classifySmartAlertRuntime({
+      watchlistId:
+        parsed.watchlistId,
+
+      network:
+        parsed.network,
+
+      subjectType:
+        parsed.subjectType,
+
+      ruleType:
+        parsed.ruleType,
+    });
+
+  /*
+   * New direct Smart Alerts may only
+   * be created for genuinely live
+   * monitoring adapters.
+   *
+   * Legacy watchlist definitions remain
+   * accepted/preserved as definition-only.
+   */
+  if (
+    parsed.watchlistId ===
+      null &&
+    runtimeStatus !==
+      "live"
+  ) {
+    return noStoreJson(
+      {
+        error:
+          "Live Smart Alert monitoring is not available for this network, subject and rule combination.",
+
+        code:
+          "MONITORING_NOT_LIVE",
+      },
+      400
+    );
+  }
+
+  if (
+    parsed.watchlistId ===
+      null &&
+    parsed.network
+  ) {
+    const resolution =
+      resolveIntelligenceNetwork(
+        parsed.network
+      );
+
+    if (!resolution.ok) {
+      return noStoreJson(
+        {
+          error:
+            "Network is unavailable for Smart Alert monitoring.",
+        },
+        400
+      );
+    }
+
+    if (
+      resolution.engine ===
+        "bitcoin" &&
+      (
+        parsed.subjectType !==
+          "wallet" ||
+        !isBitcoinMainnetAddress(
+          parsed.subjectValue ??
+          ""
+        )
+      )
+    ) {
+      return noStoreJson(
+        {
+          error:
+            "Bitcoin Smart Alerts require a valid wallet address.",
+        },
+        400
+      );
+    }
+
+    if (
+      resolution.engine ===
+        "evm" &&
+      (
+        (
+          parsed.subjectType !==
+            "wallet" &&
+          parsed.subjectType !==
+            "token"
+        ) ||
+        !EVM_ADDRESS.test(
+          parsed.subjectValue ??
+          ""
+        )
+      )
+    ) {
+      return noStoreJson(
+        {
+          error:
+            "EVM Smart Alerts require a valid 0x wallet or token address.",
+        },
+        400
+      );
+    }
+
+    const {
+      data:
+        existing,
+      error:
+        existingError,
+    } =
+      await supabase
+        .from(
+          "alert_rules"
+        )
+        .select(
+          selectFields
+        )
+        .eq(
+          "user_id",
+          userId
+        )
+        .is(
+          "watchlist_id",
+          null
+        )
+        .eq(
+          "network",
+          parsed.network
+        )
+        .eq(
+          "subject_type",
+          parsed.subjectType
+        )
+        .eq(
+          "subject_value",
+          parsed.subjectValue
+        )
+        .eq(
+          "rule_type",
+          parsed.ruleType
+        )
+        .maybeSingle();
+
+    if (existingError) {
+      return noStoreJson(
+        {
+          error:
+            "Unable to check existing Smart Alerts.",
+        },
+        500
+      );
+    }
+
+    if (existing) {
+      const schedulerReady =
+        isAlertSchedulerEnabled(
+          process.env
+            .AYZO_ALERT_SCHEDULER_ENABLED
+        );
+
+      const deliveryReady =
+        schedulerReady &&
+        isAlertDeliveryEnabled(
+          process.env
+            .AYZO_ALERT_DELIVERY_ENABLED
+        ) &&
+        isResendAlertProviderReady();
+
+      return noStoreJson(
+        {
+          error:
+            "This Smart Alert already exists.",
+
+          code:
+            "ALREADY_MONITORING",
+
+          rule: {
+            ...existing,
+
+            ...runtimeForRule(
+              existing,
+              schedulerReady,
+              deliveryReady
+            ),
+          },
+
+          monitoringLive:
+            schedulerReady,
+
+          deliveryLive:
+            deliveryReady,
+        },
+        409
+      );
+    }
+  }
+
   const {
     data,
     error,
@@ -309,16 +767,11 @@ export async function POST(
             1,
 
           mode:
-            "definition_only",
+            parsed.watchlistId
+              ? "definition_only"
+              : "smart_alert_v2",
         },
 
-        /*
-         * Database contract requires a
-         * delivery channel.
-         *
-         * No message is sent by this
-         * foundation route.
-         */
         delivery_channel:
           "email",
 
@@ -334,22 +787,56 @@ export async function POST(
     return noStoreJson(
       {
         error:
-          "Unable to create alert rule.",
+          "Unable to create Smart Alert.",
       },
       500
     );
   }
 
+  const schedulerReady =
+    isAlertSchedulerEnabled(
+      process.env
+        .AYZO_ALERT_SCHEDULER_ENABLED
+    );
+
+  const deliveryReady =
+    schedulerReady &&
+    isAlertDeliveryEnabled(
+      process.env
+        .AYZO_ALERT_DELIVERY_ENABLED
+    ) &&
+    isResendAlertProviderReady();
+
   return noStoreJson(
     {
-      rule:
-        data,
+      rule: {
+        ...data,
+
+        ...runtimeForRule(
+          data,
+          schedulerReady,
+          deliveryReady
+        ),
+
+        lastCheckedAt:
+          null,
+
+        lastEvidenceChangeAt:
+          null,
+      },
+
+      monitoringLive:
+        runtimeStatus ===
+          "live" &&
+        schedulerReady,
 
       deliveryLive:
-        false,
+        runtimeStatus ===
+          "live" &&
+        deliveryReady,
 
       foundationStatus:
-        "definition_only",
+        "smart_alerts_v2",
     },
     201
   );

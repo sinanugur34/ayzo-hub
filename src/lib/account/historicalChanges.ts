@@ -129,6 +129,39 @@ const METRIC_LABELS:
 
     moduleUnavailable:
       "Unavailable modules",
+
+    relationshipCounterpartyCount:
+      "Observed counterparties",
+
+    relationshipInteractionCount:
+      "Observed interactions",
+
+    relationshipLastSeen:
+      "Latest relationship evidence",
+
+    fundingSourceCount:
+      "Observed funding sources",
+
+    fundingObservationCount:
+      "Observed funding events",
+
+    fundingLastSeen:
+      "Latest funding evidence",
+
+    deploymentDeployer:
+      "Observed deployer",
+
+    deploymentTransactionHash:
+      "Deployment transaction",
+
+    deploymentBlockNumber:
+      "Deployment block",
+
+    developerVerifiedDeploymentCount:
+      "Verified deployments",
+
+    developerOtherVerifiedDeploymentCount:
+      "Other verified deployments",
   };
 
 function isRecord(
