@@ -130,6 +130,25 @@ export const ASK_AYZO_SITE_KNOWLEDGE:
   },
 
   {
+    id: "fund-tracer",
+    title: "Interactive Fund Tracer",
+    route: "/",
+    description:
+      "Interactive Fund Tracer is a Pro and Advanced evidence explorer for observed funding routes. Pro follows supported direct funding paths. Advanced also shows bounded multi-hop EVM upstream paths when Deep Funding evidence is available. It does not infer ultimate source of funds, identity, ownership, control or intent.",
+    directions:
+      "Run a supported analysis and open Fund Tracer in the Analysis Workspace. Select a funding route to inspect its observed addresses and transaction evidence.",
+    keywords: [
+      "fund tracer",
+      "funding tracer",
+      "funding trace",
+      "fund flow",
+      "money flow",
+      "fon takibi",
+      "fon izi",
+    ],
+  },
+
+  {
     id: "entity-labels",
     title: "Entity Labels",
     route: "/",

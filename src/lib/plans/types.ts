@@ -30,6 +30,7 @@ export type FeatureId =
   | "walletProfiler"
   | "askAyzo"
   | "visualEvidenceGraph"
+  | "fundTracer"
   | "marketFlowIntelligence"
   | "investigationTimeline"
   | "batchAnalysis"

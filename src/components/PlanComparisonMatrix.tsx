@@ -680,6 +680,12 @@ const sections:
         ),
 
         featureRow(
+          "Interactive Fund Tracer",
+          "fundTracer",
+          "Pro follows direct observed funding paths in a dedicated evidence explorer. Advanced adds bounded multi-hop EVM upstream paths when Deep Funding evidence is available."
+        ),
+
+        featureRow(
           "Investigation Timeline",
           "investigationTimeline"
         ),

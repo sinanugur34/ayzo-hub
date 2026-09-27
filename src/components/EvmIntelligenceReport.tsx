@@ -1598,6 +1598,11 @@ export default function EvmIntelligenceReport({
         caveats={data.caveats}
         graph={visualEvidenceGraph}
         timeline={data.activityTimeline}
+        deepFundingTracing={
+          funding
+            ?.deepFundingTracing ??
+          null
+        }
       />
 
       <AnalysisWorkspaceDetails>
