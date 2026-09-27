@@ -174,10 +174,13 @@ export async function runAlertEvaluationBatch({
 
 
   // ----------------------------------------------
-  // 2. DIRECT NEW_ACTIVITY RULES ONLY
+  // 2. DIRECT LIVE MONITORING RULES
   //
-  // Watchlist rules deliberately remain excluded
-  // until target-level state exists.
+  // Direct Bitcoin / EVM rules are eligible.
+  //
+  // Watchlist definitions deliberately remain
+  // excluded until target-level watchlist state
+  // exists.
   // ----------------------------------------------
 
   const {
@@ -202,10 +205,6 @@ export async function runAlertEvaluationBatch({
       .eq(
         "enabled",
         true
-      )
-      .eq(
-        "rule_type",
-        "new_activity"
       )
       .is(
         "watchlist_id",
@@ -378,6 +377,9 @@ export async function runAlertEvaluationBatch({
         await observeMonitoringTarget({
           target:
             plan.target,
+
+          ruleType:
+            rule.ruleType,
         });
 
       if (

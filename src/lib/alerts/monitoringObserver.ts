@@ -1,5 +1,17 @@
 import "server-only";
 
+import type {
+  BasicAlertRuleType,
+} from "@/lib/account/alertRules";
+
+import {
+  buildHistoricalSnapshot,
+} from "@/lib/account/historicalSnapshot";
+
+import {
+  buildSmartAlertObservation,
+} from "@/lib/alerts/smartEvidence";
+
 import {
   isBitcoinMainnetAddress,
 } from "@/lib/intelligence/bitcoin/address";
@@ -29,10 +41,8 @@ import type {
   AlertEvaluationTarget,
 } from "@/lib/alerts/evaluator";
 
-
 const EVM_ADDRESS =
   /^0x[0-9a-fA-F]{40}$/;
-
 
 export type MonitoringObservationResult =
   | {
@@ -67,12 +77,48 @@ export type MonitoringObservationResult =
         string;
     };
 
+function snapshotObservation({
+  network,
+  value,
+  ruleType,
+}: {
+  network:
+    string;
+
+  value:
+    unknown;
+
+  ruleType:
+    Exclude<
+      BasicAlertRuleType,
+      "new_activity"
+    >;
+}) {
+  const snapshot =
+    buildHistoricalSnapshot(
+      network,
+      value
+    );
+
+  if (!snapshot) {
+    return null;
+  }
+
+  return buildSmartAlertObservation({
+    snapshot,
+    ruleType,
+  });
+}
 
 export async function observeMonitoringTarget({
   target,
+  ruleType,
 }: {
   target:
     AlertEvaluationTarget;
+
+  ruleType:
+    BasicAlertRuleType;
 }): Promise<
   MonitoringObservationResult
 > {
@@ -94,9 +140,17 @@ export async function observeMonitoringTarget({
     };
   }
 
+  /*
+   * Smart Alerts 2.0 live monitoring
+   * is intentionally bounded to the
+   * adapters with established scheduled
+   * monitoring support.
+   */
   if (
-    resolution.engine ===
-    "solana"
+    resolution.engine !==
+      "bitcoin" &&
+    resolution.engine !==
+      "evm"
   ) {
     return {
       status:
@@ -106,14 +160,13 @@ export async function observeMonitoringTarget({
         false,
 
       reason:
-        "solana_activity_adapter_not_live",
+        "monitoring_adapter_not_live",
     };
   }
 
-
   if (
     resolution.engine ===
-    "evm"
+      "evm"
   ) {
     if (
       target.subjectType !==
@@ -152,11 +205,8 @@ export async function observeMonitoringTarget({
 
     try {
       /*
-       * Direct engine invocation.
-       *
-       * /api/intelligence is NOT used,
-       * therefore normal user analysis
-       * quota is not consumed here.
+       * Direct engine invocation:
+       * user analysis quota is not consumed.
        */
       const result =
         await runEvmUnifiedIntelligence({
@@ -169,7 +219,7 @@ export async function observeMonitoringTarget({
 
       if (
         result.status !==
-        200
+          200
       ) {
         return {
           status:
@@ -183,18 +233,64 @@ export async function observeMonitoringTarget({
         };
       }
 
-      const extraction =
-        extractEvmActivityEvidence({
-          data:
-            result.data,
+      if (
+        ruleType ===
+          "new_activity"
+      ) {
+        const extraction =
+          extractEvmActivityEvidence({
+            data:
+              result.data,
 
+            network:
+              resolution.networkId,
+          });
+
+        if (
+          !extraction.available
+        ) {
+          return {
+            status:
+              "unavailable",
+
+            providerCalled:
+              true,
+
+            reason:
+              "evm_activity_evidence_unavailable",
+          };
+        }
+
+        return {
+          status:
+            "observed",
+
+          providerCalled:
+            true,
+
+          observation: {
+            observedAt:
+              new Date()
+                .toISOString(),
+
+            evidence:
+              extraction.evidence,
+          },
+        };
+      }
+
+      const observation =
+        snapshotObservation({
           network:
             resolution.networkId,
+
+          value:
+            result.data,
+
+          ruleType,
         });
 
-      if (
-        !extraction.available
-      ) {
+      if (!observation) {
         return {
           status:
             "unavailable",
@@ -203,7 +299,7 @@ export async function observeMonitoringTarget({
             true,
 
           reason:
-            "evm_activity_evidence_unavailable",
+            "evm_snapshot_unavailable",
         };
       }
 
@@ -214,16 +310,8 @@ export async function observeMonitoringTarget({
         providerCalled:
           true,
 
-        observation: {
-          observedAt:
-            new Date()
-              .toISOString(),
-
-          evidence:
-            extraction.evidence,
-        },
+        observation,
       };
-
     } catch {
       return {
         status:
@@ -238,10 +326,9 @@ export async function observeMonitoringTarget({
     }
   }
 
-
   if (
     target.subjectType !==
-    "wallet"
+      "wallet"
   ) {
     return {
       status:
@@ -252,6 +339,22 @@ export async function observeMonitoringTarget({
 
       reason:
         "subject_type_not_supported",
+    };
+  }
+
+  if (
+    ruleType ===
+      "contract_activity"
+  ) {
+    return {
+      status:
+        "unsupported",
+
+      providerCalled:
+        false,
+
+      reason:
+        "rule_type_not_supported",
     };
   }
 
@@ -281,7 +384,7 @@ export async function observeMonitoringTarget({
 
     if (
       result.status !==
-      200
+        200
     ) {
       return {
         status:
@@ -295,15 +398,61 @@ export async function observeMonitoringTarget({
       };
     }
 
-    const extraction =
-      extractBitcoinActivityEvidence({
-        data:
+    if (
+      ruleType ===
+        "new_activity"
+    ) {
+      const extraction =
+        extractBitcoinActivityEvidence({
+          data:
+            result.data,
+        });
+
+      if (
+        !extraction.available
+      ) {
+        return {
+          status:
+            "unavailable",
+
+          providerCalled:
+            true,
+
+          reason:
+            "bitcoin_activity_evidence_unavailable",
+        };
+      }
+
+      return {
+        status:
+          "observed",
+
+        providerCalled:
+          true,
+
+        observation: {
+          observedAt:
+            new Date()
+              .toISOString(),
+
+          evidence:
+            extraction.evidence,
+        },
+      };
+    }
+
+    const observation =
+      snapshotObservation({
+        network:
+          resolution.networkId,
+
+        value:
           result.data,
+
+        ruleType,
       });
 
-    if (
-      !extraction.available
-    ) {
+    if (!observation) {
       return {
         status:
           "unavailable",
@@ -312,7 +461,7 @@ export async function observeMonitoringTarget({
           true,
 
         reason:
-          "bitcoin_activity_evidence_unavailable",
+          "bitcoin_snapshot_unavailable",
       };
     }
 
@@ -323,16 +472,8 @@ export async function observeMonitoringTarget({
       providerCalled:
         true,
 
-      observation: {
-        observedAt:
-          new Date()
-            .toISOString(),
-
-        evidence:
-          extraction.evidence,
-      },
+      observation,
     };
-
   } catch {
     return {
       status:

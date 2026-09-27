@@ -1,5 +1,6 @@
-import type {
-  BasicAlertRuleType,
+import {
+  basicAlertRuleTypes,
+  type BasicAlertRuleType,
 } from "@/lib/account/alertRules";
 
 import {
@@ -265,8 +266,12 @@ export function parseEvaluationRule(
       "string" ||
     typeof value.subject_value !==
       "string" ||
-    value.rule_type !==
-      "new_activity" ||
+    typeof value.rule_type !==
+      "string" ||
+    !basicAlertRuleTypes.includes(
+      value.rule_type as
+        BasicAlertRuleType
+    ) ||
     typeof value.enabled !==
       "boolean"
   ) {
@@ -304,7 +309,8 @@ export function parseEvaluationRule(
     subjectValue,
 
     ruleType:
-      "new_activity",
+      value.rule_type as
+        BasicAlertRuleType,
 
     enabled:
       value.enabled,
@@ -330,7 +336,8 @@ export function planDirectActivityTarget(
       reason:
         | "rule_disabled"
         | "unsupported_network"
-        | "unsupported_subject";
+        | "unsupported_subject"
+        | "unsupported_rule";
     } {
   if (!rule.enabled) {
     return {
@@ -358,8 +365,10 @@ export function planDirectActivityTarget(
   }
 
   if (
-    resolution.engine ===
-      "solana"
+    resolution.engine !==
+      "bitcoin" &&
+    resolution.engine !==
+      "evm"
   ) {
     return {
       status:
@@ -367,6 +376,21 @@ export function planDirectActivityTarget(
 
       reason:
         "unsupported_network",
+    };
+  }
+
+  if (
+    resolution.engine ===
+      "bitcoin" &&
+    rule.ruleType ===
+      "contract_activity"
+  ) {
+    return {
+      status:
+        "skip",
+
+      reason:
+        "unsupported_rule",
     };
   }
 
