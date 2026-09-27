@@ -79,7 +79,7 @@ test(
 );
 
 test(
-  "Evidence Change uses last-saved-analysis language",
+  "Evidence Change uses automatic analysis-history language",
   () => {
     assert.ok(
       historicalChanges.includes(
@@ -89,13 +89,13 @@ test(
 
     assert.ok(
       historicalChanges.includes(
-        "Since your last saved analysis"
+        "Since your last analysis"
       )
     );
 
     assert.ok(
       historicalChanges.includes(
-        "saved baseline"
+        "Tracking automatically"
       )
     );
 

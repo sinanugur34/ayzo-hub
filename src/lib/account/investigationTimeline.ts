@@ -9,6 +9,7 @@ import type {
 
 export type InvestigationTimelineEntryKind =
   | "saved_analysis"
+  | "automatic_baseline"
   | "current_analysis";
 
 export type InvestigationTimelineEntry = {
@@ -43,6 +44,12 @@ export type InvestigationTimelineV1 = {
     | "ready"
     | "no-history";
 
+  historySnapshotCount:
+    number;
+
+  automaticSnapshotCount:
+    number;
+
   savedSnapshotCount:
     number;
 
@@ -61,6 +68,10 @@ export type StoredInvestigationSnapshot = {
 
   analysisPayload:
     unknown;
+
+  kind?:
+    | "saved_analysis"
+    | "automatic_baseline";
 };
 
 type BuildInvestigationTimelineInput = {
@@ -79,6 +90,9 @@ type BuildInvestigationTimelineInput = {
   maxChangesPerEntry?:
     number;
 };
+
+const NEAR_DUPLICATE_MS =
+  5 * 60 * 1000;
 
 function timeValue(
   value:
@@ -120,7 +134,7 @@ export function buildInvestigationTimeline(
       )
     );
 
-  const saved =
+  const parsedHistory =
     input.savedSnapshots
       .flatMap(
         row => {
@@ -145,6 +159,10 @@ export function buildInvestigationTimeline(
               createdAt:
                 row.createdAt,
 
+              kind:
+                row.kind ??
+                "saved_analysis" as const,
+
               snapshot,
             },
           ];
@@ -165,6 +183,79 @@ export function buildInvestigationTimeline(
           )
       );
 
+  /*
+   * A manually saved analysis and its
+   * automatic baseline may represent
+   * the same evidence moment.
+   *
+   * Collapse equal evidence observed
+   * inside the five-minute window and
+   * prefer the manually curated record.
+   */
+  const history:
+    typeof parsedHistory =
+      [];
+
+  for (
+    const item of
+    parsedHistory
+  ) {
+    const previous =
+      history.length >
+        0
+        ? history[
+            history.length -
+              1
+          ]
+        : null;
+
+    if (previous) {
+      const delta =
+        Math.abs(
+          timeValue(
+            item.snapshot
+              .capturedAt
+          ) -
+          timeValue(
+            previous.snapshot
+              .capturedAt
+          )
+        );
+
+      const comparison =
+        compareHistoricalSnapshots(
+          previous.snapshot,
+          item.snapshot
+        );
+
+      if (
+        delta <=
+          NEAR_DUPLICATE_MS &&
+        comparison &&
+        !comparison.hasChanges
+      ) {
+        if (
+          previous.kind ===
+            "automatic_baseline" &&
+          item.kind ===
+            "saved_analysis"
+        ) {
+          history[
+            history.length -
+              1
+          ] =
+            item;
+        }
+
+        continue;
+      }
+    }
+
+    history.push(
+      item
+    );
+  }
+
   const entries:
     InvestigationTimelineEntry[] =
       [];
@@ -172,16 +263,16 @@ export function buildInvestigationTimeline(
   for (
     let index = 0;
     index <
-    saved.length;
+    history.length;
     index += 1
   ) {
     const current =
-      saved[index];
+      history[index];
 
     const previous =
       index >
       0
-        ? saved[
+        ? history[
             index - 1
           ]
         : null;
@@ -196,10 +287,15 @@ export function buildInvestigationTimeline(
 
     entries.push({
       id:
-        `saved:${current.id}`,
+        `${
+          current.kind ===
+            "automatic_baseline"
+            ? "automatic"
+            : "saved"
+        }:${current.id}`,
 
       kind:
-        "saved_analysis",
+        current.kind,
 
       capturedAt:
         current.snapshot
@@ -243,14 +339,36 @@ export function buildInvestigationTimeline(
           input.currentSnapshot
         );
 
-  const currentAlreadySaved =
+  const currentAlreadyStored =
     parsedCurrent
-      ? saved.some(
-          item =>
-            item.snapshot
-              .capturedAt ===
-            parsedCurrent
-              .capturedAt
+      ? history.some(
+          item => {
+            const delta =
+              Math.abs(
+                timeValue(
+                  item.snapshot
+                    .capturedAt
+                ) -
+                timeValue(
+                  parsedCurrent
+                    .capturedAt
+                )
+              );
+
+            const comparison =
+              compareHistoricalSnapshots(
+                item.snapshot,
+                parsedCurrent
+              );
+
+            return (
+              delta <=
+                NEAR_DUPLICATE_MS &&
+              comparison !==
+                null &&
+              !comparison.hasChanges
+            );
+          }
         )
       : false;
 
@@ -258,13 +376,13 @@ export function buildInvestigationTimeline(
     parsedCurrent &&
     parsedCurrent.network ===
       input.network &&
-    !currentAlreadySaved
+    !currentAlreadyStored
   ) {
     const previous =
-      saved.length >
+      history.length >
       0
-        ? saved[
-            saved.length -
+        ? history[
+            history.length -
               1
           ].snapshot
         : null;
@@ -316,10 +434,6 @@ export function buildInvestigationTimeline(
     });
   }
 
-  /*
-   * Newest research milestone
-   * appears first.
-   */
   const visibleEntries =
     entries
       .sort(
@@ -339,23 +453,41 @@ export function buildInvestigationTimeline(
         maxEntries
       );
 
+  const automaticSnapshotCount =
+    history.filter(
+      item =>
+        item.kind ===
+        "automatic_baseline"
+    ).length;
+
+  const savedSnapshotCount =
+    history.filter(
+      item =>
+        item.kind ===
+        "saved_analysis"
+    ).length;
+
   return {
     version:
       1,
 
     status:
-      saved.length >
+      history.length >
       0
         ? "ready"
         : "no-history",
 
-    savedSnapshotCount:
-      saved.length,
+    historySnapshotCount:
+      history.length,
+
+    automaticSnapshotCount,
+
+    savedSnapshotCount,
 
     entries:
       visibleEntries,
 
     limitation:
-      "Investigation Timeline is built from AYZO saved analysis snapshots and the current analysis only. It is a bounded research chronology, not an exhaustive blockchain history.",
+      "Investigation Timeline is a bounded AYZO evidence chronology built from automatic baselines, manually Saved Analyses and the current analysis. It is not an exhaustive blockchain history.",
   };
 }

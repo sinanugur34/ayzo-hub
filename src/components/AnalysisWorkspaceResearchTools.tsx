@@ -22,6 +22,9 @@ type EvidenceChangeSummary = {
 
   changeCount:
     number | null;
+
+  trackingActive:
+    boolean;
 };
 
 export default function AnalysisWorkspaceResearchTools({
@@ -98,6 +101,10 @@ export default function AnalysisWorkspaceResearchTools({
             "ready"
             ? changeCount
             : null,
+
+        trackingActive:
+          detail.trackingActive ===
+            true,
       });
     }
 
@@ -157,10 +164,14 @@ export default function AnalysisWorkspaceResearchTools({
     "no-baseline"
   ) {
     helper =
-      "Save baseline to track change";
+      evidenceChange.trackingActive
+        ? "Tracking automatically"
+        : "Save baseline to track change";
 
     helperClass =
-      "text-zinc-400";
+      evidenceChange.trackingActive
+        ? "text-emerald-300"
+        : "text-zinc-400";
   }
 
   if (
