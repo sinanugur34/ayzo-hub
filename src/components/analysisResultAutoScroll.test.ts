@@ -45,7 +45,7 @@ test(
 );
 
 test(
-  "successful analysis scrolls result workspace into view",
+  "successful analysis scrolls browser viewport to the result workspace",
   () => {
     assert.match(
       page,
@@ -54,12 +54,37 @@ test(
 
     assert.match(
       page,
-      /target\.scrollIntoView\(\{/
+      /target\.getBoundingClientRect\(\)/
     );
 
     assert.match(
       page,
-      /block:\s*"start"/
+      /window\.scrollY/
+    );
+
+    assert.match(
+      page,
+      /window\.scrollTo\(\{/
+    );
+
+    assert.doesNotMatch(
+      page,
+      /scrollIntoView\(/
+    );
+  }
+);
+
+test(
+  "analysis submit releases focused input before viewport movement",
+  () => {
+    assert.match(
+      page,
+      /document\.activeElement/
+    );
+
+    assert.match(
+      page,
+      /activeElement\.blur\(\)/
     );
   }
 );

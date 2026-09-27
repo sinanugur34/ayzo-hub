@@ -925,6 +925,16 @@ export default function Home() {
       return;
     }
 
+    const activeElement =
+      document.activeElement;
+
+    if (
+      activeElement instanceof
+      HTMLElement
+    ) {
+      activeElement.blur();
+    }
+
     const frame =
       window.requestAnimationFrame(
         () => {
@@ -942,14 +952,23 @@ export default function Home() {
               "(prefers-reduced-motion: reduce)"
             ).matches;
 
-          target.scrollIntoView({
+          const targetTop =
+            Math.max(
+              0,
+              target.getBoundingClientRect()
+                .top +
+                window.scrollY -
+                16
+            );
+
+          window.scrollTo({
+            top:
+              targetTop,
+
             behavior:
               reduceMotion
                 ? "auto"
                 : "smooth",
-
-            block:
-              "start",
           });
         }
       );
