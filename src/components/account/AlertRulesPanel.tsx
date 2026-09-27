@@ -80,7 +80,7 @@ const ruleLabels:
     "Relationships Changed",
 
   contract_activity:
-    "Contract / Authority Changed",
+    "Contract / Deployment Changed",
 };
 
 function shortSubject(
@@ -148,19 +148,30 @@ function formatDate(
 }
 
 function runtimeLabel(
-  status:
-    SmartAlertRuntimeStatus
+  rule:
+    Pick<
+      AlertRule,
+      "runtimeStatus" |
+      "evaluationLive"
+    >
 ) {
-  switch (status) {
-    case "live":
-      return "LIVE";
-
-    case "definition_only":
-      return "DEFINITION ONLY";
-
-    case "unsupported":
-      return "NOT LIVE";
+  if (
+    rule.runtimeStatus ===
+    "definition_only"
+  ) {
+    return "DEFINITION ONLY";
   }
+
+  if (
+    rule.runtimeStatus ===
+    "unsupported"
+  ) {
+    return "NOT LIVE";
+  }
+
+  return rule.evaluationLive
+    ? "LIVE"
+    : "PAUSED";
 }
 
 export default function AlertRulesPanel() {
@@ -175,6 +186,12 @@ export default function AlertRulesPanel() {
   const [
     canManage,
     setCanManage,
+  ] =
+    useState(false);
+
+  const [
+    monitoringLive,
+    setMonitoringLive,
   ] =
     useState(false);
 
@@ -345,6 +362,11 @@ export default function AlertRulesPanel() {
             true
           );
 
+          setMonitoringLive(
+            body?.monitoringLive ===
+            true
+          );
+
           setDeliveryLive(
             body?.deliveryLive ===
             true
@@ -471,8 +493,21 @@ export default function AlertRulesPanel() {
 
       setSubjectValue("");
 
+      setMonitoringLive(
+        body?.monitoringLive ===
+        true
+      );
+
+      setDeliveryLive(
+        body?.deliveryLive ===
+        true
+      );
+
       setNotice(
-        "Smart Alert enabled. AYZO will evaluate supported evidence on the scheduled monitoring cycle and send email when new supported evidence is detected."
+        body?.monitoringLive ===
+          true
+          ? "Smart Alert enabled. AYZO will evaluate supported evidence on the scheduled monitoring cycle."
+          : "Smart Alert saved. Scheduled monitoring is currently paused."
       );
     } catch (
       caught
@@ -638,8 +673,7 @@ export default function AlertRulesPanel() {
   const liveRules =
     rules.filter(
       rule =>
-        rule.runtimeStatus ===
-          "live" &&
+        rule.evaluationLive &&
         rule.enabled
     );
 
@@ -707,8 +741,16 @@ export default function AlertRulesPanel() {
             </p>
           </div>
 
-          <span className="rounded-full border border-emerald-500/20 bg-emerald-500/[0.07] px-3 py-1.5 text-[9px] font-semibold tracking-[0.12em] text-emerald-300">
-            LIVE
+          <span
+            className={
+              monitoringLive
+                ? "rounded-full border border-emerald-500/20 bg-emerald-500/[0.07] px-3 py-1.5 text-[9px] font-semibold tracking-[0.12em] text-emerald-300"
+                : "rounded-full border border-amber-500/20 bg-amber-500/[0.06] px-3 py-1.5 text-[9px] font-semibold tracking-[0.12em] text-amber-300"
+            }
+          >
+            {monitoringLive
+              ? "LIVE"
+              : "PAUSED"}
           </span>
         </div>
 
@@ -759,12 +801,24 @@ export default function AlertRulesPanel() {
         </div>
 
         <div className="mt-5 rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.04] p-4">
-          <div className="text-xs font-medium text-emerald-300">
-            Scheduled evidence monitoring
+          <div
+            className={
+              monitoringLive
+                ? "text-xs font-medium text-emerald-300"
+                : "text-xs font-medium text-amber-300"
+            }
+          >
+            {monitoringLive
+              ? "Scheduled evidence monitoring active"
+              : "Scheduled evidence monitoring paused"}
           </div>
 
           <p className="mt-2 text-[10px] leading-5 text-zinc-600">
-            AYZO evaluates enabled supported rules on the scheduled monitoring cycle. The first successful observation establishes a baseline; only newly supported evidence can create an alert event. Browser and Telegram notifications are not currently supported.
+            {monitoringLive
+              ? "AYZO evaluates enabled supported rules on the scheduled monitoring cycle. The first successful observation establishes a baseline; only newly supported evidence can create an alert event."
+              : "Your Smart Alert definitions remain saved, but scheduled evaluation is not currently active."}
+            {" "}
+            Browser and Telegram notifications are not currently supported.
           </p>
         </div>
 
@@ -1040,8 +1094,7 @@ export default function AlertRulesPanel() {
 
                         <span
                           className={
-                            rule.runtimeStatus ===
-                            "live"
+                            rule.evaluationLive
                               ? "rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-2.5 py-1 text-[8px] font-semibold tracking-[0.1em] text-emerald-300"
                               : rule.runtimeStatus ===
                                 "definition_only"
@@ -1050,7 +1103,7 @@ export default function AlertRulesPanel() {
                           }
                         >
                           {runtimeLabel(
-                            rule.runtimeStatus
+                            rule
                           )}
                         </span>
                       </div>

@@ -39,6 +39,21 @@ export type HistoricalSnapshotV1 = {
     moduleLimited?: number | null;
     moduleNotRun?: number | null;
     moduleUnavailable?: number | null;
+
+    relationshipCounterpartyCount?: number | null;
+    relationshipInteractionCount?: number | null;
+    relationshipLastSeen?: string | null;
+
+    fundingSourceCount?: number | null;
+    fundingObservationCount?: number | null;
+    fundingLastSeen?: string | null;
+
+    deploymentDeployer?: string | null;
+    deploymentTransactionHash?: string | null;
+    deploymentBlockNumber?: number | null;
+
+    developerVerifiedDeploymentCount?: number | null;
+    developerOtherVerifiedDeploymentCount?: number | null;
   };
 
   modules:
@@ -302,6 +317,65 @@ function evmSnapshot(
       root.moduleSummary
     );
 
+  const modules =
+    record(
+      root.modules
+    );
+
+  const relationshipsModule =
+    record(
+      modules
+        ?.walletRelationships
+    );
+
+  const relationships =
+    record(
+      relationshipsModule
+        ?.data
+    );
+
+  const fundingModule =
+    record(
+      modules
+        ?.fundingProvenance
+    );
+
+  const funding =
+    record(
+      fundingModule
+        ?.data
+    );
+
+  const deploymentModule =
+    record(
+      modules
+        ?.deploymentIntelligence
+    );
+
+  const deploymentLookup =
+    record(
+      deploymentModule
+        ?.data
+    );
+
+  const deployment =
+    record(
+      deploymentLookup
+        ?.deployment
+    );
+
+  const developerModule =
+    record(
+      modules
+        ?.developerHistory
+    );
+
+  const developer =
+    record(
+      developerModule
+        ?.data
+    );
+
   return {
     version: 1,
     capturedAt:
@@ -336,6 +410,72 @@ function evmSnapshot(
       moduleUnavailable:
         numberValue(
           summary?.unavailable
+        ),
+
+      relationshipCounterpartyCount:
+        numberValue(
+          relationships
+            ?.counterpartyCount
+        ),
+
+      relationshipInteractionCount:
+        numberValue(
+          relationships
+            ?.interactionCount
+        ),
+
+      relationshipLastSeen:
+        text(
+          relationships
+            ?.lastSeen
+        ),
+
+      fundingSourceCount:
+        numberValue(
+          funding
+            ?.fundingSourceCount
+        ),
+
+      fundingObservationCount:
+        numberValue(
+          funding
+            ?.fundingObservationCount
+        ),
+
+      fundingLastSeen:
+        text(
+          funding
+            ?.lastSeen
+        ),
+
+      deploymentDeployer:
+        text(
+          deployment
+            ?.deployerAddress
+        ),
+
+      deploymentTransactionHash:
+        text(
+          deployment
+            ?.transactionHash
+        ),
+
+      deploymentBlockNumber:
+        numberValue(
+          deployment
+            ?.blockNumber
+        ),
+
+      developerVerifiedDeploymentCount:
+        numberValue(
+          developer
+            ?.verifiedDeploymentCount
+        ),
+
+      developerOtherVerifiedDeploymentCount:
+        numberValue(
+          developer
+            ?.otherVerifiedDeploymentCount
         ),
     },
 

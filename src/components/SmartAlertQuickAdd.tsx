@@ -34,7 +34,7 @@ const labels:
     "Relationships changed",
 
   contract_activity:
-    "Contract / authority changed",
+    "Contract / deployment changed",
 };
 
 export default function SmartAlertQuickAdd({
@@ -176,7 +176,10 @@ export default function SmartAlertQuickAdd({
       }
 
       setNotice(
-        "Monitoring enabled. The first scheduled observation establishes the alert baseline."
+        body?.monitoringLive ===
+          true
+          ? "Monitoring enabled. The first scheduled observation establishes the alert baseline."
+          : "Smart Alert saved. Scheduled monitoring is currently paused."
       );
     } catch (
       caught

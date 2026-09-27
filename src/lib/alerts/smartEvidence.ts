@@ -30,17 +30,32 @@ const metricKeys:
   funding_movement: [
     "incomingTransfersDetected",
     "sharedFundingSourcesDetected",
+
+    "fundingSourceCount",
+    "fundingObservationCount",
+    "fundingLastSeen",
   ],
 
   relationship_change: [
     "relationshipsDetected",
     "sharedTransactionsDetected",
+
+    "relationshipCounterpartyCount",
+    "relationshipInteractionCount",
+    "relationshipLastSeen",
   ],
 
   contract_activity: [
     "mintAuthority",
     "freezeAuthority",
     "tokenProgram",
+
+    "deploymentDeployer",
+    "deploymentTransactionHash",
+    "deploymentBlockNumber",
+
+    "developerVerifiedDeploymentCount",
+    "developerOtherVerifiedDeploymentCount",
   ],
 };
 

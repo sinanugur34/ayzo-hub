@@ -39,6 +39,14 @@ import {
 } from "@/lib/alerts/resendProvider";
 
 import {
+  isAlertDeliveryEnabled,
+} from "@/lib/alerts/deliveryPolicy";
+
+import {
+  isAlertSchedulerEnabled,
+} from "@/lib/alerts/schedulerPolicy";
+
+import {
   createAdminClient,
 } from "@/lib/supabase/admin";
 
@@ -121,7 +129,9 @@ function runtimeForRule(
     rule_type:
       string;
   },
-  providerReady:
+  schedulerReady:
+    boolean,
+  deliveryReady:
     boolean
 ) {
   const runtimeStatus =
@@ -144,12 +154,14 @@ function runtimeForRule(
 
     evaluationLive:
       runtimeStatus ===
-      "live",
+        "live" &&
+      schedulerReady,
 
     deliveryLive:
       runtimeStatus ===
         "live" &&
-      providerReady,
+      schedulerReady &&
+      deliveryReady,
   };
 }
 
@@ -345,7 +357,18 @@ export async function GET() {
     }
   }
 
-  const providerReady =
+  const schedulerReady =
+    isAlertSchedulerEnabled(
+      process.env
+        .AYZO_ALERT_SCHEDULER_ENABLED
+    );
+
+  const deliveryReady =
+    schedulerReady &&
+    isAlertDeliveryEnabled(
+      process.env
+        .AYZO_ALERT_DELIVERY_ENABLED
+    ) &&
     isResendAlertProviderReady();
 
   const enrichedRules =
@@ -355,7 +378,8 @@ export async function GET() {
 
         ...runtimeForRule(
           rule,
-          providerReady
+          schedulerReady,
+          deliveryReady
         ),
 
         lastCheckedAt:
@@ -386,10 +410,10 @@ export async function GET() {
       access.billingAvailable,
 
     monitoringLive:
-      true,
+      schedulerReady,
 
     deliveryLive:
-      providerReady,
+      deliveryReady,
 
     foundationStatus:
       "smart_alerts_v2",
@@ -668,7 +692,18 @@ export async function POST(
     }
 
     if (existing) {
-      const providerReady =
+      const schedulerReady =
+        isAlertSchedulerEnabled(
+          process.env
+            .AYZO_ALERT_SCHEDULER_ENABLED
+        );
+
+      const deliveryReady =
+        schedulerReady &&
+        isAlertDeliveryEnabled(
+          process.env
+            .AYZO_ALERT_DELIVERY_ENABLED
+        ) &&
         isResendAlertProviderReady();
 
       return noStoreJson(
@@ -684,9 +719,16 @@ export async function POST(
 
             ...runtimeForRule(
               existing,
-              providerReady
+              schedulerReady,
+              deliveryReady
             ),
           },
+
+          monitoringLive:
+            schedulerReady,
+
+          deliveryLive:
+            deliveryReady,
         },
         409
       );
@@ -751,7 +793,18 @@ export async function POST(
     );
   }
 
-  const providerReady =
+  const schedulerReady =
+    isAlertSchedulerEnabled(
+      process.env
+        .AYZO_ALERT_SCHEDULER_ENABLED
+    );
+
+  const deliveryReady =
+    schedulerReady &&
+    isAlertDeliveryEnabled(
+      process.env
+        .AYZO_ALERT_DELIVERY_ENABLED
+    ) &&
     isResendAlertProviderReady();
 
   return noStoreJson(
@@ -761,7 +814,8 @@ export async function POST(
 
         ...runtimeForRule(
           data,
-          providerReady
+          schedulerReady,
+          deliveryReady
         ),
 
         lastCheckedAt:
@@ -773,12 +827,13 @@ export async function POST(
 
       monitoringLive:
         runtimeStatus ===
-        "live",
+          "live" &&
+        schedulerReady,
 
       deliveryLive:
         runtimeStatus ===
           "live" &&
-        providerReady,
+        deliveryReady,
 
       foundationStatus:
         "smart_alerts_v2",
