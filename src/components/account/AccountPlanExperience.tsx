@@ -49,6 +49,8 @@ const FEATURE_LABELS: Record<
     "Ask AYZO Investigator",
   visualEvidenceGraph:
     "Visual Evidence Graph",
+  fundTracer:
+    "Interactive Fund Tracer",
   marketFlowIntelligence:
     "Market Flow Intelligence",
   investigationTimeline:
@@ -125,6 +127,7 @@ const PLAN_COPY: Record<
       "investigationTimeline",
       "entityLabels",
       "askAyzo",
+      "fundTracer",
       "marketFlowIntelligence",
       "advancedReports",
       "dataExport",

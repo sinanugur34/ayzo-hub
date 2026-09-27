@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -11,6 +12,13 @@ import InteractiveEvidenceGraph, {
 } from "@/components/InteractiveEvidenceGraph";
 
 import AnalysisWorkspaceActivity from "@/components/AnalysisWorkspaceActivity";
+
+import FundTracerPanel from "@/components/FundTracer";
+
+import {
+  buildFundTracer,
+  type FundTracerDeepFundingInput,
+} from "@/lib/intelligence/fundTracer";
 
 import styles from "@/components/AnalysisWorkspaceConcept.module.css";
 
@@ -230,6 +238,7 @@ export default function AnalysisWorkspaceOverview({
   caveats = [],
   graph,
   timeline = null,
+  deepFundingTracing = null,
 }: {
   networkLabel: string;
   subject: string;
@@ -238,6 +247,9 @@ export default function AnalysisWorkspaceOverview({
   caveats?: readonly string[];
   graph: VisualEvidenceGraphData | null;
   timeline?: ActivityTimelineData | null;
+
+  deepFundingTracing?:
+    FundTracerDeepFundingInput | null;
 }) {
   const [
     plan,
@@ -255,6 +267,16 @@ export default function AnalysisWorkspaceOverview({
       InteractiveEvidenceSelection
     >(
       null
+    );
+
+  const [
+    tracerEvidenceRefs,
+    setTracerEvidenceRefs,
+  ] =
+    useState<
+      readonly string[]
+    >(
+      []
     );
 
   const loadPlan =
@@ -334,6 +356,43 @@ export default function AnalysisWorkspaceOverview({
           "visualEvidenceGraph"
         )
       : null;
+
+  const fundTracerPlan =
+    plan ===
+      "pro" ||
+    plan ===
+      "advanced"
+      ? plan
+      : null;
+
+  const fundTracerAccess =
+    fundTracerPlan
+      ? planHasFeature(
+          fundTracerPlan,
+          "fundTracer"
+        )
+      : false;
+
+  const fundTracerModel =
+    useMemo(
+      () =>
+        buildFundTracer({
+          graph,
+          timeline,
+
+          deepFunding:
+            fundTracerPlan ===
+            "advanced"
+              ? deepFundingTracing
+              : null,
+        }),
+      [
+        graph,
+        timeline,
+        fundTracerPlan,
+        deepFundingTracing,
+      ]
+    );
 
   const coverageState =
     coverageCopy(
@@ -445,6 +504,10 @@ export default function AnalysisWorkspaceOverview({
             onClick={() => {
               setEvidenceSelection(
                 null
+              );
+
+              setTracerEvidenceRefs(
+                []
               );
 
               window.dispatchEvent(
@@ -608,7 +671,15 @@ export default function AnalysisWorkspaceOverview({
                 evidenceSelection
               }
               onSelectionChange={
-                setEvidenceSelection
+                next => {
+                  setTracerEvidenceRefs(
+                    []
+                  );
+
+                  setEvidenceSelection(
+                    next
+                  );
+                }
               }
             />
           ) : (
@@ -745,6 +816,10 @@ export default function AnalysisWorkspaceOverview({
                   null
                 );
 
+                setTracerEvidenceRefs(
+                  []
+                );
+
                 window.dispatchEvent(
                   new CustomEvent(
                     "ayzo:evidence-selection",
@@ -778,12 +853,53 @@ export default function AnalysisWorkspaceOverview({
         </aside>
       </div>
 
+      {fundTracerPlan &&
+        fundTracerAccess && (
+        <FundTracerPanel
+          model={
+            fundTracerModel
+          }
+          plan={
+            fundTracerPlan
+          }
+          onEvidenceRefsChange={
+            refs => {
+              setEvidenceSelection(
+                null
+              );
+
+              setTracerEvidenceRefs(
+                refs
+              );
+
+              window.dispatchEvent(
+                new CustomEvent(
+                  "ayzo:evidence-selection",
+                  {
+                    detail: {
+                      evidenceRefs:
+                        refs,
+                    },
+                  }
+                )
+              );
+            }
+          }
+        />
+      )}
+
       <AnalysisWorkspaceActivity
         timeline={timeline}
         subject={subject}
         selectedEvidenceRefs={
-          evidenceSelection?.evidenceRefs ??
-          []
+          tracerEvidenceRefs.length >
+          0
+            ? tracerEvidenceRefs
+            : (
+                evidenceSelection
+                  ?.evidenceRefs ??
+                []
+              )
         }
       />
 

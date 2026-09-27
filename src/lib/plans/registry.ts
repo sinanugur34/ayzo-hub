@@ -33,6 +33,7 @@ const PRO_PLATFORM_FEATURES = {
   investigationTimeline: true,
   entityLabels: true,
   askAyzo: true,
+  fundTracer: true,
   marketFlowIntelligence: true,
   advancedReports: true,
   dataExport: true,
