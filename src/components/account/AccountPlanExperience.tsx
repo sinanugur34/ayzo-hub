@@ -46,7 +46,7 @@ const FEATURE_LABELS: Record<
   walletProfiler:
     "Wallet Profiler",
   askAyzo:
-    "Ask AYZO",
+    "Ask AYZO Investigator",
   visualEvidenceGraph:
     "Visual Evidence Graph",
   marketFlowIntelligence:

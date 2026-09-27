@@ -56,6 +56,9 @@ type AskResult = {
   limitation?:
     string;
 
+  investigatorContext?:
+    boolean;
+
   question?: {
     original?: string;
     interpreted?: string;
@@ -116,7 +119,7 @@ const PRODUCT_QUESTIONS = [
   "Where are Saved Analyses?",
   "What are Entity Labels?",
   "Where are Alerts?",
-  "What does Ask AYZO do?",
+  "What does Ask AYZO Investigator do?",
 ] as const;
 
 function extractResult(
@@ -246,6 +249,12 @@ function ResultCard({
 }) {
   return (
     <div className="rounded-2xl border border-zinc-800 bg-black/30 p-4">
+      {result.investigatorContext && (
+        <div className="mb-3 inline-flex rounded-full border border-violet-500/20 bg-violet-500/[0.07] px-2.5 py-1 text-[8px] font-semibold tracking-[0.12em] text-violet-300">
+          INVESTIGATOR CONTEXT
+        </div>
+      )}
+
       {result.question
         ?.changed &&
         result.question
@@ -429,9 +438,12 @@ function FloatingAssistant({
 
   const suggestions =
     analysisConnected
-      ? getAskAyzoSuggestedQuestions(
-          activeContext.network
-        )
+      ? [
+          "What changed since earlier evidence?",
+          ...getAskAyzoSuggestedQuestions(
+            activeContext.network
+          ),
+        ]
       : PRODUCT_QUESTIONS;
 
   async function ask(
@@ -632,19 +644,21 @@ function FloatingAssistant({
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="text-[10px] font-medium tracking-[0.18em] text-violet-400">
-              ASK AYZO
+              {analysisConnected
+                ? "ASK AYZO INVESTIGATOR"
+                : "ASK AYZO"}
             </div>
 
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <h3 className="text-base font-semibold text-white">
                 {analysisConnected
-                  ? "Analysis assistant"
+                  ? "Evidence investigator"
                   : "AYZO assistant"}
               </h3>
 
               <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-2 py-1 text-[8px] font-medium tracking-[0.12em] text-violet-300">
                 {analysisConnected
-                  ? "ANALYSIS CONNECTED"
+                  ? "INVESTIGATOR CONTEXT"
                   : "PRODUCT MODE"}
               </span>
             </div>
@@ -749,7 +763,7 @@ function FloatingAssistant({
 
           {loading && (
             <div className="rounded-2xl border border-zinc-900 bg-black/20 px-4 py-3 text-xs text-zinc-500">
-              Ask AYZO is analyzing the connected evidence…
+              Ask AYZO Investigator is analyzing the connected evidence…
             </div>
           )}
 
@@ -785,7 +799,7 @@ function FloatingAssistant({
             }
             placeholder={
               analysisConnected
-                ? "Ask a follow-up about this analysis..."
+                ? "Investigate this evidence or ask a follow-up..."
                 : "Ask about AYZO..."
             }
             className="h-11 min-w-0 flex-1 rounded-xl border border-zinc-800 bg-black/50 px-4 text-sm text-zinc-200 outline-none placeholder:text-zinc-700 focus:border-violet-500"

@@ -11,6 +11,12 @@ import {
 } from "@/lib/account/askAyzoRouter";
 
 import {
+  attachAskAyzoInvestigatorContext,
+  buildAskAyzoInvestigatorContext,
+  type AskAyzoInvestigatorHistoryReadStatus,
+} from "@/lib/account/askAyzoInvestigator";
+
+import {
   answerAskAyzoSemantically,
   isAskAyzoSemanticEnabled,
 } from "@/lib/account/askAyzoSemantic";
@@ -33,6 +39,10 @@ import {
 import {
   checkRateLimit,
 } from "@/lib/rateLimit";
+
+import {
+  createAdminClient,
+} from "@/lib/supabase/admin";
 
 export const dynamic =
   "force-dynamic";
@@ -321,6 +331,7 @@ export async function POST(
   }
 
   const {
+    supabase,
     userId,
   } =
     await getAuthenticatedAccountContext();
@@ -460,11 +471,211 @@ export async function POST(
         )
       : false;
 
+  let investigatorContextAttached =
+    false;
+
   if (
     semanticEligible &&
     semanticAllowed &&
     isAskAyzoSemanticEnabled()
   ) {
+    let semanticEvidencePayload =
+      body.evidencePayload;
+
+    try {
+      const admin =
+        createAdminClient();
+
+      const [
+        automaticResult,
+        savedResult,
+      ] =
+        await Promise.all([
+          admin
+            .from(
+              "evidence_snapshots"
+            )
+            .select(`
+              id,
+              created_at,
+              snapshot
+            `)
+            .eq(
+              "user_id",
+              userId
+            )
+            .eq(
+              "network",
+              network
+            )
+            .eq(
+              "subject_type",
+              subjectType
+            )
+            .eq(
+              "subject_value",
+              subjectValue
+            )
+            .order(
+              "captured_at",
+              {
+                ascending:
+                  false,
+              }
+            )
+            .limit(
+              8
+            ),
+
+          supabase
+            .from(
+              "saved_analyses"
+            )
+            .select(
+              "id,created_at,analysis_payload"
+            )
+            .eq(
+              "user_id",
+              userId
+            )
+            .eq(
+              "network",
+              network
+            )
+            .eq(
+              "subject_type",
+              subjectType
+            )
+            .eq(
+              "subject_value",
+              subjectValue
+            )
+            .not(
+              "analysis_payload",
+              "is",
+              null
+            )
+            .order(
+              "created_at",
+              {
+                ascending:
+                  false,
+              }
+            )
+            .limit(
+              8
+            ),
+        ]);
+
+      const automaticAvailable =
+        !automaticResult.error &&
+        Array.isArray(
+          automaticResult.data
+        );
+
+      const savedAvailable =
+        !savedResult.error &&
+        Array.isArray(
+          savedResult.data
+        );
+
+      const historyReadStatus:
+        AskAyzoInvestigatorHistoryReadStatus =
+          automaticAvailable &&
+          savedAvailable
+            ? "ready"
+            : automaticAvailable ||
+                savedAvailable
+              ? "partial"
+              : "unavailable";
+
+      const automaticSnapshots =
+        automaticAvailable
+          ? automaticResult.data.map(
+              row => ({
+                id:
+                  String(
+                    row.id
+                  ),
+
+                createdAt:
+                  typeof row.created_at ===
+                  "string"
+                    ? row.created_at
+                    : new Date(
+                        0
+                      ).toISOString(),
+
+                analysisPayload:
+                  row.snapshot,
+
+                kind:
+                  "automatic_baseline" as const,
+              })
+            )
+          : [];
+
+      const savedSnapshots =
+        savedAvailable
+          ? savedResult.data.map(
+              row => ({
+                id:
+                  String(
+                    row.id
+                  ),
+
+                createdAt:
+                  typeof row.created_at ===
+                  "string"
+                    ? row.created_at
+                    : new Date(
+                        0
+                      ).toISOString(),
+
+                analysisPayload:
+                  row.analysis_payload,
+
+                kind:
+                  "saved_analysis" as const,
+              })
+            )
+          : [];
+
+      const investigatorContext =
+        buildAskAyzoInvestigatorContext({
+          network,
+          subjectType,
+          subjectValue,
+
+          evidencePayload:
+            body.evidencePayload,
+
+          automaticSnapshots,
+
+          savedSnapshots,
+
+          historyReadStatus,
+        });
+
+      semanticEvidencePayload =
+        attachAskAyzoInvestigatorContext(
+          body.evidencePayload,
+          investigatorContext
+        );
+
+      investigatorContextAttached =
+        true;
+    } catch {
+      /*
+       * Investigator history is an
+       * additive read-only layer.
+       *
+       * Current-analysis Ask AYZO must
+       * continue working if account
+       * evidence memory is unavailable.
+       */
+    }
+
     const semanticResult =
       await answerAskAyzoSemantically({
         network,
@@ -473,7 +684,7 @@ export async function POST(
         question,
         recentConversation,
         evidencePayload:
-          body.evidencePayload,
+          semanticEvidencePayload,
         fallback:
           deterministicResult,
       });
@@ -500,7 +711,7 @@ export async function POST(
           question,
           recentConversation,
           evidencePayload:
-            body.evidencePayload,
+            semanticEvidencePayload,
           fallback:
             deterministicResult,
         });
@@ -513,9 +724,22 @@ export async function POST(
     }
   }
 
+  const responseResult =
+    investigatorContextAttached &&
+    result.mode ===
+      "evidence"
+      ? {
+          ...result,
+
+          investigatorContext:
+            true,
+        }
+      : result;
+
   return noStoreJson({
     ok: true,
+
     askAyzo:
-      result,
+      responseResult,
   });
 }

@@ -146,7 +146,7 @@ export default function AskAyzoPanel({
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <div className="text-[10px] font-medium tracking-[0.16em] text-violet-400">
-            ASK AYZO AVAILABLE
+            ASK AYZO INVESTIGATOR
           </div>
 
           <span className="rounded-full border border-emerald-500/15 bg-emerald-500/5 px-2 py-0.5 text-[8px] font-medium tracking-[0.1em] text-emerald-400">
@@ -158,7 +158,7 @@ export default function AskAyzoPanel({
           {network.toUpperCase()}
           {" · "}
           {subjectType.toUpperCase()}
-          {" · evidence context ready"}
+          {" · investigator context ready"}
         </p>
       </div>
 
@@ -169,7 +169,7 @@ export default function AskAyzoPanel({
         }
         className="inline-flex h-9 shrink-0 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/10 px-4 text-xs font-medium text-violet-200 transition hover:border-violet-400/40 hover:bg-violet-500/15"
       >
-        Open Ask AYZO
+        Open Investigator
       </button>
     </section>
   );
