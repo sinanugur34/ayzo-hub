@@ -244,6 +244,12 @@ const sections:
         ),
 
         featureRow(
+          "Wallet profiler",
+          "walletProfiler",
+          "Evidence-only synthesis of bounded wallet activity, funding and relationship observations. No profitability, identity or ownership scoring."
+        ),
+
+        featureRow(
           "Visual evidence graph",
           "visualEvidenceGraph",
           "Evidence-backed relationship visualization."

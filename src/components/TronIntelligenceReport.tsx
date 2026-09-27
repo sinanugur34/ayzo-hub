@@ -809,6 +809,7 @@ export default function TronIntelligenceReport({
         <WalletTrackRecordPanel
           record={walletTrackRecord}
           subjectLabel="TRON address"
+          profileEligible={true}
         />
       )}
 

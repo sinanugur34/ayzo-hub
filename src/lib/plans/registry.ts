@@ -29,6 +29,7 @@ const PRO_PLATFORM_FEATURES = {
   ...LIVE_PLATFORM_FEATURES,
   alerts: true,
   historicalChanges: true,
+  walletProfiler: true,
   investigationTimeline: true,
   entityLabels: true,
   askAyzo: true,

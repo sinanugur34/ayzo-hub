@@ -1,3 +1,24 @@
+"use client";
+
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import WalletProfilerPanel from "@/components/WalletProfiler";
+
+import {
+  buildWalletProfile,
+} from "@/lib/intelligence/walletProfiler";
+
+import {
+  planHasFeature,
+} from "@/lib/plans/registry";
+
+import type {
+  PlanId,
+} from "@/lib/plans/types";
+
 import type {
   WalletTrackRecord,
 } from "@/lib/intelligence/walletTrackRecord";
@@ -33,13 +54,125 @@ export default function WalletTrackRecordPanel({
   record,
   subjectLabel =
     "Analyzed wallet",
+  profileEligible =
+    false,
 }: {
   record:
     WalletTrackRecord;
 
   subjectLabel?:
     string;
+
+  profileEligible?:
+    boolean;
 }) {
+  const [
+    plan,
+    setPlan,
+  ] =
+    useState<
+      PlanId | null
+    >(null);
+
+  useEffect(
+    () => {
+      let cancelled =
+        false;
+
+      async function loadPlan() {
+        try {
+          const response =
+            await fetch(
+              "/api/free/status",
+              {
+                cache:
+                  "no-store",
+
+                credentials:
+                  "same-origin",
+              }
+            );
+
+          if (
+            !response.ok
+          ) {
+            return;
+          }
+
+          const body:
+            unknown =
+            await response.json();
+
+          if (
+            cancelled ||
+            !body ||
+            typeof body !==
+              "object" ||
+            !("plan" in body)
+          ) {
+            return;
+          }
+
+          const value =
+            (
+              body as {
+                plan?:
+                  unknown;
+              }
+            ).plan;
+
+          if (
+            value ===
+              "free" ||
+            value ===
+              "pro" ||
+            value ===
+              "advanced"
+          ) {
+            setPlan(
+              value
+            );
+          }
+        } catch {
+          return;
+        }
+      }
+
+      void loadPlan();
+
+      return () => {
+        cancelled =
+          true;
+      };
+    },
+    []
+  );
+
+  const profilerEnabled =
+    profileEligible &&
+    plan !== null &&
+    planHasFeature(
+      plan,
+      "walletProfiler"
+    );
+
+  if (
+    profilerEnabled
+  ) {
+    return (
+      <WalletProfilerPanel
+        profile={
+          buildWalletProfile(
+            record
+          )
+        }
+        subjectLabel={
+          subjectLabel
+        }
+      />
+    );
+  }
+
   return (
     <section className="overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-b from-violet-500/5 via-zinc-950/70 to-zinc-950/80">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-zinc-900 p-5 sm:p-6">

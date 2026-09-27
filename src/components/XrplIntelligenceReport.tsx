@@ -653,6 +653,7 @@ export default function XrplIntelligenceReport({
           <WalletTrackRecordPanel
             record={walletTrackRecord}
             subjectLabel="XRP Ledger account"
+            profileEligible={true}
           />
         </div>
       )}

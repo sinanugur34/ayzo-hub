@@ -293,7 +293,7 @@ function genericHelp(
       "help",
 
     answer:
-      "I can explain the current AYZO analysis, holder concentration, wallet relationships, funding evidence, Solana authorities, EVM deployment and developer history. I can also explain AYZO features or tell you where Saved Analyses, Watchlists, Alerts, Entity Labels, Historical Changes and Investigation Timeline are located.",
+      "I can explain the current AYZO analysis, holder concentration, wallet relationships, funding evidence, Solana authorities, EVM deployment and developer history. I can also explain AYZO features or tell you where Saved Analyses, Watchlists, Alerts, Wallet Profiler, Entity Labels, Historical Changes and Investigation Timeline are located.",
 
     confidence:
       "high",

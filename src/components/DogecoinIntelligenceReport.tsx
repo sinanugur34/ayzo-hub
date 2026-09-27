@@ -781,6 +781,7 @@ export default function DogecoinIntelligenceReport({
         <WalletTrackRecordPanel
           record={walletTrackRecord}
           subjectLabel="Dogecoin address"
+          profileEligible={true}
         />
       )}
 

@@ -27,6 +27,7 @@ export type FeatureId =
   | "activityTimeline"
   | "entityLabels"
   | "walletTrackRecord"
+  | "walletProfiler"
   | "askAyzo"
   | "visualEvidenceGraph"
   | "marketFlowIntelligence"

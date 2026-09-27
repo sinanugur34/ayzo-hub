@@ -1009,6 +1009,7 @@ export default function IntelligenceReport({
           })
         }
         subjectLabel="Analyzed holder-wallet set"
+        profileEligible={false}
       />
 
       <ActivityTimelinePanel

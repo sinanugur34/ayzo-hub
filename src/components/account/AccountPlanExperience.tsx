@@ -43,6 +43,8 @@ const FEATURE_LABELS: Record<
     "Entity Labels",
   walletTrackRecord:
     "Wallet Track Record",
+  walletProfiler:
+    "Wallet Profiler",
   askAyzo:
     "Ask AYZO",
   visualEvidenceGraph:

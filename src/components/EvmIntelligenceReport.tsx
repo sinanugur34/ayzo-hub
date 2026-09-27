@@ -3069,6 +3069,10 @@ export default function EvmIntelligenceReport({
           })
         }
         subjectLabel="Analyzed EVM address"
+        profileEligible={
+          data.assetKind ===
+          "wallet"
+        }
       />
 
       <ActivityTimelinePanel
