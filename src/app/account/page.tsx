@@ -15,6 +15,7 @@ import CasesPanel from "@/components/account/CasesPanel";
 import EvidenceLockerPanel from "@/components/account/EvidenceLockerPanel";
 import CompareInvestigationsPanel from "@/components/account/CompareInvestigationsPanel";
 import EvidenceHistoryPanel from "@/components/account/EvidenceHistoryPanel";
+import WalletProfileMemoryPanel from "@/components/account/WalletProfileMemoryPanel";
 import Link from "next/link";
 
 import {
@@ -85,6 +86,15 @@ export default async function AccountPage() {
       "historicalChanges"
     );
 
+  const walletProfilerEnabled =
+    accountFeatureEnabled(
+      "walletProfiler"
+    );
+
+  const evidenceMemoryEnabled =
+    evidenceHistoryEnabled ||
+    walletProfilerEnabled;
+
   const [
     savedResult,
     watchlistsResult,
@@ -147,7 +157,7 @@ export default async function AccountPage() {
     [];
 
   const evidenceResult =
-    evidenceHistoryEnabled
+    evidenceMemoryEnabled
       ? await supabase
           .from(
             "evidence_snapshots"
@@ -244,6 +254,15 @@ export default async function AccountPage() {
               </a>
             )}
 
+            {walletProfilerEnabled && (
+              <a
+                href="#wallet-profile-memory"
+                className="rounded-full border border-violet-500/15 bg-violet-500/[0.04] px-3 py-1.5 text-[10px] font-medium text-violet-300 transition hover:bg-violet-500/[0.08]"
+              >
+                Wallet profiles
+              </a>
+            )}
+
             <a
               href="#saved-analyses"
               className="rounded-full border border-zinc-800 bg-black/30 px-3 py-1.5 text-[10px] font-medium text-zinc-500 transition hover:border-zinc-700 hover:text-zinc-200"
@@ -286,6 +305,19 @@ export default async function AccountPage() {
 
         {evidenceHistoryEnabled && (
           <EvidenceHistoryPanel
+            snapshots={
+              evidenceSnapshots
+            }
+            unavailable={
+              Boolean(
+                evidenceResult.error
+              )
+            }
+          />
+        )}
+
+        {walletProfilerEnabled && (
+          <WalletProfileMemoryPanel
             snapshots={
               evidenceSnapshots
             }

@@ -822,6 +822,7 @@ export default function BitcoinIntelligenceReport({
           })
         }
         subjectLabel="Analyzed Bitcoin address"
+        profileEligible={true}
       />
 
       <ActivityTimelinePanel

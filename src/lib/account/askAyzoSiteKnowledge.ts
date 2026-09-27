@@ -127,6 +127,23 @@ export const ASK_AYZO_SITE_KNOWLEDGE:
   },
 
   {
+    id: "wallet-profiler",
+    title: "Wallet Profiler",
+    route: "/",
+    description:
+      "Wallet Profiler is a Pro and Advanced evidence-only synthesis of supported wallet activity, funding and relationship observations. It does not assign profitability, identity, ownership or risk scores.",
+    directions:
+      "Run a supported wallet analysis. Pro and Advanced accounts see Wallet Profile where the analyzed subject is a wallet. Recent wallet evidence baselines also appear in Account → Profile Memory.",
+    keywords: [
+      "wallet profiler",
+      "wallet profile",
+      "profile memory",
+      "cüzdan profili",
+      "cuzdan profili",
+    ],
+  },
+
+  {
     id: "historical-changes",
     title: "Historical Changes",
     route: "/",
