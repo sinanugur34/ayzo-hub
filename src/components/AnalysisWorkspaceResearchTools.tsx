@@ -1,12 +1,28 @@
 "use client";
 
 import {
+  useEffect,
   useRef,
+  useState,
 } from "react";
 
 import type {
   ReactNode,
 } from "react";
+
+type EvidenceChangeSummaryStatus =
+  | "loading"
+  | "locked"
+  | "no-baseline"
+  | "ready";
+
+type EvidenceChangeSummary = {
+  status:
+    EvidenceChangeSummaryStatus;
+
+  changeCount:
+    number | null;
+};
 
 export default function AnalysisWorkspaceResearchTools({
   children,
@@ -18,6 +34,85 @@ export default function AnalysisWorkspaceResearchTools({
     useRef<HTMLDetailsElement>(
       null
     );
+
+  const [
+    evidenceChange,
+    setEvidenceChange,
+  ] =
+    useState<
+      EvidenceChangeSummary | null
+    >(null);
+
+  useEffect(() => {
+    function handleEvidenceChangeSummary(
+      event:
+        Event
+    ) {
+      const detail =
+        (
+          event as CustomEvent<
+            Partial<
+              EvidenceChangeSummary
+            >
+          >
+        ).detail;
+
+      if (!detail) {
+        return;
+      }
+
+      const status =
+        detail.status;
+
+      if (
+        status !==
+          "loading" &&
+        status !==
+          "locked" &&
+        status !==
+          "no-baseline" &&
+        status !==
+          "ready"
+      ) {
+        return;
+      }
+
+      const rawCount =
+        detail.changeCount;
+
+      const changeCount =
+        typeof rawCount ===
+          "number" &&
+        Number.isInteger(
+          rawCount
+        ) &&
+        rawCount >= 0
+          ? rawCount
+          : null;
+
+      setEvidenceChange({
+        status,
+
+        changeCount:
+          status ===
+            "ready"
+            ? changeCount
+            : null,
+      });
+    }
+
+    window.addEventListener(
+      "ayzo:evidence-change-summary",
+      handleEvidenceChangeSummary
+    );
+
+    return () => {
+      window.removeEventListener(
+        "ayzo:evidence-change-summary",
+        handleEvidenceChangeSummary
+      );
+    };
+  }, []);
 
   function handleToggle() {
     const node =
@@ -40,6 +135,60 @@ export default function AnalysisWorkspaceResearchTools({
     );
   }
 
+  let helper =
+    "Save, monitor and continue";
+
+  let helperClass =
+    "text-zinc-500";
+
+  if (
+    evidenceChange?.status ===
+    "locked"
+  ) {
+    helper =
+      "Pro · Evidence Change";
+
+    helperClass =
+      "text-violet-300";
+  }
+
+  if (
+    evidenceChange?.status ===
+    "no-baseline"
+  ) {
+    helper =
+      "Save baseline to track change";
+
+    helperClass =
+      "text-zinc-400";
+  }
+
+  if (
+    evidenceChange?.status ===
+      "ready" &&
+    evidenceChange.changeCount !==
+      null
+  ) {
+    helper =
+      evidenceChange.changeCount ===
+        0
+        ? "No evidence change"
+        : `${
+            evidenceChange.changeCount
+          } evidence ${
+            evidenceChange.changeCount ===
+              1
+              ? "change"
+              : "changes"
+          }`;
+
+    helperClass =
+      evidenceChange.changeCount >
+        0
+        ? "text-violet-300"
+        : "text-emerald-300";
+  }
+
   return (
     <details
       ref={detailsRef}
@@ -53,8 +202,14 @@ export default function AnalysisWorkspaceResearchTools({
             RESEARCH TOOLS
           </div>
 
-          <div className="hidden text-[11px] text-zinc-500 sm:block">
-            Save, monitor and continue
+          <div
+            data-evidence-change-summary={
+              evidenceChange?.status ??
+              "unknown"
+            }
+            className={`hidden text-[11px] sm:block ${helperClass}`}
+          >
+            {helper}
           </div>
         </div>
 
