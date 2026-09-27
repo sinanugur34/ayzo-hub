@@ -23,6 +23,14 @@ import {
   planHasFeature,
 } from "@/lib/plans/registry";
 
+import {
+  classifySmartAlertRuntime,
+} from "@/lib/alerts/liveSupport";
+
+import {
+  isResendAlertProviderReady,
+} from "@/lib/alerts/resendProvider";
+
 export const dynamic =
   "force-dynamic";
 
@@ -219,12 +227,44 @@ export async function PATCH(
     );
   }
 
+  const runtimeStatus =
+    classifySmartAlertRuntime({
+      watchlistId:
+        data.watchlist_id,
+
+      network:
+        data.network,
+
+      subjectType:
+        data.subject_type,
+
+      ruleType:
+        data.rule_type,
+    });
+
   return noStoreJson({
-    rule:
-      data,
+    rule: {
+      ...data,
+
+      runtimeStatus,
+
+      evaluationLive:
+        runtimeStatus ===
+        "live",
+
+      deliveryLive:
+        runtimeStatus ===
+          "live" &&
+        isResendAlertProviderReady(),
+    },
 
     deliveryLive:
-      false,
+      runtimeStatus ===
+        "live" &&
+      isResendAlertProviderReady(),
+
+    foundationStatus:
+      "smart_alerts_v2",
   });
 }
 

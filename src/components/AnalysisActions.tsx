@@ -9,6 +9,7 @@ import InvestigationTimelinePanel from "@/components/InvestigationTimelinePanel"
 import AskAyzoPanel from "@/components/AskAyzoPanel";
 import CaseQuickAdd from "@/components/CaseQuickAdd";
 import EvidenceLockerQuickAdd from "@/components/EvidenceLockerQuickAdd";
+import SmartAlertQuickAdd from "@/components/SmartAlertQuickAdd";
 
 import {
   useEffect,
@@ -1203,6 +1204,12 @@ export default function AnalysisActions({
           </div>
         </div>
       )}
+
+      <SmartAlertQuickAdd
+        network={network}
+        subjectType={subjectType}
+        subjectValue={subjectValue}
+      />
 
       <CaseQuickAdd
         ensureSavedAnalysis={
