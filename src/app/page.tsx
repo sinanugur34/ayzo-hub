@@ -920,6 +920,74 @@ export default function Home() {
     xrpAnalysis !==
       null;
 
+  useEffect(() => {
+    if (!hasResult) {
+      return;
+    }
+
+    const activeElement =
+      document.activeElement;
+
+    if (
+      activeElement instanceof
+      HTMLElement
+    ) {
+      activeElement.blur();
+    }
+
+    const frame =
+      window.requestAnimationFrame(
+        () => {
+          const target =
+            document.getElementById(
+              "analysis-result"
+            );
+
+          if (!target) {
+            return;
+          }
+
+          const reduceMotion =
+            window.matchMedia(
+              "(prefers-reduced-motion: reduce)"
+            ).matches;
+
+          const targetTop =
+            Math.max(
+              0,
+              target.getBoundingClientRect()
+                .top +
+                window.scrollY -
+                16
+            );
+
+          window.scrollTo({
+            top:
+              targetTop,
+
+            behavior:
+              reduceMotion
+                ? "auto"
+                : "smooth",
+          });
+        }
+      );
+
+    return () => {
+      window.cancelAnimationFrame(
+        frame
+      );
+    };
+  }, [
+    hasResult,
+    solanaResult,
+    evmAnalysis,
+    bitcoinAnalysis,
+    dogecoinAnalysis,
+    tronAnalysis,
+    xrpAnalysis,
+  ]);
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#050506] text-white">
       <div className="pointer-events-none absolute left-1/2 top-[-300px] h-[650px] w-[650px] -translate-x-1/2 rounded-full bg-violet-700/20 blur-[150px]" />
@@ -1236,7 +1304,9 @@ export default function Home() {
         <FreePlanStatus />
 
         {solanaResult && (
-          <section className="mt-12 w-[calc(100vw-16px)] max-w-none shrink-0 self-center text-left">
+          <section
+            id="analysis-result"
+            className="mt-12 scroll-mt-4 w-[calc(100vw-16px)] max-w-none shrink-0 self-center text-left">
             <AnalysisWorkspaceFrame>
             <div className="rounded-3xl border border-zinc-800 bg-zinc-950/70 p-6 shadow-2xl shadow-purple-950/10 backdrop-blur-xl sm:p-8">
               <div className="flex flex-col justify-between gap-5 border-b border-zinc-900 pb-6 sm:flex-row sm:items-center">
@@ -1346,7 +1416,9 @@ export default function Home() {
         )}
 
         {evmAnalysis && (
-          <section className="mt-12 w-[calc(100vw-16px)] max-w-none shrink-0 self-center">
+          <section
+            id="analysis-result"
+            className="mt-12 scroll-mt-4 w-[calc(100vw-16px)] max-w-none shrink-0 self-center">
             <AnalysisWorkspaceFrame>
             <EvmIntelligenceReport
               key={`${evmAnalysis.network}:${evmAnalysis.address}`}
@@ -1362,7 +1434,9 @@ export default function Home() {
         )}
 
         {bitcoinAnalysis && (
-          <section className="mt-12 w-[calc(100vw-16px)] max-w-none shrink-0 self-center">
+          <section
+            id="analysis-result"
+            className="mt-12 scroll-mt-4 w-[calc(100vw-16px)] max-w-none shrink-0 self-center">
             <AnalysisWorkspaceFrame>
             <BitcoinIntelligenceReport
               key={
@@ -1377,7 +1451,9 @@ export default function Home() {
         )}
 
         {dogecoinAnalysis && (
-          <section className="mt-12 w-[calc(100vw-16px)] max-w-none shrink-0 self-center">
+          <section
+            id="analysis-result"
+            className="mt-12 scroll-mt-4 w-[calc(100vw-16px)] max-w-none shrink-0 self-center">
             <AnalysisWorkspaceFrame>
             <DogecoinIntelligenceReport
               key={
@@ -1392,7 +1468,9 @@ export default function Home() {
         )}
 
         {tronAnalysis && (
-          <section className="mt-12 w-[calc(100vw-16px)] max-w-none shrink-0 self-center">
+          <section
+            id="analysis-result"
+            className="mt-12 scroll-mt-4 w-[calc(100vw-16px)] max-w-none shrink-0 self-center">
             <AnalysisWorkspaceFrame>
             <TronIntelligenceReport
               key={
@@ -1407,7 +1485,9 @@ export default function Home() {
         )}
 
         {xrpAnalysis && (
-          <section className="mt-12 w-[calc(100vw-16px)] max-w-none shrink-0 self-center">
+          <section
+            id="analysis-result"
+            className="mt-12 scroll-mt-4 w-[calc(100vw-16px)] max-w-none shrink-0 self-center">
             <AnalysisWorkspaceFrame>
             <XrplIntelligenceReport
               key={
