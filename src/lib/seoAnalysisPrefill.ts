@@ -3,6 +3,10 @@ import {
   type LiveAnalysisNetworkId,
 } from "./networks/addressSelection";
 
+import {
+  isNetworkId,
+} from "./networks/registry";
+
 export type SeoAnalysisPrefill = {
   network:
     LiveAnalysisNetworkId;
@@ -49,6 +53,9 @@ export function parseSeoAnalysisPrefill(
 
   if (
     !network ||
+    !isNetworkId(
+      network
+    ) ||
     !isLiveAnalysisNetworkId(
       network
     )
