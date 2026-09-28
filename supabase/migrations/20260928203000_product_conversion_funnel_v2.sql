@@ -76,7 +76,13 @@ alter table public.product_events
 
 revoke all
 on table public.product_events
-from anon, authenticated;
+from public, anon, authenticated;
+
+-- The server-side Supabase admin client uses the service role.
+-- Grant only the operations required by AYZO telemetry.
+grant select, insert
+on table public.product_events
+to service_role;
 
 comment on table public.product_events is
   'Server-only AYZO consent-backed product funnel telemetry. Raw analysis subjects, questions, email addresses, transaction hashes and payment secrets are prohibited.';
@@ -94,8 +100,8 @@ returns table (
   user_count bigint
 )
 language sql
-security definer
-set search_path = public, pg_catalog
+security invoker
+set search_path = ''
 as $$
   select
     pe.event_name,

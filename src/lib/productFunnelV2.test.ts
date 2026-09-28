@@ -169,3 +169,53 @@ test(
     );
   }
 );
+
+test(
+  "Admin funnel RPC uses invoker rights instead of SECURITY DEFINER",
+  () => {
+    assert.doesNotMatch(
+      migration,
+      /security\s+definer/i
+    );
+
+    assert.match(
+      migration,
+      /security\s+invoker/i
+    );
+
+    assert.match(
+      migration,
+      /set\s+search_path\s*=\s*''/i
+    );
+  }
+);
+
+test(
+  "product funnel grants only required service-role table access",
+  () => {
+    assert.match(
+      migration,
+      /grant\s+select,\s*insert[\s\S]*public\.product_events[\s\S]*service_role/i
+    );
+
+    assert.match(
+      migration,
+      /revoke\s+all[\s\S]*public\.product_events[\s\S]*public,\s*anon,\s*authenticated/i
+    );
+  }
+);
+
+test(
+  "Admin funnel RPC execution remains service-role only",
+  () => {
+    assert.match(
+      migration,
+      /revoke\s+all[\s\S]*ayzo_admin_product_funnel[\s\S]*public,\s*anon,\s*authenticated/i
+    );
+
+    assert.match(
+      migration,
+      /grant\s+execute[\s\S]*ayzo_admin_product_funnel[\s\S]*service_role/i
+    );
+  }
+);
