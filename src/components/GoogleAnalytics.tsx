@@ -3,6 +3,10 @@
 import Script from "next/script";
 import { useEffect, useState } from "react";
 
+import {
+  trackEvent,
+} from "@/lib/analytics/client";
+
 const GA_ID = "G-FHVK63YV5E";
 
 type Consent = "granted" | "denied" | null;
@@ -17,6 +21,16 @@ export default function GoogleAnalytics() {
     const timer = window.setTimeout(() => {
       if (saved === "granted" || saved === "denied") {
         setConsent(saved);
+
+        if (saved === "granted") {
+          trackEvent(
+            "product_session_started",
+            {
+              surface:
+                "web",
+            }
+          );
+        }
       }
 
       setReady(true);
@@ -28,6 +42,16 @@ export default function GoogleAnalytics() {
   function chooseConsent(value: "granted" | "denied") {
     localStorage.setItem("ayzo_analytics_consent", value);
     setConsent(value);
+
+    if (value === "granted") {
+      trackEvent(
+        "product_session_started",
+        {
+          surface:
+            "web",
+        }
+      );
+    }
   }
 
   return (

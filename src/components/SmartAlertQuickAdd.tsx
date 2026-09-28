@@ -8,6 +8,10 @@ import {
   getLiveSmartAlertRuleTypes,
 } from "@/lib/alerts/liveSupport";
 
+import {
+  trackEvent,
+} from "@/lib/analytics/client";
+
 import type {
   BasicAlertRuleType,
 } from "@/lib/account/alertRules";
@@ -180,6 +184,15 @@ export default function SmartAlertQuickAdd({
           true
           ? "Monitoring enabled. The first scheduled observation establishes the alert baseline."
           : "Smart Alert saved. Scheduled monitoring is currently paused."
+      );
+
+      trackEvent(
+        "smart_alert_enabled",
+        {
+          network,
+          surface:
+            "analysis",
+        }
       );
     } catch (
       caught

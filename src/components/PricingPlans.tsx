@@ -9,6 +9,10 @@ import PlanComparisonMatrix from "@/components/PlanComparisonMatrix";
 import PlanCheckoutButton from "@/components/billing/PlanCheckoutButton";
 
 import {
+  trackEvent,
+} from "@/lib/analytics/client";
+
+import {
   PLANS,
 } from "@/lib/plans/registry";
 
@@ -128,6 +132,25 @@ export default function PricingPlans() {
         true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!account) {
+      return;
+    }
+
+    trackEvent(
+      "pricing_viewed",
+      {
+        surface:
+          "home",
+
+        plan:
+          account.authenticated
+            ? account.plan
+            : "anonymous",
+      }
+    );
+  }, [account]);
 
   if (!account) {
     return null;
