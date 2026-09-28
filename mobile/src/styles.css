@@ -1933,3 +1933,77 @@ button {
       0.28
     );
 }
+
+/* AYZO Mobile Account Parity — Research Library */
+
+.research-overview {
+  margin-bottom: 22px;
+}
+
+.research-section {
+  margin-top: 24px;
+}
+
+.research-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.research-section-heading h2 {
+  margin: 5px 0 0;
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.research-chip {
+  flex-shrink: 0;
+  border: 1px solid #342c43;
+  border-radius: 999px;
+  padding: 5px 9px;
+  color: #aa91ef;
+  background: rgba(139, 92, 246, 0.06);
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+}
+
+.research-stats {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0, 1fr)
+    );
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.research-stats > div {
+  min-width: 0;
+  border: 1px solid #25212d;
+  border-radius: 14px;
+  padding: 12px;
+  background: #09080c;
+}
+
+.research-stats span,
+.research-stats strong {
+  display: block;
+}
+
+.research-stats span {
+  overflow: hidden;
+  color: #706a78;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.research-stats strong {
+  margin-top: 6px;
+  color: #eee9f6;
+  font-size: 15px;
+}
