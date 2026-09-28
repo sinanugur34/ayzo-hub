@@ -12,6 +12,10 @@ import EvidenceLockerQuickAdd from "@/components/EvidenceLockerQuickAdd";
 import SmartAlertQuickAdd from "@/components/SmartAlertQuickAdd";
 
 import {
+  trackEvent,
+} from "@/lib/analytics/client";
+
+import {
   useEffect,
   useState,
 } from "react";
@@ -468,6 +472,15 @@ export default function AnalysisActions({
         "success"
       );
 
+      trackEvent(
+        "analysis_saved",
+        {
+          network,
+          surface:
+            "analysis",
+        }
+      );
+
       return id;
     } catch {
       showMessage(
@@ -804,6 +817,15 @@ export default function AnalysisActions({
     showMessage(
       "Added to your AYZO watchlist.",
       "success"
+    );
+
+    trackEvent(
+      "watchlist_item_added",
+      {
+        network,
+        surface:
+          "analysis",
+      }
     );
 
     return true;

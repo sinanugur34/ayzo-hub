@@ -10,6 +10,10 @@ import {
   type AskAyzoSubjectType,
 } from "@/components/AskAyzoAssistantProvider";
 
+import {
+  trackEvent,
+} from "@/lib/analytics/client";
+
 function evidenceRevision(
   value: unknown
 ) {
@@ -164,9 +168,18 @@ export default function AskAyzoPanel({
 
       <button
         type="button"
-        onClick={
-          openAssistant
-        }
+        onClick={() => {
+          trackEvent(
+            "ask_ayzo_opened",
+            {
+              network,
+              surface:
+                "analysis",
+            }
+          );
+
+          openAssistant();
+        }}
         className="inline-flex h-9 shrink-0 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/10 px-4 text-xs font-medium text-violet-200 transition hover:border-violet-400/40 hover:bg-violet-500/15"
       >
         Open Investigator

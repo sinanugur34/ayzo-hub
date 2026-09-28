@@ -24,6 +24,9 @@ import ExampleInvestigationGallery from "@/components/ExampleInvestigationGaller
 import PricingPlans from "@/components/PricingPlans";
 import HeaderAuthControls from "@/components/auth/HeaderAuthControls";
 import {
+  trackEvent,
+} from "@/lib/analytics/client";
+import {
   isLiveAnalysisNetworkId,
   resolveSelectedNetworkForAddress,
   type LiveAnalysisNetworkId,
@@ -489,6 +492,15 @@ export default function Home() {
 
       return;
     }
+
+    trackEvent(
+      "analysis_submitted",
+      {
+        network,
+        surface:
+          "home",
+      }
+    );
 
     if (
       network ===

@@ -11,6 +11,10 @@ import {
   getAdminBillingInsights,
 } from "@/lib/adminBillingInsights";
 
+import {
+  getAdminConversionFunnel,
+} from "@/lib/adminConversionFunnel";
+
 
 export const dynamic =
   "force-dynamic";
@@ -52,11 +56,13 @@ export default async function AdminPage() {
     snapshot,
     signup,
     billing,
+    funnel,
   ] =
     await Promise.all([
       getAdminDashboardSnapshot(),
       getAdminSignupInsights(),
       getAdminBillingInsights(),
+      getAdminConversionFunnel(),
     ]);
 
   const signupTracked =
@@ -271,6 +277,118 @@ export default async function AdminPage() {
               )}
           </div>
         </div>
+      </section>
+
+      <section className="mt-8">
+        <div>
+          <div className="text-xs font-medium tracking-[0.16em] text-zinc-500">
+            PRODUCT FUNNEL · 7 DAYS
+          </div>
+
+          <h2 className="mt-2 text-xl font-semibold">
+            Conversion & engagement signals
+          </h2>
+
+          <p className="mt-2 max-w-3xl text-xs leading-5 text-zinc-600">
+            Unique consented web sessions. These are directional product signals, not a strict sequential cohort.
+          </p>
+        </div>
+
+        {funnel.available ? (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Metric
+              label="Consented sessions"
+              value={
+                funnel
+                  .last7d
+                  .product_session_started
+                  .sessions
+              }
+              detail={`${funnel.last30d.product_session_started.sessions} sessions · 30d`}
+            />
+
+            <Metric
+              label="Example opened"
+              value={
+                funnel
+                  .last7d
+                  .example_opened
+                  .sessions
+              }
+              detail={`${funnel.last30d.example_opened.sessions} sessions · 30d`}
+            />
+
+            <Metric
+              label="Analyze submitted"
+              value={
+                funnel
+                  .last7d
+                  .analysis_submitted
+                  .sessions
+              }
+              detail={`${funnel.last30d.analysis_submitted.sessions} sessions · 30d`}
+            />
+
+            <Metric
+              label="Analysis saved"
+              value={
+                funnel
+                  .last7d
+                  .analysis_saved
+                  .sessions
+              }
+              detail={`${funnel.last30d.analysis_saved.sessions} sessions · 30d`}
+            />
+
+            <Metric
+              label="Watchlist add"
+              value={
+                funnel
+                  .last7d
+                  .watchlist_item_added
+                  .sessions
+              }
+              detail={`${funnel.last30d.watchlist_item_added.sessions} sessions · 30d`}
+            />
+
+            <Metric
+              label="Ask AYZO opened"
+              value={
+                funnel
+                  .last7d
+                  .ask_ayzo_opened
+                  .sessions
+              }
+              detail={`${funnel.last30d.ask_ayzo_opened.sessions} sessions · 30d`}
+            />
+
+            <Metric
+              label="Pricing viewed"
+              value={
+                funnel
+                  .last7d
+                  .pricing_viewed
+                  .sessions
+              }
+              detail={`${funnel.last30d.pricing_viewed.sessions} sessions · 30d`}
+            />
+
+            <Metric
+              label="Checkout started"
+              value={
+                funnel
+                  .last7d
+                  .checkout_started
+                  .sessions
+              }
+              detail={`${funnel.last30d.checkout_started.sessions} sessions · 30d`}
+            />
+          </div>
+        ) : (
+          <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-950/50 p-5 text-xs leading-5 text-zinc-500">
+            Product funnel telemetry is not available yet. Existing Admin Analytics remains fully available.
+          </div>
+        )}
       </section>
 
       <section className="mt-8">
