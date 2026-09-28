@@ -2495,6 +2495,12 @@ function App() {
   const [reviewPassword, setReviewPassword] =
     useState("");
 
+  const [
+    reviewPasswordVisible,
+    setReviewPasswordVisible,
+  ] =
+    useState(false);
+
   const [reviewLoading, setReviewLoading] =
     useState(false);
 
@@ -2503,6 +2509,56 @@ function App() {
 
   const authFlowActiveRef =
     useRef(false);
+
+  useEffect(() => {
+    if (screen !== "review") {
+      return;
+    }
+
+    let cancelled = false;
+
+    let backHandle:
+      | Awaited<
+          ReturnType<
+            typeof CapacitorApp.addListener
+          >
+        >
+      | undefined;
+
+    void CapacitorApp.addListener(
+      "backButton",
+      () => {
+        if (reviewLoading) {
+          return;
+        }
+
+        setAuthError("");
+        setEmailSent(false);
+        setReviewPassword("");
+        setReviewPasswordVisible(false);
+
+        authFlowActiveRef.current =
+          false;
+
+        setScreen("signin");
+      }
+    ).then((listener) => {
+      if (cancelled) {
+        void listener.remove();
+        return;
+      }
+
+      backHandle = listener;
+    });
+
+    return () => {
+      cancelled = true;
+
+      if (backHandle) {
+        void backHandle.remove();
+      }
+    };
+  }, [screen, reviewLoading]);
 
   useEffect(
     () => {
@@ -3038,7 +3094,7 @@ function App() {
 
             <input
               className="auth-email-input"
-              type="password"
+              type={reviewPasswordVisible ? "text" : "password"}
               autoComplete="current-password"
               placeholder="Reviewer password"
               value={reviewPassword}
@@ -3057,6 +3113,25 @@ function App() {
             />
 
             <button
+              className="text-auth-button"
+              type="button"
+              disabled={reviewLoading}
+              onClick={() =>
+                setReviewPasswordVisible(
+                  (visible) =>
+                    !visible
+                )
+              }
+              aria-pressed={
+                reviewPasswordVisible
+              }
+            >
+              {reviewPasswordVisible
+                ? "Hide password"
+                : "Show password"}
+            </button>
+
+            <button
               className="primary-auth-button"
               disabled={reviewLoading}
               onClick={() =>
@@ -3070,13 +3145,21 @@ function App() {
 
             <button
               className="text-auth-button"
+              type="button"
+              disabled={reviewLoading}
               onClick={() => {
                 setAuthError("");
+                setEmailSent(false);
                 setReviewPassword("");
+                setReviewPasswordVisible(false);
+
+                authFlowActiveRef.current =
+                  false;
+
                 setScreen("signin");
               }}
             >
-              Back to standard sign in
+              ← Back to Google or email sign in
             </button>
 
             {authError ? (
@@ -3183,6 +3266,7 @@ function App() {
                 onClick={() => {
                   setAuthError("");
                   setReviewPassword("");
+                  setReviewPasswordVisible(false);
                   setScreen("review");
                 }}
               >

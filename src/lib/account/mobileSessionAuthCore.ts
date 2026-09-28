@@ -251,3 +251,155 @@ export function isFreshAuthenticationToken(
     MOBILE_FRESH_AUTH_WINDOW_MS
   );
 }
+
+
+/*
+ * Google Play review uses a dedicated,
+ * server-created Supabase account with a
+ * reusable password.
+ *
+ * This helper intentionally does NOT widen
+ * isFreshAuthenticationToken(), whose normal
+ * mobile policy remains OAuth / OTP only.
+ */
+export function isFreshReviewPasswordAuthenticationToken(
+  accessToken:
+    string,
+  now =
+    Date.now()
+) {
+  const payload =
+    readJwtPayload(
+      accessToken
+    );
+
+  if (!payload) {
+    return false;
+  }
+
+  const sessionId =
+    payload.session_id;
+
+  if (
+    typeof sessionId !==
+      "string" ||
+    !sessionId.trim()
+  ) {
+    return false;
+  }
+
+  const amr =
+    payload.amr;
+
+  if (
+    !Array.isArray(
+      amr
+    )
+  ) {
+    return false;
+  }
+
+  const authenticationTimes:
+    number[] = [];
+
+  for (
+    const entry of
+    amr
+  ) {
+    if (
+      !entry ||
+      typeof entry !==
+        "object" ||
+      Array.isArray(
+        entry
+      )
+    ) {
+      continue;
+    }
+
+    const record =
+      entry as Record<
+        string,
+        unknown
+      >;
+
+    if (
+      record.method !==
+        "password" ||
+      typeof record.timestamp !==
+        "number" ||
+      !Number.isFinite(
+        record.timestamp
+      ) ||
+      record.timestamp <=
+        0
+    ) {
+      continue;
+    }
+
+    authenticationTimes.push(
+      record.timestamp *
+        1000
+    );
+  }
+
+  if (
+    authenticationTimes.length ===
+      0
+  ) {
+    return false;
+  }
+
+  const authenticatedAt =
+    Math.max(
+      ...authenticationTimes
+    );
+
+  if (
+    authenticatedAt >
+      now +
+        MAX_FUTURE_SKEW_MS
+  ) {
+    return false;
+  }
+
+  return (
+    now -
+      authenticatedAt <=
+    MOBILE_FRESH_AUTH_WINDOW_MS
+  );
+}
+
+/*
+ * app_metadata is evaluated only after
+ * admin.auth.getUser(accessToken) verifies
+ * the exact Supabase bearer token.
+ *
+ * User-controlled user_metadata is never
+ * accepted for this purpose.
+ */
+export function isGooglePlayReviewAccountMetadata(
+  value:
+    unknown
+) {
+  if (
+    !value ||
+    typeof value !==
+      "object" ||
+    Array.isArray(
+      value
+    )
+  ) {
+    return false;
+  }
+
+  return (
+    (
+      value as Record<
+        string,
+        unknown
+      >
+    ).ayzo_account_type ===
+      "google_play_review"
+  );
+}

@@ -83,3 +83,77 @@ test(
     );
   }
 );
+
+
+test(
+  "review access supports password visibility and safe navigation",
+  () => {
+    assert.match(
+      app,
+      /Show password/
+    );
+
+    assert.match(
+      app,
+      /Hide password/
+    );
+
+    assert.match(
+      app,
+      /reviewPasswordVisible/
+    );
+
+    assert.match(
+      app,
+      /"backButton"/
+    );
+
+    assert.match(
+      app,
+      /Back to Google or email sign in/
+    );
+
+    assert.match(
+      app,
+      /setScreen\("signin"\)/
+    );
+  }
+);
+
+
+test(
+  "review password device registration is restricted to server-marked reviewer accounts",
+  () => {
+    const mobileSessionAuth =
+      fs.readFileSync(
+        "src/lib/account/mobileSessionAuth.ts",
+        "utf8"
+      );
+
+    const mobileSessionAuthCore =
+      fs.readFileSync(
+        "src/lib/account/mobileSessionAuthCore.ts",
+        "utf8"
+      );
+
+    assert.match(
+      mobileSessionAuth,
+      /isGooglePlayReviewAccountMetadata\(\s*user\.app_metadata\s*\)\s*&&\s*isFreshReviewPasswordAuthenticationToken\(\s*accessToken\s*\)/s
+    );
+
+    assert.match(
+      mobileSessionAuthCore,
+      /ayzo_account_type\s*===\s*"google_play_review"/
+    );
+
+    assert.match(
+      mobileSessionAuthCore,
+      /record\.method\s*!==\s*"password"/
+    );
+
+    assert.doesNotMatch(
+      mobileSessionAuthCore,
+      /ALLOWED_FRESH_AUTH_METHODS[\s\S]{0,160}"password"/
+    );
+  }
+);
