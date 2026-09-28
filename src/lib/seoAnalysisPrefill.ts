@@ -9,7 +9,8 @@ import {
 
 export type SeoAnalysisPrefill = {
   network:
-    LiveAnalysisNetworkId;
+    LiveAnalysisNetworkId |
+    null;
 
   source:
     "seo";
@@ -51,8 +52,17 @@ export function parseSeoAnalysisPrefill(
       "network"
     );
 
+  if (!network) {
+    return {
+      network:
+        null,
+
+      source:
+        "seo",
+    };
+  }
+
   if (
-    !network ||
     !isNetworkId(
       network
     ) ||
