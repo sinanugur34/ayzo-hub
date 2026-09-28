@@ -40,6 +40,11 @@ import {
 import {
   getMobileAccountStatus,
 } from "./mobileStatus";
+
+import {
+  getMobileAccountResearch,
+  type MobileAccountResearch,
+} from "./mobileAccountResearch";
 import {
   getMobileAlerts,
   type MobileAlertRule,
@@ -1901,8 +1906,691 @@ function AlertsScreen({
   );
 }
 
+
+function shortMobileResearchValue(
+  value: string
+) {
+  if (
+    value.length <=
+    32
+  ) {
+    return value;
+  }
+
+  return `${value.slice(
+    0,
+    15
+  )}…${value.slice(
+    -10
+  )}`;
+}
+
+function formatMobileResearchDate(
+  value: string
+) {
+  const date =
+    new Date(
+      value
+    );
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return "Unavailable";
+  }
+
+  return new Intl.DateTimeFormat(
+    "en-US",
+    {
+      month:
+        "short",
+      day:
+        "numeric",
+      hour:
+        "2-digit",
+      minute:
+        "2-digit",
+    }
+  ).format(
+    date
+  );
+}
+
+type MobileProfileMemory = {
+  key: string;
+  network: string;
+  subjectValue: string;
+  latestAt: string;
+  snapshotCount: number;
+};
+
+function buildMobileProfileMemory(
+  data: MobileAccountResearch
+) {
+  const memory =
+    new Map<
+      string,
+      MobileProfileMemory
+    >();
+
+  for (
+    const snapshot of
+    data.evidenceSnapshots
+  ) {
+    if (
+      snapshot.subject_type !==
+      "wallet"
+    ) {
+      continue;
+    }
+
+    const key =
+      `${snapshot.network}|${snapshot.subject_value}`;
+
+    const current =
+      memory.get(
+        key
+      );
+
+    if (current) {
+      current.snapshotCount +=
+        1;
+      continue;
+    }
+
+    memory.set(
+      key,
+      {
+        key,
+        network:
+          snapshot.network,
+        subjectValue:
+          snapshot.subject_value,
+        latestAt:
+          snapshot.captured_at,
+        snapshotCount:
+          1,
+      }
+    );
+  }
+
+  return [
+    ...memory.values(),
+  ].slice(
+    0,
+    6
+  );
+}
+
+function ResearchScreen({
+  onBack,
+}: {
+  onBack: () => void;
+}) {
+  const [
+    research,
+    setResearch,
+  ] =
+    useState<
+      MobileAccountResearch |
+      null
+    >(
+      null
+    );
+
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(true);
+
+  const [
+    error,
+    setError,
+  ] =
+    useState("");
+
+  useEffect(() => {
+    let cancelled =
+      false;
+
+    void getMobileAccountResearch()
+      .then((result) => {
+        if (
+          cancelled
+        ) {
+          return;
+        }
+
+        setResearch(
+          result
+        );
+        setError("");
+      })
+      .catch((loadError) => {
+        if (
+          cancelled
+        ) {
+          return;
+        }
+
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "AYZO research library is unavailable."
+        );
+      })
+      .finally(() => {
+        if (
+          !cancelled
+        ) {
+          setLoading(
+            false
+          );
+        }
+      });
+
+    return () => {
+      cancelled =
+        true;
+    };
+  }, []);
+
+  const trackedSubjects =
+    research
+      ? new Set(
+          research
+            .evidenceSnapshots
+            .map(
+              snapshot =>
+                [
+                  snapshot.network,
+                  snapshot.subject_type,
+                  snapshot.subject_value,
+                ].join(
+                  "::"
+                )
+            )
+        ).size
+      : 0;
+
+  const profileMemory =
+    research
+      ? buildMobileProfileMemory(
+          research
+        )
+      : [];
+
+  return (
+    <main className="app account-page">
+      <header className="account-page-header">
+        <button
+          className="account-back-button"
+          onClick={onBack}
+          aria-label="Back to profile"
+        >
+          ‹
+        </button>
+
+        <div>
+          <div className="eyebrow">
+            RESEARCH
+          </div>
+          <h1>
+            Research Library
+          </h1>
+        </div>
+      </header>
+
+      {loading && (
+        <div className="empty-state-card">
+          <strong>
+            Loading research…
+          </strong>
+          <span>
+            Syncing account-backed AYZO evidence.
+          </span>
+        </div>
+      )}
+
+      {!loading &&
+        error && (
+          <div className="empty-state-card error">
+            <strong>
+              Research unavailable
+            </strong>
+            <span>
+              {error}
+            </span>
+          </div>
+        )}
+
+      {!loading &&
+        research && (
+          <>
+            <section className="account-card research-overview">
+              <div className="account-card-heading">
+                <span>
+                  Plan
+                </span>
+                <strong>
+                  {research.plan ===
+                  "advanced"
+                    ? "Advanced"
+                    : research.plan ===
+                        "pro"
+                      ? "Pro"
+                      : "Free"}
+                </strong>
+              </div>
+
+              <div className="research-stats">
+                <div>
+                  <span>
+                    Saved
+                  </span>
+                  <strong>
+                    {
+                      research
+                        .savedAnalyses
+                        .length
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Watchlists
+                  </span>
+                  <strong>
+                    {
+                      research
+                        .watchlists
+                        .length
+                    }
+                  </strong>
+                </div>
+
+                {research.features
+                  .historicalChanges && (
+                    <div>
+                      <span>
+                        Baselines
+                      </span>
+                      <strong>
+                        {
+                          research
+                            .evidenceSnapshots
+                            .length
+                        }
+                      </strong>
+                    </div>
+                  )}
+              </div>
+            </section>
+
+            <section className="research-section">
+              <div className="research-section-heading">
+                <div>
+                  <div className="eyebrow">
+                    RESEARCH
+                  </div>
+                  <h2>
+                    Saved Analyses
+                  </h2>
+                </div>
+                <span className="research-chip">
+                  {
+                    research
+                      .savedAnalyses
+                      .length
+                  }
+                </span>
+              </div>
+
+              {research
+                .savedAnalysesUnavailable ? (
+                  <div className="empty-state-card error">
+                    <strong>
+                      Saved analyses unavailable
+                    </strong>
+                  </div>
+                ) : research
+                    .savedAnalyses
+                    .length ===
+                    0 ? (
+                  <div className="empty-state-card">
+                    <strong>
+                      No saved analyses yet.
+                    </strong>
+                    <span>
+                      Save investigations from AYZO analysis results.
+                    </span>
+                  </div>
+                ) : (
+                  <div className="history-list">
+                    {research
+                      .savedAnalyses
+                      .slice(
+                        0,
+                        6
+                      )
+                      .map(
+                        item => (
+                          <article
+                            className="history-row"
+                            key={
+                              item.id
+                            }
+                          >
+                            <div>
+                              <strong>
+                                {item.title ||
+                                  shortMobileResearchValue(
+                                    item.subject_value
+                                  )}
+                              </strong>
+                              <span>
+                                {item.network}
+                                {" · "}
+                                {item.subject_type}
+                              </span>
+                            </div>
+
+                            <div className="history-meta">
+                              <span>
+                                {formatMobileResearchDate(
+                                  item.created_at
+                                )}
+                              </span>
+                            </div>
+                          </article>
+                        )
+                      )}
+                  </div>
+                )}
+            </section>
+
+            <section className="research-section">
+              <div className="research-section-heading">
+                <div>
+                  <div className="eyebrow">
+                    ORGANIZE
+                  </div>
+                  <h2>
+                    Watchlists
+                  </h2>
+                </div>
+                <span className="research-chip">
+                  {
+                    research
+                      .watchlists
+                      .length
+                  }
+                </span>
+              </div>
+
+              {research
+                .watchlistsUnavailable ? (
+                  <div className="empty-state-card error">
+                    <strong>
+                      Watchlists unavailable
+                    </strong>
+                  </div>
+                ) : research
+                    .watchlists
+                    .length ===
+                    0 ? (
+                  <div className="empty-state-card">
+                    <strong>
+                      No watchlists yet.
+                    </strong>
+                    <span>
+                      Organize monitored subjects from AYZO investigations.
+                    </span>
+                  </div>
+                ) : (
+                  <div className="history-list">
+                    {research
+                      .watchlists
+                      .slice(
+                        0,
+                        6
+                      )
+                      .map(
+                        item => (
+                          <article
+                            className="history-row"
+                            key={
+                              item.id
+                            }
+                          >
+                            <div>
+                              <strong>
+                                {item.name}
+                              </strong>
+                              <span>
+                                {item.description ||
+                                  "AYZO watchlist"}
+                              </span>
+                            </div>
+
+                            <div className="history-meta">
+                              <span>
+                                {formatMobileResearchDate(
+                                  item.created_at
+                                )}
+                              </span>
+                            </div>
+                          </article>
+                        )
+                      )}
+                  </div>
+                )}
+            </section>
+
+            {research.features
+              .historicalChanges && (
+                <section className="research-section">
+                  <div className="research-section-heading">
+                    <div>
+                      <div className="eyebrow">
+                        EVIDENCE MEMORY
+                      </div>
+                      <h2>
+                        Evidence History
+                      </h2>
+                    </div>
+
+                    <span className="research-chip">
+                      AUTO
+                    </span>
+                  </div>
+
+                  <div className="research-stats">
+                    <div>
+                      <span>
+                        Recent baselines
+                      </span>
+                      <strong>
+                        {
+                          research
+                            .evidenceSnapshots
+                            .length
+                        }
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        Subjects
+                      </span>
+                      <strong>
+                        {trackedSubjects}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        Retention
+                      </span>
+                      <strong>
+                        {
+                          research
+                            .evidenceRetention
+                        }
+                      </strong>
+                    </div>
+                  </div>
+
+                  {research
+                    .evidenceUnavailable ? (
+                      <div className="empty-state-card error">
+                        <strong>
+                          Evidence History unavailable
+                        </strong>
+                      </div>
+                    ) : research
+                        .evidenceSnapshots
+                        .length ===
+                        0 ? (
+                      <div className="empty-state-card">
+                        <strong>
+                          Automatic tracking is ready.
+                        </strong>
+                        <span>
+                          Analyze the same subject over time to build bounded evidence history.
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="history-list">
+                        {research
+                          .evidenceSnapshots
+                          .slice(
+                            0,
+                            6
+                          )
+                          .map(
+                            snapshot => (
+                              <article
+                                className="history-row"
+                                key={
+                                  snapshot.id
+                                }
+                              >
+                                <div>
+                                  <strong>
+                                    {shortMobileResearchValue(
+                                      snapshot.subject_value
+                                    )}
+                                  </strong>
+                                  <span>
+                                    {snapshot.network}
+                                    {" · "}
+                                    {snapshot.subject_type}
+                                  </span>
+                                </div>
+
+                                <div className="history-meta">
+                                  <span>
+                                    {formatMobileResearchDate(
+                                      snapshot.captured_at
+                                    )}
+                                  </span>
+                                </div>
+                              </article>
+                            )
+                          )}
+                      </div>
+                    )}
+                </section>
+              )}
+
+            {research.features
+              .walletProfiler && (
+                <section className="research-section">
+                  <div className="research-section-heading">
+                    <div>
+                      <div className="eyebrow">
+                        WALLET PROFILER
+                      </div>
+                      <h2>
+                        Profile Memory
+                      </h2>
+                    </div>
+
+                    <span className="research-chip">
+                      PRO
+                    </span>
+                  </div>
+
+                  {profileMemory.length ===
+                  0 ? (
+                    <div className="empty-state-card">
+                      <strong>
+                        No wallet profile memory yet.
+                      </strong>
+                      <span>
+                        Supported wallet analyses create evidence-only profile memory.
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="history-list">
+                      {profileMemory.map(
+                        item => (
+                          <article
+                            className="history-row"
+                            key={
+                              item.key
+                            }
+                          >
+                            <div>
+                              <strong>
+                                {shortMobileResearchValue(
+                                  item.subjectValue
+                                )}
+                              </strong>
+                              <span>
+                                {item.network}
+                                {" · "}
+                                {
+                                  item.snapshotCount
+                                }
+                                {" "}
+                                {item.snapshotCount ===
+                                1
+                                  ? "baseline"
+                                  : "baselines"}
+                              </span>
+                            </div>
+
+                            <div className="history-meta">
+                              <span>
+                                {formatMobileResearchDate(
+                                  item.latestAt
+                                )}
+                              </span>
+                            </div>
+                          </article>
+                        )
+                      )}
+                    </div>
+                  )}
+                </section>
+              )}
+          </>
+        )}
+    </main>
+  );
+}
+
 function ProfileScreen({
   onBack,
+  onOpenResearch,
+  onOpenHistory,
+  onOpenAlerts,
   onOpenSettings,
   onOpenSecurity,
   onOpenAbout,
@@ -1910,6 +2598,9 @@ function ProfileScreen({
   onSignOut,
 }: {
   onBack: () => void;
+  onOpenResearch: () => void;
+  onOpenHistory: () => void;
+  onOpenAlerts: () => void;
   onOpenSettings: () => void;
   onOpenSecurity: () => void;
   onOpenAbout: () => void;
@@ -1931,6 +2622,45 @@ function ProfileScreen({
 
   const [signingOut, setSigningOut] =
     useState(false);
+
+  const [
+    appVersion,
+    setAppVersion,
+  ] =
+    useState("Loading…");
+
+  useEffect(() => {
+    let cancelled =
+      false;
+
+    void CapacitorApp
+      .getInfo()
+      .then((info) => {
+        if (
+          cancelled
+        ) {
+          return;
+        }
+
+        setAppVersion(
+          `${info.version} (${info.build})`
+        );
+      })
+      .catch(() => {
+        if (
+          !cancelled
+        ) {
+          setAppVersion(
+            "Unavailable"
+          );
+        }
+      });
+
+    return () => {
+      cancelled =
+        true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -2030,6 +2760,48 @@ function ProfileScreen({
 
       <section className="account-section">
         <div className="account-section-title">
+          RESEARCH
+        </div>
+
+        <div className="account-menu">
+          <button
+            className="account-menu-row"
+            onClick={onOpenResearch}
+          >
+            <div>
+              <strong>
+                Research Library
+              </strong>
+              <span>
+                Saved analyses, watchlists and evidence memory
+              </span>
+            </div>
+            <span className="account-chevron">
+              ›
+            </span>
+          </button>
+
+          <button
+            className="account-menu-row"
+            onClick={onOpenAlerts}
+          >
+            <div>
+              <strong>
+                Smart Alerts
+              </strong>
+              <span>
+                Evidence monitoring and alert rules
+              </span>
+            </div>
+            <span className="account-chevron">
+              ›
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <section className="account-section">
+        <div className="account-section-title">
           ACCOUNT
         </div>
 
@@ -2110,7 +2882,7 @@ function ProfileScreen({
               <span>AYZO Android</span>
             </div>
             <span className="account-value">
-              1.0 (15)
+              {appVersion}
             </span>
           </div>
         </div>
@@ -2141,7 +2913,9 @@ function ProfileScreen({
           Home
         </button>
 
-        <button disabled>
+        <button
+          onClick={onOpenHistory}
+        >
           <span>↺</span>
           History
         </button>
@@ -2154,7 +2928,9 @@ function ProfileScreen({
           Analyze
         </button>
 
-        <button disabled>
+        <button
+          onClick={onOpenAlerts}
+        >
           <span>♧</span>
           Alerts
         </button>
@@ -2473,6 +3249,7 @@ function App() {
     | "review"
     | "dashboard"
     | "profile"
+    | "research"
     | "settings"
     | "security"
     | "about"
@@ -2993,6 +3770,33 @@ function App() {
         onBack={() =>
           setScreen("dashboard")
         }
+        onOpenResearch={() => {
+          void trackMobileEvent(
+            "account_research_opened"
+          );
+
+          setScreen(
+            "research"
+          );
+        }}
+        onOpenHistory={() => {
+          void trackMobileEvent(
+            "history_opened"
+          );
+
+          setScreen(
+            "history"
+          );
+        }}
+        onOpenAlerts={() => {
+          void trackMobileEvent(
+            "alerts_opened"
+          );
+
+          setScreen(
+            "alerts"
+          );
+        }}
         onOpenSettings={() =>
           setScreen("settings")
         }
@@ -3017,6 +3821,16 @@ function App() {
         }}
         onSignOut={
           signOutAndReturn
+        }
+      />
+    );
+  }
+
+  if (screen === "research") {
+    return (
+      <ResearchScreen
+        onBack={() =>
+          setScreen("profile")
         }
       />
     );
