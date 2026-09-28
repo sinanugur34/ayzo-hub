@@ -347,23 +347,34 @@ export default function Home() {
       return;
     }
 
-    setNetwork(
-      prefill.network
-    );
+    const frame =
+      window.requestAnimationFrame(
+        () => {
+          setNetwork(
+            prefill.network
+          );
 
-    setAnalysisSource(
-      prefill.source
-    );
+          setAnalysisSource(
+            prefill.source
+          );
 
-    setMessage(
-      `${networkName(
-        prefill.network
-      )} selected from AYZO research. Paste an address to analyze.`
-    );
+          setMessage(
+            `${networkName(
+              prefill.network
+            )} selected from AYZO research. Paste an address to analyze.`
+          );
 
-    setIsValid(
-      null
-    );
+          setIsValid(
+            null
+          );
+        }
+      );
+
+    return () => {
+      window.cancelAnimationFrame(
+        frame
+      );
+    };
   }, []);
 
   useEffect(() => {
