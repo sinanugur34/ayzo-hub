@@ -20,6 +20,7 @@ import EvmIntelligenceReport from "@/components/EvmIntelligenceReport";
 import FreePlanStatus from "@/components/FreePlanStatus";
 import IntelligenceReport from "@/components/IntelligenceReport";
 import AnalysisWorkspaceFrame from "@/components/AnalysisWorkspaceFrame";
+import ExampleInvestigationGallery from "@/components/ExampleInvestigationGallery";
 import PricingPlans from "@/components/PricingPlans";
 import HeaderAuthControls from "@/components/auth/HeaderAuthControls";
 import {
@@ -1559,57 +1560,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-950/70 p-6">
-              <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-violet-500/10 blur-3xl" />
-
-              <div className="relative">
-                <div className="flex items-center justify-between">
-                  <div className="text-[10px] font-medium tracking-[0.18em] text-zinc-500">
-                    EXAMPLE INVESTIGATION
-                  </div>
-
-                  <div className="rounded-full border border-emerald-500/15 bg-emerald-500/[0.06] px-2.5 py-1 text-[9px] font-medium text-emerald-400">
-                    SAMPLE
-                  </div>
-                </div>
-
-                <div className="mt-5 font-mono text-xs text-zinc-500">
-                  0x8f...c21
-                </div>
-
-                <div className="mt-1 text-sm font-medium text-zinc-200">
-                  Ethereum
-                </div>
-
-                <div className="mt-6 space-y-3">
-                  {[
-                    ["Funding source", "Found"],
-                    ["Relationships", "8 nodes"],
-                    ["Verification", "Verified"],
-                    ["Observed activity", "81 tx"],
-                  ].map(
-                    ([label, value]) => (
-                      <div
-                        key={label}
-                        className="flex items-center justify-between border-b border-zinc-900 pb-3 text-xs last:border-0 last:pb-0"
-                      >
-                        <span className="text-zinc-600">
-                          {label}
-                        </span>
-
-                        <span className="font-medium text-zinc-300">
-                          {value}
-                        </span>
-                      </div>
-                    )
-                  )}
-                </div>
-
-                <div className="mt-6 rounded-xl border border-zinc-900 bg-black/25 px-4 py-3 text-[10px] leading-4 text-zinc-600">
-                  Illustrative example only. No live request is made and no analysis credit is used.
-                </div>
-              </div>
-            </div>
+            <ExampleInvestigationGallery />
           </div>
         )}
 
