@@ -350,19 +350,27 @@ export default function Home() {
     const frame =
       window.requestAnimationFrame(
         () => {
-          setNetwork(
-            prefill.network
-          );
-
           setAnalysisSource(
             prefill.source
           );
 
-          setMessage(
-            `${networkName(
+          if (
+            prefill.network
+          ) {
+            setNetwork(
               prefill.network
-            )} selected from AYZO research. Paste an address to analyze.`
-          );
+            );
+
+            setMessage(
+              `${networkName(
+                prefill.network
+              )} selected from AYZO research. Paste an address to analyze.`
+            );
+          } else {
+            setMessage(
+              "Opened from AYZO research. Select the correct network and paste an address to analyze."
+            );
+          }
 
           setIsValid(
             null

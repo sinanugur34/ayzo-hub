@@ -139,3 +139,41 @@ test(
     );
   }
 );
+
+test(
+  "accepts SEO attribution without forcing a network",
+  () => {
+    assert.deepEqual(
+      parseSeoAnalysisPrefill(
+        "?source=seo"
+      ),
+      {
+        network:
+          null,
+
+        source:
+          "seo",
+      }
+    );
+  }
+);
+
+test(
+  "source-only SEO attribution still ignores analysis subjects",
+  () => {
+    assert.deepEqual(
+      parseSeoAnalysisPrefill(
+        "?source=seo" +
+        "&address=SensitiveWalletValue" +
+        "&subject=SensitiveTokenValue"
+      ),
+      {
+        network:
+          null,
+
+        source:
+          "seo",
+      }
+    );
+  }
+);
