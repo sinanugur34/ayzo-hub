@@ -27,6 +27,9 @@ import {
   trackEvent,
 } from "@/lib/analytics/client";
 import {
+  parseSeoAnalysisPrefill,
+} from "@/lib/seoAnalysisPrefill";
+import {
   isLiveAnalysisNetworkId,
   resolveSelectedNetworkForAddress,
   type LiveAnalysisNetworkId,
@@ -206,6 +209,14 @@ export default function Home() {
     useState("");
 
   const [
+    analysisSource,
+    setAnalysisSource,
+  ] =
+    useState<
+      "seo" | null
+    >(null);
+
+  const [
     message,
     setMessage,
   ] =
@@ -325,6 +336,35 @@ export default function Home() {
     setLoading(false);
     resetResult();
   }
+
+  useEffect(() => {
+    const prefill =
+      parseSeoAnalysisPrefill(
+        window.location.search
+      );
+
+    if (!prefill) {
+      return;
+    }
+
+    setNetwork(
+      prefill.network
+    );
+
+    setAnalysisSource(
+      prefill.source
+    );
+
+    setMessage(
+      `${networkName(
+        prefill.network
+      )} selected from AYZO research. Paste an address to analyze.`
+    );
+
+    setIsValid(
+      null
+    );
+  }, []);
 
   useEffect(() => {
     const value =
@@ -497,8 +537,16 @@ export default function Home() {
       "analysis_submitted",
       {
         network,
+
         surface:
           "home",
+
+        ...(analysisSource
+          ? {
+              source:
+                analysisSource,
+            }
+          : {}),
       }
     );
 
