@@ -16,6 +16,8 @@ import {
 
 import {
   isFreshAuthenticationToken,
+  isFreshReviewPasswordAuthenticationToken,
+  isGooglePlayReviewAccountMetadata,
   MOBILE_DEVICE_TOKEN_HEADER,
   normalizeAuthEmail,
   readBearerToken,
@@ -152,16 +154,38 @@ async function verifyMobileIdentity(
    * same verified session token.
    */
   if (
-    requireFreshAuth &&
-    !isFreshAuthenticationToken(
-      accessToken
-    )
+    requireFreshAuth
   ) {
-    return failure(
-      401,
-      "REAUTH_REQUIRED",
-      "A fresh AYZO sign-in is required to register this device."
-    );
+    const hasStandardFreshAuthentication =
+      isFreshAuthenticationToken(
+        accessToken
+      );
+
+    /*
+     * Password-based freshness remains disabled
+     * for ordinary AYZO accounts.
+     *
+     * It is accepted only for the dedicated
+     * server-marked Google Play reviewer account.
+     */
+    const hasReviewPasswordFreshAuthentication =
+      isGooglePlayReviewAccountMetadata(
+        user.app_metadata
+      ) &&
+      isFreshReviewPasswordAuthenticationToken(
+        accessToken
+      );
+
+    if (
+      !hasStandardFreshAuthentication &&
+      !hasReviewPasswordFreshAuthentication
+    ) {
+      return failure(
+        401,
+        "REAUTH_REQUIRED",
+        "A fresh AYZO sign-in is required to register this device."
+      );
+    }
   }
 
   return {

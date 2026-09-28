@@ -162,6 +162,46 @@ export async function listenForAuthCallback(
   );
 }
 
+export async function signInWithReviewCredentials(
+  email: string,
+  password: string
+) {
+  const normalized =
+    email.trim().toLowerCase();
+
+  if (!normalized) {
+    throw new Error("Email is required.");
+  }
+
+  if (!password) {
+    throw new Error("Password is required.");
+  }
+
+  const {
+    data,
+    error,
+  } =
+    await supabase.auth.signInWithPassword({
+      email: normalized,
+      password,
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  if (
+    !data.user ||
+    !data.session
+  ) {
+    throw new Error(
+      "Review authentication did not create a valid session."
+    );
+  }
+
+  return data.user;
+}
+
 export async function sendEmailOtp(
   email: string,
   isSignup: boolean

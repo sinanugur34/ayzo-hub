@@ -10,6 +10,8 @@ import {
 
 import {
   isFreshAuthenticationToken,
+  isFreshReviewPasswordAuthenticationToken,
+  isGooglePlayReviewAccountMetadata,
   normalizeAuthEmail,
   readBearerToken,
 } from "./mobileSessionAuthCore";
@@ -292,6 +294,204 @@ test(
     assert.equal(
       isFreshAuthenticationToken(
         "not-a-jwt"
+      ),
+      false
+    );
+  }
+);
+
+
+test(
+  "keeps password auth outside the standard mobile fresh-auth policy",
+  () => {
+    const now =
+      Date.parse(
+        "2026-09-28T12:00:00.000Z"
+      );
+
+    const token =
+      makeJwt({
+        session_id:
+          "review-session-standard-check",
+
+        amr: [
+          {
+            method:
+              "password",
+
+            timestamp:
+              Math.floor(
+                now / 1000
+              ) -
+              60,
+          },
+        ],
+      });
+
+    assert.equal(
+      isFreshAuthenticationToken(
+        token,
+        now
+      ),
+      false
+    );
+  }
+);
+
+test(
+  "accepts recent password auth only through the review-specific helper",
+  () => {
+    const now =
+      Date.parse(
+        "2026-09-28T12:00:00.000Z"
+      );
+
+    const token =
+      makeJwt({
+        session_id:
+          "review-session-password",
+
+        amr: [
+          {
+            method:
+              "password",
+
+            timestamp:
+              Math.floor(
+                now / 1000
+              ) -
+              60,
+          },
+        ],
+      });
+
+    assert.equal(
+      isFreshReviewPasswordAuthenticationToken(
+        token,
+        now
+      ),
+      true
+    );
+  }
+);
+
+test(
+  "rejects stale reviewer password authentication",
+  () => {
+    const now =
+      Date.parse(
+        "2026-09-28T12:00:00.000Z"
+      );
+
+    const token =
+      makeJwt({
+        session_id:
+          "review-session-stale",
+
+        amr: [
+          {
+            method:
+              "password",
+
+            timestamp:
+              Math.floor(
+                now / 1000
+              ) -
+              60 * 60,
+          },
+        ],
+      });
+
+    assert.equal(
+      isFreshReviewPasswordAuthenticationToken(
+        token,
+        now
+      ),
+      false
+    );
+  }
+);
+
+test(
+  "review password helper does not accept OTP or OAuth",
+  () => {
+    const now =
+      Date.parse(
+        "2026-09-28T12:00:00.000Z"
+      );
+
+    for (
+      const method of
+      [
+        "otp",
+        "oauth",
+      ]
+    ) {
+      const token =
+        makeJwt({
+          session_id:
+            `review-session-${method}`,
+
+          amr: [
+            {
+              method,
+
+              timestamp:
+                Math.floor(
+                  now / 1000
+                ),
+            },
+          ],
+        });
+
+      assert.equal(
+        isFreshReviewPasswordAuthenticationToken(
+          token,
+          now
+        ),
+        false
+      );
+    }
+  }
+);
+
+test(
+  "recognizes only the exact Google Play review app metadata marker",
+  () => {
+    assert.equal(
+      isGooglePlayReviewAccountMetadata({
+        ayzo_account_type:
+          "google_play_review",
+      }),
+      true
+    );
+
+    assert.equal(
+      isGooglePlayReviewAccountMetadata({
+        ayzo_account_type:
+          "customer",
+      }),
+      false
+    );
+
+    assert.equal(
+      isGooglePlayReviewAccountMetadata({
+        google_play_review:
+          true,
+      }),
+      false
+    );
+
+    assert.equal(
+      isGooglePlayReviewAccountMetadata(
+        null
+      ),
+      false
+    );
+
+    assert.equal(
+      isGooglePlayReviewAccountMetadata(
+        "google_play_review"
       ),
       false
     );
