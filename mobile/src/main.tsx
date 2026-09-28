@@ -2,7 +2,12 @@ import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { App as CapacitorApp } from "@capacitor/app";
 import "./styles.css";
-import { listenForAuthCallback, sendEmailOtp, signInWithGoogle } from "./mobileAuth";
+import {
+  listenForAuthCallback,
+  sendEmailOtp,
+  signInWithGoogle,
+  signInWithReviewCredentials,
+} from "./mobileAuth";
 import {
   registerMobileSession,
   validateMobileSession,
@@ -2465,6 +2470,7 @@ function App() {
     | "welcome"
     | "signin"
     | "signup"
+    | "review"
     | "dashboard"
     | "profile"
     | "settings"
@@ -2484,6 +2490,12 @@ function App() {
     useState(false);
 
   const [emailLoading, setEmailLoading] =
+    useState(false);
+
+  const [reviewPassword, setReviewPassword] =
+    useState("");
+
+  const [reviewLoading, setReviewLoading] =
     useState(false);
 
   const startupCompleteRef =
@@ -2759,6 +2771,92 @@ function App() {
     }
   }
 
+  async function continueWithReviewAccess() {
+    setAuthError("");
+
+    if (
+      !email.trim() ||
+      !reviewPassword
+    ) {
+      setAuthError(
+        "Enter the reviewer email and password."
+      );
+      return;
+    }
+
+    setReviewLoading(true);
+    authFlowActiveRef.current =
+      true;
+
+    try {
+      await signInWithReviewCredentials(
+        email,
+        reviewPassword
+      );
+
+      await registerMobileSession();
+
+      touchSessionActivity();
+
+      const {
+        data,
+        error,
+      } =
+        await supabase.auth.getUser();
+
+      if (
+        error ||
+        !data.user?.id
+      ) {
+        throw new Error(
+          "Authenticated reviewer could not be verified."
+        );
+      }
+
+      try {
+        await identifyMobileAnalyticsUser(
+          data.user.id
+        );
+      } catch {
+        // Analytics must never interrupt authentication.
+      }
+
+      void trackMobileEvent(
+        "login_success",
+        {
+          method:
+            "google_play_review",
+        }
+      );
+
+      startupCompleteRef.current =
+        true;
+
+      authFlowActiveRef.current =
+        false;
+
+      setReviewPassword("");
+      setScreen("dashboard");
+    } catch {
+      authFlowActiveRef.current =
+        false;
+
+      try {
+        await supabase.auth.signOut({
+          scope: "local",
+        });
+      } catch {
+        // Local cleanup is best effort.
+      }
+
+      setAuthError(
+        "Review credentials were not accepted."
+      );
+    } finally {
+      setReviewLoading(false);
+    }
+  }
+
   if (screen === "checking") {
     return (
       <main className="welcome-screen">
@@ -2898,6 +2996,103 @@ function App() {
     );
   }
 
+  if (screen === "review") {
+    return (
+      <main className="welcome-screen">
+        <div className="welcome-content">
+          <img
+            className="welcome-logo"
+            src="/ayzo-logo.png"
+            alt="AYZO"
+          />
+
+          <div className="welcome-copy">
+            <div className="eyebrow">
+              APP REVIEW ACCESS
+            </div>
+
+            <h1>
+              Google Play review sign in
+            </h1>
+
+            <p>
+              Dedicated reusable credentials for app review.
+              No email verification or one-time code is required.
+            </p>
+          </div>
+
+          <div className="welcome-actions">
+            <input
+              className="auth-email-input"
+              type="email"
+              inputMode="email"
+              autoComplete="username"
+              placeholder="Reviewer email"
+              value={email}
+              onChange={(event) =>
+                setEmail(
+                  event.target.value
+                )
+              }
+            />
+
+            <input
+              className="auth-email-input"
+              type="password"
+              autoComplete="current-password"
+              placeholder="Reviewer password"
+              value={reviewPassword}
+              onChange={(event) =>
+                setReviewPassword(
+                  event.target.value
+                )
+              }
+              onKeyDown={(event) => {
+                if (
+                  event.key === "Enter"
+                ) {
+                  void continueWithReviewAccess();
+                }
+              }}
+            />
+
+            <button
+              className="primary-auth-button"
+              disabled={reviewLoading}
+              onClick={() =>
+                void continueWithReviewAccess()
+              }
+            >
+              {reviewLoading
+                ? "Signing in..."
+                : "Sign in for app review"}
+            </button>
+
+            <button
+              className="text-auth-button"
+              onClick={() => {
+                setAuthError("");
+                setReviewPassword("");
+                setScreen("signin");
+              }}
+            >
+              Back to standard sign in
+            </button>
+
+            {authError ? (
+              <div
+                className="auth-error"
+                role="alert"
+              >
+                {authError}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   if (screen === "signin" || screen === "signup") {
     const isSignup = screen === "signup";
 
@@ -2981,6 +3176,19 @@ function App() {
                 ? "Already have an account? Sign in"
                 : "New to AYZO? Create account"}
             </button>
+
+            {!isSignup && !emailSent ? (
+              <button
+                className="text-auth-button"
+                onClick={() => {
+                  setAuthError("");
+                  setReviewPassword("");
+                  setScreen("review");
+                }}
+              >
+                App review access
+              </button>
+            ) : null}
 
             {authError ? (
               <div className="auth-error">
