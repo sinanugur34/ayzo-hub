@@ -96,6 +96,14 @@ export default async function AdminPage() {
       100
     );
 
+  const nonRevenuePaidAccess =
+    Math.max(
+      0,
+      billing.activeSubscriptions -
+        billing.creem -
+        billing.googlePlay
+    );
+
   const resolvedAnalyses =
     snapshot.activity.completed7d +
     snapshot.activity.failed7d;
@@ -142,12 +150,12 @@ export default async function AdminPage() {
           />
 
           <Metric
-            label="Active subscriptions"
+            label="Paid access users"
             value={
-              snapshot
-                .subscriptions
-                .active
+              billing
+                .activeSubscriptions
             }
+            detail="Effective active or canceling access"
           />
 
           <Metric
@@ -479,11 +487,11 @@ export default async function AdminPage() {
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Metric
-            label="Paid users"
+            label="Paid access users"
             value={
               billing.activeSubscriptions
             }
-            detail="Active or canceling with paid access"
+            detail="Effective active or canceling access"
           />
 
           <Metric
@@ -530,9 +538,17 @@ export default async function AdminPage() {
           />
 
           <Metric
-            label="Providers"
+            label="Revenue providers"
             value={`${billing.creem} / ${billing.googlePlay}`}
             detail="Creem / Google Play"
+          />
+
+          <Metric
+            label="Internal / review"
+            value={
+              nonRevenuePaidAccess
+            }
+            detail="Effective access not backed by Creem or Google Play billing"
           />
         </div>
       </section>
@@ -601,43 +617,42 @@ export default async function AdminPage() {
 
       <section className="mt-8">
         <div className="text-xs font-medium tracking-[0.16em] text-zinc-500">
-          SUBSCRIPTIONS
+          EFFECTIVE ACCESS MIX
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Metric
             label="Pro"
             value={
-              snapshot
-                .subscriptions
-                .pro
+              billing.pro
             }
           />
 
           <Metric
             label="Advanced"
             value={
-              snapshot
-                .subscriptions
-                .advanced
+              billing.advanced
             }
           />
 
           <Metric
             label="Google Play"
             value={
-              snapshot
-                .subscriptions
-                .googlePlay
+              billing.googlePlay
             }
           />
 
           <Metric
             label="Creem"
             value={
-              snapshot
-                .subscriptions
-                .creem
+              billing.creem
+            }
+          />
+
+          <Metric
+            label="Internal / review"
+            value={
+              nonRevenuePaidAccess
             }
           />
         </div>
