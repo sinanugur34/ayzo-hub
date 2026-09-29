@@ -15,6 +15,12 @@ import {
   getAdminConversionFunnel,
 } from "@/lib/adminConversionFunnel";
 
+import {
+  buildAdminConversionRates,
+  formatAdminConversionRate,
+  type AdminConversionRate,
+} from "@/lib/adminConversionRatesCore";
+
 
 export const dynamic =
   "force-dynamic";
@@ -51,6 +57,19 @@ function Metric({
   );
 }
 
+
+function conversionRateDetail(
+  last7d:
+    AdminConversionRate,
+
+  last30d:
+    AdminConversionRate
+) {
+  return `${last7d.numerator}/${last7d.denominator} sessions · 30d ${formatAdminConversionRate(
+    last30d
+  )}`;
+}
+
 export default async function AdminPage() {
   const [
     snapshot,
@@ -64,6 +83,20 @@ export default async function AdminPage() {
       getAdminBillingInsights(),
       getAdminConversionFunnel(),
     ]);
+
+  const conversionRates7d =
+    funnel.available
+      ? buildAdminConversionRates(
+          funnel.last7d
+        )
+      : null;
+
+  const conversionRates30d =
+    funnel.available
+      ? buildAdminConversionRates(
+          funnel.last30d
+        )
+      : null;
 
   const signupTracked =
     signup.tracking.recorded +
@@ -463,6 +496,165 @@ export default async function AdminPage() {
             Product funnel telemetry is not available yet. Existing Admin Analytics remains fully available.
           </div>
         )}
+
+        {conversionRates7d &&
+          conversionRates30d && (
+            <div className="mt-6">
+              <div className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
+                DIRECTIONAL RATES · 7 DAYS
+              </div>
+
+              <p className="mt-2 max-w-3xl text-xs leading-5 text-zinc-600">
+                Ratios compare unique-session signals inside the same time window. They are directional diagnostics, not strict same-session cohorts.
+              </p>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <Metric
+                  label="Session → analyze"
+                  value={
+                    formatAdminConversionRate(
+                      conversionRates7d
+                        .sessionToSubmit
+                    )
+                  }
+                  detail={
+                    conversionRateDetail(
+                      conversionRates7d
+                        .sessionToSubmit,
+                      conversionRates30d
+                        .sessionToSubmit
+                    )
+                  }
+                />
+
+                <Metric
+                  label="Submit → start"
+                  value={
+                    formatAdminConversionRate(
+                      conversionRates7d
+                        .submitToStart
+                    )
+                  }
+                  detail={
+                    conversionRateDetail(
+                      conversionRates7d
+                        .submitToStart,
+                      conversionRates30d
+                        .submitToStart
+                    )
+                  }
+                />
+
+                <Metric
+                  label="Start → complete"
+                  value={
+                    formatAdminConversionRate(
+                      conversionRates7d
+                        .startToComplete
+                    )
+                  }
+                  detail={
+                    conversionRateDetail(
+                      conversionRates7d
+                        .startToComplete,
+                      conversionRates30d
+                        .startToComplete
+                    )
+                  }
+                />
+
+                <Metric
+                  label="Submit → complete"
+                  value={
+                    formatAdminConversionRate(
+                      conversionRates7d
+                        .submitToComplete
+                    )
+                  }
+                  detail={
+                    conversionRateDetail(
+                      conversionRates7d
+                        .submitToComplete,
+                      conversionRates30d
+                        .submitToComplete
+                    )
+                  }
+                />
+
+                <Metric
+                  label="Session → pricing"
+                  value={
+                    formatAdminConversionRate(
+                      conversionRates7d
+                        .sessionToPricing
+                    )
+                  }
+                  detail={
+                    conversionRateDetail(
+                      conversionRates7d
+                        .sessionToPricing,
+                      conversionRates30d
+                        .sessionToPricing
+                    )
+                  }
+                />
+
+                <Metric
+                  label="Pricing → checkout"
+                  value={
+                    formatAdminConversionRate(
+                      conversionRates7d
+                        .pricingToCheckout
+                    )
+                  }
+                  detail={
+                    conversionRateDetail(
+                      conversionRates7d
+                        .pricingToCheckout,
+                      conversionRates30d
+                        .pricingToCheckout
+                    )
+                  }
+                />
+
+                <Metric
+                  label="Checkout → created"
+                  value={
+                    formatAdminConversionRate(
+                      conversionRates7d
+                        .checkoutToCreated
+                    )
+                  }
+                  detail={
+                    conversionRateDetail(
+                      conversionRates7d
+                        .checkoutToCreated,
+                      conversionRates30d
+                        .checkoutToCreated
+                    )
+                  }
+                />
+
+                <Metric
+                  label="Created → verified paid"
+                  value={
+                    formatAdminConversionRate(
+                      conversionRates7d
+                        .createdToPaid
+                    )
+                  }
+                  detail={
+                    conversionRateDetail(
+                      conversionRates7d
+                        .createdToPaid,
+                      conversionRates30d
+                        .createdToPaid
+                    )
+                  }
+                />
+              </div>
+            </div>
+          )}
       </section>
 
       <section className="mt-8">
