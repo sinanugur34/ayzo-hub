@@ -181,7 +181,7 @@ test(
       readAnalysisFailureCode,
     } =
       await import(
-        "./adminAnalytics"
+        "./adminAnalyticsCore"
       );
 
     assert.equal(
