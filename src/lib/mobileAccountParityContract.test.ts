@@ -122,14 +122,33 @@ test(
 test(
   "mobile app version is read from the native build instead of stale hardcoded text",
   () => {
+    const nativeReads =
+      app.match(
+        /CapacitorApp\s*\.\s*getInfo\s*\(\s*\)/g
+      ) ?? [];
+
+    assert.ok(
+      nativeReads.length >= 2
+    );
+
     assert.match(
       app,
-      /CapacitorApp\s*\.\s*getInfo/
+      /AYZO Android \{appVersion\}/
+    );
+
+    assert.doesNotMatch(
+      app,
+      /AYZO Android\s+\d+(?:\.\d+)*\s+·\s+Build\s+\d+/
     );
 
     assert.doesNotMatch(
       app,
       /1\.0 \(15\)/
+    );
+
+    assert.doesNotMatch(
+      app,
+      /Build 16/
     );
   }
 );
