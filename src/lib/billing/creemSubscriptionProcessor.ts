@@ -28,6 +28,9 @@ export async function processCreemSubscriptionEvent(
     return {
       status:
         "ignored" as const,
+
+      paidConversion:
+        null,
     };
   }
 
@@ -184,6 +187,15 @@ export async function processCreemSubscriptionEvent(
     return {
       status:
         "processed" as const,
+
+      /*
+       * Existing subscriptions include
+       * renewals and synchronization.
+       * Never attribute them back to an
+       * old browser checkout session.
+       */
+      paidConversion:
+        null,
     };
   }
 
@@ -243,8 +255,34 @@ export async function processCreemSubscriptionEvent(
     );
   }
 
+  const paidConversion =
+    event.eventType ===
+      "subscription.paid" &&
+    mutation.analyticsSessionId
+      ? {
+          userId:
+            mutation.userId,
+
+          sessionId:
+            mutation
+              .analyticsSessionId,
+
+          plan:
+            mutation.planId,
+
+          interval:
+            mutation
+              .billingInterval,
+
+          provider:
+            "creem" as const,
+        }
+      : null;
+
   return {
     status:
       "processed" as const,
+
+    paidConversion,
   };
 }

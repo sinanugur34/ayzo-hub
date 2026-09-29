@@ -16,6 +16,10 @@ import {
 } from "@/lib/billing/creemSubscriptionProcessor";
 
 import {
+  recordProductEvent,
+} from "@/lib/productAnalytics";
+
+import {
   creemWebhookStaleCutoffIso,
   shouldTreatCreemWebhookAsDuplicate,
 } from "@/lib/billing/creemWebhookRetryPolicyCore";
@@ -414,6 +418,52 @@ export async function POST(
           status: 500,
         }
       );
+    }
+
+    if (
+      result.paidConversion
+    ) {
+      /*
+       * Billing is already persisted and
+       * the webhook ledger is finalized.
+       *
+       * Product analytics is fail-soft and
+       * must never control paid entitlement.
+       */
+      await recordProductEvent({
+        userId:
+          result
+            .paidConversion
+            .userId,
+
+        sessionId:
+          result
+            .paidConversion
+            .sessionId,
+
+        eventName:
+          "subscription_paid",
+
+        properties: {
+          plan:
+            result
+              .paidConversion
+              .plan,
+
+          interval:
+            result
+              .paidConversion
+              .interval,
+
+          provider:
+            result
+              .paidConversion
+              .provider,
+
+          source:
+            "verified_webhook",
+        },
+      });
     }
 
     return Response.json({

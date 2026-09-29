@@ -3,6 +3,7 @@ import fs from "node:fs";
 import test from "node:test";
 
 import {
+  isProductAnalyticsSessionId,
   sanitizeProductEventPayload,
 } from "./productAnalyticsCore";
 
@@ -21,6 +22,42 @@ const route =
 const reader =
   fs.readFileSync(
     "src/lib/adminConversionFunnel.ts",
+    "utf8"
+  );
+
+const checkoutButton =
+  fs.readFileSync(
+    "src/components/billing/PlanCheckoutButton.tsx",
+    "utf8"
+  );
+
+const checkoutRoute =
+  fs.readFileSync(
+    "src/app/api/billing/checkout/route.ts",
+    "utf8"
+  );
+
+const creemCheckout =
+  fs.readFileSync(
+    "src/lib/billing/creem.ts",
+    "utf8"
+  );
+
+const creemProcessor =
+  fs.readFileSync(
+    "src/lib/billing/creemSubscriptionProcessor.ts",
+    "utf8"
+  );
+
+const creemWebhook =
+  fs.readFileSync(
+    "src/app/api/billing/webhooks/creem/route.ts",
+    "utf8"
+  );
+
+const adminPage =
+  fs.readFileSync(
+    "src/app/admin/page.tsx",
     "utf8"
   );
 
@@ -49,6 +86,36 @@ test(
       "pricing_viewed"
     );
 
+    for (
+      const eventName of [
+        "analysis_started",
+        "intelligence_completed",
+        "analysis_failed",
+        "analysis_quota_blocked",
+      ]
+    ) {
+      const lifecycle =
+        sanitizeProductEventPayload({
+          eventName,
+
+          sessionId:
+            "11111111-1111-4111-8111-111111111111",
+
+          properties: {
+            network:
+              "ethereum",
+
+            feature:
+              "ethereum_intelligence",
+          },
+        });
+
+      assert.equal(
+        lifecycle?.eventName,
+        eventName
+      );
+    }
+
     assert.equal(
       sanitizeProductEventPayload({
         eventName:
@@ -58,6 +125,137 @@ test(
           "11111111-1111-4111-8111-111111111111",
       }),
       null
+    );
+  }
+);
+
+test(
+  "analytics attribution accepts only canonical UUID sessions",
+  () => {
+    assert.equal(
+      isProductAnalyticsSessionId(
+        "11111111-1111-4111-8111-111111111111"
+      ),
+      true
+    );
+
+    assert.equal(
+      isProductAnalyticsSessionId(
+        "not-a-session"
+      ),
+      false
+    );
+
+    const paid =
+      sanitizeProductEventPayload({
+        eventName:
+          "subscription_paid",
+
+        sessionId:
+          "11111111-1111-4111-8111-111111111111",
+
+        properties: {
+          provider:
+            "creem",
+
+          plan:
+            "pro",
+
+          interval:
+            "monthly",
+
+          source:
+            "verified_webhook",
+        },
+      });
+
+    assert.equal(
+      paid?.eventName,
+      "subscription_paid"
+    );
+  }
+);
+
+test(
+  "checkout attribution is consent-backed and provider metadata is server validated",
+  () => {
+    assert.match(
+      checkoutButton,
+      /getAnalyticsAttributionSessionId/
+    );
+
+    assert.match(
+      checkoutButton,
+      /analyticsSessionId/
+    );
+
+    assert.match(
+      checkoutRoute,
+      /isProductAnalyticsSessionId/
+    );
+
+    assert.match(
+      creemCheckout,
+      /ayzo_analytics_session_id/
+    );
+  }
+);
+
+test(
+  "verified paid telemetry is written only after webhook finalization",
+  () => {
+    const finalizeGuard =
+      creemWebhook.indexOf(
+        "finalizeError ||"
+      );
+
+    const analyticsWrite =
+      creemWebhook.indexOf(
+        "await recordProductEvent"
+      );
+
+    assert.ok(
+      finalizeGuard >= 0
+    );
+
+    assert.ok(
+      analyticsWrite >
+        finalizeGuard
+    );
+
+    assert.match(
+      creemWebhook,
+      /eventName:\s*"subscription_paid"/
+    );
+
+    assert.match(
+      creemWebhook,
+      /source:\s*"verified_webhook"/
+    );
+
+    assert.match(
+      creemProcessor,
+      /Existing subscriptions include[\s\S]*renewals[\s\S]*paidConversion:\s*null/
+    );
+  }
+);
+
+test(
+  "Admin funnel separates checkout creation from verified payment",
+  () => {
+    assert.match(
+      adminPage,
+      /\.checkout_created/
+    );
+
+    assert.match(
+      adminPage,
+      /\.subscription_paid/
+    );
+
+    assert.match(
+      adminPage,
+      /Verified paid/
     );
   }
 );

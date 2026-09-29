@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  trackEvent,
+} from "@/lib/analytics/client";
+
 import AnalysisWorkspaceResearchTools from "@/components/AnalysisWorkspaceResearchTools";
 
 import AnalysisWorkspaceDetails from "@/components/AnalysisWorkspaceDetails";
@@ -256,6 +260,16 @@ export default function BitcoinIntelligenceReport({
       setElapsedSeconds(0);
 
       try {
+        trackEvent(
+          "analysis_started",
+          {
+            feature:
+              "bitcoin_intelligence",
+            network:
+              "bitcoin",
+          }
+        );
+
         const response =
           await fetch(
             "/api/intelligence",
@@ -306,14 +320,38 @@ export default function BitcoinIntelligenceReport({
             result.code ===
               "DAILY_FREE_LIMIT" ||
             result.code ===
-              "DAILY_PRO_LIMIT"
+              "DAILY_PRO_LIMIT" ||
+            result.code ===
+              "DAILY_ADVANCED_LIMIT"
           )
           ) {
+            trackEvent(
+              "analysis_quota_blocked",
+              {
+                feature:
+                  "bitcoin_intelligence",
+                network:
+                  "bitcoin",
+                result:
+                  result.code,
+              }
+            );
+
             setDailyLimitReached(
               true
             );
             return;
           }
+
+          trackEvent(
+            "analysis_failed",
+            {
+              feature:
+                "bitcoin_intelligence",
+              network:
+                "bitcoin",
+            }
+          );
 
           setError(
             result.error ||
@@ -322,9 +360,29 @@ export default function BitcoinIntelligenceReport({
           return;
         }
 
+        trackEvent(
+          "intelligence_completed",
+          {
+            feature:
+              "bitcoin_intelligence",
+            network:
+              "bitcoin",
+          }
+        );
+
         setData(result);
       } catch (caught) {
         if (!cancelled) {
+          trackEvent(
+            "analysis_failed",
+            {
+              feature:
+                "bitcoin_intelligence",
+              network:
+                "bitcoin",
+            }
+          );
+
           setError(
             caught instanceof
               Error

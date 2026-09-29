@@ -23,6 +23,10 @@ import type {
   BillingInterval,
 } from "@/lib/plans/types";
 
+import {
+  isProductAnalyticsSessionId,
+} from "@/lib/productAnalyticsCore";
+
 export const dynamic =
   "force-dynamic";
 
@@ -137,6 +141,15 @@ export async function POST(
   const confirmUpgrade =
     record?.confirmUpgrade ===
       true;
+
+  const analyticsSessionId =
+    isProductAnalyticsSessionId(
+      record?.analyticsSessionId
+    )
+      ? record
+          .analyticsSessionId
+          .toLowerCase()
+      : null;
 
   if (
     !isPaidPlan(
@@ -413,6 +426,7 @@ export async function POST(
       planId:
         plan,
       interval,
+      analyticsSessionId,
     });
 
   if (!result.ok) {

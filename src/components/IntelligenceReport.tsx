@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  trackEvent,
+} from "@/lib/analytics/client";
+
 import AnalysisWorkspaceResearchTools from "@/components/AnalysisWorkspaceResearchTools";
 
 import AnalysisWorkspaceDetails from "@/components/AnalysisWorkspaceDetails";
@@ -23,25 +27,6 @@ import {
 import {
   buildSolanaFundingActivityTimeline,
 } from "@/lib/intelligence/activityTimeline";
-
-type AnalyticsWindow = Window & {
-  gtag?: (...args: unknown[]) => void;
-};
-
-function trackEvent(
-  name: string,
-  params?: Record<string, string | number | boolean>
-) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  (window as AnalyticsWindow).gtag?.(
-    "event",
-    name,
-    params ?? {}
-  );
-}
 
 type Holder = {
   rank: number;
@@ -166,6 +151,7 @@ export default function IntelligenceReport({
       try {
         trackEvent("analysis_started", {
           feature: "intelligence_report",
+          network: "solana",
         });
 
         const response = await fetch("/api/solana/intelligence", {
@@ -193,8 +179,17 @@ export default function IntelligenceReport({
         if (!result.ok) {
           if ((
             result.code === "DAILY_FREE_LIMIT" ||
-            result.code === "DAILY_PRO_LIMIT"
+            result.code ===
+              "DAILY_PRO_LIMIT" ||
+            result.code ===
+              "DAILY_ADVANCED_LIMIT"
           )) {
+            trackEvent("analysis_quota_blocked", {
+              feature: "intelligence_report",
+              network: "solana",
+              result: result.code,
+            });
+
             setDailyLimitReached(true);
             setData(null);
             setError("");
@@ -221,11 +216,17 @@ export default function IntelligenceReport({
 
         trackEvent("intelligence_completed", {
           feature: "intelligence_report",
+          network: "solana",
         });
 
         setData(result);
       } catch (err) {
         if (!cancelled) {
+          trackEvent("analysis_failed", {
+            feature: "intelligence_report",
+            network: "solana",
+          });
+
           setError(
             err instanceof Error
               ? err.message
