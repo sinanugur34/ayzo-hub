@@ -1596,7 +1596,7 @@ export default function Home() {
                 </div>
 
                 <div className="rounded-full border border-zinc-800 bg-black/30 px-3 py-1.5 text-[10px] text-zinc-500">
-                  17 networks
+                  {LIVE_NETWORKS.length} networks
                 </div>
               </div>
 
