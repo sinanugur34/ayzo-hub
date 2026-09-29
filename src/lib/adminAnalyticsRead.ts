@@ -357,6 +357,8 @@ export type AdminDashboardSnapshot = {
     quotaBlocked7d: number;
     web7d: number;
     android7d: number;
+    ios7d: number;
+    api7d: number;
   };
 };
 
@@ -384,7 +386,9 @@ export async function getAdminDashboardSnapshot():
     filters: {
       platform?:
         "web" |
-        "android";
+        "android" |
+        "ios" |
+        "api";
 
       outcome?:
         "completed" |
@@ -444,6 +448,8 @@ export async function getAdminDashboardSnapshot():
     quotaBlocked7dResult,
     web7dResult,
     android7dResult,
+    ios7dResult,
+    api7dResult,
   ] =
     await Promise.all([
       admin.auth.admin
@@ -506,6 +512,16 @@ export async function getAdminDashboardSnapshot():
         platform:
           "android",
       }),
+
+      countActivity({
+        platform:
+          "ios",
+      }),
+
+      countActivity({
+        platform:
+          "api",
+      }),
     ]);
 
   const results = [
@@ -518,6 +534,8 @@ export async function getAdminDashboardSnapshot():
     quotaBlocked7dResult.error,
     web7dResult.error,
     android7dResult.error,
+    ios7dResult.error,
+    api7dResult.error,
   ];
 
   if (
@@ -628,6 +646,14 @@ export async function getAdminDashboardSnapshot():
 
       android7d:
         android7dResult.count ??
+        0,
+
+      ios7d:
+        ios7dResult.count ??
+        0,
+
+      api7d:
+        api7dResult.count ??
         0,
     },
   };
