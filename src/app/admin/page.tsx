@@ -21,6 +21,15 @@ import {
   type AdminConversionRate,
 } from "@/lib/adminConversionRatesCore";
 
+import {
+  getAdminAuthenticatedAttribution,
+} from "@/lib/adminAttribution";
+
+import {
+  formatAdminAttributionCoverage,
+  type AdminAttributionBucket,
+} from "@/lib/adminAttributionCore";
+
 
 export const dynamic =
   "force-dynamic";
@@ -70,18 +79,72 @@ function conversionRateDetail(
   )}`;
 }
 
+
+function AttributionBreakdown({
+  title,
+  items,
+}: {
+  title:
+    string;
+
+  items:
+    AdminAttributionBucket[];
+}) {
+  return (
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-5">
+      <div className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
+        {title}
+      </div>
+
+      <div className="mt-4 space-y-2">
+        {items.length > 0 ? (
+          items
+            .slice(
+              0,
+              8
+            )
+            .map(
+              item => (
+                <div
+                  key={
+                    item.value
+                  }
+                  className="flex items-center justify-between gap-4 text-sm"
+                >
+                  <span className="truncate text-zinc-400">
+                    {item.value}
+                  </span>
+
+                  <span className="font-medium text-zinc-200">
+                    {item.total}
+                  </span>
+                </div>
+              )
+            )
+        ) : (
+          <div className="text-xs text-zinc-600">
+            No attributed users in this window.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default async function AdminPage() {
   const [
     snapshot,
     signup,
     billing,
     funnel,
+    attribution,
   ] =
     await Promise.all([
       getAdminDashboardSnapshot(),
       getAdminSignupInsights(),
       getAdminBillingInsights(),
       getAdminConversionFunnel(),
+      getAdminAuthenticatedAttribution(),
     ]);
 
   const conversionRates7d =
@@ -655,6 +718,236 @@ export default async function AdminPage() {
               </div>
             </div>
           )}
+      </section>
+
+      <section className="mt-8">
+        <div>
+          <div className="text-xs font-medium tracking-[0.16em] text-zinc-500">
+            AUTHENTICATED ATTRIBUTION · 7 DAYS
+          </div>
+
+          <h2 className="mt-2 text-xl font-semibold">
+            Acquisition → product behavior
+          </h2>
+
+          <p className="mt-2 max-w-3xl text-xs leading-5 text-zinc-600">
+            Authenticated product-event users only. Signup channel, device and country come from normalized signup metadata. Anonymous consented sessions are intentionally excluded from these breakdowns.
+          </p>
+        </div>
+
+        {attribution.available ? (
+          <>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Metric
+                label="Attribution coverage"
+                value={
+                  formatAdminAttributionCoverage(
+                    attribution
+                      .last7d
+                      .coverage
+                      .percent
+                  )
+                }
+                detail={`${attribution.last7d.coverage.recorded}/${attribution.last7d.coverage.total} authenticated users · 30d ${formatAdminAttributionCoverage(
+                  attribution
+                    .last30d
+                    .coverage
+                    .percent
+                )}`}
+              />
+
+              <Metric
+                label="Attributed users"
+                value={
+                  attribution
+                    .last7d
+                    .coverage
+                    .recorded
+                }
+                detail={`${attribution.last30d.coverage.recorded} · 30d`}
+              />
+
+              <Metric
+                label="Unknown signup source"
+                value={
+                  attribution
+                    .last7d
+                    .coverage
+                    .unknown
+                }
+                detail="Authenticated users without normalized signup metadata"
+              />
+            </div>
+
+            <div className="mt-6">
+              <div className="text-sm font-medium text-zinc-300">
+                Analyze submitted
+              </div>
+
+              <div className="mt-3 grid gap-3 lg:grid-cols-3">
+                <AttributionBreakdown
+                  title="Signup channel"
+                  items={
+                    attribution
+                      .last7d
+                      .events
+                      .analysis_submitted
+                      .channel
+                  }
+                />
+
+                <AttributionBreakdown
+                  title="Device"
+                  items={
+                    attribution
+                      .last7d
+                      .events
+                      .analysis_submitted
+                      .device
+                  }
+                />
+
+                <AttributionBreakdown
+                  title="Country"
+                  items={
+                    attribution
+                      .last7d
+                      .events
+                      .analysis_submitted
+                      .country
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="text-sm font-medium text-zinc-300">
+                Analysis completed
+              </div>
+
+              <div className="mt-3 grid gap-3 lg:grid-cols-3">
+                <AttributionBreakdown
+                  title="Signup channel"
+                  items={
+                    attribution
+                      .last7d
+                      .events
+                      .intelligence_completed
+                      .channel
+                  }
+                />
+
+                <AttributionBreakdown
+                  title="Device"
+                  items={
+                    attribution
+                      .last7d
+                      .events
+                      .intelligence_completed
+                      .device
+                  }
+                />
+
+                <AttributionBreakdown
+                  title="Country"
+                  items={
+                    attribution
+                      .last7d
+                      .events
+                      .intelligence_completed
+                      .country
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="text-sm font-medium text-zinc-300">
+                Pricing viewed
+              </div>
+
+              <div className="mt-3 grid gap-3 lg:grid-cols-3">
+                <AttributionBreakdown
+                  title="Signup channel"
+                  items={
+                    attribution
+                      .last7d
+                      .events
+                      .pricing_viewed
+                      .channel
+                  }
+                />
+
+                <AttributionBreakdown
+                  title="Device"
+                  items={
+                    attribution
+                      .last7d
+                      .events
+                      .pricing_viewed
+                      .device
+                  }
+                />
+
+                <AttributionBreakdown
+                  title="Country"
+                  items={
+                    attribution
+                      .last7d
+                      .events
+                      .pricing_viewed
+                      .country
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="text-sm font-medium text-zinc-300">
+                Verified paid
+              </div>
+
+              <div className="mt-3 grid gap-3 lg:grid-cols-3">
+                <AttributionBreakdown
+                  title="Signup channel"
+                  items={
+                    attribution
+                      .last7d
+                      .events
+                      .subscription_paid
+                      .channel
+                  }
+                />
+
+                <AttributionBreakdown
+                  title="Device"
+                  items={
+                    attribution
+                      .last7d
+                      .events
+                      .subscription_paid
+                      .device
+                  }
+                />
+
+                <AttributionBreakdown
+                  title="Country"
+                  items={
+                    attribution
+                      .last7d
+                      .events
+                      .subscription_paid
+                      .country
+                  }
+                />
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-950/50 p-5 text-xs leading-5 text-zinc-500">
+            Authenticated attribution is not available yet. Existing Admin Analytics remains fully available.
+          </div>
+        )}
       </section>
 
       <section className="mt-8">
