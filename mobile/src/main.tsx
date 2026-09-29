@@ -3176,6 +3176,47 @@ function AboutScreen({
 }: {
   onBack: () => void;
 }) {
+  const [
+    appVersion,
+    setAppVersion,
+  ] =
+    useState(
+      "Loading…"
+    );
+
+  useEffect(() => {
+    let cancelled =
+      false;
+
+    void CapacitorApp
+      .getInfo()
+      .then((info) => {
+        if (
+          cancelled
+        ) {
+          return;
+        }
+
+        setAppVersion(
+          `${info.version} (${info.build})`
+        );
+      })
+      .catch(() => {
+        if (
+          !cancelled
+        ) {
+          setAppVersion(
+            "Unavailable"
+          );
+        }
+      });
+
+    return () => {
+      cancelled =
+        true;
+    };
+  }, []);
+
   return (
     <SimpleAccountScreen
       eyebrow="AYZO"
@@ -3200,7 +3241,7 @@ function AboutScreen({
         </p>
 
         <span>
-          AYZO Android 1.0 · Build 16
+          AYZO Android {appVersion}
         </span>
       </section>
     </SimpleAccountScreen>
