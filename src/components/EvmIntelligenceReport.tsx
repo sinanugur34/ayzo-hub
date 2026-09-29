@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  trackEvent,
+} from "@/lib/analytics/client";
+
 import AnalysisWorkspaceResearchTools from "@/components/AnalysisWorkspaceResearchTools";
 
 import AnalysisWorkspaceDetails from "@/components/AnalysisWorkspaceDetails";
@@ -40,36 +44,6 @@ import type {
 import {
   NETWORKS,
 } from "@/lib/networks/registry";
-
-type AnalyticsWindow =
-  Window & {
-    gtag?: (
-      ...args: unknown[]
-    ) => void;
-  };
-
-function trackEvent(
-  name: string,
-  params?: Record<
-    string,
-    string | number | boolean
-  >
-) {
-  if (
-    typeof window ===
-    "undefined"
-  ) {
-    return;
-  }
-
-  (
-    window as AnalyticsWindow
-  ).gtag?.(
-    "event",
-    name,
-    params ?? {}
-  );
-}
 
 type ModuleStatus =
   | "complete"
@@ -1210,9 +1184,22 @@ export default function EvmIntelligenceReport({
             result.code ===
               "DAILY_FREE_LIMIT" ||
             result.code ===
-              "DAILY_PRO_LIMIT"
+              "DAILY_PRO_LIMIT" ||
+            result.code ===
+              "DAILY_ADVANCED_LIMIT"
           )
           ) {
+            trackEvent(
+              "analysis_quota_blocked",
+              {
+                feature:
+                  `${network}_intelligence`,
+                network,
+                result:
+                  result.code,
+              }
+            );
+
             setDailyLimitReached(
               true
             );
@@ -1239,6 +1226,15 @@ export default function EvmIntelligenceReport({
         setData(result);
       } catch (caught) {
         if (!cancelled) {
+          trackEvent(
+            "analysis_failed",
+            {
+              feature:
+                `${network}_intelligence`,
+              network,
+            }
+          );
+
           setError(
             caught instanceof
               Error

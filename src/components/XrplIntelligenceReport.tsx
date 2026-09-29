@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  trackEvent,
+} from "@/lib/analytics/client";
+
 import AnalysisWorkspaceResearchTools from "@/components/AnalysisWorkspaceResearchTools";
 
 import AnalysisWorkspaceDetails from "@/components/AnalysisWorkspaceDetails";
@@ -191,6 +195,16 @@ export default function XrplIntelligenceReport({
 
       void (async () => {
         try {
+          trackEvent(
+            "analysis_started",
+            {
+              feature:
+                "xrp_intelligence",
+              network:
+                "xrp",
+            }
+          );
+
           const response =
             await fetch(
               "/api/intelligence",
@@ -232,6 +246,18 @@ export default function XrplIntelligenceReport({
             response.status ===
               429
           ) {
+            trackEvent(
+              "analysis_quota_blocked",
+              {
+                feature:
+                  "xrp_intelligence",
+                network:
+                  "xrp",
+                status:
+                  429,
+              }
+            );
+
             setDailyLimitReached(
               true
             );
@@ -242,6 +268,18 @@ export default function XrplIntelligenceReport({
           if (
             !body.ok
           ) {
+            trackEvent(
+              "analysis_failed",
+              {
+                feature:
+                  "xrp_intelligence",
+                network:
+                  "xrp",
+                status:
+                  response.status,
+              }
+            );
+
             setError(
               body.error
             );
@@ -252,12 +290,34 @@ export default function XrplIntelligenceReport({
           if (
             !response.ok
           ) {
+            trackEvent(
+              "analysis_failed",
+              {
+                feature:
+                  "xrp_intelligence",
+                network:
+                  "xrp",
+                status:
+                  response.status,
+              }
+            );
+
             setError(
               "XRP Ledger intelligence request failed."
             );
 
             return;
           }
+
+          trackEvent(
+            "intelligence_completed",
+            {
+              feature:
+                "xrp_intelligence",
+              network:
+                "xrp",
+            }
+          );
 
           setData(
             body
@@ -266,6 +326,16 @@ export default function XrplIntelligenceReport({
           if (
             !cancelled
           ) {
+            trackEvent(
+              "analysis_failed",
+              {
+                feature:
+                  "xrp_intelligence",
+                network:
+                  "xrp",
+              }
+            );
+
             setError(
               "XRP Ledger intelligence is temporarily unavailable."
             );

@@ -49,6 +49,36 @@ test(
       "pricing_viewed"
     );
 
+    for (
+      const eventName of [
+        "analysis_started",
+        "intelligence_completed",
+        "analysis_failed",
+        "analysis_quota_blocked",
+      ]
+    ) {
+      const lifecycle =
+        sanitizeProductEventPayload({
+          eventName,
+
+          sessionId:
+            "11111111-1111-4111-8111-111111111111",
+
+          properties: {
+            network:
+              "ethereum",
+
+            feature:
+              "ethereum_intelligence",
+          },
+        });
+
+      assert.equal(
+        lifecycle?.eventName,
+        eventName
+      );
+    }
+
     assert.equal(
       sanitizeProductEventPayload({
         eventName:

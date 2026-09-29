@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  trackEvent,
+} from "@/lib/analytics/client";
+
 import AnalysisWorkspaceResearchTools from "@/components/AnalysisWorkspaceResearchTools";
 
 import AnalysisWorkspaceDetails from "@/components/AnalysisWorkspaceDetails";
@@ -227,6 +231,16 @@ export default function TronIntelligenceReport({
       setElapsedSeconds(0);
 
       try {
+        trackEvent(
+          "analysis_started",
+          {
+            feature:
+              "tron_intelligence",
+            network:
+              "tron",
+          }
+        );
+
         const response =
           await fetch(
             "/api/intelligence",
@@ -276,14 +290,38 @@ export default function TronIntelligenceReport({
             result.code ===
               "DAILY_FREE_LIMIT" ||
             result.code ===
-              "DAILY_PRO_LIMIT"
+              "DAILY_PRO_LIMIT" ||
+            result.code ===
+              "DAILY_ADVANCED_LIMIT"
           ) {
+            trackEvent(
+              "analysis_quota_blocked",
+              {
+                feature:
+                  "tron_intelligence",
+                network:
+                  "tron",
+                result:
+                  result.code,
+              }
+            );
+
             setDailyLimitReached(
               true
             );
 
             return;
           }
+
+          trackEvent(
+            "analysis_failed",
+            {
+              feature:
+                "tron_intelligence",
+              network:
+                "tron",
+            }
+          );
 
           setError(
             result.error ||
@@ -293,11 +331,31 @@ export default function TronIntelligenceReport({
           return;
         }
 
+        trackEvent(
+          "intelligence_completed",
+          {
+            feature:
+              "tron_intelligence",
+            network:
+              "tron",
+          }
+        );
+
         setData(
           result
         );
       } catch (caught) {
         if (!cancelled) {
+          trackEvent(
+            "analysis_failed",
+            {
+              feature:
+                "tron_intelligence",
+              network:
+                "tron",
+            }
+          );
+
           setError(
             caught instanceof
               Error

@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  trackEvent,
+} from "@/lib/analytics/client";
+
 import AnalysisWorkspaceResearchTools from "@/components/AnalysisWorkspaceResearchTools";
 
 import AnalysisWorkspaceDetails from "@/components/AnalysisWorkspaceDetails";
@@ -214,6 +218,16 @@ export default function DogecoinIntelligenceReport({
       setElapsedSeconds(0);
 
       try {
+        trackEvent(
+          "analysis_started",
+          {
+            feature:
+              "dogecoin_intelligence",
+            network:
+              "dogecoin",
+          }
+        );
+
         const response =
           await fetch(
             "/api/intelligence",
@@ -264,14 +278,38 @@ export default function DogecoinIntelligenceReport({
             result.code ===
               "DAILY_FREE_LIMIT" ||
             result.code ===
-              "DAILY_PRO_LIMIT"
+              "DAILY_PRO_LIMIT" ||
+            result.code ===
+              "DAILY_ADVANCED_LIMIT"
           ) {
+            trackEvent(
+              "analysis_quota_blocked",
+              {
+                feature:
+                  "dogecoin_intelligence",
+                network:
+                  "dogecoin",
+                result:
+                  result.code,
+              }
+            );
+
             setDailyLimitReached(
               true
             );
 
             return;
           }
+
+          trackEvent(
+            "analysis_failed",
+            {
+              feature:
+                "dogecoin_intelligence",
+              network:
+                "dogecoin",
+            }
+          );
 
           setError(
             result.error ||
@@ -281,9 +319,29 @@ export default function DogecoinIntelligenceReport({
           return;
         }
 
+        trackEvent(
+          "intelligence_completed",
+          {
+            feature:
+              "dogecoin_intelligence",
+            network:
+              "dogecoin",
+          }
+        );
+
         setData(result);
       } catch (caught) {
         if (!cancelled) {
+          trackEvent(
+            "analysis_failed",
+            {
+              feature:
+                "dogecoin_intelligence",
+              network:
+                "dogecoin",
+            }
+          );
+
           setError(
             caught instanceof
               Error
