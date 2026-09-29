@@ -330,6 +330,50 @@ export default async function AdminPage() {
             />
 
             <Metric
+              label="Analysis started"
+              value={
+                funnel
+                  .last7d
+                  .analysis_started
+                  .sessions
+              }
+              detail={`${funnel.last30d.analysis_started.sessions} sessions · 30d`}
+            />
+
+            <Metric
+              label="Analysis completed"
+              value={
+                funnel
+                  .last7d
+                  .intelligence_completed
+                  .sessions
+              }
+              detail={`${funnel.last30d.intelligence_completed.sessions} sessions · 30d`}
+            />
+
+            <Metric
+              label="Analysis failed"
+              value={
+                funnel
+                  .last7d
+                  .analysis_failed
+                  .sessions
+              }
+              detail={`${funnel.last30d.analysis_failed.sessions} sessions · 30d`}
+            />
+
+            <Metric
+              label="Quota blocked"
+              value={
+                funnel
+                  .last7d
+                  .analysis_quota_blocked
+                  .sessions
+              }
+              detail={`${funnel.last30d.analysis_quota_blocked.sessions} sessions · 30d`}
+            />
+
+            <Metric
               label="Analysis saved"
               value={
                 funnel
@@ -382,6 +426,28 @@ export default async function AdminPage() {
                   .sessions
               }
               detail={`${funnel.last30d.checkout_started.sessions} sessions · 30d`}
+            />
+
+            <Metric
+              label="Checkout created"
+              value={
+                funnel
+                  .last7d
+                  .checkout_created
+                  .sessions
+              }
+              detail={`${funnel.last30d.checkout_created.sessions} sessions · 30d`}
+            />
+
+            <Metric
+              label="Verified paid"
+              value={
+                funnel
+                  .last7d
+                  .subscription_paid
+                  .sessions
+              }
+              detail={`${funnel.last30d.subscription_paid.sessions} sessions · 30d`}
             />
           </div>
         ) : (

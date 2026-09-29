@@ -6,6 +6,10 @@ import type {
   CreemWebhookEvent,
 } from "@/lib/billing/creemWebhookPayload";
 
+import {
+  isProductAnalyticsSessionId,
+} from "@/lib/productAnalyticsCore";
+
 export type CreemPaidPlan =
   "pro" |
   "advanced";
@@ -31,6 +35,9 @@ export type CreemSubscriptionMutation =
 
       userId:
         string;
+
+      analyticsSessionId:
+        string | null;
 
       providerSubscriptionId:
         string;
@@ -278,6 +285,20 @@ export function interpretCreemSubscriptionEvent(
     );
   }
 
+  const analyticsSessionCandidate =
+    metadataString(
+      metadata,
+      "ayzo_analytics_session_id"
+    );
+
+  const analyticsSessionId =
+    isProductAnalyticsSessionId(
+      analyticsSessionCandidate
+    )
+      ? analyticsSessionCandidate
+          .toLowerCase()
+      : null;
+
   const start =
     event.object
       .current_period_start_date;
@@ -363,6 +384,8 @@ export function interpretCreemSubscriptionEvent(
       "apply",
 
     userId,
+
+    analyticsSessionId,
 
     providerSubscriptionId:
       event.object.id,

@@ -9,6 +9,10 @@ import type {
   PlanId,
 } from "@/lib/plans/types";
 
+import {
+  isProductAnalyticsSessionId,
+} from "@/lib/productAnalyticsCore";
+
 type PaidPlanId =
   Exclude<PlanId, "free">;
 
@@ -21,6 +25,8 @@ export type CreemCheckoutInput = {
   userEmail: string | null;
   planId: PaidPlanId;
   interval: BillingInterval;
+  analyticsSessionId:
+    string | null;
 };
 
 export type CreemCheckoutResult =
@@ -188,6 +194,7 @@ export async function createCreemCheckout({
   userEmail,
   planId,
   interval,
+  analyticsSessionId,
 }: CreemCheckoutInput):
   Promise<CreemCheckoutResult> {
   let apiKey:
@@ -282,6 +289,16 @@ export async function createCreemCheckout({
 
                 ayzo_interval:
                   interval,
+
+                ...(isProductAnalyticsSessionId(
+                  analyticsSessionId
+                )
+                  ? {
+                      ayzo_analytics_session_id:
+                        analyticsSessionId
+                          .toLowerCase(),
+                    }
+                  : {}),
               },
             }),
         }

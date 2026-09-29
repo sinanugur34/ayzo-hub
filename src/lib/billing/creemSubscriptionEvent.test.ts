@@ -12,6 +12,9 @@ import type {
 const USER_ID =
   "11111111-1111-4111-8111-111111111111";
 
+const ANALYTICS_SESSION_ID =
+  "22222222-2222-4222-8222-222222222222";
+
 const ENV_KEYS = {
   CREEM_PRO_MONTHLY_PRODUCT_ID:
     "prod_pro_month",
@@ -49,6 +52,8 @@ function event({
     "pro",
   interval =
     "monthly",
+  analyticsSessionId =
+    null,
 }: {
   eventType?: string;
   productId?: string;
@@ -57,6 +62,8 @@ function event({
     string;
   plan?: string;
   interval?: string;
+  analyticsSessionId?:
+    string | null;
 } = {}):
   CreemWebhookEvent {
   return {
@@ -108,6 +115,13 @@ function event({
 
         ayzo_interval:
           interval,
+
+        ...(analyticsSessionId
+          ? {
+              ayzo_analytics_session_id:
+                analyticsSessionId,
+            }
+          : {}),
       },
     },
   };
@@ -147,6 +161,67 @@ test(
       result.lockedPriceUsdCents,
       1900
     );
+  }
+);
+
+test(
+  "verified paid event preserves a valid analytics session",
+  () => {
+    const result =
+      interpretCreemSubscriptionEvent(
+        event({
+          analyticsSessionId:
+            ANALYTICS_SESSION_ID,
+        })
+      );
+
+    assert.equal(
+      result.action,
+      "apply"
+    );
+
+    if (
+      result.action ===
+        "apply"
+    ) {
+      assert.equal(
+        result.analyticsSessionId,
+        ANALYTICS_SESSION_ID
+      );
+    }
+  }
+);
+
+test(
+  "invalid analytics attribution never blocks verified billing",
+  () => {
+    const result =
+      interpretCreemSubscriptionEvent(
+        event({
+          analyticsSessionId:
+            "not-a-valid-session",
+        })
+      );
+
+    assert.equal(
+      result.action,
+      "apply"
+    );
+
+    if (
+      result.action ===
+        "apply"
+    ) {
+      assert.equal(
+        result.analyticsSessionId,
+        null
+      );
+
+      assert.equal(
+        result.status,
+        "active"
+      );
+    }
   }
 );
 

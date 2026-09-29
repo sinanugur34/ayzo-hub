@@ -9,6 +9,7 @@ import {
 } from "next/navigation";
 
 import {
+  getAnalyticsAttributionSessionId,
   trackEvent,
 } from "@/lib/analytics/client";
 
@@ -79,6 +80,9 @@ export default function PlanCheckoutButton({
     setLoading(true);
     setError("");
 
+    const analyticsSessionId =
+      getAnalyticsAttributionSessionId();
+
     trackEvent(
       "checkout_started",
       {
@@ -105,6 +109,12 @@ export default function PlanCheckoutButton({
                 plan,
                 interval,
                 confirmUpgrade,
+
+                ...(analyticsSessionId
+                  ? {
+                      analyticsSessionId,
+                    }
+                  : {}),
               }),
           }
         );

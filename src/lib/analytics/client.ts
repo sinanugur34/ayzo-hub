@@ -126,6 +126,18 @@ function recordFirstPartyEvent(
   );
 }
 
+export function getAnalyticsAttributionSessionId() {
+  if (
+    typeof window ===
+      "undefined" ||
+    !analyticsAllowed()
+  ) {
+    return null;
+  }
+
+  return analyticsSessionId();
+}
+
 export function trackEvent(
   name: string,
   params:
