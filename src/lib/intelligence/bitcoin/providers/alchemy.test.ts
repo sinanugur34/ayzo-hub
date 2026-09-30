@@ -543,3 +543,225 @@ test(
     );
   }
 );
+
+test(
+  "normalizes explicit Bitcoin script addresses without inferring them",
+  async () => {
+    const originalFetch =
+      globalThis.fetch;
+
+    const originalKey =
+      process.env
+        .ALCHEMY_API_KEY;
+
+    process.env
+      .ALCHEMY_API_KEY =
+      "test-key";
+
+    const rootHash =
+      "9".repeat(64);
+
+    const prevHash =
+      "8".repeat(64);
+
+    globalThis.fetch =
+      (async (
+        _input,
+        init
+      ) => {
+        const body =
+          JSON.parse(
+            String(
+              init?.body
+            )
+          ) as {
+            method:
+              string;
+
+            params:
+              unknown[];
+          };
+
+        const requested =
+          String(
+            body.params[0]
+          );
+
+        if (
+          requested ===
+            rootHash
+        ) {
+          return new Response(
+            JSON.stringify({
+              jsonrpc:
+                "2.0",
+
+              id:
+                1,
+
+              result: {
+                txid:
+                  rootHash,
+
+                hash:
+                  rootHash,
+
+                confirmations:
+                  1,
+
+                vin: [
+                  {
+                    txid:
+                      prevHash,
+
+                    vout:
+                      0,
+                  },
+                ],
+
+                vout: [
+                  {
+                    n:
+                      0,
+
+                    value:
+                      0.001,
+
+                    scriptPubKey: {
+                      hex:
+                        "76a914",
+
+                      address:
+                        "1BoatSLRHtKNngkdXEeobR76b53LETtpyT",
+                    },
+                  },
+                ],
+              },
+            }),
+            {
+              status:
+                200,
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+            }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({
+            jsonrpc:
+              "2.0",
+
+            id:
+              2,
+
+            result: {
+              txid:
+                prevHash,
+
+              hash:
+                prevHash,
+
+              confirmations:
+                2,
+
+              vin: [
+                {
+                  coinbase:
+                    "abcd",
+                },
+              ],
+
+              vout: [
+                {
+                  n:
+                    0,
+
+                  value:
+                    0.002,
+
+                  scriptPubKey: {
+                    hex:
+                      "0014abcd",
+
+                    addresses: [
+                      "34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo",
+                    ],
+                  },
+                },
+              ],
+            },
+          }),
+          {
+            status:
+              200,
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+          }
+        );
+      }) as typeof fetch;
+
+    try {
+      const result =
+        await alchemyBitcoinProvider
+          .getTransactionEvidence({
+            network:
+              NETWORK,
+
+            transactionHash:
+              rootHash,
+          });
+
+      assert.equal(
+        result.ok,
+        true
+      );
+
+      if (!result.ok) {
+        assert.fail(
+          "Expected successful Bitcoin canonical evidence."
+        );
+      }
+
+      assert.deepEqual(
+        result.data
+          .outputs[0]
+          ?.addresses,
+        [
+          "1BoatSLRHtKNngkdXEeobR76b53LETtpyT",
+        ]
+      );
+
+      assert.deepEqual(
+        result.data
+          .inputs[0]
+          ?.prevout
+          ?.addresses,
+        [
+          "34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo",
+        ]
+      );
+    } finally {
+      globalThis.fetch =
+        originalFetch;
+
+      if (
+        originalKey ===
+          undefined
+      ) {
+        delete process.env
+          .ALCHEMY_API_KEY;
+      } else {
+        process.env
+          .ALCHEMY_API_KEY =
+          originalKey;
+      }
+    }
+  }
+);

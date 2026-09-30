@@ -28,7 +28,7 @@ const POLICIES:
         10,
 
       canonicalSampleLimit:
-        1,
+        2,
     },
 
     advanced: {
@@ -36,7 +36,7 @@ const POLICIES:
         20,
 
       canonicalSampleLimit:
-        1,
+        3,
     },
   };
 

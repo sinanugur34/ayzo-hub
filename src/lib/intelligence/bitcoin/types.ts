@@ -53,6 +53,12 @@ export type BitcoinAddressHistoryPage = {
 export type BitcoinPrevoutEvidence = {
   valueSats: string;
   scriptPubKey: string | null;
+
+  /*
+   * Explicit provider-decoded addresses only.
+   * No address is inferred from script bytes here.
+   */
+  addresses?: readonly string[];
 };
 
 export type BitcoinPrevoutStatus =
@@ -76,6 +82,11 @@ export type BitcoinTransactionOutput = {
   index: number;
   valueSats: string;
   scriptPubKey: string | null;
+
+  /*
+   * Explicit provider-decoded output addresses only.
+   */
+  addresses?: readonly string[];
 };
 
 export type BitcoinPrevoutCoverage = {

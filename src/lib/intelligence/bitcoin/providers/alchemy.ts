@@ -126,6 +126,55 @@ function bitcoinValueToSats(
   return String(sats);
 }
 
+function scriptAddresses(
+  value: unknown
+): readonly string[] {
+  const script =
+    asObject(value);
+
+  if (!script) {
+    return [];
+  }
+
+  const direct =
+    typeof script.address ===
+      "string"
+      ? script.address.trim()
+      : "";
+
+  const legacy =
+    Array.isArray(
+      script.addresses
+    )
+      ? script.addresses
+          .filter(
+            (
+              item
+            ): item is string =>
+              typeof item ===
+                "string"
+          )
+          .map(
+            item =>
+              item.trim()
+          )
+          .filter(
+            Boolean
+          )
+      : [];
+
+  return [
+    ...new Set(
+      [
+        direct,
+        ...legacy,
+      ].filter(
+        Boolean
+      )
+    ),
+  ];
+}
+
 function scriptHex(
   value: unknown
 ): string | null {
@@ -276,6 +325,10 @@ function parseOutput(
     index,
     valueSats,
     scriptPubKey,
+    addresses:
+      scriptAddresses(
+        output.scriptPubKey
+      ),
   };
 }
 
@@ -339,6 +392,10 @@ function prevoutAt(
   return {
     valueSats,
     scriptPubKey,
+    addresses:
+      scriptAddresses(
+        output.scriptPubKey
+      ),
   };
 }
 
