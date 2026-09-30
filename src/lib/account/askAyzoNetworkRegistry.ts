@@ -6,6 +6,10 @@ export type AskAyzoAdapterId =
   | "solana"
   | "evm"
   | "utxo"
+  | "sui"
+  | "ton"
+  | "stellar"
+  | "hyperliquid"
   | "tron"
   | "xrpl"
   | "generic";
@@ -60,6 +64,42 @@ const CAPABILITIES:
     "transaction-cost",
   ],
 
+  sui: [
+    "summary",
+    "coverage",
+    "relationships",
+    "funding",
+    "transaction-history",
+  ],
+
+  ton: [
+    "summary",
+    "coverage",
+    "relationships",
+    "funding",
+    "transaction-history",
+    "transaction-value",
+    "transaction-cost",
+  ],
+
+  hyperliquid: [
+    "summary",
+    "coverage",
+    "transaction-history",
+    "transaction-value",
+    "transaction-cost",
+  ],
+
+  stellar: [
+    "summary",
+    "coverage",
+    "relationships",
+    "funding",
+    "transaction-history",
+    "transaction-value",
+    "transaction-cost",
+  ],
+
   tron: [
     "summary",
     "coverage",
@@ -107,6 +147,31 @@ const QUESTIONS:
     "What are the most important findings?",
   ],
 
+  sui: [
+    "What are the most important Sui findings?",
+    "What coin balances were observed?",
+    "What funding and relationship evidence was observed?",
+  ],
+
+  ton: [
+    "What are the most important TON findings?",
+    "What direct funding and relationship evidence was observed?",
+    "What Jetton holdings and transfers were observed?",
+  ],
+
+  hyperliquid: [
+    "What are the most important Hyperliquid findings?",
+    "What positions, spot balances and fills were observed on HyperCore?",
+    "How do HyperCore and HyperEVM evidence differ?",
+    "What perpetual funding payments were observed, without treating them as wallet funding provenance?",
+  ],
+
+  stellar: [
+    "What are the most important Stellar findings?",
+    "What trustlines and issuers were observed?",
+    "What direct payment and funding relationships were observed?",
+  ],
+
   tron: [
     "What was the transaction fee?",
     "How much energy was used?",
@@ -138,7 +203,20 @@ function adapterForFamily(
 
     case "bitcoin":
     case "dogecoin":
+    case "litecoin":
       return "utxo";
+
+    case "sui":
+      return "sui";
+
+    case "ton":
+      return "ton";
+
+    case "hyperliquid":
+      return "hyperliquid";
+
+    case "stellar":
+      return "stellar";
 
     case "tron":
       return "tron";

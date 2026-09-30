@@ -48,6 +48,38 @@ const XRPL_CAPABILITIES = [
   "fundingIntelligence",
 ] as const satisfies readonly NetworkCapability[];
 
+const LITECOIN_CAPABILITIES = [
+  "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
+] as const satisfies readonly NetworkCapability[];
+
+const SUI_CAPABILITIES = [
+  "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
+] as const satisfies readonly NetworkCapability[];
+
+const TON_CAPABILITIES = [
+  "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
+] as const satisfies readonly NetworkCapability[];
+
+const HYPERLIQUID_CAPABILITIES = [
+  "addressFlows",
+] as const satisfies readonly NetworkCapability[];
+
+const STELLAR_CAPABILITIES = [
+  "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
+] as const satisfies readonly NetworkCapability[];
+
 export const NETWORKS = {
   solana: {
     id: "solana",
@@ -250,6 +282,66 @@ export const NETWORKS = {
     nativeCurrency: "XRP",
     explorerUrl: "https://livenet.xrpl.org",
     capabilities: XRPL_CAPABILITIES,
+  },
+
+  litecoin: {
+    id: "litecoin",
+    name: "Litecoin",
+    shortName: "LTC",
+    family: "litecoin",
+    status: "live",
+    chainId: null,
+    nativeCurrency: "LTC",
+    explorerUrl: "https://blockchair.com/litecoin",
+    capabilities: LITECOIN_CAPABILITIES,
+  },
+
+  sui: {
+    id: "sui",
+    name: "Sui",
+    shortName: "SUI",
+    family: "sui",
+    status: "live",
+    chainId: null,
+    nativeCurrency: "SUI",
+    explorerUrl: "https://suivision.xyz",
+    capabilities: SUI_CAPABILITIES,
+  },
+
+  ton: {
+    id: "ton",
+    name: "TON",
+    shortName: "TON",
+    family: "ton",
+    status: "live",
+    chainId: null,
+    nativeCurrency: "TON",
+    explorerUrl: "https://tonviewer.com",
+    capabilities: TON_CAPABILITIES,
+  },
+
+  hyperliquid: {
+    id: "hyperliquid",
+    name: "Hyperliquid",
+    shortName: "HYPE",
+    family: "hyperliquid",
+    status: "live",
+    chainId: null,
+    nativeCurrency: "HYPE",
+    explorerUrl: "https://app.hyperliquid.xyz/explorer",
+    capabilities: HYPERLIQUID_CAPABILITIES,
+  },
+
+  stellar: {
+    id: "stellar",
+    name: "Stellar",
+    shortName: "XLM",
+    family: "stellar",
+    status: "live",
+    chainId: null,
+    nativeCurrency: "XLM",
+    explorerUrl: "https://stellar.expert/explorer/public",
+    capabilities: STELLAR_CAPABILITIES,
   },
 
 } as const satisfies Record<string, NetworkDefinition>;

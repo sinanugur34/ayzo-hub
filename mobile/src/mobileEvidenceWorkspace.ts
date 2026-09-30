@@ -1311,6 +1311,481 @@ export function buildMobileEvidenceWorkspace({
   }
 
   /*
+   * Litecoin:
+   * explicit canonical counterparty evidence only.
+   */
+  if (
+    networkId ===
+    "litecoin"
+  ) {
+    const derived =
+      recordChild(
+        root,
+        "derived"
+      );
+
+    const counterparties =
+      recordChild(
+        derived,
+        "counterparties"
+      );
+
+    for (
+      const item of
+      arrayChild(
+        counterparties,
+        "items"
+      )
+    ) {
+      const wallet =
+        stringValue(
+          item.address
+        );
+
+      if (!wallet) {
+        continue;
+      }
+
+      const walletId =
+        addWallet(
+          wallet,
+          `${
+            numberValue(
+              item.observationCount
+            ) ??
+            1
+          } observed relationship signal(s)`
+        );
+
+      if (!walletId) {
+        continue;
+      }
+
+      const incoming =
+        numberValue(
+          item.incomingCount
+        ) ??
+        0;
+
+      const outgoing =
+        numberValue(
+          item.outgoingCount
+        ) ??
+        0;
+
+      addEdge({
+        id:
+          `ltc:${walletId}`,
+
+        source:
+          incoming > 0 &&
+          outgoing === 0
+            ? walletId
+            : rootId,
+
+        target:
+          incoming > 0 &&
+          outgoing === 0
+            ? rootId
+            : walletId,
+
+        label:
+          "Observed Litecoin relationship",
+
+        direction:
+          incoming > 0 &&
+          outgoing > 0
+            ? "bidirectional"
+            : "forward",
+      });
+    }
+
+    const funding =
+      recordChild(
+        derived,
+        "observedFunding"
+      );
+
+    const source =
+      stringValue(
+        funding
+          ?.sourceAddress
+      );
+
+    if (source) {
+      const sourceId =
+        addWallet(
+          source,
+          "Observed Litecoin funding source",
+          "funding"
+        );
+
+      if (sourceId) {
+        addEdge({
+          id:
+            `ltc-funding:${sourceId}`,
+          source:
+            sourceId,
+          target:
+            rootId,
+          label:
+            "Observed funding",
+          direction:
+            "forward",
+        });
+      }
+    }
+  }
+
+  /*
+   * Sui:
+   * Use only explicit affected-address relationship and
+   * bounded observed inbound-SUI sender evidence already
+   * returned by the AYZO backend.
+   */
+  if (
+    networkId ===
+    "sui"
+  ) {
+    const derived =
+      recordChild(
+        root,
+        "derived"
+      );
+
+    const counterparties =
+      recordChild(
+        derived,
+        "counterparties"
+      );
+
+    for (
+      const item of
+      arrayChild(
+        counterparties,
+        "items"
+      )
+    ) {
+      const counterparty =
+        stringValue(
+          item.address
+        );
+
+      if (!counterparty) {
+        continue;
+      }
+
+      const counterpartyId =
+        addWallet(
+          counterparty,
+          `${
+            numberValue(
+              item
+                .interactionCount
+            ) ??
+            1
+          } affected-address signal(s)`
+        );
+
+      if (!counterpartyId) {
+        continue;
+      }
+
+      addEdge({
+        id:
+          `sui:${counterpartyId}`,
+
+        source:
+          rootId,
+
+        target:
+          counterpartyId,
+
+        label:
+          "Observed Sui relationship",
+
+        direction:
+          "observed",
+      });
+    }
+
+    const funding =
+      recordChild(
+        derived,
+        "observedFunding"
+      );
+
+    const sender =
+      stringValue(
+        funding
+          ?.observedSender
+      );
+
+    if (sender) {
+      const senderId =
+        addWallet(
+          sender,
+          "Observed sender on bounded inbound SUI evidence",
+          "funding"
+        );
+
+      if (senderId) {
+        addEdge({
+          id:
+            `sui-funding:${senderId}`,
+
+          source:
+            senderId,
+
+          target:
+            rootId,
+
+          label:
+            "Observed inbound SUI",
+
+          direction:
+            "forward",
+        });
+      }
+    }
+  }
+
+  /*
+   * TON:
+   * Direct indexed message and Jetton-transfer evidence.
+   */
+  if (
+    networkId ===
+    "ton"
+  ) {
+    const derived =
+      recordChild(
+        root,
+        "derived"
+      );
+
+    const counterparties =
+      recordChild(
+        derived,
+        "counterparties"
+      );
+
+    for (
+      const item of
+      arrayChild(
+        counterparties,
+        "items"
+      )
+    ) {
+      const address =
+        stringValue(
+          item.address
+        );
+
+      if (!address) {
+        continue;
+      }
+
+      const id =
+        addWallet(
+          address,
+          `${
+            numberValue(
+              item.interactionCount
+            ) ??
+            1
+          } direct TON/Jetton signal(s)`
+        );
+
+      if (!id) {
+        continue;
+      }
+
+      addEdge({
+        id:
+          `ton:${id}`,
+
+        source:
+          rootId,
+
+        target:
+          id,
+
+        label:
+          "Observed TON relationship",
+
+        direction:
+          "observed",
+      });
+    }
+
+    const funding =
+      recordChild(
+        derived,
+        "observedFunding"
+      );
+
+    const source =
+      stringValue(
+        funding?.sourceAddress
+      );
+
+    if (source) {
+      const id =
+        addWallet(
+          source,
+          "Observed early inbound TON source",
+          "funding"
+        );
+
+      if (id) {
+        addEdge({
+          id:
+            `ton-funding:${id}`,
+
+          source:
+            id,
+
+          target:
+            rootId,
+
+          label:
+            "Observed inbound TON",
+
+          direction:
+            "forward",
+        });
+      }
+    }
+  }
+
+  /*
+   * Hyperliquid:
+   * HyperCore and HyperEVM remain separate.
+   *
+   * HyperCore fills do not expose peer wallet counterparties,
+   * and perpetual funding payments are not wallet-funding
+   * provenance. Therefore this adapter intentionally adds no
+   * fabricated wallet relationship or funding edges.
+   */
+  if (
+    networkId ===
+    "hyperliquid"
+  ) {
+    // Root subject and module topology remain available.
+    // No unsupported counterparty or ownership evidence is added.
+  }
+
+  /*
+   * Stellar:
+   * payment/create-account and explicit issuer relationships only.
+   */
+  if (
+    networkId ===
+    "stellar"
+  ) {
+    const derived =
+      recordChild(
+        root,
+        "derived"
+      );
+
+    const counterparties =
+      recordChild(
+        derived,
+        "counterparties"
+      );
+
+    for (
+      const item of
+      arrayChild(
+        counterparties,
+        "items"
+      )
+    ) {
+      const address =
+        stringValue(
+          item.address
+        );
+
+      if (!address) {
+        continue;
+      }
+
+      const id =
+        addWallet(
+          address,
+          `${
+            numberValue(
+              item.interactionCount
+            ) ??
+            1
+          } direct Stellar payment signal(s)`
+        );
+
+      if (!id) {
+        continue;
+      }
+
+      addEdge({
+        id:
+          `stellar:${id}`,
+
+        source:
+          rootId,
+
+        target:
+          id,
+
+        label:
+          "Observed Stellar relationship",
+
+        direction:
+          "observed",
+      });
+    }
+
+    const funding =
+      recordChild(
+        derived,
+        "observedFunding"
+      );
+
+    const source =
+      stringValue(
+        funding?.sourceAddress
+      );
+
+    if (source) {
+      const id =
+        addWallet(
+          source,
+          "Observed early inbound Stellar source",
+          "funding"
+        );
+
+      if (id) {
+        addEdge({
+          id:
+            `stellar-funding:${id}`,
+
+          source:
+            id,
+
+          target:
+            rootId,
+
+          label:
+            "Observed inbound Stellar funding",
+
+          direction:
+            "forward",
+        });
+      }
+    }
+  }
+
+  /*
    * TRON:
    * explicit canonical owner/destination
    * relationships and observed inbound funding.

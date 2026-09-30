@@ -27,6 +27,46 @@ import {
 import {
   runDogecoinIntelligence,
 } from "@/lib/intelligence/dogecoin/engine";
+
+import {
+  isLitecoinMainnetAddress,
+} from "@/lib/intelligence/litecoin/address";
+
+import {
+  runLitecoinIntelligence,
+} from "@/lib/intelligence/litecoin/engine";
+
+import {
+  isSuiAddress,
+} from "@/lib/intelligence/sui/address";
+
+import {
+  runSuiIntelligence,
+} from "@/lib/intelligence/sui/engine";
+
+import {
+  isTonAddress,
+} from "@/lib/intelligence/ton/address";
+
+import {
+  runTonIntelligence,
+} from "@/lib/intelligence/ton/engine";
+
+import {
+  isStellarAccountAddress,
+} from "@/lib/intelligence/stellar/address";
+
+import {
+  runStellarIntelligence,
+} from "@/lib/intelligence/stellar/engine";
+
+import {
+  isHyperliquidAddress,
+} from "@/lib/intelligence/hyperliquid/address";
+
+import {
+  runHyperliquidIntelligence,
+} from "@/lib/intelligence/hyperliquid/engine";
 import {
   runTronIntelligence,
 } from "@/lib/intelligence/tron/engine";
@@ -222,6 +262,98 @@ export async function POST(request: Request) {
           ok: false,
           code: "INVALID_ADDRESS",
           error: "Invalid Dogecoin address.",
+          network: resolution.networkId,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      resolution.engine ===
+        "litecoin" &&
+      !isLitecoinMainnetAddress(
+        address
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid Litecoin address.",
+          network:
+            resolution.networkId,
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+
+    if (
+      resolution.engine === "sui" &&
+      !isSuiAddress(
+        address
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          code: "INVALID_ADDRESS",
+          error: "Invalid Sui address.",
+          network: resolution.networkId,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      resolution.engine === "ton" &&
+      !isTonAddress(
+        address
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          code: "INVALID_ADDRESS",
+          error: "Invalid TON address.",
+          network: resolution.networkId,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      resolution.engine === "hyperliquid" &&
+      !isHyperliquidAddress(
+        address
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          code: "INVALID_ADDRESS",
+          error: "Invalid Hyperliquid account address.",
+          network: resolution.networkId,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      resolution.engine === "stellar" &&
+      !isStellarAccountAddress(
+        address
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          code: "INVALID_ADDRESS",
+          error: "Invalid Stellar account address.",
           network: resolution.networkId,
         },
         { status: 400 }
@@ -596,6 +728,141 @@ export async function POST(request: Request) {
         );
       }
 
+      case "litecoin": {
+        const result =
+          await runLitecoinIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "sui": {
+        const result =
+          await runSuiIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "ton": {
+        const result =
+          await runTonIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "stellar": {
+        const result =
+          await runStellarIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "hyperliquid": {
+        const result =
+          await runHyperliquidIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
       case "tron": {
         const result =
           await runTronIntelligence({
@@ -650,6 +917,33 @@ export async function POST(request: Request) {
         );
       }
     }
+
+    /*
+     * Network families may be registered as
+     * development before their production
+     * intelligence engines are connected.
+     *
+     * resolveIntelligenceNetwork() normally
+     * blocks those networks before this point.
+     * This fallback keeps the route total and
+     * prevents accidental partial exposure if a
+     * registry status is changed prematurely.
+     */
+    return Response.json(
+      {
+        ok: false,
+        code:
+          "NETWORK_NOT_AVAILABLE",
+        error:
+          `${resolution.network.name} intelligence engine is not connected yet.`,
+        network:
+          resolution.networkId,
+      },
+      {
+        status: 503,
+      }
+    );
+
   } catch {
     if (
       !isDevelopmentTestRequest &&

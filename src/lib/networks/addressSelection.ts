@@ -37,6 +37,10 @@ export type AddressKind =
   | "solana"
   | "bitcoin"
   | "dogecoin"
+  | "litecoin"
+  | "sui"
+  | "ton"
+  | "stellar"
   | "tron"
   | "xrp"
   | "invalid";
@@ -54,6 +58,10 @@ export function resolveSelectedNetworkForAddress<
   | "ethereum"
   | "bitcoin"
   | "dogecoin"
+  | "litecoin"
+  | "sui"
+  | "ton"
+  | "stellar"
   | "tron"
   | "xrp"
   | null {
@@ -87,6 +95,34 @@ export function resolveSelectedNetworkForAddress<
 
   if (
     addressKind ===
+    "litecoin"
+  ) {
+    return "litecoin";
+  }
+
+  if (
+    addressKind ===
+    "sui"
+  ) {
+    return "sui";
+  }
+
+  if (
+    addressKind ===
+    "ton"
+  ) {
+    return "ton";
+  }
+
+  if (
+    addressKind ===
+    "stellar"
+  ) {
+    return "stellar";
+  }
+
+  if (
+    addressKind ===
     "tron"
   ) {
     return "tron";
@@ -97,6 +133,20 @@ export function resolveSelectedNetworkForAddress<
     "xrp"
   ) {
     return "xrp";
+  }
+
+  /*
+   * Hyperliquid and EVM share the same 20-byte 0x address shape.
+   * Automatic detection remains EVM, but an explicit
+   * Hyperliquid selection must be preserved.
+   */
+  if (
+    addressKind ===
+      "evm" &&
+    selectedNetwork ===
+      "hyperliquid"
+  ) {
+    return selectedNetwork;
   }
 
   return NETWORKS[

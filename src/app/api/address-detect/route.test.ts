@@ -168,3 +168,118 @@ test(
     );
   }
 );
+
+test(
+  "detects a distinct Litecoin mainnet address",
+  async () => {
+    const result =
+      await detect(
+        "LKDxGDJq5fF4FohAB8zJH24mDDNHDNtqsE"
+      );
+
+    assert.equal(
+      result.status,
+      200
+    );
+
+    assert.equal(
+      result.body.network,
+      "litecoin"
+    );
+  }
+);
+
+test(
+  "keeps shared legacy P2SH auto-detection on Bitcoin",
+  async () => {
+    const result =
+      await detect(
+        "3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy"
+      );
+
+    assert.equal(
+      result.body.network,
+      "bitcoin"
+    );
+  }
+);
+
+test(
+  "detects a distinct Sui address",
+  async () => {
+    const result =
+      await detect(
+        "0x1111111111111111111111111111111111111111111111111111111111111111"
+      );
+
+    assert.equal(
+      result.status,
+      200
+    );
+
+    assert.equal(
+      result.body.network,
+      "sui"
+    );
+  }
+);
+
+test(
+  "keeps ambiguous 20-byte 0x automatic detection on EVM",
+  async () => {
+    const result =
+      await detect(
+        "0x1111111111111111111111111111111111111111"
+      );
+
+    assert.equal(
+      result.status,
+      200
+    );
+
+    assert.equal(
+      result.body.network,
+      "evm"
+    );
+  }
+);
+
+test(
+  "detects TON mainnet address",
+  async () => {
+    const result =
+      await detect(
+        "UQBKgXCNLPexWhs2L79kiARR1phGH1LwXxRbNsCFF9doczSI"
+      );
+
+    assert.equal(
+      result.status,
+      200
+    );
+
+    assert.equal(
+      result.body.network,
+      "ton"
+    );
+  }
+);
+
+test(
+  "detects Stellar account before generic Base58 handling",
+  async () => {
+    const result =
+      await detect(
+        "GDMQQNJM4UL7QIA66P7R2PZHMQINWZBM77BEBMHLFXD5JEUAHGJ7R4JZ"
+      );
+
+    assert.equal(
+      result.status,
+      200
+    );
+
+    assert.equal(
+      result.body.network,
+      "stellar"
+    );
+  }
+);

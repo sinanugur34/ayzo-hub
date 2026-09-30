@@ -4,7 +4,12 @@ export type NetworkFamily =
   | "bitcoin"
   | "dogecoin"
   | "tron"
-  | "xrpl";
+  | "xrpl"
+  | "litecoin"
+  | "sui"
+  | "ton"
+  | "hyperliquid"
+  | "stellar";
 
 export type NetworkStatus =
   | "live"

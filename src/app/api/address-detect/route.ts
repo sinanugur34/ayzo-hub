@@ -15,6 +15,22 @@ import {
 } from "@/lib/intelligence/dogecoin/address";
 
 import {
+  isLitecoinMainnetAddress,
+} from "@/lib/intelligence/litecoin/address";
+
+import {
+  isSuiAddress,
+} from "@/lib/intelligence/sui/address";
+
+import {
+  isTonAddress,
+} from "@/lib/intelligence/ton/address";
+
+import {
+  isStellarAccountAddress,
+} from "@/lib/intelligence/stellar/address";
+
+import {
   isTronAddress,
 } from "@/lib/intelligence/tron/address";
 
@@ -25,9 +41,40 @@ import {
 const EVM_ADDRESS =
   /^0x[0-9a-fA-F]{40}$/;
 
+function isDistinctLitecoinAddress(
+  value: string
+): boolean {
+  const address =
+    value.trim();
+
+  const distinctPrefix =
+    address.startsWith(
+      "L"
+    ) ||
+    address.startsWith(
+      "M"
+    ) ||
+    address
+      .toLowerCase()
+      .startsWith(
+        "ltc1"
+      );
+
+  return (
+    distinctPrefix &&
+    isLitecoinMainnetAddress(
+      address
+    )
+  );
+}
+
 type DetectedNetwork =
   | "bitcoin"
   | "dogecoin"
+  | "litecoin"
+  | "sui"
+  | "ton"
+  | "stellar"
   | "tron"
   | "xrp"
   | "solana"
@@ -120,6 +167,27 @@ export async function POST(
     network =
       "dogecoin";
   } else if (
+    isDistinctLitecoinAddress(
+      address
+    )
+  ) {
+    network =
+      "litecoin";
+  } else if (
+    isTonAddress(
+      address
+    )
+  ) {
+    network =
+      "ton";
+  } else if (
+    isStellarAccountAddress(
+      address
+    )
+  ) {
+    network =
+      "stellar";
+  } else if (
     isTronAddress(
       address
     )
@@ -140,6 +208,13 @@ export async function POST(
   ) {
     network =
       "evm";
+  } else if (
+    isSuiAddress(
+      address
+    )
+  ) {
+    network =
+      "sui";
   } else if (
     isAddress(
       address

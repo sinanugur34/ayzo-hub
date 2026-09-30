@@ -14,6 +14,11 @@ import {
 
 import BitcoinIntelligenceReport from "@/components/BitcoinIntelligenceReport";
 import DogecoinIntelligenceReport from "@/components/DogecoinIntelligenceReport";
+import LitecoinIntelligenceReport from "@/components/LitecoinIntelligenceReport";
+import SuiIntelligenceReport from "@/components/SuiIntelligenceReport";
+import TonIntelligenceReport from "@/components/TonIntelligenceReport";
+import StellarIntelligenceReport from "@/components/StellarIntelligenceReport";
+import HyperliquidIntelligenceReport from "@/components/HyperliquidIntelligenceReport";
 import TronIntelligenceReport from "@/components/TronIntelligenceReport";
 import XrplIntelligenceReport from "@/components/XrplIntelligenceReport";
 import EvmIntelligenceReport from "@/components/EvmIntelligenceReport";
@@ -58,6 +63,12 @@ const BITCOIN_MAINNET_SHAPE =
 
 const DOGECOIN_MAINNET_SHAPE =
   /^(?:D|9|A)[1-9A-HJ-NP-Za-km-z]{25,34}$/;
+
+const LITECOIN_MAINNET_SHAPE =
+  /^(?:(?:L|M|3)[1-9A-HJ-NP-Za-km-z]{25,34}|ltc1[ac-hj-np-z02-9]{6,87})$/i;
+
+const SUI_ADDRESS_SHAPE =
+  /^0x[0-9a-fA-F]{1,64}$/;
 
 const TRON_ADDRESS_SHAPE =
   /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
@@ -104,6 +115,8 @@ type AddressDetectionResponse =
       network:
         | "bitcoin"
         | "dogecoin"
+        | "litecoin"
+        | "sui"
         | "tron"
         | "xrp"
         | "solana"
@@ -278,6 +291,61 @@ export default function Home() {
     );
 
   const [
+    litecoinAnalysis,
+    setLitecoinAnalysis,
+  ] =
+    useState<{
+      address:
+        string;
+    } | null>(
+      null
+    );
+
+  const [
+    suiAnalysis,
+    setSuiAnalysis,
+  ] =
+    useState<{
+      address:
+        string;
+    } | null>(
+      null
+    );
+
+  const [
+    tonAnalysis,
+    setTonAnalysis,
+  ] =
+    useState<{
+      address:
+        string;
+    } | null>(
+      null
+    );
+
+  const [
+    stellarAnalysis,
+    setStellarAnalysis,
+  ] =
+    useState<{
+      address:
+        string;
+    } | null>(
+      null
+    );
+
+  const [
+    hyperliquidAnalysis,
+    setHyperliquidAnalysis,
+  ] =
+    useState<{
+      address:
+        string;
+    } | null>(
+      null
+    );
+
+  const [
     tronAnalysis,
     setTronAnalysis,
   ] =
@@ -313,6 +381,25 @@ export default function Home() {
     );
 
     setDogecoinAnalysis(
+      null
+    );
+
+    setLitecoinAnalysis(
+      null
+    );
+
+    setSuiAnalysis(
+      null
+    );
+
+    setTonAnalysis(
+      null
+    );
+
+    setStellarAnalysis(
+      null
+    );
+    setHyperliquidAnalysis(
       null
     );
 
@@ -442,6 +529,43 @@ export default function Home() {
               return;
             }
 
+            if (
+              network ===
+                "litecoin" &&
+              result.network ===
+                "bitcoin" &&
+              value.startsWith(
+                "3"
+              )
+            ) {
+              /*
+               * Bitcoin and Litecoin can share
+               * legacy P2SH version 0x05.
+               * Preserve explicit Litecoin selection;
+               * server checksum validation remains
+               * authoritative during analysis.
+               */
+              return;
+            }
+
+            if (
+              network ===
+                "sui" &&
+              result.network ===
+                "evm" &&
+              SUI_ADDRESS_SHAPE.test(
+                value
+              )
+            ) {
+              /*
+               * Preserve explicit Sui selection for
+               * structurally ambiguous 20-byte 0x
+               * addresses. Server-side Sui validation
+               * remains authoritative.
+               */
+              return;
+            }
+
             let detectedNetwork:
               LiveAnalysisNetworkId | null =
                 null;
@@ -491,6 +615,25 @@ export default function Home() {
             );
 
             setDogecoinAnalysis(
+              null
+            );
+
+            setLitecoinAnalysis(
+              null
+            );
+
+            setSuiAnalysis(
+              null
+            );
+
+            setTonAnalysis(
+              null
+            );
+
+            setStellarAnalysis(
+              null
+            );
+            setHyperliquidAnalysis(
               null
             );
 
@@ -568,6 +711,66 @@ export default function Home() {
           : {}),
       }
     );
+
+    if (
+      network ===
+        "hyperliquid"
+    ) {
+      setIsValid(
+        true
+      );
+
+      setMessage(
+        "Hyperliquid account accepted. AYZO is reading HyperCore and HyperEVM evidence."
+      );
+
+      setHyperliquidAnalysis({
+        address:
+          value,
+      });
+
+      return;
+    }
+
+    if (
+      network ===
+        "stellar"
+    ) {
+      setIsValid(
+        true
+      );
+
+      setMessage(
+        "Stellar account accepted. AYZO intelligence is running."
+      );
+
+      setStellarAnalysis({
+        address:
+          value,
+      });
+
+      return;
+    }
+
+    if (
+      network ===
+        "ton"
+    ) {
+      setIsValid(
+        true
+      );
+
+      setMessage(
+        "TON address accepted. AYZO intelligence is running."
+      );
+
+      setTonAnalysis({
+        address:
+          value,
+      });
+
+      return;
+    }
 
     if (
       network ===
@@ -668,6 +871,50 @@ export default function Home() {
       );
 
       setDogecoinAnalysis({
+        address:
+          value,
+      });
+
+      return;
+    }
+
+    const isLitecoinAddressShape =
+      LITECOIN_MAINNET_SHAPE.test(
+        value
+      );
+
+    if (
+      network ===
+        "litecoin"
+    ) {
+      if (
+        !isLitecoinAddressShape
+      ) {
+        setIsValid(false);
+
+        setMessage(
+          "This does not look like a valid Litecoin mainnet address."
+        );
+
+        return;
+      }
+
+      if (
+        network !==
+        "litecoin"
+      ) {
+        setNetwork(
+          "litecoin"
+        );
+      }
+
+      setIsValid(true);
+
+      setMessage(
+        "Litecoin address accepted. AYZO intelligence is running."
+      );
+
+      setLitecoinAnalysis({
         address:
           value,
       });
@@ -801,6 +1048,52 @@ export default function Home() {
       );
 
       setTronAnalysis({
+        address:
+          value,
+      });
+
+      return;
+    }
+
+    const isSuiAddressShape =
+      SUI_ADDRESS_SHAPE.test(
+        value
+      );
+
+    const isDistinctSuiShape =
+      isSuiAddressShape &&
+      value.length !==
+        42;
+
+    if (
+      isSuiAddressShape &&
+      (
+        network ===
+          "sui" ||
+        isDistinctSuiShape
+      )
+    ) {
+      if (
+        network !==
+          "sui"
+      ) {
+        setNetwork(
+          "sui"
+        );
+      }
+
+      setIsValid(
+        true
+      );
+
+      setMessage(
+        network ===
+          "sui"
+          ? "Sui address accepted. AYZO intelligence is running."
+          : "Sui address detected automatically. AYZO intelligence is running."
+      );
+
+      setSuiAnalysis({
         address:
           value,
       });
@@ -995,6 +1288,16 @@ export default function Home() {
       null ||
     dogecoinAnalysis !==
       null ||
+    litecoinAnalysis !==
+      null ||
+    suiAnalysis !==
+      null ||
+    tonAnalysis !==
+      null ||
+    stellarAnalysis !==
+      null ||
+    hyperliquidAnalysis !==
+      null ||
     tronAnalysis !==
       null ||
     xrpAnalysis !==
@@ -1064,6 +1367,11 @@ export default function Home() {
     evmAnalysis,
     bitcoinAnalysis,
     dogecoinAnalysis,
+    litecoinAnalysis,
+    suiAnalysis,
+    tonAnalysis,
+    stellarAnalysis,
+    hyperliquidAnalysis,
     tronAnalysis,
     xrpAnalysis,
   ]);
@@ -1543,6 +1851,95 @@ export default function Home() {
                 dogecoinAnalysis.address
               }
             />
+            </AnalysisWorkspaceFrame>
+          </section>
+        )}
+
+        {litecoinAnalysis && (
+          <section
+            id="analysis-result"
+            className="mt-12 scroll-mt-4 w-[calc(100vw-16px)] max-w-none shrink-0 self-center">
+            <AnalysisWorkspaceFrame>
+            <LitecoinIntelligenceReport
+              key={
+                litecoinAnalysis.address
+              }
+              address={
+                litecoinAnalysis.address
+              }
+            />
+            </AnalysisWorkspaceFrame>
+          </section>
+        )}
+
+        {suiAnalysis && (
+          <section
+            id="analysis-result"
+            className="mt-12 scroll-mt-4 w-[calc(100vw-16px)] max-w-none shrink-0 self-center"
+          >
+            <AnalysisWorkspaceFrame>
+              <SuiIntelligenceReport
+                key={
+                  suiAnalysis.address
+                }
+                address={
+                  suiAnalysis.address
+                }
+              />
+            </AnalysisWorkspaceFrame>
+          </section>
+        )}
+
+        {tonAnalysis && (
+          <section
+            id="analysis-result"
+            className="mt-12 scroll-mt-4 w-[calc(100vw-16px)] max-w-none shrink-0 self-center"
+          >
+            <AnalysisWorkspaceFrame>
+              <TonIntelligenceReport
+                key={
+                  tonAnalysis.address
+                }
+                address={
+                  tonAnalysis.address
+                }
+              />
+            </AnalysisWorkspaceFrame>
+          </section>
+        )}
+
+        {hyperliquidAnalysis && (
+          <section
+            id="analysis-result"
+            className="mt-12 scroll-mt-4 w-[calc(100vw-16px)] max-w-none shrink-0 self-center"
+          >
+            <AnalysisWorkspaceFrame>
+              <HyperliquidIntelligenceReport
+                key={
+                  hyperliquidAnalysis.address
+                }
+                address={
+                  hyperliquidAnalysis.address
+                }
+              />
+            </AnalysisWorkspaceFrame>
+          </section>
+        )}
+
+        {stellarAnalysis && (
+          <section
+            id="analysis-result"
+            className="mt-12 scroll-mt-4 w-[calc(100vw-16px)] max-w-none shrink-0 self-center"
+          >
+            <AnalysisWorkspaceFrame>
+              <StellarIntelligenceReport
+                key={
+                  stellarAnalysis.address
+                }
+                address={
+                  stellarAnalysis.address
+                }
+              />
             </AnalysisWorkspaceFrame>
           </section>
         )}

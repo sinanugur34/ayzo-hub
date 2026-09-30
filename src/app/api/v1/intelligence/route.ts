@@ -34,6 +34,46 @@ import {
 } from "@/lib/intelligence/dogecoin/engine";
 
 import {
+  isLitecoinMainnetAddress,
+} from "@/lib/intelligence/litecoin/address";
+
+import {
+  runLitecoinIntelligence,
+} from "@/lib/intelligence/litecoin/engine";
+
+import {
+  isSuiAddress,
+} from "@/lib/intelligence/sui/address";
+
+import {
+  runSuiIntelligence,
+} from "@/lib/intelligence/sui/engine";
+
+import {
+  isTonAddress,
+} from "@/lib/intelligence/ton/address";
+
+import {
+  runTonIntelligence,
+} from "@/lib/intelligence/ton/engine";
+
+import {
+  isStellarAccountAddress,
+} from "@/lib/intelligence/stellar/address";
+
+import {
+  runStellarIntelligence,
+} from "@/lib/intelligence/stellar/engine";
+
+import {
+  isHyperliquidAddress,
+} from "@/lib/intelligence/hyperliquid/address";
+
+import {
+  runHyperliquidIntelligence,
+} from "@/lib/intelligence/hyperliquid/engine";
+
+import {
   isTronAddress,
 } from "@/lib/intelligence/tron/address";
 
@@ -420,6 +460,41 @@ export async function POST(
       ) ||
       (
         resolution.engine ===
+          "litecoin" &&
+        !isLitecoinMainnetAddress(
+          address
+        )
+      ) ||
+      (
+        resolution.engine ===
+          "sui" &&
+        !isSuiAddress(
+          address
+        )
+      ) ||
+      (
+        resolution.engine ===
+          "ton" &&
+        !isTonAddress(
+          address
+        )
+      ) ||
+      (
+        resolution.engine ===
+          "hyperliquid" &&
+        !isHyperliquidAddress(
+          address
+        )
+      ) ||
+      (
+        resolution.engine ===
+          "stellar" &&
+        !isStellarAccountAddress(
+          address
+        )
+      ) ||
+      (
+        resolution.engine ===
           "tron" &&
         !isTronAddress(
           address
@@ -716,6 +791,86 @@ export async function POST(
         );
       }
 
+      case "litecoin": {
+        const result =
+          await runLitecoinIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "sui": {
+        const result =
+          await runSuiIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "ton": {
+        const result =
+          await runTonIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "stellar": {
+        const result =
+          await runStellarIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "hyperliquid": {
+        const result =
+          await runHyperliquidIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
       case "tron": {
         const result =
           await runTronIntelligence({
@@ -748,6 +903,25 @@ export async function POST(
         );
       }
     }
+
+    /*
+     * Development-registered network families
+     * remain unavailable until their native
+     * production engines are connected.
+     */
+    return json(
+      {
+        ok: false,
+        code:
+          "NETWORK_NOT_AVAILABLE",
+        error:
+          `${resolution.network.name} intelligence engine is not connected yet.`,
+        network:
+          resolution.networkId,
+      },
+      503
+    );
+
   } catch {
     if (
       quota &&

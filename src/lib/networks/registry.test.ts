@@ -7,11 +7,11 @@ import {
 } from "./registry";
 
 test(
-  "keeps seventeen registered networks live",
+  "keeps twenty-two registered networks with all twenty-two currently live",
   () => {
     assert.equal(
       NETWORK_IDS.length,
-      17
+      22
     );
 
     const liveNetworkCount =
@@ -24,7 +24,32 @@ test(
 
     assert.equal(
       liveNetworkCount,
-      17
+      22
+    );
+
+    assert.equal(
+      NETWORKS.litecoin.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.sui.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.ton.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.stellar.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.hyperliquid.status,
+      "live"
     );
 
     assert.equal(
@@ -293,6 +318,222 @@ test(
       NETWORKS.xrp.capabilities.includes(
         "addressFlows"
       )
+    );
+  }
+);
+
+
+test(
+  "keeps Litecoin live after full UTXO quality gates",
+  () => {
+    assert.equal(
+      NETWORKS.litecoin.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.litecoin.family,
+      "litecoin"
+    );
+
+    assert.equal(
+      NETWORKS.litecoin.nativeCurrency,
+      "LTC"
+    );
+
+    assert.ok(
+      NETWORKS.litecoin
+        .capabilities
+        .includes(
+          "addressFlows"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.litecoin
+        .capabilities
+        .includes(
+          "walletRelationships"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.litecoin
+        .capabilities
+        .includes(
+          "fundingIntelligence"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.litecoin
+        .capabilities
+        .includes(
+          "fundingProvenance"
+        )
+    );
+  }
+);
+
+
+test(
+  "keeps Sui live after GraphQL quality gates",
+  () => {
+    assert.equal(
+      NETWORKS.sui.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.sui.family,
+      "sui"
+    );
+
+    assert.equal(
+      NETWORKS.sui.nativeCurrency,
+      "SUI"
+    );
+
+    assert.ok(
+      NETWORKS.sui
+        .capabilities
+        .includes(
+          "addressFlows"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.sui
+        .capabilities
+        .includes(
+          "walletRelationships"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.sui
+        .capabilities
+        .includes(
+          "fundingProvenance"
+        )
+    );
+  }
+);
+
+
+test(
+  "keeps TON live after TON Center v3 quality gates",
+  () => {
+    assert.equal(
+      NETWORKS.ton.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.ton.family,
+      "ton"
+    );
+
+    assert.equal(
+      NETWORKS.ton.nativeCurrency,
+      "TON"
+    );
+
+    assert.ok(
+      NETWORKS.ton
+        .capabilities
+        .includes(
+          "addressFlows"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.ton
+        .capabilities
+        .includes(
+          "walletRelationships"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.ton
+        .capabilities
+        .includes(
+          "fundingProvenance"
+        )
+    );
+  }
+);
+
+
+test(
+  "keeps Stellar live after Horizon quality gates",
+  () => {
+    assert.equal(
+      NETWORKS.stellar.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.stellar.family,
+      "stellar"
+    );
+
+    assert.equal(
+      NETWORKS.stellar.nativeCurrency,
+      "XLM"
+    );
+
+    assert.ok(
+      NETWORKS.stellar
+        .capabilities
+        .includes(
+          "addressFlows"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.stellar
+        .capabilities
+        .includes(
+          "walletRelationships"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.stellar
+        .capabilities
+        .includes(
+          "fundingProvenance"
+        )
+    );
+  }
+);
+
+
+test(
+  "keeps Hyperliquid live after dual-surface quality gates",
+  () => {
+    assert.equal(
+      NETWORKS.hyperliquid.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.hyperliquid.family,
+      "hyperliquid"
+    );
+
+    assert.equal(
+      NETWORKS.hyperliquid.nativeCurrency,
+      "HYPE"
+    );
+
+    assert.deepEqual(
+      NETWORKS.hyperliquid.capabilities,
+      [
+        "addressFlows",
+      ]
     );
   }
 );

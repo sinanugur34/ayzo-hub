@@ -81,9 +81,12 @@ import {
   type NetworkId,
 } from "../../src/lib/networks/registry";
 import {
-  getLiveNetworks,
   getProductToolsForNetwork,
 } from "../../src/lib/networks/productCapabilities";
+
+import {
+  getMobileLiveNetworks,
+} from "./mobileNetworkSupport";
 
 function formatCapabilityLabel(value: string) {
   return value
@@ -116,7 +119,7 @@ function Dashboard({
     NETWORKS[selectedNetworkId];
 
   const liveNetworks =
-    getLiveNetworks();
+    getMobileLiveNetworks();
 
   const tools =
     getProductToolsForNetwork(selectedNetworkId);

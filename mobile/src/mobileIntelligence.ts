@@ -11,6 +11,10 @@ import type {
 } from "../../src/lib/plans/types";
 
 import {
+  isSuiAddress,
+} from "../../src/lib/intelligence/sui/address";
+
+import {
   resolveSelectedNetworkForAddress,
   type AddressKind,
 } from "../../src/lib/networks/addressSelection";
@@ -24,6 +28,11 @@ import {
   readMobileQuotaStatus,
   type MobileQuotaStatus,
 } from "./mobileQuota";
+
+import {
+  getMobileNetworkSupport,
+  isMobileAnalysisNetworkLive,
+} from "./mobileNetworkSupport";
 
 export type MobileAnalysisResult = {
   networkId: NetworkId;
@@ -172,6 +181,10 @@ export async function detectMobileAddressNetwork({
       "solana",
       "bitcoin",
       "dogecoin",
+      "litecoin",
+      "sui",
+      "ton",
+      "stellar",
       "tron",
       "xrp",
     ];
@@ -185,10 +198,59 @@ export async function detectMobileAddressNetwork({
     return null;
   }
 
-  return resolveSelectedNetworkForAddress(
-    selectedNetworkId,
-    detected as AddressKind
-  );
+  if (
+    selectedNetworkId ===
+      "litecoin" &&
+    detected ===
+      "bitcoin" &&
+    trimmed.startsWith(
+      "3"
+    )
+  ) {
+    /*
+     * Legacy P2SH version 0x05 is structurally
+     * shared by Bitcoin and Litecoin.
+     *
+     * Preserve an explicit Litecoin selection and
+     * let the server-side Litecoin checksum validator
+     * remain authoritative.
+     */
+    return "litecoin";
+  }
+
+  if (
+    selectedNetworkId ===
+      "sui" &&
+    detected ===
+      "evm" &&
+    isSuiAddress(
+      trimmed
+    )
+  ) {
+    /*
+     * A shortened Sui address can have the same
+     * 20-byte 0x shape as EVM. Preserve explicit
+     * Sui selection instead of silently changing
+     * network semantics.
+     */
+    return "sui";
+  }
+
+  const resolved =
+    resolveSelectedNetworkForAddress(
+      selectedNetworkId,
+      detected as AddressKind
+    );
+
+  if (!resolved) {
+    return null;
+  }
+
+  return isMobileAnalysisNetworkLive(
+    resolved
+  )
+    ? resolved
+    : null;
 }
 
 export async function analyzeMobileAddress({
@@ -206,6 +268,30 @@ export async function analyzeMobileAddress({
       "Enter a wallet, token or contract address."
     );
   }
+
+  const support =
+    getMobileNetworkSupport(
+      networkId
+    );
+
+  if (
+    !support.analysisEnabled
+  ) {
+    throw new MobileAnalysisError({
+      message:
+        `${support.name} mobile intelligence is not live yet.`,
+      status:
+        503,
+      code:
+        "NETWORK_NOT_AVAILABLE",
+    });
+  }
+
+  /*
+   * Mobile network engine is not ready unless
+   * both the canonical registry and mobile
+   * support gate allow analysis.
+   */
 
   const authHeaders =
     await getMobileAuthHeaders();
