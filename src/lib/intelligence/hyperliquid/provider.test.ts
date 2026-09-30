@@ -183,6 +183,34 @@ test(
                 },
               ]);
 
+            case "userNonFundingLedgerUpdates":
+              return response([
+                {
+                  time:
+                    1_700_000_000_100,
+
+                  hash:
+                    "0xledger",
+
+                  delta: {
+                    type:
+                      "spotTransfer",
+
+                    user:
+                      "0x2222222222222222222222222222222222222222",
+
+                    destination:
+                      "0x1111111111111111111111111111111111111111",
+
+                    amount:
+                      "5",
+
+                    token:
+                      "USDC",
+                  },
+                },
+              ]);
+
             case "userFunding":
               return response([
                 {
@@ -381,6 +409,36 @@ test(
 
     assert.equal(
       result.data
+        .hyperCore
+        .nonFundingLedger
+        .length,
+      1
+    );
+
+    assert.equal(
+      result.data
+        .hyperCore
+        .nonFundingLedger[0]
+        ?.type,
+      "spotTransfer"
+    );
+
+    assert.equal(
+      result.data
+        .coverage
+        .ledgerLimit,
+      16
+    );
+
+    assert.equal(
+      result.data
+        .coverage
+        .ledgerLookbackDays,
+      7
+    );
+
+    assert.equal(
+      result.data
         .hyperEvm
         .chainId,
       999
@@ -435,6 +493,7 @@ test(
 
             case "userFills":
             case "userFunding":
+            case "userNonFundingLedgerUpdates":
             case "portfolio":
               return response([]);
 

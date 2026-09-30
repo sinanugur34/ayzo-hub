@@ -115,6 +115,56 @@ export type HyperliquidFundingPaymentEvidence = {
     string | null;
 };
 
+export type HyperliquidLedgerEvidence = {
+  hash:
+    string | null;
+
+  timestamp:
+    string | null;
+
+  type:
+    string;
+
+  usdc:
+    string | null;
+
+  amount:
+    string | null;
+
+  token:
+    string | null;
+
+  user:
+    string | null;
+
+  destination:
+    string | null;
+
+  fee:
+    string | null;
+
+  nativeTokenFee:
+    string | null;
+
+  feeToken:
+    string | null;
+
+  toPerp:
+    boolean | null;
+
+  vault:
+    string | null;
+
+  requestedUsd:
+    string | null;
+
+  sourceDex:
+    string | null;
+
+  destinationDex:
+    string | null;
+};
+
 export type HyperliquidPortfolioWindow = {
   window:
     string;
@@ -172,6 +222,9 @@ export type HyperliquidEvidence = {
 
     portfolio:
       readonly HyperliquidPortfolioWindow[];
+
+    nonFundingLedger:
+      readonly HyperliquidLedgerEvidence[];
   };
 
   hyperEvm: {
@@ -214,6 +267,12 @@ export type HyperliquidEvidence = {
       number;
 
     portfolioPointLimit:
+      number;
+
+    ledgerLimit:
+      number;
+
+    ledgerLookbackDays:
       number;
 
     hyperCoreProvider:

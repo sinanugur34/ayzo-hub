@@ -14,6 +14,7 @@ import type {
   HyperliquidEvidence,
   HyperliquidFillEvidence,
   HyperliquidFundingPaymentEvidence,
+  HyperliquidLedgerEvidence,
   HyperliquidPortfolioWindow,
   HyperliquidPositionEvidence,
   HyperliquidProviderResult,
@@ -604,6 +605,129 @@ function parseFunding(
     );
 }
 
+function parseNonFundingLedger(
+  value:
+    unknown,
+  limit:
+    number
+): HyperliquidLedgerEvidence[] {
+  return array(
+    value
+  )
+    .map(
+      record
+    )
+    .filter(
+      (
+        row
+      ): row is
+        JsonRecord =>
+          row !== null
+    )
+    .flatMap(
+      row => {
+        const delta =
+          record(
+            row.delta
+          );
+
+        const type =
+          text(
+            delta?.type
+          );
+
+        if (!type) {
+          return [];
+        }
+
+        return [
+          {
+            hash:
+              text(
+                row.hash
+              ),
+
+            timestamp:
+              timestampMs(
+                row.time
+              ),
+
+            type,
+
+            usdc:
+              text(
+                delta?.usdc
+              ),
+
+            amount:
+              text(
+                delta?.amount
+              ),
+
+            token:
+              text(
+                delta?.token
+              ),
+
+            user:
+              text(
+                delta?.user
+              ),
+
+            destination:
+              text(
+                delta?.destination
+              ),
+
+            fee:
+              text(
+                delta?.fee
+              ),
+
+            nativeTokenFee:
+              text(
+                delta?.nativeTokenFee
+              ),
+
+            feeToken:
+              text(
+                delta?.feeToken
+              ),
+
+            toPerp:
+              booleanValue(
+                delta?.toPerp
+              ),
+
+            vault:
+              text(
+                delta?.vault
+              ),
+
+            requestedUsd:
+              text(
+                delta?.requestedUsd
+              ),
+
+            sourceDex:
+              text(
+                delta?.sourceDex
+              ),
+
+            destinationDex:
+              text(
+                delta?.destinationDex
+              ),
+          },
+        ];
+      }
+    )
+    .slice(
+      0,
+      limit
+    );
+}
+
 function parsePortfolio(
   value:
     unknown,
@@ -1000,7 +1124,7 @@ export async function getHyperliquidEvidence(
   }
 
   try {
-    const startTime =
+    const fundingStartTime =
       Math.max(
         0,
         deps.now() -
@@ -1012,11 +1136,24 @@ export async function getHyperliquidEvidence(
           1000
       );
 
+    const ledgerStartTime =
+      Math.max(
+        0,
+        deps.now() -
+          policy
+            .ledgerLookbackDays *
+          24 *
+          60 *
+          60 *
+          1000
+      );
+
     const [
       clearinghouseRaw,
       spotRaw,
       fillsRaw,
       fundingRaw,
+      ledgerRaw,
       portfolioRaw,
       roleRaw,
       chainIdRaw,
@@ -1055,7 +1192,18 @@ export async function getHyperliquidEvidence(
 
           user,
 
-          startTime,
+          startTime:
+            fundingStartTime,
+        }),
+
+        info({
+          type:
+            "userNonFundingLedgerUpdates",
+
+          user,
+
+          startTime:
+            ledgerStartTime,
         }),
 
         info({
@@ -1241,6 +1389,13 @@ export async function getHyperliquidEvidence(
               policy
                 .portfolioPointLimit
             ),
+
+          nonFundingLedger:
+            parseNonFundingLedger(
+              ledgerRaw,
+              policy
+                .ledgerLimit
+            ),
         },
 
         hyperEvm: {
@@ -1291,6 +1446,14 @@ export async function getHyperliquidEvidence(
           portfolioPointLimit:
             policy
               .portfolioPointLimit,
+
+          ledgerLimit:
+            policy
+              .ledgerLimit,
+
+          ledgerLookbackDays:
+            policy
+              .ledgerLookbackDays,
 
           hyperCoreProvider:
             "hyperliquid-info",
