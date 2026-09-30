@@ -11,6 +11,8 @@ export type AskAyzoAdapterId =
   | "stellar"
   | "cardano"
   | "aptos"
+  | "near"
+  | "hedera"
   | "hyperliquid"
   | "tron"
   | "xrpl"
@@ -124,6 +126,28 @@ const CAPABILITIES:
     "resource-usage",
   ],
 
+  near: [
+    "summary",
+    "coverage",
+    "authorities",
+    "relationships",
+    "funding",
+    "transaction-history",
+    "transaction-value",
+    "execution",
+  ],
+
+  hedera: [
+    "summary",
+    "coverage",
+    "authorities",
+    "relationships",
+    "funding",
+    "transaction-history",
+    "transaction-value",
+    "resource-usage",
+  ],
+
   tron: [
     "summary",
     "coverage",
@@ -208,6 +232,20 @@ const QUESTIONS:
     "What explicit transfer counterparties and funding evidence were observed?",
   ],
 
+  near: [
+    "What are the most important NEAR findings?",
+    "What actions, receipts and contract methods were observed?",
+    "What access-key permissions were observed?",
+    "What explicit counterparties and inbound funding evidence were observed?",
+  ],
+
+  hedera: [
+    "What are the most important Hedera findings?",
+    "What HBAR transfer counterparties were observed?",
+    "What token relationships and explicit token control keys were observed?",
+    "What staking and reward evidence was observed?",
+  ],
+
   tron: [
     "What was the transaction fee?",
     "How much energy was used?",
@@ -259,6 +297,12 @@ function adapterForFamily(
 
     case "aptos":
       return "aptos";
+
+    case "near":
+      return "near";
+
+    case "hedera":
+      return "hedera";
 
     case "tron":
       return "tron";
