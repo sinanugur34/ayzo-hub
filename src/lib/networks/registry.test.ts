@@ -7,7 +7,7 @@ import {
 } from "./registry";
 
 test(
-  "keeps twenty-two registered networks with twenty currently live",
+  "keeps twenty-two registered networks with twenty-one currently live",
   () => {
     assert.equal(
       NETWORK_IDS.length,
@@ -24,7 +24,7 @@ test(
 
     assert.equal(
       liveNetworkCount,
-      20
+      21
     );
 
     assert.equal(
@@ -42,10 +42,14 @@ test(
       "live"
     );
 
+    assert.equal(
+      NETWORKS.stellar.status,
+      "live"
+    );
+
     for (
       const networkId of [
         "hyperliquid",
-        "stellar",
       ] as const
     ) {
       assert.equal(
@@ -461,6 +465,51 @@ test(
 
     assert.ok(
       NETWORKS.ton
+        .capabilities
+        .includes(
+          "fundingProvenance"
+        )
+    );
+  }
+);
+
+
+test(
+  "keeps Stellar live after Horizon quality gates",
+  () => {
+    assert.equal(
+      NETWORKS.stellar.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.stellar.family,
+      "stellar"
+    );
+
+    assert.equal(
+      NETWORKS.stellar.nativeCurrency,
+      "XLM"
+    );
+
+    assert.ok(
+      NETWORKS.stellar
+        .capabilities
+        .includes(
+          "addressFlows"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.stellar
+        .capabilities
+        .includes(
+          "walletRelationships"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.stellar
         .capabilities
         .includes(
           "fundingProvenance"

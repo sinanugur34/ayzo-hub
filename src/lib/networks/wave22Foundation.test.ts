@@ -14,28 +14,28 @@ const PROMOTED = [
   "litecoin",
   "sui",
   "ton",
-] as const;
-
-const REMAINING = [
   "stellar",
-  "hyperliquid",
 ] as const;
 
 test(
-  "wave 22 has twenty live networks after TON promotion",
+  "wave 22 has twenty-one live networks after Stellar promotion",
   () => {
     assert.equal(
       NETWORK_IDS.length,
       22
     );
 
-    assert.equal(
+    const live =
       NETWORK_IDS.filter(
         id =>
-          NETWORKS[id].status ===
+          NETWORKS[id]
+            .status ===
           "live"
-      ).length,
-      20
+      );
+
+    assert.equal(
+      live.length,
+      21
     );
 
     for (
@@ -55,21 +55,16 @@ test(
       );
     }
 
-    for (
-      const id of
-      REMAINING
-    ) {
-      assert.equal(
-        NETWORKS[id].status,
-        "development"
-      );
+    assert.equal(
+      NETWORKS.hyperliquid.status,
+      "development"
+    );
 
-      assert.equal(
-        resolveIntelligenceNetwork(
-          id
-        ).ok,
-        false
-      );
-    }
+    assert.equal(
+      resolveIntelligenceNetwork(
+        "hyperliquid"
+      ).ok,
+      false
+    );
   }
 );

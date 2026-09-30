@@ -60,6 +60,14 @@ import {
 } from "@/lib/intelligence/ton/engine";
 
 import {
+  isStellarAccountAddress,
+} from "@/lib/intelligence/stellar/address";
+
+import {
+  runStellarIntelligence,
+} from "@/lib/intelligence/stellar/engine";
+
+import {
   isTronAddress,
 } from "@/lib/intelligence/tron/address";
 
@@ -496,6 +504,27 @@ export async function POST(
 
     if (
       resolution.engine ===
+        "stellar" &&
+      !isStellarAccountAddress(
+        address
+      )
+    ) {
+      return json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid Stellar account address.",
+          network:
+            resolution.networkId,
+        },
+        400
+      );
+    }
+
+    if (
+      resolution.engine ===
         "xrpl" &&
       !isXrplClassicAddress(
         address
@@ -889,6 +918,33 @@ export async function POST(
       case "ton": {
         const result =
           await runTonIntelligence({
+            address,
+
+            analysisPlan:
+              entitlement.planId,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
+        return json(
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
+          result.status
+        );
+      }
+
+      case "stellar": {
+        const result =
+          await runStellarIntelligence({
             address,
 
             analysisPlan:

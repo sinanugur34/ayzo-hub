@@ -29,17 +29,17 @@ test(
 );
 
 test(
-  "twenty networks are mobile live after TON promotion",
+  "twenty-one networks are mobile live after Stellar promotion",
   () => {
     assert.equal(
       getMobileLiveNetworkIds()
         .length,
-      20
+      21
     );
 
     assert.equal(
       getMobileNetworkSupport(
-        "ton"
+        "stellar"
       ).analysisEnabled,
       true
     );
@@ -47,16 +47,16 @@ test(
 );
 
 test(
-  "TON uses dedicated native mobile adapter",
+  "Stellar uses dedicated native mobile adapter",
   () => {
     const support =
       getMobileNetworkSupport(
-        "ton"
+        "stellar"
       );
 
     assert.equal(
       support.adapter,
-      "ton"
+      "stellar"
     );
 
     assert.equal(
@@ -77,20 +77,13 @@ test(
 );
 
 test(
-  "Stellar and Hyperliquid remain hidden",
+  "Hyperliquid remains hidden",
   () => {
-    for (
-      const id of [
-        "stellar",
-        "hyperliquid",
-      ] as const
-    ) {
-      assert.equal(
-        getMobileNetworkSupport(
-          id
-        ).analysisEnabled,
-        false
-      );
-    }
+    assert.equal(
+      getMobileNetworkSupport(
+        "hyperliquid"
+      ).analysisEnabled,
+      false
+    );
   }
 );

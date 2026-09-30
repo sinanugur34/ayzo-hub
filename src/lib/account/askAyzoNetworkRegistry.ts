@@ -8,6 +8,7 @@ export type AskAyzoAdapterId =
   | "utxo"
   | "sui"
   | "ton"
+  | "stellar"
   | "tron"
   | "xrpl"
   | "generic";
@@ -80,6 +81,16 @@ const CAPABILITIES:
     "transaction-cost",
   ],
 
+  stellar: [
+    "summary",
+    "coverage",
+    "relationships",
+    "funding",
+    "transaction-history",
+    "transaction-value",
+    "transaction-cost",
+  ],
+
   tron: [
     "summary",
     "coverage",
@@ -139,6 +150,12 @@ const QUESTIONS:
     "What Jetton holdings and transfers were observed?",
   ],
 
+  stellar: [
+    "What are the most important Stellar findings?",
+    "What trustlines and issuers were observed?",
+    "What direct payment and funding relationships were observed?",
+  ],
+
   tron: [
     "What was the transaction fee?",
     "How much energy was used?",
@@ -178,6 +195,9 @@ function adapterForFamily(
 
     case "ton":
       return "ton";
+
+    case "stellar":
+      return "stellar";
 
     case "tron":
       return "tron";

@@ -46,6 +46,7 @@ const networks = [
   "litecoin",
   "sui",
   "ton",
+  "stellar",
   "tron",
   "xrp",
 ] as const;

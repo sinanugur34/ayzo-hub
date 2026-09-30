@@ -27,6 +27,10 @@ import {
 } from "@/lib/intelligence/ton/address";
 
 import {
+  isStellarAccountAddress,
+} from "@/lib/intelligence/stellar/address";
+
+import {
   isTronAddress,
 } from "@/lib/intelligence/tron/address";
 
@@ -70,6 +74,7 @@ type DetectedNetwork =
   | "litecoin"
   | "sui"
   | "ton"
+  | "stellar"
   | "tron"
   | "xrp"
   | "solana"
@@ -175,6 +180,13 @@ export async function POST(
   ) {
     network =
       "ton";
+  } else if (
+    isStellarAccountAddress(
+      address
+    )
+  ) {
+    network =
+      "stellar";
   } else if (
     isTronAddress(
       address

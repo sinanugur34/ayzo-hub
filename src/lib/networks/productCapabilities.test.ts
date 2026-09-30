@@ -112,6 +112,20 @@ test(
 );
 
 test(
+  "maps Stellar evidence to wallet funding and connections tools",
+  () => {
+    assert.deepEqual(
+      toolIds("stellar"),
+      [
+        "walletAnalysis",
+        "fundingTrace",
+        "connections",
+      ]
+    );
+  }
+);
+
+test(
   "returns every currently live canonical network",
   () => {
     const liveNetworks =

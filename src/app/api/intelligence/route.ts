@@ -51,6 +51,14 @@ import {
 import {
   runTonIntelligence,
 } from "@/lib/intelligence/ton/engine";
+
+import {
+  isStellarAccountAddress,
+} from "@/lib/intelligence/stellar/address";
+
+import {
+  runStellarIntelligence,
+} from "@/lib/intelligence/stellar/engine";
 import {
   runTronIntelligence,
 } from "@/lib/intelligence/tron/engine";
@@ -304,6 +312,23 @@ export async function POST(request: Request) {
           ok: false,
           code: "INVALID_ADDRESS",
           error: "Invalid TON address.",
+          network: resolution.networkId,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      resolution.engine === "stellar" &&
+      !isStellarAccountAddress(
+        address
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          code: "INVALID_ADDRESS",
+          error: "Invalid Stellar account address.",
           network: resolution.networkId,
         },
         { status: 400 }
@@ -735,6 +760,33 @@ export async function POST(request: Request) {
       case "ton": {
         const result =
           await runTonIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "stellar": {
+        const result =
+          await runStellarIntelligence({
             address,
             analysisPlan,
           });

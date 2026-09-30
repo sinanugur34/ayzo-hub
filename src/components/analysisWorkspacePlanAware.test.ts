@@ -10,6 +10,7 @@ const reports = [
   "src/components/LitecoinIntelligenceReport.tsx",
   "src/components/SuiIntelligenceReport.tsx",
   "src/components/TonIntelligenceReport.tsx",
+  "src/components/StellarIntelligenceReport.tsx",
   "src/components/TronIntelligenceReport.tsx",
   "src/components/XrplIntelligenceReport.tsx",
 ];

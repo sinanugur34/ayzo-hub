@@ -17,6 +17,7 @@ import DogecoinIntelligenceReport from "@/components/DogecoinIntelligenceReport"
 import LitecoinIntelligenceReport from "@/components/LitecoinIntelligenceReport";
 import SuiIntelligenceReport from "@/components/SuiIntelligenceReport";
 import TonIntelligenceReport from "@/components/TonIntelligenceReport";
+import StellarIntelligenceReport from "@/components/StellarIntelligenceReport";
 import TronIntelligenceReport from "@/components/TronIntelligenceReport";
 import XrplIntelligenceReport from "@/components/XrplIntelligenceReport";
 import EvmIntelligenceReport from "@/components/EvmIntelligenceReport";
@@ -322,6 +323,17 @@ export default function Home() {
     );
 
   const [
+    stellarAnalysis,
+    setStellarAnalysis,
+  ] =
+    useState<{
+      address:
+        string;
+    } | null>(
+      null
+    );
+
+  const [
     tronAnalysis,
     setTronAnalysis,
   ] =
@@ -369,6 +381,10 @@ export default function Home() {
     );
 
     setTonAnalysis(
+      null
+    );
+
+    setStellarAnalysis(
       null
     );
 
@@ -599,6 +615,10 @@ export default function Home() {
               null
             );
 
+            setStellarAnalysis(
+              null
+            );
+
             setTronAnalysis(
               null
             );
@@ -673,6 +693,26 @@ export default function Home() {
           : {}),
       }
     );
+
+    if (
+      network ===
+        "stellar"
+    ) {
+      setIsValid(
+        true
+      );
+
+      setMessage(
+        "Stellar account accepted. AYZO intelligence is running."
+      );
+
+      setStellarAnalysis({
+        address:
+          value,
+      });
+
+      return;
+    }
 
     if (
       network ===
@@ -1216,6 +1256,8 @@ export default function Home() {
       null ||
     tonAnalysis !==
       null ||
+    stellarAnalysis !==
+      null ||
     tronAnalysis !==
       null ||
     xrpAnalysis !==
@@ -1288,6 +1330,7 @@ export default function Home() {
     litecoinAnalysis,
     suiAnalysis,
     tonAnalysis,
+    stellarAnalysis,
     tronAnalysis,
     xrpAnalysis,
   ]);
@@ -1818,6 +1861,24 @@ export default function Home() {
                 }
                 address={
                   tonAnalysis.address
+                }
+              />
+            </AnalysisWorkspaceFrame>
+          </section>
+        )}
+
+        {stellarAnalysis && (
+          <section
+            id="analysis-result"
+            className="mt-12 scroll-mt-4 w-[calc(100vw-16px)] max-w-none shrink-0 self-center"
+          >
+            <AnalysisWorkspaceFrame>
+              <StellarIntelligenceReport
+                key={
+                  stellarAnalysis.address
+                }
+                address={
+                  stellarAnalysis.address
                 }
               />
             </AnalysisWorkspaceFrame>

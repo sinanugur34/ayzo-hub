@@ -263,3 +263,23 @@ test(
     );
   }
 );
+
+test(
+  "detects Stellar account before generic Base58 handling",
+  async () => {
+    const result =
+      await detect(
+        "GDMQQNJM4UL7QIA66P7R2PZHMQINWZBM77BEBMHLFXD5JEUAHGJ7R4JZ"
+      );
+
+    assert.equal(
+      result.status,
+      200
+    );
+
+    assert.equal(
+      result.body.network,
+      "stellar"
+    );
+  }
+);

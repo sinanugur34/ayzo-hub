@@ -36,6 +36,7 @@ export type HistoricalSnapshotV1 = {
 
     nativeBalanceRaw?: string | null;
     assetBalanceTypeCount?: number | null;
+    issuerCount?: number | null;
     ownedObjectCount?: number | null;
     objectCreatedCount?: number | null;
     objectDeletedCount?: number | null;
@@ -728,6 +729,120 @@ function suiSnapshot(
   };
 }
 
+function stellarSnapshot(
+  network:
+    string,
+  root:
+    JsonRecord
+): HistoricalSnapshotV1 {
+  const account =
+    record(
+      root.account
+    );
+
+  const history =
+    record(
+      root.history
+    );
+
+  const transactions =
+    Array.isArray(
+      history?.transactions
+    )
+      ? history.transactions
+      : [];
+
+  const latest =
+    record(
+      transactions[0]
+    );
+
+  const balances =
+    Array.isArray(
+      account?.balances
+    )
+      ? account.balances
+      : [];
+
+  const derived =
+    record(
+      root.derived
+    );
+
+  const counterparties =
+    record(
+      derived?.counterparties
+    );
+
+  const trustlines =
+    record(
+      derived?.trustlines
+    );
+
+  return {
+    version:
+      1,
+
+    capturedAt:
+      new Date().toISOString(),
+
+    network,
+
+    coverage:
+      text(
+        root.coverage
+      ),
+
+    subjectKind:
+      "wallet",
+
+    metrics: {
+      nativeBalanceRaw:
+        text(
+          derived
+            ?.nativeBalanceXlm
+        ),
+
+      assetBalanceTypeCount:
+        balances.length,
+
+      transactionCount:
+        transactions.length,
+
+      latestTransactionHash:
+        text(
+          latest?.hash
+        ),
+
+      latestTransactionTimestamp:
+        text(
+          latest?.createdAt
+        ),
+
+      relationshipsDetected:
+        numberValue(
+          counterparties?.count
+        ),
+
+      issuerCount:
+        numberValue(
+          trustlines
+            ?.issuerCount
+        ),
+    },
+
+    modules:
+      moduleSnapshot(
+        root.modules
+      ),
+
+    findings:
+      findingSnapshot(
+        root.findings
+      ),
+  };
+}
+
 function tonSnapshot(
   network:
     string,
@@ -989,6 +1104,16 @@ export function buildHistoricalSnapshot(
       "xrp"
   ) {
     return utxoSnapshot(
+      network,
+      root
+    );
+  }
+
+  if (
+    network ===
+      "stellar"
+  ) {
+    return stellarSnapshot(
       network,
       root
     );

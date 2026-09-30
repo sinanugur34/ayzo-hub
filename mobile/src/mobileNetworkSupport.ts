@@ -128,6 +128,7 @@ const MOBILE_ENGINE_READY =
     "litecoin",
     "sui",
     "ton",
+    "stellar",
     "tron",
     "xrp",
   ]);

@@ -58,6 +58,14 @@ import {
 } from "@/lib/intelligence/ton/engine";
 
 import {
+  isStellarAccountAddress,
+} from "@/lib/intelligence/stellar/address";
+
+import {
+  runStellarIntelligence,
+} from "@/lib/intelligence/stellar/engine";
+
+import {
   isTronAddress,
 } from "@/lib/intelligence/tron/address";
 
@@ -465,6 +473,13 @@ export async function POST(
       ) ||
       (
         resolution.engine ===
+          "stellar" &&
+        !isStellarAccountAddress(
+          address
+        )
+      ) ||
+      (
+        resolution.engine ===
           "tron" &&
         !isTronAddress(
           address
@@ -796,6 +811,22 @@ export async function POST(
       case "ton": {
         const result =
           await runTonIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "stellar": {
+        const result =
+          await runStellarIntelligence({
             address,
 
             analysisPlan:

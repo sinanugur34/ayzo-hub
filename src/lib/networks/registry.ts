@@ -75,6 +75,9 @@ const HYPERLIQUID_CAPABILITIES = [
 
 const STELLAR_CAPABILITIES = [
   "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
 ] as const satisfies readonly NetworkCapability[];
 
 export const NETWORKS = {
@@ -334,7 +337,7 @@ export const NETWORKS = {
     name: "Stellar",
     shortName: "XLM",
     family: "stellar",
-    status: "development",
+    status: "live",
     chainId: null,
     nativeCurrency: "XLM",
     explorerUrl: "https://stellar.expert/explorer/public",

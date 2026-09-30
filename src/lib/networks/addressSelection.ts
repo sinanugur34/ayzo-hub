@@ -40,6 +40,7 @@ export type AddressKind =
   | "litecoin"
   | "sui"
   | "ton"
+  | "stellar"
   | "tron"
   | "xrp"
   | "invalid";
@@ -60,6 +61,7 @@ export function resolveSelectedNetworkForAddress<
   | "litecoin"
   | "sui"
   | "ton"
+  | "stellar"
   | "tron"
   | "xrp"
   | null {
@@ -110,6 +112,13 @@ export function resolveSelectedNetworkForAddress<
     "ton"
   ) {
     return "ton";
+  }
+
+  if (
+    addressKind ===
+    "stellar"
+  ) {
+    return "stellar";
   }
 
   if (
