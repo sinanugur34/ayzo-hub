@@ -13,6 +13,81 @@ import type {
   HyperliquidIntelligence,
 } from "./engine";
 
+function sameHyperliquidAddress(
+  left:
+    string | null,
+  right:
+    string
+) {
+  return (
+    typeof left ===
+      "string" &&
+    left.toLowerCase() ===
+      right.toLowerCase()
+  );
+}
+
+function validHyperliquidAddress(
+  value:
+    string | null
+) {
+  return (
+    typeof value ===
+      "string" &&
+    /^0x[0-9a-fA-F]{40}$/.test(
+      value
+    )
+  );
+}
+
+function ledgerDirection(
+  subject:
+    string,
+  user:
+    string | null,
+  destination:
+    string | null
+) {
+  const fromSubject =
+    sameHyperliquidAddress(
+      user,
+      subject
+    );
+
+  const toSubject =
+    sameHyperliquidAddress(
+      destination,
+      subject
+    );
+
+  if (
+    fromSubject &&
+    toSubject
+  ) {
+    return "self" as const;
+  }
+
+  if (
+    toSubject &&
+    validHyperliquidAddress(
+      user
+    )
+  ) {
+    return "incoming" as const;
+  }
+
+  if (
+    fromSubject &&
+    validHyperliquidAddress(
+      destination
+    )
+  ) {
+    return "outgoing" as const;
+  }
+
+  return "observed" as const;
+}
+
 export function buildHyperliquidActivityTimeline(
   data:
     HyperliquidIntelligence
@@ -137,6 +212,132 @@ export function buildHyperliquidActivityTimeline(
     });
   }
 
+  for (
+    const [
+      index,
+      ledger
+    ] of
+    data
+      .executionSurfaces
+      .hyperCore
+      .nonFundingLedger
+      .entries()
+  ) {
+    const direction =
+      ledgerDirection(
+        data.address,
+        ledger.user,
+        ledger.destination
+      );
+
+    const counterparty =
+      direction ===
+        "incoming"
+        ? ledger.user
+        : direction ===
+            "outgoing"
+          ? ledger.destination
+          : null;
+
+    const type =
+      ledger.type
+        .trim()
+        .toLowerCase();
+
+    const asset =
+      ledger.token ??
+      (
+        ledger.usdc !==
+          null
+          ? "USDC"
+          : null
+      );
+
+    const rawValue =
+      ledger.amount ??
+      ledger.usdc;
+
+    const from =
+      direction ===
+        "incoming"
+        ? ledger.user
+        : direction ===
+            "outgoing"
+          ? data.address
+          : direction ===
+              "self"
+            ? data.address
+            : ledger.user;
+
+    const to =
+      direction ===
+        "incoming"
+        ? data.address
+        : direction ===
+            "outgoing"
+          ? ledger.destination
+          : direction ===
+              "self"
+            ? data.address
+            : ledger.destination;
+
+    events.push({
+      id:
+        `hl-ledger:${ledger.hash ?? index}`,
+
+      timestamp:
+        ledger.timestamp,
+
+      blockNumber:
+        null,
+
+      kind:
+        asset
+          ? "token_transfer"
+          : "transaction",
+
+      direction,
+
+      from,
+
+      to,
+
+      counterparty,
+
+      asset,
+
+      assetAddress:
+        null,
+
+      rawValue,
+
+      formattedValue:
+        rawValue,
+
+      transactionHash:
+        ledger.hash ??
+        `hypercore-ledger:${index}`,
+
+      evidenceState:
+        "SUPPORTED",
+
+      whyItMatters:
+        type.includes(
+          "deposit"
+        )
+          ? "Observed HyperCore non-funding deposit ledger evidence."
+          : type.includes(
+              "withdraw"
+            )
+            ? "Observed HyperCore non-funding withdrawal ledger evidence."
+            : type.includes(
+                "transfer"
+              )
+              ? "Observed HyperCore non-funding transfer ledger evidence."
+              : `Observed HyperCore non-funding ledger event (${ledger.type}). AYZO does not invent semantics beyond the provider-supplied delta type.`,
+    });
+  }
+
   events.sort(
     (
       left,
@@ -180,7 +381,7 @@ export function buildHyperliquidActivityTimeline(
         : "unavailable",
 
     limitation:
-      "Timeline combines bounded HyperCore fills and perpetual funding-rate payments only. It is not HyperEVM address transaction history and does not represent wallet-funding provenance.",
+      "Timeline combines bounded HyperCore fills, perpetual funding-rate payments and non-funding ledger updates. Ledger transfers use explicit address fields only. It is not indexed HyperEVM address history and does not establish ultimate wallet-funding provenance.",
 
     events:
       events.slice(
@@ -197,7 +398,11 @@ export function buildHyperliquidActivityTimeline(
           .length,
 
       transferCount:
-        0,
+        data
+          .executionSurfaces
+          .hyperCore
+          .nonFundingLedger
+          .length,
 
       maxEvents,
     },
@@ -359,6 +564,131 @@ export function buildHyperliquidVisualEvidenceGraph(
       },
     ];
 
+  const maxNodes =
+    data.analysisPlan ===
+      "advanced"
+      ? 16
+      : data.analysisPlan ===
+          "pro"
+        ? 10
+        : 6;
+
+  const maxEdges =
+    data.analysisPlan ===
+      "advanced"
+      ? 24
+      : data.analysisPlan ===
+          "pro"
+        ? 14
+        : 8;
+
+  for (
+    const address of
+    data
+      .derived
+      .hyperCore
+      .counterparties
+      .addresses
+  ) {
+    if (
+      nodes.length >=
+        maxNodes ||
+      edges.length >=
+        maxEdges
+    ) {
+      break;
+    }
+
+    const normalized =
+      address.toLowerCase();
+
+    const nodeId =
+      `hyperliquid:counterparty:${normalized}`;
+
+    if (
+      nodes.some(
+        node =>
+          node.id ===
+          nodeId
+      )
+    ) {
+      continue;
+    }
+
+    const evidence =
+      data
+        .executionSurfaces
+        .hyperCore
+        .nonFundingLedger
+        .filter(
+          ledger =>
+            ledger.user
+              ?.toLowerCase() ===
+              normalized ||
+            ledger.destination
+              ?.toLowerCase() ===
+              normalized
+        );
+
+    nodes.push({
+      id:
+        nodeId,
+
+      kind:
+        "wallet",
+
+      label:
+        address,
+
+      detail:
+        `${evidence.length} explicit non-funding ledger observation(s)`,
+
+      evidenceState:
+        "SUPPORTED",
+    });
+
+    edges.push({
+      id:
+        `hyperliquid-ledger-${normalized}`,
+
+      source:
+        rootId,
+
+      target:
+        nodeId,
+
+      kind:
+        "direct_interaction",
+
+      direction:
+        "observed",
+
+      label:
+        "Explicit HyperCore ledger interaction",
+
+      evidenceState:
+        "SUPPORTED",
+
+      evidenceCount:
+        evidence.length,
+
+      evidenceRefs:
+        evidence
+          .flatMap(
+            item =>
+              item.hash
+                ? [
+                    item.hash,
+                  ]
+                : []
+          )
+          .slice(
+            0,
+            8
+          ),
+    });
+  }
+
   return {
     status:
       "limited",
@@ -367,26 +697,12 @@ export function buildHyperliquidVisualEvidenceGraph(
     edges,
 
     limitation:
-      "The graph separates HyperCore exchange evidence from HyperEVM latest-state evidence. It intentionally contains no fabricated wallet counterparties, common-ownership links or wallet-funding provenance.",
+      "The graph separates HyperCore exchange evidence from HyperEVM latest-state evidence. Counterparty nodes are added only from explicit HyperCore non-funding ledger address fields. No common ownership, identity, control or ultimate wallet-funding provenance is inferred.",
 
     coverage: {
-      maxNodes:
-        data.analysisPlan ===
-          "advanced"
-          ? 16
-          : data.analysisPlan ===
-              "pro"
-            ? 10
-            : 6,
+      maxNodes,
 
-      maxEdges:
-        data.analysisPlan ===
-          "advanced"
-          ? 24
-          : data.analysisPlan ===
-              "pro"
-            ? 14
-            : 8,
+      maxEdges,
 
       ownershipInference:
         false,
