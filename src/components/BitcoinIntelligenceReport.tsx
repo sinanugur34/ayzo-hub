@@ -48,6 +48,81 @@ type Finding = {
   caveat: string;
 };
 
+type BitcoinCanonicalTransaction = {
+  transactionHash: string;
+
+  witnessHash:
+    string | null;
+
+  blockHash:
+    string | null;
+
+  confirmed:
+    boolean;
+
+  confirmations:
+    number | null;
+
+  inputs: readonly {
+    previousTransactionHash:
+      string | null;
+
+    previousOutputIndex:
+      number | null;
+
+    prevout: {
+      valueSats:
+        string;
+
+      scriptPubKey:
+        string | null;
+
+      addresses?:
+        readonly string[];
+    } | null;
+
+    prevoutStatus:
+      | "resolved"
+      | "coinbase"
+      | "omitted"
+      | "unavailable";
+  }[];
+
+  outputs: readonly {
+    index:
+      number;
+
+    valueSats:
+      string;
+
+    scriptPubKey:
+      string | null;
+
+    addresses?:
+      readonly string[];
+  }[];
+
+  prevoutCoverage: {
+    eligible:
+      number;
+
+    attempted:
+      number;
+
+    resolved:
+      number;
+
+    unavailable:
+      number;
+
+    omitted:
+      number;
+
+    complete:
+      boolean;
+  };
+};
+
 type BitcoinSuccess = {
   ok: true;
   network: "bitcoin";
@@ -69,49 +144,107 @@ type BitcoinSuccess = {
       string | null;
   };
 
-  canonicalTransaction: {
-    transactionHash: string;
-    witnessHash:
-      string | null;
-    blockHash:
-      string | null;
-    confirmed: boolean;
-    confirmations:
-      number | null;
+  analysisPlan:
+    "free" |
+    "pro" |
+    "advanced";
 
-    inputs: readonly {
-      previousTransactionHash:
-        string | null;
-      previousOutputIndex:
-        number | null;
-      prevout: {
-        valueSats: string;
-        scriptPubKey:
-          string | null;
-      } | null;
-      prevoutStatus:
-        | "resolved"
-        | "coinbase"
-        | "omitted"
-        | "unavailable";
-    }[];
+  evidenceCoverage: {
+    historyLimit:
+      number;
 
-    outputs: readonly {
-      index: number;
-      valueSats: string;
-      scriptPubKey:
-        string | null;
-    }[];
+    canonicalSampleLimit:
+      number;
 
-    prevoutCoverage: {
-      eligible: number;
-      attempted: number;
-      resolved: number;
-      unavailable: number;
-      omitted: number;
-      complete: boolean;
+    historyHasMore:
+      boolean;
+  };
+
+  canonicalTransaction:
+    BitcoinCanonicalTransaction |
+    null;
+
+  canonicalTransactions:
+    readonly BitcoinCanonicalTransaction[];
+
+  derived: {
+    flow: {
+      incomingTransactionCount:
+        number;
+
+      outgoingTransactionCount:
+        number;
+
+      selfTransactionCount:
+        number;
+
+      unresolvedTransactionCount:
+        number;
+
+      observedTransactionCount:
+        number;
+
+      incomingSats:
+        string;
+
+      outgoingNonTargetSats:
+        string;
     };
-  } | null;
+
+    counterparties: {
+      count:
+        number;
+
+      items:
+        readonly {
+          address:
+            string;
+
+          incomingCount:
+            number;
+
+          outgoingCount:
+            number;
+
+          observationCount:
+            number;
+        }[];
+    };
+
+    observedFunding: {
+      sourceAddress:
+        string;
+
+      transactionHash:
+        string;
+
+      amountSats:
+        string | null;
+    } | null;
+
+    canonicalCoverage: {
+      requested:
+        number;
+
+      verified:
+        number;
+
+      unavailable:
+        number;
+
+      prevoutEligible:
+        number;
+
+      prevoutResolved:
+        number;
+
+      prevoutUnavailable:
+        number;
+
+      prevoutOmitted:
+        number;
+    };
+  };
 
   modules: {
     addressHistory: {
@@ -124,6 +257,33 @@ type BitcoinSuccess = {
     };
 
     canonicalTransactionEvidence: {
+      status:
+        | "complete"
+        | "limited"
+        | "unavailable";
+      error:
+        string | null;
+    };
+
+    flow: {
+      status:
+        | "complete"
+        | "limited"
+        | "unavailable";
+      error:
+        string | null;
+    };
+
+    counterparties: {
+      status:
+        | "complete"
+        | "limited"
+        | "unavailable";
+      error:
+        string | null;
+    };
+
+    funding: {
       status:
         | "complete"
         | "limited"
@@ -207,6 +367,58 @@ function formatTimestamp(
   return date.toLocaleString(
     "en-US"
   );
+}
+
+function formatSats(
+  value:
+    string | null |
+    undefined
+) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
+    return "—";
+  }
+
+  try {
+    const sats =
+      BigInt(value);
+
+    const divisor =
+      100_000_000n;
+
+    const whole =
+      sats /
+      divisor;
+
+    const remainder =
+      sats %
+      divisor;
+
+    if (
+      remainder ===
+        0n
+    ) {
+      return `${whole.toLocaleString("en-US")} BTC`;
+    }
+
+    const fraction =
+      remainder
+        .toString()
+        .padStart(
+          8,
+          "0"
+        )
+        .replace(
+          /0+$/,
+          ""
+        );
+
+    return `${whole.toLocaleString("en-US")}.${fraction} BTC`;
+  } catch {
+    return `${value} sats`;
+  }
 }
 
 export default function BitcoinIntelligenceReport({
@@ -491,6 +703,36 @@ export default function BitcoinIntelligenceReport({
                     }
                   : null,
 
+              canonicalTransactions:
+                data.canonicalTransactions
+                  .slice(
+                    0,
+                    5
+                  )
+                  .map(
+                    transaction => ({
+                      ...transaction,
+
+                      inputs:
+                        transaction.inputs.slice(
+                          0,
+                          20
+                        ),
+
+                      outputs:
+                        transaction.outputs.slice(
+                          0,
+                          20
+                        ),
+                    })
+                  ),
+
+              derived:
+                data.derived,
+
+              evidenceCoverage:
+                data.evidenceCoverage,
+
               modules:
                 data.modules,
 
@@ -525,8 +767,8 @@ export default function BitcoinIntelligenceReport({
               </h3>
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500">
-                Reading bounded address history and verifying canonical
-                transaction evidence from Bitcoin mainnet.
+                Reading bounded address history, verifying plan-aware
+                canonical UTXO evidence, flow, counterparties and observed funding.
               </p>
             </div>
 
@@ -538,9 +780,9 @@ export default function BitcoinIntelligenceReport({
           <div className="mt-6 grid gap-2 sm:grid-cols-2">
             {[
               "Address history",
-              "Canonical transaction",
-              "Input evidence",
-              "Output evidence",
+              "Canonical transactions",
+              "UTXO flow",
+              "Counterparties & funding",
             ].map(
               item => (
                 <div
@@ -660,37 +902,22 @@ export default function BitcoinIntelligenceReport({
             />
 
             <Stat
-              label="Confirmed"
-              value={
-                canonical
-                  ? canonical.confirmed
-                    ? "Yes"
-                    : "No"
-                  : "Unavailable"
-              }
+              label="Canonical verified"
+              value={`${data.derived.canonicalCoverage.verified}/${data.derived.canonicalCoverage.requested}`}
             />
 
             <Stat
-              label="Confirmations"
-              value={
-                canonical?.confirmations !==
-                null &&
-                canonical?.confirmations !==
-                undefined
-                  ? String(
-                      canonical.confirmations
-                    )
-                  : "—"
-              }
+              label="Counterparties"
+              value={String(
+                data.derived
+                  .counterparties
+                  .count
+              )}
             />
 
             <Stat
               label="Prevout coverage"
-              value={
-                canonical
-                  ? `${canonical.prevoutCoverage.resolved}/${canonical.prevoutCoverage.eligible}`
-                  : "—"
-              }
+              value={`${data.derived.canonicalCoverage.prevoutResolved}/${data.derived.canonicalCoverage.prevoutEligible}`}
             />
           </div>
 
@@ -712,6 +939,220 @@ export default function BitcoinIntelligenceReport({
                   .status
               }
             />
+
+            <Module
+              label="UTXO flow"
+              status={
+                data.modules
+                  .flow
+                  .status
+              }
+            />
+
+            <Module
+              label="Counterparties"
+              status={
+                data.modules
+                  .counterparties
+                  .status
+              }
+            />
+
+            <Module
+              label="Observed funding"
+              status={
+                data.modules
+                  .funding
+                  .status
+              }
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-orange-500/15 bg-zinc-950/60 p-6 sm:p-8">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="text-xs font-medium tracking-[0.16em] text-orange-300">
+              BITCOIN DEEP INVESTIGATION
+            </div>
+
+            <p className="mt-2 max-w-3xl text-xs leading-5 text-zinc-500">
+              Evidence-backed UTXO flow, explicit counterparties and bounded
+              observed funding. Change ownership and ultimate source are not inferred.
+            </p>
+          </div>
+
+          <span className="rounded-full border border-zinc-800 px-3 py-1 text-[9px] uppercase tracking-wide text-zinc-500">
+            {data.analysisPlan} depth
+          </span>
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Stat
+            label="Incoming tx"
+            value={String(
+              data.derived
+                .flow
+                .incomingTransactionCount
+            )}
+          />
+
+          <Stat
+            label="Outgoing tx"
+            value={String(
+              data.derived
+                .flow
+                .outgoingTransactionCount
+            )}
+          />
+
+          <Stat
+            label="Observed incoming"
+            value={formatSats(
+              data.derived
+                .flow
+                .incomingSats
+            )}
+          />
+
+          <Stat
+            label="Observed outgoing"
+            value={formatSats(
+              data.derived
+                .flow
+                .outgoingNonTargetSats
+            )}
+          />
+
+          <Stat
+            label="Self-directed"
+            value={String(
+              data.derived
+                .flow
+                .selfTransactionCount
+            )}
+          />
+
+          <Stat
+            label="Direction unresolved"
+            value={String(
+              data.derived
+                .flow
+                .unresolvedTransactionCount
+            )}
+          />
+
+          <Stat
+            label="Prevouts unavailable"
+            value={String(
+              data.derived
+                .canonicalCoverage
+                .prevoutUnavailable
+            )}
+          />
+
+          <Stat
+            label="Prevouts omitted"
+            value={String(
+              data.derived
+                .canonicalCoverage
+                .prevoutOmitted
+            )}
+          />
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <div className="rounded-2xl border border-zinc-900 bg-black/20 p-5">
+            <div className="text-[10px] font-medium tracking-[0.14em] text-zinc-600">
+              OBSERVED FUNDING
+            </div>
+
+            {data.derived.observedFunding ? (
+              <div className="mt-4 space-y-2">
+                <div className="break-all font-mono text-xs text-zinc-300">
+                  {data.derived.observedFunding.sourceAddress}
+                </div>
+
+                <div className="text-xs text-zinc-500">
+                  Amount:{" "}
+                  {formatSats(
+                    data.derived
+                      .observedFunding
+                      .amountSats
+                  )}
+                </div>
+
+                <div className="font-mono text-[10px] text-zinc-600">
+                  TX:{" "}
+                  {short(
+                    data.derived
+                      .observedFunding
+                      .transactionHash
+                  )}
+                </div>
+
+                <p className="pt-2 text-[10px] leading-5 text-zinc-700">
+                  Direct inbound evidence inside the bounded canonical sample.
+                  This is not proof of ultimate origin.
+                </p>
+              </div>
+            ) : (
+              <p className="mt-4 text-xs leading-5 text-zinc-600">
+                No direct inbound funding source was resolved in the current
+                canonical evidence window.
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-zinc-900 bg-black/20 p-5">
+            <div className="text-[10px] font-medium tracking-[0.14em] text-zinc-600">
+              EXPLICIT COUNTERPARTIES
+            </div>
+
+            {data.derived.counterparties.items.length > 0 ? (
+              <div className="mt-4 space-y-2">
+                {data.derived.counterparties.items
+                  .slice(
+                    0,
+                    8
+                  )
+                  .map(
+                    counterparty => (
+                      <div
+                        key={counterparty.address}
+                        className="rounded-xl border border-zinc-900 bg-black/20 px-3 py-3"
+                      >
+                        <div className="break-all font-mono text-[10px] text-zinc-300">
+                          {counterparty.address}
+                        </div>
+
+                        <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-zinc-600">
+                          <span>
+                            observations:{" "}
+                            {counterparty.observationCount}
+                          </span>
+
+                          <span>
+                            inbound:{" "}
+                            {counterparty.incomingCount}
+                          </span>
+
+                          <span>
+                            outbound:{" "}
+                            {counterparty.outgoingCount}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  )}
+              </div>
+            ) : (
+              <p className="mt-4 text-xs leading-5 text-zinc-600">
+                No explicit provider-decoded counterparty addresses were
+                available in this bounded canonical sample.
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -756,6 +1197,66 @@ export default function BitcoinIntelligenceReport({
                   : "Limited"
               }
             />
+          </div>
+        </section>
+      )}
+
+      {data.canonicalTransactions.length > 0 && (
+        <section className="rounded-3xl border border-zinc-900 bg-zinc-950/60 p-6 sm:p-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="text-xs font-medium tracking-[0.16em] text-zinc-500">
+              PLAN-AWARE CANONICAL SAMPLES
+            </div>
+
+            <div className="text-[10px] text-zinc-600">
+              verified{" "}
+              {data.derived.canonicalCoverage.verified}
+              {" / "}
+              requested{" "}
+              {data.derived.canonicalCoverage.requested}
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-2">
+            {data.canonicalTransactions.map(
+              (
+                transaction,
+                index
+              ) => (
+                <div
+                  key={
+                    transaction
+                      .transactionHash
+                  }
+                  className="grid gap-2 rounded-xl border border-zinc-900 bg-black/20 px-4 py-3 text-xs sm:grid-cols-4"
+                >
+                  <div className="font-mono text-zinc-300">
+                    #{index + 1}{" "}
+                    {short(
+                      transaction
+                        .transactionHash
+                    )}
+                  </div>
+
+                  <div className="text-zinc-500">
+                    inputs:{" "}
+                    {transaction.inputs.length}
+                  </div>
+
+                  <div className="text-zinc-500">
+                    outputs:{" "}
+                    {transaction.outputs.length}
+                  </div>
+
+                  <div className="text-zinc-500">
+                    prevouts:{" "}
+                    {transaction.prevoutCoverage.resolved}
+                    /
+                    {transaction.prevoutCoverage.eligible}
+                  </div>
+                </div>
+              )
+            )}
           </div>
         </section>
       )}
