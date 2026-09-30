@@ -2,6 +2,9 @@ import { createHmac } from "node:crypto";
 import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
 import { getInternalApiKey } from "@/lib/apiSecurity";
+import {
+  redisRuntimePrefix,
+} from "@/lib/redisRuntimeNamespace";
 
 let redisClient: Redis | null = null;
 
@@ -51,7 +54,7 @@ function getRateLimiter(
       `${windowSeconds} s`
     ),
     prefix:
-      `ayzo:api:rate:${limit}:${windowSeconds}`,
+      `ayzo:${redisRuntimePrefix()}api:rate:${limit}:${windowSeconds}`,
     analytics: false,
   });
 

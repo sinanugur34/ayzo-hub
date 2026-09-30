@@ -7,11 +7,11 @@ import {
 } from "./registry";
 
 test(
-  "keeps twenty-two registered networks with all twenty-two currently live",
+  "keeps twenty-four registered networks with all twenty-four currently live",
   () => {
     assert.equal(
       NETWORK_IDS.length,
-      22
+      24
     );
 
     const liveNetworkCount =
@@ -24,7 +24,7 @@ test(
 
     assert.equal(
       liveNetworkCount,
-      22
+      24
     );
 
     assert.equal(
@@ -534,6 +534,116 @@ test(
       [
         "addressFlows",
       ]
+    );
+  }
+);
+
+
+test(
+  "registers Cardano and Aptos as Wave A native networks",
+  () => {
+    assert.equal(
+      NETWORKS.cardano.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.cardano.family,
+      "cardano"
+    );
+
+    assert.equal(
+      NETWORKS.cardano.nativeCurrency,
+      "ADA"
+    );
+
+    assert.equal(
+      NETWORKS.cardano.chainId,
+      null
+    );
+
+    assert.ok(
+      NETWORKS.cardano
+        .capabilities
+        .includes(
+          "assetVerification"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.cardano
+        .capabilities
+        .includes(
+          "addressFlows"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.cardano
+        .capabilities
+        .includes(
+          "walletRelationships"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.cardano
+        .capabilities
+        .includes(
+          "fundingIntelligence"
+        )
+    );
+
+    assert.equal(
+      NETWORKS.aptos.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.aptos.family,
+      "aptos"
+    );
+
+    assert.equal(
+      NETWORKS.aptos.nativeCurrency,
+      "APT"
+    );
+
+    assert.equal(
+      NETWORKS.aptos.chainId,
+      null
+    );
+
+    assert.ok(
+      NETWORKS.aptos
+        .capabilities
+        .includes(
+          "assetVerification"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.aptos
+        .capabilities
+        .includes(
+          "addressFlows"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.aptos
+        .capabilities
+        .includes(
+          "walletRelationships"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.aptos
+        .capabilities
+        .includes(
+          "fundingIntelligence"
+        )
     );
   }
 );

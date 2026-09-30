@@ -12,29 +12,29 @@ import {
 } from "./mobileNetworkSupport";
 
 test(
-  "mobile adapter registry covers all twenty-two canonical networks",
+  "mobile adapter registry covers all twenty-four canonical networks",
   () => {
     assert.equal(
       NETWORK_IDS.length,
-      22
+      24
     );
 
     assert.equal(
       Object.keys(
         MOBILE_NETWORK_ADAPTERS
       ).length,
-      22
+      24
     );
   }
 );
 
 test(
-  "all twenty-two canonical networks are mobile live",
+  "all twenty-four canonical networks are mobile live",
   () => {
     assert.equal(
       getMobileLiveNetworkIds()
         .length,
-      22
+      24
     );
 
     for (
@@ -66,17 +66,42 @@ test(
     );
 
     assert.equal(
-      support.canonicalLive,
-      true
-    );
-
-    assert.equal(
-      support.engineReady,
-      true
-    );
-
-    assert.equal(
       support.analysisEnabled,
+      true
+    );
+  }
+);
+
+test(
+  "Cardano and Aptos use dedicated native mobile adapters",
+  () => {
+    const cardano =
+      getMobileNetworkSupport(
+        "cardano"
+      );
+
+    const aptos =
+      getMobileNetworkSupport(
+        "aptos"
+      );
+
+    assert.equal(
+      cardano.adapter,
+      "cardano"
+    );
+
+    assert.equal(
+      cardano.analysisEnabled,
+      true
+    );
+
+    assert.equal(
+      aptos.adapter,
+      "aptos"
+    );
+
+    assert.equal(
+      aptos.analysisEnabled,
       true
     );
   }

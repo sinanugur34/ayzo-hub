@@ -43,6 +43,8 @@ export type AddressKind =
   | "stellar"
   | "tron"
   | "xrp"
+  | "cardano"
+  | "aptos"
   | "invalid";
 
 export function resolveSelectedNetworkForAddress<
@@ -64,6 +66,8 @@ export function resolveSelectedNetworkForAddress<
   | "stellar"
   | "tron"
   | "xrp"
+  | "cardano"
+  | "aptos"
   | null {
   if (
     addressKind ===
@@ -133,6 +137,28 @@ export function resolveSelectedNetworkForAddress<
     "xrp"
   ) {
     return "xrp";
+  }
+
+  if (
+    addressKind ===
+    "cardano"
+  ) {
+    return "cardano";
+  }
+
+  /*
+   * Aptos and Sui can both use 0x-prefixed hexadecimal forms.
+   * Never auto-switch a generic 0x address into Aptos.
+   * Preserve Aptos only when it was explicitly selected.
+   */
+  if (
+    addressKind ===
+      "aptos"
+  ) {
+    return selectedNetwork ===
+      "aptos"
+      ? "aptos"
+      : null;
   }
 
   /*

@@ -15,6 +15,10 @@ import {
   type QuotaPlan,
 } from "@/lib/analysisQuotaPolicy";
 
+import {
+  redisRuntimePrefix,
+} from "@/lib/redisRuntimeNamespace";
+
 export type MobileAnalysisQuotaState = {
   plan: QuotaPlan;
   allowed: boolean;
@@ -96,13 +100,13 @@ function quotaKey(
     plan === "advanced"
   ) {
     return (
-      `ayzo:quota:v1:${plan}:user:` +
+      `ayzo:${redisRuntimePrefix()}quota:v1:${plan}:user:` +
       hash
     );
   }
 
   return (
-    "ayzo:quota:v1:free-mobile:user:" +
+    `ayzo:${redisRuntimePrefix()}quota:v1:free-mobile:user:` +
     hash
   );
 }

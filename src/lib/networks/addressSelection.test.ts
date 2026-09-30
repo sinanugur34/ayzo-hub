@@ -274,3 +274,78 @@ test(
     );
   }
 );
+
+test(
+  "selects Cardano for a detected Cardano address kind",
+  () => {
+    assert.equal(
+      resolveSelectedNetworkForAddress(
+        "ethereum",
+        "cardano"
+      ),
+      "cardano"
+    );
+
+    assert.equal(
+      resolveSelectedNetworkForAddress(
+        "solana",
+        "cardano"
+      ),
+      "cardano"
+    );
+  }
+);
+
+test(
+  "preserves Aptos only when Aptos was explicitly selected",
+  () => {
+    assert.equal(
+      resolveSelectedNetworkForAddress(
+        "aptos",
+        "aptos"
+      ),
+      "aptos"
+    );
+
+    assert.equal(
+      resolveSelectedNetworkForAddress(
+        "ethereum",
+        "aptos"
+      ),
+      null
+    );
+
+    assert.equal(
+      resolveSelectedNetworkForAddress(
+        "sui",
+        "aptos"
+      ),
+      null
+    );
+  }
+);
+
+test(
+  "recognizes Cardano and Aptos as canonical live analysis networks",
+  async () => {
+    const {
+      isLiveAnalysisNetworkId,
+    } = await import(
+      "./addressSelection"
+    );
+
+    assert.equal(
+      isLiveAnalysisNetworkId(
+        "cardano"
+      ),
+      true
+    );
+
+    assert.equal(
+      isLiveAnalysisNetworkId(
+        "aptos"
+      ),
+      true
+    );
+  }
+);

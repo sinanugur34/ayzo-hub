@@ -9,7 +9,9 @@ export type NetworkFamily =
   | "sui"
   | "ton"
   | "hyperliquid"
-  | "stellar";
+  | "stellar"
+  | "cardano"
+  | "aptos";
 
 export type NetworkStatus =
   | "live"

@@ -28,6 +28,10 @@ import {
   getInternalApiKey,
 } from "@/lib/apiSecurity";
 
+import {
+  redisRuntimePrefix,
+} from "@/lib/redisRuntimeNamespace";
+
 export type AnalysisQuotaState =
   FreeQuotaState & {
     plan:
@@ -115,7 +119,7 @@ function paidQuotaKey(
     PaidQuotaPlan
 ) {
   return (
-    `ayzo:quota:v1:${plan}:user:` +
+    `ayzo:${redisRuntimePrefix()}quota:v1:${plan}:user:` +
     hashUserId(
       userId,
       plan
