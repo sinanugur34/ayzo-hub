@@ -18,6 +18,7 @@ import LitecoinIntelligenceReport from "@/components/LitecoinIntelligenceReport"
 import SuiIntelligenceReport from "@/components/SuiIntelligenceReport";
 import TonIntelligenceReport from "@/components/TonIntelligenceReport";
 import StellarIntelligenceReport from "@/components/StellarIntelligenceReport";
+import HyperliquidIntelligenceReport from "@/components/HyperliquidIntelligenceReport";
 import TronIntelligenceReport from "@/components/TronIntelligenceReport";
 import XrplIntelligenceReport from "@/components/XrplIntelligenceReport";
 import EvmIntelligenceReport from "@/components/EvmIntelligenceReport";
@@ -334,6 +335,17 @@ export default function Home() {
     );
 
   const [
+    hyperliquidAnalysis,
+    setHyperliquidAnalysis,
+  ] =
+    useState<{
+      address:
+        string;
+    } | null>(
+      null
+    );
+
+  const [
     tronAnalysis,
     setTronAnalysis,
   ] =
@@ -385,6 +397,9 @@ export default function Home() {
     );
 
     setStellarAnalysis(
+      null
+    );
+    setHyperliquidAnalysis(
       null
     );
 
@@ -618,6 +633,9 @@ export default function Home() {
             setStellarAnalysis(
               null
             );
+            setHyperliquidAnalysis(
+              null
+            );
 
             setTronAnalysis(
               null
@@ -693,6 +711,26 @@ export default function Home() {
           : {}),
       }
     );
+
+    if (
+      network ===
+        "hyperliquid"
+    ) {
+      setIsValid(
+        true
+      );
+
+      setMessage(
+        "Hyperliquid account accepted. AYZO is reading HyperCore and HyperEVM evidence."
+      );
+
+      setHyperliquidAnalysis({
+        address:
+          value,
+      });
+
+      return;
+    }
 
     if (
       network ===
@@ -1258,6 +1296,8 @@ export default function Home() {
       null ||
     stellarAnalysis !==
       null ||
+    hyperliquidAnalysis !==
+      null ||
     tronAnalysis !==
       null ||
     xrpAnalysis !==
@@ -1331,6 +1371,7 @@ export default function Home() {
     suiAnalysis,
     tonAnalysis,
     stellarAnalysis,
+    hyperliquidAnalysis,
     tronAnalysis,
     xrpAnalysis,
   ]);
@@ -1861,6 +1902,24 @@ export default function Home() {
                 }
                 address={
                   tonAnalysis.address
+                }
+              />
+            </AnalysisWorkspaceFrame>
+          </section>
+        )}
+
+        {hyperliquidAnalysis && (
+          <section
+            id="analysis-result"
+            className="mt-12 scroll-mt-4 w-[calc(100vw-16px)] max-w-none shrink-0 self-center"
+          >
+            <AnalysisWorkspaceFrame>
+              <HyperliquidIntelligenceReport
+                key={
+                  hyperliquidAnalysis.address
+                }
+                address={
+                  hyperliquidAnalysis.address
                 }
               />
             </AnalysisWorkspaceFrame>

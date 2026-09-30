@@ -729,6 +729,111 @@ function suiSnapshot(
   };
 }
 
+function hyperliquidSnapshot(
+  network:
+    string,
+  root:
+    JsonRecord
+): HistoricalSnapshotV1 {
+  const surfaces =
+    record(
+      root.executionSurfaces
+    );
+
+  const core =
+    record(
+      surfaces?.hyperCore
+    );
+
+  const evm =
+    record(
+      surfaces?.hyperEvm
+    );
+
+  const fills =
+    Array.isArray(
+      core?.fills
+    )
+      ? core.fills
+      : [];
+
+  const positions =
+    Array.isArray(
+      core?.positions
+    )
+      ? core.positions
+      : [];
+
+  const spotBalances =
+    Array.isArray(
+      core?.spotBalances
+    )
+      ? core.spotBalances
+      : [];
+
+  const latestFill =
+    record(
+      fills[0]
+    );
+
+  return {
+    version:
+      1,
+
+    capturedAt:
+      new Date().toISOString(),
+
+    network,
+
+    coverage:
+      text(
+        root.coverage
+      ),
+
+    subjectKind:
+      "wallet",
+
+    metrics: {
+      nativeBalanceRaw:
+        text(
+          evm?.balanceWei
+        ),
+
+      assetBalanceTypeCount:
+        spotBalances.length +
+        positions.length,
+
+      transactionCount:
+        fills.length,
+
+      latestTransactionHash:
+        text(
+          latestFill?.hash
+        ) ??
+        text(
+          latestFill
+            ?.transactionId
+        ),
+
+      latestTransactionTimestamp:
+        text(
+          latestFill
+            ?.timestamp
+        ),
+    },
+
+    modules:
+      moduleSnapshot(
+        root.modules
+      ),
+
+    findings:
+      findingSnapshot(
+        root.findings
+      ),
+  };
+}
+
 function stellarSnapshot(
   network:
     string,
@@ -1104,6 +1209,16 @@ export function buildHistoricalSnapshot(
       "xrp"
   ) {
     return utxoSnapshot(
+      network,
+      root
+    );
+  }
+
+  if (
+    network ===
+      "hyperliquid"
+  ) {
+    return hyperliquidSnapshot(
       network,
       root
     );

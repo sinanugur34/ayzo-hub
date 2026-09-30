@@ -325,7 +325,7 @@ export const NETWORKS = {
     name: "Hyperliquid",
     shortName: "HYPE",
     family: "hyperliquid",
-    status: "development",
+    status: "live",
     chainId: null,
     nativeCurrency: "HYPE",
     explorerUrl: "https://app.hyperliquid.xyz/explorer",

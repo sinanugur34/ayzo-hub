@@ -68,6 +68,14 @@ import {
 } from "@/lib/intelligence/stellar/engine";
 
 import {
+  isHyperliquidAddress,
+} from "@/lib/intelligence/hyperliquid/address";
+
+import {
+  runHyperliquidIntelligence,
+} from "@/lib/intelligence/hyperliquid/engine";
+
+import {
   isTronAddress,
 } from "@/lib/intelligence/tron/address";
 
@@ -495,6 +503,27 @@ export async function POST(
             "INVALID_ADDRESS",
           error:
             "Invalid TON address.",
+          network:
+            resolution.networkId,
+        },
+        400
+      );
+    }
+
+    if (
+      resolution.engine ===
+        "hyperliquid" &&
+      !isHyperliquidAddress(
+        address
+      )
+    ) {
+      return json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid Hyperliquid account address.",
           network:
             resolution.networkId,
         },
@@ -945,6 +974,33 @@ export async function POST(
       case "stellar": {
         const result =
           await runStellarIntelligence({
+            address,
+
+            analysisPlan:
+              entitlement.planId,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
+        return json(
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
+          result.status
+        );
+      }
+
+      case "hyperliquid": {
+        const result =
+          await runHyperliquidIntelligence({
             address,
 
             analysisPlan:

@@ -47,6 +47,7 @@ const networks = [
   "sui",
   "ton",
   "stellar",
+  "hyperliquid",
   "tron",
   "xrp",
 ] as const;

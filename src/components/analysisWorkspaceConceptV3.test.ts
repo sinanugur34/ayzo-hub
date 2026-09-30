@@ -11,6 +11,7 @@ const reports = [
   "src/components/SuiIntelligenceReport.tsx",
   "src/components/TonIntelligenceReport.tsx",
   "src/components/StellarIntelligenceReport.tsx",
+  "src/components/HyperliquidIntelligenceReport.tsx",
   "src/components/TronIntelligenceReport.tsx",
   "src/components/XrplIntelligenceReport.tsx",
 ];

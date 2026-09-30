@@ -7,7 +7,7 @@ import {
 } from "./registry";
 
 test(
-  "keeps twenty-two registered networks with twenty-one currently live",
+  "keeps twenty-two registered networks with all twenty-two currently live",
   () => {
     assert.equal(
       NETWORK_IDS.length,
@@ -24,7 +24,7 @@ test(
 
     assert.equal(
       liveNetworkCount,
-      21
+      22
     );
 
     assert.equal(
@@ -47,18 +47,10 @@ test(
       "live"
     );
 
-    for (
-      const networkId of [
-        "hyperliquid",
-      ] as const
-    ) {
-      assert.equal(
-        NETWORKS[
-          networkId
-        ].status,
-        "development"
-      );
-    }
+    assert.equal(
+      NETWORKS.hyperliquid.status,
+      "live"
+    );
 
     assert.equal(
       NETWORKS.solana.status,
@@ -514,6 +506,34 @@ test(
         .includes(
           "fundingProvenance"
         )
+    );
+  }
+);
+
+
+test(
+  "keeps Hyperliquid live after dual-surface quality gates",
+  () => {
+    assert.equal(
+      NETWORKS.hyperliquid.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.hyperliquid.family,
+      "hyperliquid"
+    );
+
+    assert.equal(
+      NETWORKS.hyperliquid.nativeCurrency,
+      "HYPE"
+    );
+
+    assert.deepEqual(
+      NETWORKS.hyperliquid.capabilities,
+      [
+        "addressFlows",
+      ]
     );
   }
 );

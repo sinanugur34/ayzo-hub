@@ -66,6 +66,14 @@ import {
 } from "@/lib/intelligence/stellar/engine";
 
 import {
+  isHyperliquidAddress,
+} from "@/lib/intelligence/hyperliquid/address";
+
+import {
+  runHyperliquidIntelligence,
+} from "@/lib/intelligence/hyperliquid/engine";
+
+import {
   isTronAddress,
 } from "@/lib/intelligence/tron/address";
 
@@ -473,6 +481,13 @@ export async function POST(
       ) ||
       (
         resolution.engine ===
+          "hyperliquid" &&
+        !isHyperliquidAddress(
+          address
+        )
+      ) ||
+      (
+        resolution.engine ===
           "stellar" &&
         !isStellarAccountAddress(
           address
@@ -827,6 +842,22 @@ export async function POST(
       case "stellar": {
         const result =
           await runStellarIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "hyperliquid": {
+        const result =
+          await runHyperliquidIntelligence({
             address,
 
             analysisPlan:

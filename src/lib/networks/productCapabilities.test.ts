@@ -126,6 +126,18 @@ test(
 );
 
 test(
+  "maps Hyperliquid only to wallet analysis without inventing wallet funding or connections",
+  () => {
+    assert.deepEqual(
+      toolIds("hyperliquid"),
+      [
+        "walletAnalysis",
+      ]
+    );
+  }
+);
+
+test(
   "returns every currently live canonical network",
   () => {
     const liveNetworks =

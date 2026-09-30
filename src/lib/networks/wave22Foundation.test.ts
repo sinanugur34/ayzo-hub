@@ -10,15 +10,8 @@ import {
   resolveIntelligenceNetwork,
 } from "../intelligence/router";
 
-const PROMOTED = [
-  "litecoin",
-  "sui",
-  "ton",
-  "stellar",
-] as const;
-
 test(
-  "wave 22 has twenty-one live networks after Stellar promotion",
+  "wave 22 has all twenty-two networks live",
   () => {
     assert.equal(
       NETWORK_IDS.length,
@@ -35,36 +28,26 @@ test(
 
     assert.equal(
       live.length,
-      21
+      22
     );
 
     for (
       const id of
-      PROMOTED
+      NETWORK_IDS
     ) {
       assert.equal(
         NETWORKS[id].status,
-        "live"
+        "live",
+        `${id} must be live`
       );
 
       assert.equal(
         resolveIntelligenceNetwork(
           id
         ).ok,
-        true
+        true,
+        `${id} must resolve`
       );
     }
-
-    assert.equal(
-      NETWORKS.hyperliquid.status,
-      "development"
-    );
-
-    assert.equal(
-      resolveIntelligenceNetwork(
-        "hyperliquid"
-      ).ok,
-      false
-    );
   }
 );

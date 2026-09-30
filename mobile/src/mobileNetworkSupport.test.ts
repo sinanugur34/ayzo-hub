@@ -12,7 +12,7 @@ import {
 } from "./mobileNetworkSupport";
 
 test(
-  "mobile adapter registry covers all canonical networks",
+  "mobile adapter registry covers all twenty-two canonical networks",
   () => {
     assert.equal(
       NETWORK_IDS.length,
@@ -29,34 +29,40 @@ test(
 );
 
 test(
-  "twenty-one networks are mobile live after Stellar promotion",
+  "all twenty-two canonical networks are mobile live",
   () => {
     assert.equal(
       getMobileLiveNetworkIds()
         .length,
-      21
+      22
     );
 
-    assert.equal(
-      getMobileNetworkSupport(
-        "stellar"
-      ).analysisEnabled,
-      true
-    );
+    for (
+      const id of
+      NETWORK_IDS
+    ) {
+      assert.equal(
+        getMobileNetworkSupport(
+          id
+        ).analysisEnabled,
+        true,
+        `${id} must be enabled`
+      );
+    }
   }
 );
 
 test(
-  "Stellar uses dedicated native mobile adapter",
+  "Hyperliquid uses dedicated native mobile adapter",
   () => {
     const support =
       getMobileNetworkSupport(
-        "stellar"
+        "hyperliquid"
       );
 
     assert.equal(
       support.adapter,
-      "stellar"
+      "hyperliquid"
     );
 
     assert.equal(
@@ -72,18 +78,6 @@ test(
     assert.equal(
       support.analysisEnabled,
       true
-    );
-  }
-);
-
-test(
-  "Hyperliquid remains hidden",
-  () => {
-    assert.equal(
-      getMobileNetworkSupport(
-        "hyperliquid"
-      ).analysisEnabled,
-      false
     );
   }
 );

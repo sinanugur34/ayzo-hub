@@ -135,6 +135,20 @@ export function resolveSelectedNetworkForAddress<
     return "xrp";
   }
 
+  /*
+   * Hyperliquid and EVM share the same 20-byte 0x address shape.
+   * Automatic detection remains EVM, but an explicit
+   * Hyperliquid selection must be preserved.
+   */
+  if (
+    addressKind ===
+      "evm" &&
+    selectedNetwork ===
+      "hyperliquid"
+  ) {
+    return selectedNetwork;
+  }
+
   return NETWORKS[
     selectedNetwork
   ].family === "evm"

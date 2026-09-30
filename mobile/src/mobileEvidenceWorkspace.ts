@@ -1660,6 +1660,23 @@ export function buildMobileEvidenceWorkspace({
   }
 
   /*
+   * Hyperliquid:
+   * HyperCore and HyperEVM remain separate.
+   *
+   * HyperCore fills do not expose peer wallet counterparties,
+   * and perpetual funding payments are not wallet-funding
+   * provenance. Therefore this adapter intentionally adds no
+   * fabricated wallet relationship or funding edges.
+   */
+  if (
+    networkId ===
+    "hyperliquid"
+  ) {
+    // Root subject and module topology remain available.
+    // No unsupported counterparty or ownership evidence is added.
+  }
+
+  /*
    * Stellar:
    * payment/create-account and explicit issuer relationships only.
    */

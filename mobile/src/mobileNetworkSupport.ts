@@ -129,6 +129,7 @@ const MOBILE_ENGINE_READY =
     "sui",
     "ton",
     "stellar",
+    "hyperliquid",
     "tron",
     "xrp",
   ]);

@@ -9,6 +9,7 @@ export type AskAyzoAdapterId =
   | "sui"
   | "ton"
   | "stellar"
+  | "hyperliquid"
   | "tron"
   | "xrpl"
   | "generic";
@@ -76,6 +77,14 @@ const CAPABILITIES:
     "coverage",
     "relationships",
     "funding",
+    "transaction-history",
+    "transaction-value",
+    "transaction-cost",
+  ],
+
+  hyperliquid: [
+    "summary",
+    "coverage",
     "transaction-history",
     "transaction-value",
     "transaction-cost",
@@ -150,6 +159,13 @@ const QUESTIONS:
     "What Jetton holdings and transfers were observed?",
   ],
 
+  hyperliquid: [
+    "What are the most important Hyperliquid findings?",
+    "What positions, spot balances and fills were observed on HyperCore?",
+    "How do HyperCore and HyperEVM evidence differ?",
+    "What perpetual funding payments were observed, without treating them as wallet funding provenance?",
+  ],
+
   stellar: [
     "What are the most important Stellar findings?",
     "What trustlines and issuers were observed?",
@@ -195,6 +211,9 @@ function adapterForFamily(
 
     case "ton":
       return "ton";
+
+    case "hyperliquid":
+      return "hyperliquid";
 
     case "stellar":
       return "stellar";
