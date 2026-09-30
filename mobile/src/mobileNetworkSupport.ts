@@ -125,6 +125,7 @@ const MOBILE_ENGINE_READY =
 
     "bitcoin",
     "dogecoin",
+    "litecoin",
     "tron",
     "xrp",
   ]);

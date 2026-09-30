@@ -168,3 +168,38 @@ test(
     );
   }
 );
+
+test(
+  "detects a distinct Litecoin mainnet address",
+  async () => {
+    const result =
+      await detect(
+        "LKDxGDJq5fF4FohAB8zJH24mDDNHDNtqsE"
+      );
+
+    assert.equal(
+      result.status,
+      200
+    );
+
+    assert.equal(
+      result.body.network,
+      "litecoin"
+    );
+  }
+);
+
+test(
+  "keeps shared legacy P2SH auto-detection on Bitcoin",
+  async () => {
+    const result =
+      await detect(
+        "3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy"
+      );
+
+    assert.equal(
+      result.body.network,
+      "bitcoin"
+    );
+  }
+);

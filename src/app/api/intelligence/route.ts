@@ -27,6 +27,14 @@ import {
 import {
   runDogecoinIntelligence,
 } from "@/lib/intelligence/dogecoin/engine";
+
+import {
+  isLitecoinMainnetAddress,
+} from "@/lib/intelligence/litecoin/address";
+
+import {
+  runLitecoinIntelligence,
+} from "@/lib/intelligence/litecoin/engine";
 import {
   runTronIntelligence,
 } from "@/lib/intelligence/tron/engine";
@@ -227,6 +235,30 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    if (
+      resolution.engine ===
+        "litecoin" &&
+      !isLitecoinMainnetAddress(
+        address
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid Litecoin address.",
+          network:
+            resolution.networkId,
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
 
     if (
       resolution.engine === "xrpl" &&
@@ -572,6 +604,33 @@ export async function POST(request: Request) {
       case "dogecoin": {
         const result =
           await runDogecoinIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "litecoin": {
+        const result =
+          await runLitecoinIntelligence({
             address,
             analysisPlan,
           });

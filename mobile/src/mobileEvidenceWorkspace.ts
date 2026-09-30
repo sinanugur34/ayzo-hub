@@ -1311,6 +1311,133 @@ export function buildMobileEvidenceWorkspace({
   }
 
   /*
+   * Litecoin:
+   * explicit canonical counterparty evidence only.
+   */
+  if (
+    networkId ===
+    "litecoin"
+  ) {
+    const derived =
+      recordChild(
+        root,
+        "derived"
+      );
+
+    const counterparties =
+      recordChild(
+        derived,
+        "counterparties"
+      );
+
+    for (
+      const item of
+      arrayChild(
+        counterparties,
+        "items"
+      )
+    ) {
+      const wallet =
+        stringValue(
+          item.address
+        );
+
+      if (!wallet) {
+        continue;
+      }
+
+      const walletId =
+        addWallet(
+          wallet,
+          `${
+            numberValue(
+              item.observationCount
+            ) ??
+            1
+          } observed relationship signal(s)`
+        );
+
+      if (!walletId) {
+        continue;
+      }
+
+      const incoming =
+        numberValue(
+          item.incomingCount
+        ) ??
+        0;
+
+      const outgoing =
+        numberValue(
+          item.outgoingCount
+        ) ??
+        0;
+
+      addEdge({
+        id:
+          `ltc:${walletId}`,
+
+        source:
+          incoming > 0 &&
+          outgoing === 0
+            ? walletId
+            : rootId,
+
+        target:
+          incoming > 0 &&
+          outgoing === 0
+            ? rootId
+            : walletId,
+
+        label:
+          "Observed Litecoin relationship",
+
+        direction:
+          incoming > 0 &&
+          outgoing > 0
+            ? "bidirectional"
+            : "forward",
+      });
+    }
+
+    const funding =
+      recordChild(
+        derived,
+        "observedFunding"
+      );
+
+    const source =
+      stringValue(
+        funding
+          ?.sourceAddress
+      );
+
+    if (source) {
+      const sourceId =
+        addWallet(
+          source,
+          "Observed Litecoin funding source",
+          "funding"
+        );
+
+      if (sourceId) {
+        addEdge({
+          id:
+            `ltc-funding:${sourceId}`,
+          source:
+            sourceId,
+          target:
+            rootId,
+          label:
+            "Observed funding",
+          direction:
+            "forward",
+        });
+      }
+    }
+  }
+
+  /*
    * TRON:
    * explicit canonical owner/destination
    * relationships and observed inbound funding.

@@ -7,7 +7,7 @@ import {
 } from "./registry";
 
 test(
-  "keeps twenty-two registered networks with seventeen currently live",
+  "keeps twenty-two registered networks with eighteen currently live",
   () => {
     assert.equal(
       NETWORK_IDS.length,
@@ -24,12 +24,16 @@ test(
 
     assert.equal(
       liveNetworkCount,
-      17
+      18
+    );
+
+    assert.equal(
+      NETWORKS.litecoin.status,
+      "live"
     );
 
     for (
       const networkId of [
-        "litecoin",
         "sui",
         "ton",
         "hyperliquid",
@@ -310,6 +314,59 @@ test(
       NETWORKS.xrp.capabilities.includes(
         "addressFlows"
       )
+    );
+  }
+);
+
+
+test(
+  "keeps Litecoin live after full UTXO quality gates",
+  () => {
+    assert.equal(
+      NETWORKS.litecoin.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.litecoin.family,
+      "litecoin"
+    );
+
+    assert.equal(
+      NETWORKS.litecoin.nativeCurrency,
+      "LTC"
+    );
+
+    assert.ok(
+      NETWORKS.litecoin
+        .capabilities
+        .includes(
+          "addressFlows"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.litecoin
+        .capabilities
+        .includes(
+          "walletRelationships"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.litecoin
+        .capabilities
+        .includes(
+          "fundingIntelligence"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.litecoin
+        .capabilities
+        .includes(
+          "fundingProvenance"
+        )
     );
   }
 );

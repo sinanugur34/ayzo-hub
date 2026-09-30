@@ -130,7 +130,8 @@ function isBase58MainnetAddress(
 
   if (
     version !== 0x30 &&
-    version !== 0x32
+    version !== 0x32 &&
+    version !== 0x05
   ) {
     return false;
   }

@@ -43,6 +43,7 @@ const networks = [
   "monad",
   "bitcoin",
   "dogecoin",
+  "litecoin",
   "tron",
   "xrp",
 ] as const;

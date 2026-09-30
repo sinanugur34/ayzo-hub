@@ -50,6 +50,9 @@ const XRPL_CAPABILITIES = [
 
 const LITECOIN_CAPABILITIES = [
   "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
 ] as const satisfies readonly NetworkCapability[];
 
 const SUI_CAPABILITIES = [
@@ -277,7 +280,7 @@ export const NETWORKS = {
     name: "Litecoin",
     shortName: "LTC",
     family: "litecoin",
-    status: "development",
+    status: "live",
     chainId: null,
     nativeCurrency: "LTC",
     explorerUrl: "https://blockchair.com/litecoin",

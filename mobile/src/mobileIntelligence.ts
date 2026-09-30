@@ -177,6 +177,7 @@ export async function detectMobileAddressNetwork({
       "solana",
       "bitcoin",
       "dogecoin",
+      "litecoin",
       "tron",
       "xrp",
     ];
@@ -188,6 +189,26 @@ export async function detectMobileAddressNetwork({
     )
   ) {
     return null;
+  }
+
+  if (
+    selectedNetworkId ===
+      "litecoin" &&
+    detected ===
+      "bitcoin" &&
+    trimmed.startsWith(
+      "3"
+    )
+  ) {
+    /*
+     * Legacy P2SH version 0x05 is structurally
+     * shared by Bitcoin and Litecoin.
+     *
+     * Preserve an explicit Litecoin selection and
+     * let the server-side Litecoin checksum validator
+     * remain authoritative.
+     */
+    return "litecoin";
   }
 
   const resolved =

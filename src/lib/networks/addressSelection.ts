@@ -37,6 +37,7 @@ export type AddressKind =
   | "solana"
   | "bitcoin"
   | "dogecoin"
+  | "litecoin"
   | "tron"
   | "xrp"
   | "invalid";
@@ -54,6 +55,7 @@ export function resolveSelectedNetworkForAddress<
   | "ethereum"
   | "bitcoin"
   | "dogecoin"
+  | "litecoin"
   | "tron"
   | "xrp"
   | null {
@@ -83,6 +85,13 @@ export function resolveSelectedNetworkForAddress<
     "dogecoin"
   ) {
     return "dogecoin";
+  }
+
+  if (
+    addressKind ===
+    "litecoin"
+  ) {
+    return "litecoin";
   }
 
   if (

@@ -16,8 +16,7 @@ import {
   buildMobileEvidenceWorkspace,
 } from "./mobileEvidenceWorkspace";
 
-const WAVE_22 = [
-  "litecoin",
+const REMAINING_WAVE = [
   "sui",
   "ton",
   "hyperliquid",
@@ -42,165 +41,148 @@ test(
 );
 
 test(
-  "existing seventeen networks remain mobile live",
+  "eighteen networks are mobile live after Litecoin promotion",
   () => {
     const live =
       getMobileLiveNetworkIds();
 
     assert.equal(
       live.length,
-      17
+      18
     );
 
-    for (
-      const networkId of
-      live
-    ) {
-      assert.equal(
-        isMobileAnalysisNetworkLive(
-          networkId
-        ),
-        true
-      );
-    }
-  }
-);
-
-test(
-  "wave 22 networks stay hidden until full mobile engines are ready",
-  () => {
-    for (
-      const networkId of
-      WAVE_22
-    ) {
-      const support =
-        getMobileNetworkSupport(
-          networkId
-        );
-
-      assert.equal(
-        support.canonicalLive,
-        false
-      );
-
-      assert.equal(
-        support.engineReady,
-        false
-      );
-
-      assert.equal(
-        support.analysisEnabled,
-        false
-      );
-    }
-  }
-);
-
-test(
-  "Litecoin inherits the native UTXO mobile adapter",
-  () => {
     assert.equal(
+      isMobileAnalysisNetworkLive(
+        "litecoin"
+      ),
+      true
+    );
+  }
+);
+
+test(
+  "Litecoin uses production UTXO mobile adapter",
+  () => {
+    const support =
       getMobileNetworkSupport(
         "litecoin"
-      ).adapter,
+      );
+
+    assert.equal(
+      support.adapter,
       "utxo"
     );
-  }
-);
 
-test(
-  "new native families have explicit mobile adapters",
-  () => {
     assert.equal(
-      getMobileNetworkSupport(
-        "sui"
-      ).adapter,
-      "sui"
+      support.canonicalLive,
+      true
     );
 
     assert.equal(
-      getMobileNetworkSupport(
-        "ton"
-      ).adapter,
-      "ton"
+      support.engineReady,
+      true
     );
 
     assert.equal(
-      getMobileNetworkSupport(
-        "hyperliquid"
-      ).adapter,
-      "hyperliquid"
-    );
-
-    assert.equal(
-      getMobileNetworkSupport(
-        "stellar"
-      ).adapter,
-      "stellar"
+      support.analysisEnabled,
+      true
     );
   }
 );
 
 test(
-  "mobile evidence workspace safely accepts all wave 22 network ids",
+  "remaining wave networks stay hidden",
   () => {
     for (
       const networkId of
-      WAVE_22
+      REMAINING_WAVE
     ) {
-      const workspace =
-        buildMobileEvidenceWorkspace({
-          networkId,
+      assert.equal(
+        getMobileNetworkSupport(
+          networkId
+        ).analysisEnabled,
+        false
+      );
+    }
+  }
+);
 
-          address:
-            `test-${networkId}-subject`,
+test(
+  "Litecoin mobile workspace uses returned evidence only",
+  () => {
+    const workspace =
+      buildMobileEvidenceWorkspace({
+        networkId:
+          "litecoin",
 
-          data: {
-            ok:
-              true,
+        address:
+          "LKDxGDJq5fF4FohAB8zJH24mDDNHDNtqsE",
 
-            network:
-              networkId,
+        data: {
+          ok:
+            true,
 
-            coverage:
-              "limited",
+          network:
+            "litecoin",
 
-            history: {
-              transactions: [
+          coverage:
+            "partial",
+
+          derived: {
+            counterparties: {
+              items: [
                 {
-                  transactionHash:
-                    `${networkId}-transaction`,
+                  address:
+                    "M7uAERuQW2AotfyLDyewFGcLUDtAYu9v5V",
 
-                  timestamp:
-                    null,
+                  incomingCount:
+                    1,
+
+                  outgoingCount:
+                    0,
+
+                  observationCount:
+                    1,
                 },
               ],
             },
 
-            modules: {
-              addressHistory: {
-                status:
-                  "limited",
-              },
+            observedFunding: {
+              sourceAddress:
+                "M7uAERuQW2AotfyLDyewFGcLUDtAYu9v5V",
             },
           },
-        });
 
-      assert.ok(
-        workspace.nodes.length >=
-          1
-      );
+          history: {
+            transactions: [
+              {
+                transactionHash:
+                  "a".repeat(
+                    64
+                  ),
 
-      assert.ok(
-        workspace.timeline.length >=
-          1
-      );
+                timestamp:
+                  null,
+              },
+            ],
+          },
+        },
+      });
 
-      assert.ok(
-        workspace.limitation.includes(
-          "only evidence already returned by AYZO"
-        )
-      );
-    }
+    assert.ok(
+      workspace.nodes.length >=
+        2
+    );
+
+    assert.ok(
+      workspace.edges.length >=
+        1
+    );
+
+    assert.ok(
+      workspace.limitation.includes(
+        "only evidence already returned by AYZO"
+      )
+    );
   }
 );

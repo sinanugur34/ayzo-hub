@@ -34,6 +34,14 @@ import {
 } from "@/lib/intelligence/dogecoin/engine";
 
 import {
+  isLitecoinMainnetAddress,
+} from "@/lib/intelligence/litecoin/address";
+
+import {
+  runLitecoinIntelligence,
+} from "@/lib/intelligence/litecoin/engine";
+
+import {
   isTronAddress,
 } from "@/lib/intelligence/tron/address";
 
@@ -420,6 +428,13 @@ export async function POST(
       ) ||
       (
         resolution.engine ===
+          "litecoin" &&
+        !isLitecoinMainnetAddress(
+          address
+        )
+      ) ||
+      (
+        resolution.engine ===
           "tron" &&
         !isTronAddress(
           address
@@ -703,6 +718,22 @@ export async function POST(
       case "dogecoin": {
         const result =
           await runDogecoinIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "litecoin": {
+        const result =
+          await runLitecoinIntelligence({
             address,
 
             analysisPlan:

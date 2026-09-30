@@ -138,6 +138,7 @@ function adapterForFamily(
 
     case "bitcoin":
     case "dogecoin":
+    case "litecoin":
       return "utxo";
 
     case "tron":

@@ -7,6 +7,7 @@ const reports = [
   "src/components/EvmIntelligenceReport.tsx",
   "src/components/BitcoinIntelligenceReport.tsx",
   "src/components/DogecoinIntelligenceReport.tsx",
+  "src/components/LitecoinIntelligenceReport.tsx",
   "src/components/TronIntelligenceReport.tsx",
   "src/components/XrplIntelligenceReport.tsx",
 ];
