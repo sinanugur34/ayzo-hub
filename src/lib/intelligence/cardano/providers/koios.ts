@@ -110,6 +110,86 @@ function booleanValue(
     : null;
 }
 
+function timestampValue(
+  value: unknown
+): string | null {
+  const direct =
+    text(value);
+
+  if (direct) {
+    const trimmed =
+      direct.trim();
+
+    if (
+      /^\d+$/.test(
+        trimmed
+      )
+    ) {
+      const numeric =
+        Number(trimmed);
+
+      if (
+        Number.isFinite(
+          numeric
+        )
+      ) {
+        return new Date(
+          numeric * 1000
+        ).toISOString();
+      }
+    }
+
+    const parsed =
+      Date.parse(
+        trimmed
+      );
+
+    return Number.isNaN(
+      parsed
+    )
+      ? trimmed
+      : new Date(
+          parsed
+        ).toISOString();
+  }
+
+  const numeric =
+    numberValue(
+      value
+    );
+
+  if (numeric === null) {
+    return null;
+  }
+
+  return new Date(
+    numeric * 1000
+  ).toISOString();
+}
+
+function paymentAddress(
+  value: unknown
+): string | null {
+  const direct =
+    text(value);
+
+  if (direct) {
+    return direct;
+  }
+
+  const row =
+    record(value);
+
+  return (
+    text(
+      row?.bech32
+    ) ??
+    text(
+      row?.address
+    )
+  );
+}
+
 function mapStatus(
   status: number
 ) {
@@ -235,6 +315,9 @@ function parseAddressState(
 
     script:
       booleanValue(
+        row.script_address
+      ) ??
+      booleanValue(
         row.is_script
       ),
 
@@ -261,7 +344,10 @@ function parseTxSummary(
   }
 
   const blockTime =
-    text(
+    timestampValue(
+      row?.block_time
+    ) ??
+    timestampValue(
       row?.tx_timestamp
     );
 
@@ -352,11 +438,21 @@ function parseUtxo(
     inlineDatum:
       text(
         row.inline_datum
+      ) ??
+      text(
+        record(
+          row.inline_datum
+        )?.bytes
       ),
 
     referenceScriptHash:
       text(
         row.reference_script
+      ) ??
+      text(
+        record(
+          row.reference_script
+        )?.hash
       ),
   };
 }
@@ -412,7 +508,7 @@ function parseCanonical(
 
         return {
           address:
-            text(
+            paymentAddress(
               input.payment_addr
             ) ??
             text(
@@ -475,7 +571,7 @@ function parseCanonical(
 
         return {
           address:
-            text(
+            paymentAddress(
               output.payment_addr
             ) ??
             text(
@@ -514,8 +610,11 @@ function parseCanonical(
       ),
 
     blockTime:
-      text(
+      timestampValue(
         row.tx_timestamp
+      ) ??
+      timestampValue(
+        row.block_time
       ),
 
     feeLovelace:
@@ -602,6 +701,8 @@ function parseStake(
 async function requestJson(
   path:
     string,
+  body:
+    JsonRecord,
   deps:
     KoiosDependencies
 ): Promise<
@@ -642,6 +743,22 @@ async function requestJson(
       await deps.fetchImpl(
         `${deps.baseUrl}${path}`,
         {
+          method:
+            "POST",
+
+          headers: {
+            accept:
+              "application/json",
+
+            "content-type":
+              "application/json",
+          },
+
+          body:
+            JSON.stringify(
+              body
+            ),
+
           signal:
             controller.signal,
         }
@@ -774,7 +891,9 @@ export async function getCardanoKoiosEvidence(
   const run =
     async (
       path:
-        string
+        string,
+      body:
+        JsonRecord
     ) => {
       if (
         requestsUsed >=
@@ -798,13 +917,19 @@ export async function getCardanoKoiosEvidence(
 
       return requestJson(
         path,
+        body,
         deps
       );
     };
 
   const stateResult =
     await run(
-      `/address_info?_address=${encodeURIComponent(address)}`
+      "/address_info",
+      {
+        _addresses: [
+          address,
+        ],
+      }
     );
 
   if (!stateResult.ok) {
@@ -855,7 +980,12 @@ export async function getCardanoKoiosEvidence(
 
   const txResult =
     await run(
-      `/address_txs?_address=${encodeURIComponent(address)}`
+      "/address_txs",
+      {
+        _addresses: [
+          address,
+        ],
+      }
     );
 
   if (!txResult.ok) {
@@ -911,7 +1041,15 @@ export async function getCardanoKoiosEvidence(
 
   const utxoResult =
     await run(
-      `/address_utxos?_address=${encodeURIComponent(address)}`
+      "/address_utxos",
+      {
+        _addresses: [
+          address,
+        ],
+
+        _extended:
+          true,
+      }
     );
 
   const utxos =
@@ -964,7 +1102,18 @@ export async function getCardanoKoiosEvidence(
 
     const txResult =
       await run(
-        `/tx_info?_tx_hashes=${encodeURIComponent(tx.transactionHash)}`
+        "/tx_info",
+        {
+          _tx_hashes: [
+            tx.transactionHash,
+          ],
+
+          _inputs:
+            true,
+
+          _assets:
+            true,
+        }
       );
 
     if (!txResult.ok) {
@@ -1002,7 +1151,13 @@ export async function getCardanoKoiosEvidence(
   ) {
     const stakeResult =
       await run(
-        `/account_info?_stake_address=${encodeURIComponent(addressState.stakeAddress)}`
+        "/account_info",
+        {
+          _stake_addresses: [
+            addressState
+              .stakeAddress,
+          ],
+        }
       );
 
     if (stakeResult.ok) {
