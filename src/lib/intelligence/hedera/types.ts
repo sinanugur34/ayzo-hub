@@ -3,7 +3,8 @@ import type {
 } from "@/lib/analysisDepthPolicy";
 
 export type HederaProviderId =
-  | "hedera-mirror-public";
+  | "hedera-mirror-public"
+  | "hedera-hgraph";
 
 export type HederaProviderErrorCode =
   | "INVALID_ACCOUNT"

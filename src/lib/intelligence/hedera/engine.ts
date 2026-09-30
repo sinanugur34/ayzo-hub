@@ -17,8 +17,8 @@ import {
 } from "./address";
 
 import {
-  getHederaMirrorEvidence,
-} from "./provider";
+  getResilientHederaMirrorEvidence,
+} from "./resilientProvider";
 
 import {
   getHederaSpecialistEvidence,
@@ -184,7 +184,7 @@ export type HederaEngineDependencies = {
 const DEFAULT_DEPS:
   HederaEngineDependencies = {
     loadEvidence:
-      getHederaMirrorEvidence,
+      getResilientHederaMirrorEvidence,
 
     loadSpecialist:
       getHederaSpecialistEvidence,

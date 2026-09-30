@@ -53,6 +53,13 @@ export type HederaProviderDependencies = {
 
   timeoutMs:
     number;
+
+  apiKey?:
+    string | null;
+
+  providerId?:
+    "hedera-mirror-public" |
+    "hedera-hgraph";
 };
 
 const DEFAULT_DEPENDENCIES:
@@ -566,6 +573,14 @@ async function request(
       await deps.fetchImpl(
         url,
         {
+          headers:
+            deps.apiKey
+              ? {
+                  "X-API-KEY":
+                    deps.apiKey,
+                }
+              : undefined,
+
           signal:
             controller.signal,
         }
@@ -747,6 +762,7 @@ export async function getHederaMirrorEvidence(
         false,
 
       providerId:
+        deps.providerId ??
         "hedera-mirror-public",
 
       latencyMs:
@@ -784,6 +800,7 @@ export async function getHederaMirrorEvidence(
         false,
 
       providerId:
+        deps.providerId ??
         "hedera-mirror-public",
 
       latencyMs:
@@ -856,6 +873,7 @@ export async function getHederaMirrorEvidence(
         false,
 
       providerId:
+        deps.providerId ??
         "hedera-mirror-public",
 
       latencyMs:
