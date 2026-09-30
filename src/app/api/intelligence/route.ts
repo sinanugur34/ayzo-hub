@@ -650,6 +650,33 @@ export async function POST(request: Request) {
         );
       }
     }
+
+    /*
+     * Network families may be registered as
+     * development before their production
+     * intelligence engines are connected.
+     *
+     * resolveIntelligenceNetwork() normally
+     * blocks those networks before this point.
+     * This fallback keeps the route total and
+     * prevents accidental partial exposure if a
+     * registry status is changed prematurely.
+     */
+    return Response.json(
+      {
+        ok: false,
+        code:
+          "NETWORK_NOT_AVAILABLE",
+        error:
+          `${resolution.network.name} intelligence engine is not connected yet.`,
+        network:
+          resolution.networkId,
+      },
+      {
+        status: 503,
+      }
+    );
+
   } catch {
     if (
       !isDevelopmentTestRequest &&

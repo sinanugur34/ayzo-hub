@@ -25,6 +25,11 @@ import {
   type MobileQuotaStatus,
 } from "./mobileQuota";
 
+import {
+  getMobileNetworkSupport,
+  isMobileAnalysisNetworkLive,
+} from "./mobileNetworkSupport";
+
 export type MobileAnalysisResult = {
   networkId: NetworkId;
   address: string;
@@ -185,10 +190,21 @@ export async function detectMobileAddressNetwork({
     return null;
   }
 
-  return resolveSelectedNetworkForAddress(
-    selectedNetworkId,
-    detected as AddressKind
-  );
+  const resolved =
+    resolveSelectedNetworkForAddress(
+      selectedNetworkId,
+      detected as AddressKind
+    );
+
+  if (!resolved) {
+    return null;
+  }
+
+  return isMobileAnalysisNetworkLive(
+    resolved
+  )
+    ? resolved
+    : null;
 }
 
 export async function analyzeMobileAddress({
@@ -206,6 +222,30 @@ export async function analyzeMobileAddress({
       "Enter a wallet, token or contract address."
     );
   }
+
+  const support =
+    getMobileNetworkSupport(
+      networkId
+    );
+
+  if (
+    !support.analysisEnabled
+  ) {
+    throw new MobileAnalysisError({
+      message:
+        `${support.name} mobile intelligence is not live yet.`,
+      status:
+        503,
+      code:
+        "NETWORK_NOT_AVAILABLE",
+    });
+  }
+
+  /*
+   * Mobile network engine is not ready unless
+   * both the canonical registry and mobile
+   * support gate allow analysis.
+   */
 
   const authHeaders =
     await getMobileAuthHeaders();

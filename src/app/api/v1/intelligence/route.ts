@@ -748,6 +748,25 @@ export async function POST(
         );
       }
     }
+
+    /*
+     * Development-registered network families
+     * remain unavailable until their native
+     * production engines are connected.
+     */
+    return json(
+      {
+        ok: false,
+        code:
+          "NETWORK_NOT_AVAILABLE",
+        error:
+          `${resolution.network.name} intelligence engine is not connected yet.`,
+        network:
+          resolution.networkId,
+      },
+      503
+    );
+
   } catch {
     if (
       quota &&

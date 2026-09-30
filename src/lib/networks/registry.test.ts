@@ -7,11 +7,11 @@ import {
 } from "./registry";
 
 test(
-  "keeps seventeen registered networks live",
+  "keeps twenty-two registered networks with seventeen currently live",
   () => {
     assert.equal(
       NETWORK_IDS.length,
-      17
+      22
     );
 
     const liveNetworkCount =
@@ -26,6 +26,23 @@ test(
       liveNetworkCount,
       17
     );
+
+    for (
+      const networkId of [
+        "litecoin",
+        "sui",
+        "ton",
+        "hyperliquid",
+        "stellar",
+      ] as const
+    ) {
+      assert.equal(
+        NETWORKS[
+          networkId
+        ].status,
+        "development"
+      );
+    }
 
     assert.equal(
       NETWORKS.solana.status,
