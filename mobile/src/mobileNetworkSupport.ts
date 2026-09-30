@@ -13,7 +13,9 @@ export type MobileAnalysisAdapterId =
   | "sui"
   | "ton"
   | "hyperliquid"
-  | "stellar";
+  | "stellar"
+  | "cardano"
+  | "aptos";
 
 /*
  * Exhaustive mapping.
@@ -91,6 +93,12 @@ export const MOBILE_NETWORK_ADAPTERS:
 
   stellar:
     "stellar",
+
+  cardano:
+    "cardano",
+
+  aptos:
+    "aptos",
 };
 
 /*
@@ -132,6 +140,8 @@ const MOBILE_ENGINE_READY =
     "hyperliquid",
     "tron",
     "xrp",
+    "cardano",
+    "aptos",
   ]);
 
 export function getMobileNetworkSupport(

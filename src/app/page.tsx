@@ -18,6 +18,8 @@ import LitecoinIntelligenceReport from "@/components/LitecoinIntelligenceReport"
 import SuiIntelligenceReport from "@/components/SuiIntelligenceReport";
 import TonIntelligenceReport from "@/components/TonIntelligenceReport";
 import StellarIntelligenceReport from "@/components/StellarIntelligenceReport";
+import CardanoIntelligenceReport from "@/components/CardanoIntelligenceReport";
+import AptosIntelligenceReport from "@/components/AptosIntelligenceReport";
 import HyperliquidIntelligenceReport from "@/components/HyperliquidIntelligenceReport";
 import TronIntelligenceReport from "@/components/TronIntelligenceReport";
 import XrplIntelligenceReport from "@/components/XrplIntelligenceReport";
@@ -44,6 +46,14 @@ import {
   NETWORKS,
   NETWORK_IDS,
 } from "@/lib/networks/registry";
+
+import {
+  isCardanoPaymentAddress,
+} from "@/lib/intelligence/cardano/address";
+
+import {
+  normalizeAptosAddress,
+} from "@/lib/intelligence/aptos/address";
 
 const LIVE_NETWORKS =
   NETWORK_IDS.filter(
@@ -335,6 +345,28 @@ export default function Home() {
     );
 
   const [
+    cardanoAnalysis,
+    setCardanoAnalysis,
+  ] =
+    useState<{
+      address:
+        string;
+    } | null>(
+      null
+    );
+
+  const [
+    aptosAnalysis,
+    setAptosAnalysis,
+  ] =
+    useState<{
+      address:
+        string;
+    } | null>(
+      null
+    );
+
+  const [
     hyperliquidAnalysis,
     setHyperliquidAnalysis,
   ] =
@@ -397,6 +429,14 @@ export default function Home() {
     );
 
     setStellarAnalysis(
+      null
+    );
+
+    setCardanoAnalysis(
+      null
+    );
+
+    setAptosAnalysis(
       null
     );
     setHyperliquidAnalysis(
@@ -566,6 +606,28 @@ export default function Home() {
               return;
             }
 
+            if (
+              network ===
+                "aptos" &&
+              normalizeAptosAddress(
+                value
+              ) &&
+              (
+                result.network ===
+                  "evm" ||
+                result.network ===
+                  "sui"
+              )
+            ) {
+              /*
+               * Preserve explicit Aptos selection for
+               * ambiguous 0x hexadecimal account forms.
+               * Aptos is never auto-selected from generic
+               * 0x input.
+               */
+              return;
+            }
+
             let detectedNetwork:
               LiveAnalysisNetworkId | null =
                 null;
@@ -711,6 +773,94 @@ export default function Home() {
           : {}),
       }
     );
+
+    if (
+      network ===
+        "cardano" ||
+      isCardanoPaymentAddress(
+        value
+      )
+    ) {
+      if (
+        !isCardanoPaymentAddress(
+          value
+        )
+      ) {
+        setIsValid(
+          false
+        );
+
+        setMessage(
+          "This does not look like a valid Cardano mainnet payment address."
+        );
+
+        return;
+      }
+
+      if (
+        network !==
+          "cardano"
+      ) {
+        setNetwork(
+          "cardano"
+        );
+      }
+
+      setIsValid(
+        true
+      );
+
+      setMessage(
+        network ===
+          "cardano"
+          ? "Cardano address accepted. AYZO intelligence is running."
+          : "Cardano address detected automatically. AYZO intelligence is running."
+      );
+
+      setCardanoAnalysis({
+        address:
+          value.toLowerCase(),
+      });
+
+      return;
+    }
+
+    if (
+      network ===
+        "aptos"
+    ) {
+      const normalizedAptos =
+        normalizeAptosAddress(
+          value
+        );
+
+      if (!normalizedAptos) {
+        setIsValid(
+          false
+        );
+
+        setMessage(
+          "This does not look like a valid Aptos account address."
+        );
+
+        return;
+      }
+
+      setIsValid(
+        true
+      );
+
+      setMessage(
+        "Aptos account accepted. AYZO intelligence is running."
+      );
+
+      setAptosAnalysis({
+        address:
+          normalizedAptos,
+      });
+
+      return;
+    }
 
     if (
       network ===
@@ -1296,6 +1446,10 @@ export default function Home() {
       null ||
     stellarAnalysis !==
       null ||
+    cardanoAnalysis !==
+      null ||
+    aptosAnalysis !==
+      null ||
     hyperliquidAnalysis !==
       null ||
     tronAnalysis !==
@@ -1371,6 +1525,8 @@ export default function Home() {
     suiAnalysis,
     tonAnalysis,
     stellarAnalysis,
+    cardanoAnalysis,
+    aptosAnalysis,
     hyperliquidAnalysis,
     tronAnalysis,
     xrpAnalysis,
@@ -1938,6 +2094,42 @@ export default function Home() {
                 }
                 address={
                   stellarAnalysis.address
+                }
+              />
+            </AnalysisWorkspaceFrame>
+          </section>
+        )}
+
+        {cardanoAnalysis && (
+          <section
+            id="analysis-result"
+            className="mt-12 scroll-mt-4 w-[calc(100vw-16px)] max-w-none shrink-0 self-center"
+          >
+            <AnalysisWorkspaceFrame>
+              <CardanoIntelligenceReport
+                key={
+                  cardanoAnalysis.address
+                }
+                address={
+                  cardanoAnalysis.address
+                }
+              />
+            </AnalysisWorkspaceFrame>
+          </section>
+        )}
+
+        {aptosAnalysis && (
+          <section
+            id="analysis-result"
+            className="mt-12 scroll-mt-4 w-[calc(100vw-16px)] max-w-none shrink-0 self-center"
+          >
+            <AnalysisWorkspaceFrame>
+              <AptosIntelligenceReport
+                key={
+                  aptosAnalysis.address
+                }
+                address={
+                  aptosAnalysis.address
                 }
               />
             </AnalysisWorkspaceFrame>

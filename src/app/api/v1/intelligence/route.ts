@@ -50,6 +50,22 @@ import {
 } from "@/lib/intelligence/sui/engine";
 
 import {
+  isCardanoPaymentAddress,
+} from "@/lib/intelligence/cardano/address";
+
+import {
+  runCardanoIntelligence,
+} from "@/lib/intelligence/cardano/engine";
+
+import {
+  normalizeAptosAddress,
+} from "@/lib/intelligence/aptos/address";
+
+import {
+  runAptosIntelligence,
+} from "@/lib/intelligence/aptos/engine";
+
+import {
   isTonAddress,
 } from "@/lib/intelligence/ton/address";
 
@@ -506,6 +522,20 @@ export async function POST(
         !isXrplClassicAddress(
           address
         )
+      ) ||
+      (
+        resolution.engine ===
+          "cardano" &&
+        !isCardanoPaymentAddress(
+          address
+        )
+      ) ||
+      (
+        resolution.engine ===
+          "aptos" &&
+        !normalizeAptosAddress(
+          address
+        )
       );
 
     if (invalid) {
@@ -810,6 +840,38 @@ export async function POST(
       case "sui": {
         const result =
           await runSuiIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "cardano": {
+        const result =
+          await runCardanoIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "aptos": {
+        const result =
+          await runAptosIntelligence({
             address,
 
             analysisPlan:

@@ -187,3 +187,33 @@ test(
     );
   }
 );
+
+test(
+  "maps Cardano deep native evidence to all applicable product tools",
+  () => {
+    assert.deepEqual(
+      toolIds("cardano"),
+      [
+        "tokenAnalysis",
+        "walletAnalysis",
+        "fundingTrace",
+        "connections",
+      ]
+    );
+  }
+);
+
+test(
+  "maps Aptos deep native evidence to all applicable product tools",
+  () => {
+    assert.deepEqual(
+      toolIds("aptos"),
+      [
+        "tokenAnalysis",
+        "walletAnalysis",
+        "fundingTrace",
+        "connections",
+      ]
+    );
+  }
+);

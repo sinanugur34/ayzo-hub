@@ -9,6 +9,8 @@ export type AskAyzoAdapterId =
   | "sui"
   | "ton"
   | "stellar"
+  | "cardano"
+  | "aptos"
   | "hyperliquid"
   | "tron"
   | "xrpl"
@@ -100,6 +102,28 @@ const CAPABILITIES:
     "transaction-cost",
   ],
 
+  cardano: [
+    "summary",
+    "coverage",
+    "relationships",
+    "funding",
+    "transaction-history",
+    "canonical-transaction",
+    "transaction-value",
+    "transaction-cost",
+  ],
+
+  aptos: [
+    "summary",
+    "coverage",
+    "relationships",
+    "funding",
+    "transaction-history",
+    "transaction-value",
+    "execution",
+    "resource-usage",
+  ],
+
   tron: [
     "summary",
     "coverage",
@@ -172,6 +196,18 @@ const QUESTIONS:
     "What direct payment and funding relationships were observed?",
   ],
 
+  cardano: [
+    "What are the most important Cardano findings?",
+    "What native assets and staking evidence were observed?",
+    "What explicit counterparties and funding evidence were observed?",
+  ],
+
+  aptos: [
+    "What are the most important Aptos findings?",
+    "What Move resources, Fungible Assets and objects were observed?",
+    "What explicit transfer counterparties and funding evidence were observed?",
+  ],
+
   tron: [
     "What was the transaction fee?",
     "How much energy was used?",
@@ -217,6 +253,12 @@ function adapterForFamily(
 
     case "stellar":
       return "stellar";
+
+    case "cardano":
+      return "cardano";
+
+    case "aptos":
+      return "aptos";
 
     case "tron":
       return "tron";

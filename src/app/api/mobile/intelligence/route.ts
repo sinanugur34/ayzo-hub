@@ -52,6 +52,22 @@ import {
 } from "@/lib/intelligence/sui/engine";
 
 import {
+  isCardanoPaymentAddress,
+} from "@/lib/intelligence/cardano/address";
+
+import {
+  runCardanoIntelligence,
+} from "@/lib/intelligence/cardano/engine";
+
+import {
+  normalizeAptosAddress,
+} from "@/lib/intelligence/aptos/address";
+
+import {
+  runAptosIntelligence,
+} from "@/lib/intelligence/aptos/engine";
+
+import {
   isTonAddress,
 } from "@/lib/intelligence/ton/address";
 
@@ -491,6 +507,48 @@ export async function POST(
 
     if (
       resolution.engine ===
+        "aptos" &&
+      !normalizeAptosAddress(
+        address
+      )
+    ) {
+      return json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid Aptos account address.",
+          network:
+            resolution.networkId,
+        },
+        400
+      );
+    }
+
+    if (
+      resolution.engine ===
+        "cardano" &&
+      !isCardanoPaymentAddress(
+        address
+      )
+    ) {
+      return json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid Cardano mainnet payment address.",
+          network:
+            resolution.networkId,
+        },
+        400
+      );
+    }
+
+    if (
+      resolution.engine ===
         "ton" &&
       !isTonAddress(
         address
@@ -920,6 +978,60 @@ export async function POST(
       case "sui": {
         const result =
           await runSuiIntelligence({
+            address,
+
+            analysisPlan:
+              entitlement.planId,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
+        return json(
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
+          result.status
+        );
+      }
+
+      case "cardano": {
+        const result =
+          await runCardanoIntelligence({
+            address,
+
+            analysisPlan:
+              entitlement.planId,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
+        return json(
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
+          result.status
+        );
+      }
+
+      case "aptos": {
+        const result =
+          await runAptosIntelligence({
             address,
 
             analysisPlan:

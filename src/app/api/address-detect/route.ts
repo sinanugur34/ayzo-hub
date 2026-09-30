@@ -38,6 +38,10 @@ import {
   isXrplClassicAddress,
 } from "@/lib/intelligence/xrpl/address";
 
+import {
+  isCardanoMainnetAddress,
+} from "@/lib/intelligence/cardano/address";
+
 const EVM_ADDRESS =
   /^0x[0-9a-fA-F]{40}$/;
 
@@ -77,6 +81,7 @@ type DetectedNetwork =
   | "stellar"
   | "tron"
   | "xrp"
+  | "cardano"
   | "solana"
   | "evm"
   | null;
@@ -201,6 +206,13 @@ export async function POST(
   ) {
     network =
       "xrp";
+  } else if (
+    isCardanoMainnetAddress(
+      address
+    )
+  ) {
+    network =
+      "cardano";
   } else if (
     EVM_ADDRESS.test(
       address

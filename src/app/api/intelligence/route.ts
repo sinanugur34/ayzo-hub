@@ -45,6 +45,22 @@ import {
 } from "@/lib/intelligence/sui/engine";
 
 import {
+  isCardanoPaymentAddress,
+} from "@/lib/intelligence/cardano/address";
+
+import {
+  runCardanoIntelligence,
+} from "@/lib/intelligence/cardano/engine";
+
+import {
+  normalizeAptosAddress,
+} from "@/lib/intelligence/aptos/address";
+
+import {
+  runAptosIntelligence,
+} from "@/lib/intelligence/aptos/engine";
+
+import {
   isTonAddress,
 } from "@/lib/intelligence/ton/address";
 
@@ -303,6 +319,42 @@ export async function POST(request: Request) {
           ok: false,
           code: "INVALID_ADDRESS",
           error: "Invalid Sui address.",
+          network: resolution.networkId,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      resolution.engine ===
+        "aptos" &&
+      !normalizeAptosAddress(
+        address
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          code: "INVALID_ADDRESS",
+          error: "Invalid Aptos account address.",
+          network: resolution.networkId,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      resolution.engine ===
+        "cardano" &&
+      !isCardanoPaymentAddress(
+        address
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          code: "INVALID_ADDRESS",
+          error: "Invalid Cardano mainnet payment address.",
           network: resolution.networkId,
         },
         { status: 400 }
@@ -758,6 +810,60 @@ export async function POST(request: Request) {
       case "sui": {
         const result =
           await runSuiIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "cardano": {
+        const result =
+          await runCardanoIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "aptos": {
+        const result =
+          await runAptosIntelligence({
             address,
             analysisPlan,
           });

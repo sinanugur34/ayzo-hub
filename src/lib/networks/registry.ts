@@ -80,6 +80,22 @@ const STELLAR_CAPABILITIES = [
   "fundingProvenance",
 ] as const satisfies readonly NetworkCapability[];
 
+const CARDANO_CAPABILITIES = [
+  "assetVerification",
+  "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
+] as const satisfies readonly NetworkCapability[];
+
+const APTOS_CAPABILITIES = [
+  "assetVerification",
+  "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
+] as const satisfies readonly NetworkCapability[];
+
 export const NETWORKS = {
   solana: {
     id: "solana",
@@ -342,6 +358,30 @@ export const NETWORKS = {
     nativeCurrency: "XLM",
     explorerUrl: "https://stellar.expert/explorer/public",
     capabilities: STELLAR_CAPABILITIES,
+  },
+
+  cardano: {
+    id: "cardano",
+    name: "Cardano",
+    shortName: "ADA",
+    family: "cardano",
+    status: "live",
+    chainId: null,
+    nativeCurrency: "ADA",
+    explorerUrl: "https://cardanoscan.io",
+    capabilities: CARDANO_CAPABILITIES,
+  },
+
+  aptos: {
+    id: "aptos",
+    name: "Aptos",
+    shortName: "APT",
+    family: "aptos",
+    status: "live",
+    chainId: null,
+    nativeCurrency: "APT",
+    explorerUrl: "https://explorer.aptoslabs.com",
+    capabilities: APTOS_CAPABILITIES,
   },
 
 } as const satisfies Record<string, NetworkDefinition>;

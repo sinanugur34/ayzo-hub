@@ -61,15 +61,39 @@ test(
 );
 
 test(
-  "rejects unavailable or unknown networks",
+  "accepts Wave30 Cardano and Aptos SEO handoffs",
   () => {
-    assert.equal(
+    assert.deepEqual(
       parseSeoAnalysisPrefill(
         "?network=cardano&source=seo"
       ),
-      null
+      {
+        network:
+          "cardano",
+
+        source:
+          "seo",
+      }
     );
 
+    assert.deepEqual(
+      parseSeoAnalysisPrefill(
+        "?network=aptos&source=seo"
+      ),
+      {
+        network:
+          "aptos",
+
+        source:
+          "seo",
+      }
+    );
+  }
+);
+
+test(
+  "rejects unknown networks",
+  () => {
     assert.equal(
       parseSeoAnalysisPrefill(
         "?network=not-a-network&source=seo"
