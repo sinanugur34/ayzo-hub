@@ -6,6 +6,7 @@ export type AskAyzoAdapterId =
   | "solana"
   | "evm"
   | "utxo"
+  | "sui"
   | "tron"
   | "xrpl"
   | "generic";
@@ -60,6 +61,14 @@ const CAPABILITIES:
     "transaction-cost",
   ],
 
+  sui: [
+    "summary",
+    "coverage",
+    "relationships",
+    "funding",
+    "transaction-history",
+  ],
+
   tron: [
     "summary",
     "coverage",
@@ -107,6 +116,12 @@ const QUESTIONS:
     "What are the most important findings?",
   ],
 
+  sui: [
+    "What are the most important Sui findings?",
+    "What coin balances were observed?",
+    "What funding and relationship evidence was observed?",
+  ],
+
   tron: [
     "What was the transaction fee?",
     "How much energy was used?",
@@ -140,6 +155,9 @@ function adapterForFamily(
     case "dogecoin":
     case "litecoin":
       return "utxo";
+
+    case "sui":
+      return "sui";
 
     case "tron":
       return "tron";

@@ -11,6 +11,10 @@ import type {
 } from "../../src/lib/plans/types";
 
 import {
+  isSuiAddress,
+} from "../../src/lib/intelligence/sui/address";
+
+import {
   resolveSelectedNetworkForAddress,
   type AddressKind,
 } from "../../src/lib/networks/addressSelection";
@@ -178,6 +182,7 @@ export async function detectMobileAddressNetwork({
       "bitcoin",
       "dogecoin",
       "litecoin",
+      "sui",
       "tron",
       "xrp",
     ];
@@ -209,6 +214,24 @@ export async function detectMobileAddressNetwork({
      * remain authoritative.
      */
     return "litecoin";
+  }
+
+  if (
+    selectedNetworkId ===
+      "sui" &&
+    detected ===
+      "evm" &&
+    isSuiAddress(
+      trimmed
+    )
+  ) {
+    /*
+     * A shortened Sui address can have the same
+     * 20-byte 0x shape as EVM. Preserve explicit
+     * Sui selection instead of silently changing
+     * network semantics.
+     */
+    return "sui";
   }
 
   const resolved =

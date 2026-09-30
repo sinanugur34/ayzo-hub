@@ -57,6 +57,9 @@ const LITECOIN_CAPABILITIES = [
 
 const SUI_CAPABILITIES = [
   "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
 ] as const satisfies readonly NetworkCapability[];
 
 const TON_CAPABILITIES = [
@@ -292,7 +295,7 @@ export const NETWORKS = {
     name: "Sui",
     shortName: "SUI",
     family: "sui",
-    status: "development",
+    status: "live",
     chainId: null,
     nativeCurrency: "SUI",
     explorerUrl: "https://suivision.xyz",

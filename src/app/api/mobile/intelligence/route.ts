@@ -44,6 +44,14 @@ import {
 } from "@/lib/intelligence/litecoin/engine";
 
 import {
+  isSuiAddress,
+} from "@/lib/intelligence/sui/address";
+
+import {
+  runSuiIntelligence,
+} from "@/lib/intelligence/sui/engine";
+
+import {
   isTronAddress,
 } from "@/lib/intelligence/tron/address";
 
@@ -438,6 +446,27 @@ export async function POST(
 
     if (
       resolution.engine ===
+        "sui" &&
+      !isSuiAddress(
+        address
+      )
+    ) {
+      return json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid Sui address.",
+          network:
+            resolution.networkId,
+        },
+        400
+      );
+    }
+
+    if (
+      resolution.engine ===
         "xrpl" &&
       !isXrplClassicAddress(
         address
@@ -777,6 +806,33 @@ export async function POST(
       case "litecoin": {
         const result =
           await runLitecoinIntelligence({
+            address,
+
+            analysisPlan:
+              entitlement.planId,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
+        return json(
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
+          result.status
+        );
+      }
+
+      case "sui": {
+        const result =
+          await runSuiIntelligence({
             address,
 
             analysisPlan:

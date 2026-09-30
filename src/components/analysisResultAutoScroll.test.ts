@@ -9,7 +9,7 @@ const page =
   );
 
 test(
-  "all seven result-engine surfaces expose the result anchor",
+  "all eight result-engine surfaces expose the result anchor",
   () => {
     const anchors =
       page.match(
@@ -18,7 +18,7 @@ test(
 
     assert.equal(
       anchors.length,
-      7
+      8
     );
 
     for (
@@ -28,6 +28,7 @@ test(
         "bitcoinAnalysis",
         "dogecoinAnalysis",
         "litecoinAnalysis",
+        "suiAnalysis",
         "tronAnalysis",
         "xrpAnalysis",
       ]

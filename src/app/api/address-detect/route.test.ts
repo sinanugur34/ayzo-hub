@@ -203,3 +203,43 @@ test(
     );
   }
 );
+
+test(
+  "detects a distinct Sui address",
+  async () => {
+    const result =
+      await detect(
+        "0x1111111111111111111111111111111111111111111111111111111111111111"
+      );
+
+    assert.equal(
+      result.status,
+      200
+    );
+
+    assert.equal(
+      result.body.network,
+      "sui"
+    );
+  }
+);
+
+test(
+  "keeps ambiguous 20-byte 0x automatic detection on EVM",
+  async () => {
+    const result =
+      await detect(
+        "0x1111111111111111111111111111111111111111"
+      );
+
+    assert.equal(
+      result.status,
+      200
+    );
+
+    assert.equal(
+      result.body.network,
+      "evm"
+    );
+  }
+);

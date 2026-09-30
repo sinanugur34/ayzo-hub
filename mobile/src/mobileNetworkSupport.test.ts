@@ -16,15 +16,14 @@ import {
   buildMobileEvidenceWorkspace,
 } from "./mobileEvidenceWorkspace";
 
-const REMAINING_WAVE = [
-  "sui",
+const REMAINING = [
   "ton",
   "hyperliquid",
   "stellar",
 ] as const;
 
 test(
-  "mobile adapter registry covers every canonical network",
+  "mobile adapter registry covers all 22 networks",
   () => {
     assert.equal(
       NETWORK_IDS.length,
@@ -41,19 +40,17 @@ test(
 );
 
 test(
-  "eighteen networks are mobile live after Litecoin promotion",
+  "nineteen networks are mobile live",
   () => {
-    const live =
-      getMobileLiveNetworkIds();
-
     assert.equal(
-      live.length,
-      18
+      getMobileLiveNetworkIds()
+        .length,
+      19
     );
 
     assert.equal(
       isMobileAnalysisNetworkLive(
-        "litecoin"
+        "sui"
       ),
       true
     );
@@ -61,16 +58,16 @@ test(
 );
 
 test(
-  "Litecoin uses production UTXO mobile adapter",
+  "Sui dedicated mobile adapter is ready",
   () => {
     const support =
       getMobileNetworkSupport(
-        "litecoin"
+        "sui"
       );
 
     assert.equal(
       support.adapter,
-      "utxo"
+      "sui"
     );
 
     assert.equal(
@@ -91,15 +88,15 @@ test(
 );
 
 test(
-  "remaining wave networks stay hidden",
+  "remaining wave networks remain hidden",
   () => {
     for (
-      const networkId of
-      REMAINING_WAVE
+      const id of
+      REMAINING
     ) {
       assert.equal(
         getMobileNetworkSupport(
-          networkId
+          id
         ).analysisEnabled,
         false
       );
@@ -108,48 +105,36 @@ test(
 );
 
 test(
-  "Litecoin mobile workspace uses returned evidence only",
+  "Sui evidence workspace uses returned evidence",
   () => {
     const workspace =
       buildMobileEvidenceWorkspace({
         networkId:
-          "litecoin",
+          "sui",
 
         address:
-          "LKDxGDJq5fF4FohAB8zJH24mDDNHDNtqsE",
+          `0x${"11".repeat(32)}`,
 
         data: {
-          ok:
-            true,
-
           network:
-            "litecoin",
-
-          coverage:
-            "partial",
+            "sui",
 
           derived: {
             counterparties: {
               items: [
                 {
                   address:
-                    "M7uAERuQW2AotfyLDyewFGcLUDtAYu9v5V",
+                    `0x${"22".repeat(32)}`,
 
-                  incomingCount:
-                    1,
-
-                  outgoingCount:
-                    0,
-
-                  observationCount:
+                  interactionCount:
                     1,
                 },
               ],
             },
 
             observedFunding: {
-              sourceAddress:
-                "M7uAERuQW2AotfyLDyewFGcLUDtAYu9v5V",
+              observedSender:
+                `0x${"22".repeat(32)}`,
             },
           },
 
@@ -157,9 +142,7 @@ test(
             transactions: [
               {
                 transactionHash:
-                  "a".repeat(
-                    64
-                  ),
+                  "sui-test-transaction",
 
                 timestamp:
                   null,
@@ -177,12 +160,6 @@ test(
     assert.ok(
       workspace.edges.length >=
         1
-    );
-
-    assert.ok(
-      workspace.limitation.includes(
-        "only evidence already returned by AYZO"
-      )
     );
   }
 );

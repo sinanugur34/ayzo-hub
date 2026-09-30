@@ -1438,6 +1438,119 @@ export function buildMobileEvidenceWorkspace({
   }
 
   /*
+   * Sui:
+   * Use only explicit affected-address relationship and
+   * bounded observed inbound-SUI sender evidence already
+   * returned by the AYZO backend.
+   */
+  if (
+    networkId ===
+    "sui"
+  ) {
+    const derived =
+      recordChild(
+        root,
+        "derived"
+      );
+
+    const counterparties =
+      recordChild(
+        derived,
+        "counterparties"
+      );
+
+    for (
+      const item of
+      arrayChild(
+        counterparties,
+        "items"
+      )
+    ) {
+      const counterparty =
+        stringValue(
+          item.address
+        );
+
+      if (!counterparty) {
+        continue;
+      }
+
+      const counterpartyId =
+        addWallet(
+          counterparty,
+          `${
+            numberValue(
+              item
+                .interactionCount
+            ) ??
+            1
+          } affected-address signal(s)`
+        );
+
+      if (!counterpartyId) {
+        continue;
+      }
+
+      addEdge({
+        id:
+          `sui:${counterpartyId}`,
+
+        source:
+          rootId,
+
+        target:
+          counterpartyId,
+
+        label:
+          "Observed Sui relationship",
+
+        direction:
+          "observed",
+      });
+    }
+
+    const funding =
+      recordChild(
+        derived,
+        "observedFunding"
+      );
+
+    const sender =
+      stringValue(
+        funding
+          ?.observedSender
+      );
+
+    if (sender) {
+      const senderId =
+        addWallet(
+          sender,
+          "Observed sender on bounded inbound SUI evidence",
+          "funding"
+        );
+
+      if (senderId) {
+        addEdge({
+          id:
+            `sui-funding:${senderId}`,
+
+          source:
+            senderId,
+
+          target:
+            rootId,
+
+          label:
+            "Observed inbound SUI",
+
+          direction:
+            "forward",
+        });
+      }
+    }
+  }
+
+  /*
    * TRON:
    * explicit canonical owner/destination
    * relationships and observed inbound funding.

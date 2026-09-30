@@ -34,6 +34,12 @@ export type HistoricalSnapshotV1 = {
     latestTransactionTimestamp?: string | null;
     latestBlockHeight?: number | null;
 
+    nativeBalanceRaw?: string | null;
+    assetBalanceTypeCount?: number | null;
+    ownedObjectCount?: number | null;
+    objectCreatedCount?: number | null;
+    objectDeletedCount?: number | null;
+
     moduleTotal?: number | null;
     moduleComplete?: number | null;
     moduleLimited?: number | null;
@@ -578,6 +584,150 @@ function utxoSnapshot(
   };
 }
 
+function suiSnapshot(
+  network:
+    string,
+  root:
+    JsonRecord
+): HistoricalSnapshotV1 {
+  const account =
+    record(
+      root.account
+    );
+
+  const history =
+    record(
+      root.history
+    );
+
+  const transactions =
+    Array.isArray(
+      history?.transactions
+    )
+      ? history.transactions
+      : [];
+
+  const latest =
+    record(
+      transactions[0]
+    );
+
+  const balances =
+    Array.isArray(
+      root.balances
+    )
+      ? root.balances
+      : [];
+
+  const objects =
+    Array.isArray(
+      root.ownedObjects
+    )
+      ? root.ownedObjects
+      : [];
+
+  const derived =
+    record(
+      root.derived
+    );
+
+  const flow =
+    record(
+      derived?.flow
+    );
+
+  const counterparties =
+    record(
+      derived?.counterparties
+    );
+
+  const objectActivity =
+    record(
+      derived?.objectActivity
+    );
+
+  return {
+    version:
+      1,
+
+    capturedAt:
+      new Date().toISOString(),
+
+    network,
+
+    coverage:
+      text(
+        root.coverage
+      ),
+
+    subjectKind:
+      "wallet",
+
+    metrics: {
+      nativeBalanceRaw:
+        text(
+          account
+            ?.suiBalanceMist
+        ),
+
+      assetBalanceTypeCount:
+        balances.length,
+
+      ownedObjectCount:
+        objects.length,
+
+      objectCreatedCount:
+        numberValue(
+          objectActivity
+            ?.created
+        ),
+
+      objectDeletedCount:
+        numberValue(
+          objectActivity
+            ?.deleted
+        ),
+
+      transactionCount:
+        transactions.length,
+
+      latestTransactionHash:
+        text(
+          latest
+            ?.transactionHash
+        ),
+
+      latestTransactionTimestamp:
+        text(
+          latest
+            ?.timestamp
+        ),
+
+      relationshipsDetected:
+        numberValue(
+          counterparties
+            ?.count
+        ),
+
+      incomingTransfersDetected:
+        numberValue(
+          flow
+            ?.incomingTransactionCount
+        ),
+    },
+
+    modules:
+      moduleSnapshot(
+        root.modules
+      ),
+
+    findings:
+      findingSnapshot(
+        root.findings
+      ),
+  };
+}
+
 function tronSnapshot(
   network:
     string,
@@ -696,6 +846,16 @@ export function buildHistoricalSnapshot(
     "solana"
   ) {
     return solanaSnapshot(
+      network,
+      root
+    );
+  }
+
+  if (
+    network ===
+      "sui"
+  ) {
+    return suiSnapshot(
       network,
       root
     );

@@ -15,6 +15,7 @@ import {
 import BitcoinIntelligenceReport from "@/components/BitcoinIntelligenceReport";
 import DogecoinIntelligenceReport from "@/components/DogecoinIntelligenceReport";
 import LitecoinIntelligenceReport from "@/components/LitecoinIntelligenceReport";
+import SuiIntelligenceReport from "@/components/SuiIntelligenceReport";
 import TronIntelligenceReport from "@/components/TronIntelligenceReport";
 import XrplIntelligenceReport from "@/components/XrplIntelligenceReport";
 import EvmIntelligenceReport from "@/components/EvmIntelligenceReport";
@@ -63,6 +64,9 @@ const DOGECOIN_MAINNET_SHAPE =
 const LITECOIN_MAINNET_SHAPE =
   /^(?:(?:L|M|3)[1-9A-HJ-NP-Za-km-z]{25,34}|ltc1[ac-hj-np-z02-9]{6,87})$/i;
 
+const SUI_ADDRESS_SHAPE =
+  /^0x[0-9a-fA-F]{1,64}$/;
+
 const TRON_ADDRESS_SHAPE =
   /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
 
@@ -109,6 +113,7 @@ type AddressDetectionResponse =
         | "bitcoin"
         | "dogecoin"
         | "litecoin"
+        | "sui"
         | "tron"
         | "xrp"
         | "solana"
@@ -294,6 +299,17 @@ export default function Home() {
     );
 
   const [
+    suiAnalysis,
+    setSuiAnalysis,
+  ] =
+    useState<{
+      address:
+        string;
+    } | null>(
+      null
+    );
+
+  const [
     tronAnalysis,
     setTronAnalysis,
   ] =
@@ -333,6 +349,10 @@ export default function Home() {
     );
 
     setLitecoinAnalysis(
+      null
+    );
+
+    setSuiAnalysis(
       null
     );
 
@@ -481,6 +501,24 @@ export default function Home() {
               return;
             }
 
+            if (
+              network ===
+                "sui" &&
+              result.network ===
+                "evm" &&
+              SUI_ADDRESS_SHAPE.test(
+                value
+              )
+            ) {
+              /*
+               * Preserve explicit Sui selection for
+               * structurally ambiguous 20-byte 0x
+               * addresses. Server-side Sui validation
+               * remains authoritative.
+               */
+              return;
+            }
+
             let detectedNetwork:
               LiveAnalysisNetworkId | null =
                 null;
@@ -534,6 +572,10 @@ export default function Home() {
             );
 
             setLitecoinAnalysis(
+              null
+            );
+
+            setSuiAnalysis(
               null
             );
 
@@ -895,6 +937,52 @@ export default function Home() {
       return;
     }
 
+    const isSuiAddressShape =
+      SUI_ADDRESS_SHAPE.test(
+        value
+      );
+
+    const isDistinctSuiShape =
+      isSuiAddressShape &&
+      value.length !==
+        42;
+
+    if (
+      isSuiAddressShape &&
+      (
+        network ===
+          "sui" ||
+        isDistinctSuiShape
+      )
+    ) {
+      if (
+        network !==
+          "sui"
+      ) {
+        setNetwork(
+          "sui"
+        );
+      }
+
+      setIsValid(
+        true
+      );
+
+      setMessage(
+        network ===
+          "sui"
+          ? "Sui address accepted. AYZO intelligence is running."
+          : "Sui address detected automatically. AYZO intelligence is running."
+      );
+
+      setSuiAnalysis({
+        address:
+          value,
+      });
+
+      return;
+    }
+
     const isEvmAddress =
       EVM_ADDRESS.test(
         value
@@ -1084,6 +1172,8 @@ export default function Home() {
       null ||
     litecoinAnalysis !==
       null ||
+    suiAnalysis !==
+      null ||
     tronAnalysis !==
       null ||
     xrpAnalysis !==
@@ -1154,6 +1244,7 @@ export default function Home() {
     bitcoinAnalysis,
     dogecoinAnalysis,
     litecoinAnalysis,
+    suiAnalysis,
     tronAnalysis,
     xrpAnalysis,
   ]);
@@ -1650,6 +1741,24 @@ export default function Home() {
                 litecoinAnalysis.address
               }
             />
+            </AnalysisWorkspaceFrame>
+          </section>
+        )}
+
+        {suiAnalysis && (
+          <section
+            id="analysis-result"
+            className="mt-12 scroll-mt-4 w-[calc(100vw-16px)] max-w-none shrink-0 self-center"
+          >
+            <AnalysisWorkspaceFrame>
+              <SuiIntelligenceReport
+                key={
+                  suiAnalysis.address
+                }
+                address={
+                  suiAnalysis.address
+                }
+              />
             </AnalysisWorkspaceFrame>
           </section>
         )}

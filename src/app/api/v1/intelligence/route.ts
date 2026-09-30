@@ -42,6 +42,14 @@ import {
 } from "@/lib/intelligence/litecoin/engine";
 
 import {
+  isSuiAddress,
+} from "@/lib/intelligence/sui/address";
+
+import {
+  runSuiIntelligence,
+} from "@/lib/intelligence/sui/engine";
+
+import {
   isTronAddress,
 } from "@/lib/intelligence/tron/address";
 
@@ -435,6 +443,13 @@ export async function POST(
       ) ||
       (
         resolution.engine ===
+          "sui" &&
+        !isSuiAddress(
+          address
+        )
+      ) ||
+      (
+        resolution.engine ===
           "tron" &&
         !isTronAddress(
           address
@@ -734,6 +749,22 @@ export async function POST(
       case "litecoin": {
         const result =
           await runLitecoinIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "sui": {
+        const result =
+          await runSuiIntelligence({
             address,
 
             analysisPlan:

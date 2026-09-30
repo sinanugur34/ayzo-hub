@@ -84,6 +84,20 @@ test(
 );
 
 test(
+  "maps Sui native evidence to wallet funding and connections tools",
+  () => {
+    assert.deepEqual(
+      toolIds("sui"),
+      [
+        "walletAnalysis",
+        "fundingTrace",
+        "connections",
+      ]
+    );
+  }
+);
+
+test(
   "returns every currently live canonical network",
   () => {
     const liveNetworks =

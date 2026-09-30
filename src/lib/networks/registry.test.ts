@@ -7,7 +7,7 @@ import {
 } from "./registry";
 
 test(
-  "keeps twenty-two registered networks with eighteen currently live",
+  "keeps twenty-two registered networks with nineteen currently live",
   () => {
     assert.equal(
       NETWORK_IDS.length,
@@ -24,7 +24,7 @@ test(
 
     assert.equal(
       liveNetworkCount,
-      18
+      19
     );
 
     assert.equal(
@@ -32,9 +32,13 @@ test(
       "live"
     );
 
+    assert.equal(
+      NETWORKS.sui.status,
+      "live"
+    );
+
     for (
       const networkId of [
-        "sui",
         "ton",
         "hyperliquid",
         "stellar",
@@ -363,6 +367,51 @@ test(
 
     assert.ok(
       NETWORKS.litecoin
+        .capabilities
+        .includes(
+          "fundingProvenance"
+        )
+    );
+  }
+);
+
+
+test(
+  "keeps Sui live after GraphQL quality gates",
+  () => {
+    assert.equal(
+      NETWORKS.sui.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.sui.family,
+      "sui"
+    );
+
+    assert.equal(
+      NETWORKS.sui.nativeCurrency,
+      "SUI"
+    );
+
+    assert.ok(
+      NETWORKS.sui
+        .capabilities
+        .includes(
+          "addressFlows"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.sui
+        .capabilities
+        .includes(
+          "walletRelationships"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.sui
         .capabilities
         .includes(
           "fundingProvenance"
