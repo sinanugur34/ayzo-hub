@@ -96,6 +96,20 @@ const APTOS_CAPABILITIES = [
   "fundingProvenance",
 ] as const satisfies readonly NetworkCapability[];
 
+const NEAR_CAPABILITIES = [
+  "assetVerification",
+  "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+] as const satisfies readonly NetworkCapability[];
+
+const HEDERA_CAPABILITIES = [
+  "assetVerification",
+  "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+] as const satisfies readonly NetworkCapability[];
+
 export const NETWORKS = {
   solana: {
     id: "solana",
@@ -382,6 +396,30 @@ export const NETWORKS = {
     nativeCurrency: "APT",
     explorerUrl: "https://explorer.aptoslabs.com",
     capabilities: APTOS_CAPABILITIES,
+  },
+
+  near: {
+    id: "near",
+    name: "NEAR",
+    shortName: "NEAR",
+    family: "near",
+    status: "development",
+    chainId: null,
+    nativeCurrency: "NEAR",
+    explorerUrl: "https://nearblocks.io",
+    capabilities: NEAR_CAPABILITIES,
+  },
+
+  hedera: {
+    id: "hedera",
+    name: "Hedera",
+    shortName: "HBAR",
+    family: "hedera",
+    status: "development",
+    chainId: null,
+    nativeCurrency: "HBAR",
+    explorerUrl: "https://hashscan.io/mainnet",
+    capabilities: HEDERA_CAPABILITIES,
   },
 
 } as const satisfies Record<string, NetworkDefinition>;

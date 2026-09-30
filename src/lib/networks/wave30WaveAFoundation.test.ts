@@ -11,13 +11,8 @@ import {
 } from "../intelligence/router";
 
 test(
-  "Wave30 A expands the canonical registry from 22 to 24 networks",
+  "Wave30 A preserves twenty-four accepted live networks after later development registration",
   () => {
-    assert.equal(
-      NETWORK_IDS.length,
-      24
-    );
-
     const live =
       NETWORK_IDS.filter(
         id =>
@@ -29,6 +24,16 @@ test(
     assert.equal(
       live.length,
       24
+    );
+
+    assert.equal(
+      NETWORKS.cardano.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.aptos.status,
+      "live"
     );
   }
 );

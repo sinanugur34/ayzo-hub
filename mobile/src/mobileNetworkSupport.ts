@@ -15,7 +15,9 @@ export type MobileAnalysisAdapterId =
   | "hyperliquid"
   | "stellar"
   | "cardano"
-  | "aptos";
+  | "aptos"
+  | "near"
+  | "hedera";
 
 /*
  * Exhaustive mapping.
@@ -99,6 +101,12 @@ export const MOBILE_NETWORK_ADAPTERS:
 
   aptos:
     "aptos",
+
+  near:
+    "near",
+
+  hedera:
+    "hedera",
 };
 
 /*
