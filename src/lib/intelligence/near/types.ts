@@ -7,7 +7,8 @@ import type {
 } from "./address";
 
 export type NearProviderId =
-  | "near-rpc";
+  | "near-rpc"
+  | "near-nearblocks";
 
 export type NearProviderErrorCode =
   | "INVALID_ACCOUNT"
