@@ -6,6 +6,9 @@ import {
 import { Redis } from "@upstash/redis";
 import { getClientIp } from "@/lib/rateLimit";
 import { getInternalApiKey } from "@/lib/apiSecurity";
+import {
+  redisRuntimePrefix,
+} from "@/lib/redisRuntimeNamespace";
 
 export const FREE_ANALYSIS_LIMIT = 3;
 export const FREE_ANALYSIS_WINDOW_SECONDS = 24 * 60 * 60;
@@ -148,9 +151,15 @@ function getKeys(request: Request, deviceId: string) {
     deviceId
   );
 
+  const runtimePrefix =
+    redisRuntimePrefix();
+
   return {
-    ipKey: `ayzo:free:v1:ip:${ipHash}`,
-    deviceKey: `ayzo:free:v1:device:${deviceHash}`,
+    ipKey:
+      `ayzo:${runtimePrefix}free:v1:ip:${ipHash}`,
+
+    deviceKey:
+      `ayzo:${runtimePrefix}free:v1:device:${deviceHash}`,
   };
 }
 
