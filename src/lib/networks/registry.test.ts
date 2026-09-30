@@ -7,7 +7,7 @@ import {
 } from "./registry";
 
 test(
-  "keeps twenty-two registered networks with nineteen currently live",
+  "keeps twenty-two registered networks with twenty currently live",
   () => {
     assert.equal(
       NETWORK_IDS.length,
@@ -24,7 +24,7 @@ test(
 
     assert.equal(
       liveNetworkCount,
-      19
+      20
     );
 
     assert.equal(
@@ -37,9 +37,13 @@ test(
       "live"
     );
 
+    assert.equal(
+      NETWORKS.ton.status,
+      "live"
+    );
+
     for (
       const networkId of [
-        "ton",
         "hyperliquid",
         "stellar",
       ] as const
@@ -412,6 +416,51 @@ test(
 
     assert.ok(
       NETWORKS.sui
+        .capabilities
+        .includes(
+          "fundingProvenance"
+        )
+    );
+  }
+);
+
+
+test(
+  "keeps TON live after TON Center v3 quality gates",
+  () => {
+    assert.equal(
+      NETWORKS.ton.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.ton.family,
+      "ton"
+    );
+
+    assert.equal(
+      NETWORKS.ton.nativeCurrency,
+      "TON"
+    );
+
+    assert.ok(
+      NETWORKS.ton
+        .capabilities
+        .includes(
+          "addressFlows"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.ton
+        .capabilities
+        .includes(
+          "walletRelationships"
+        )
+    );
+
+    assert.ok(
+      NETWORKS.ton
         .capabilities
         .includes(
           "fundingProvenance"

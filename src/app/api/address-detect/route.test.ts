@@ -243,3 +243,23 @@ test(
     );
   }
 );
+
+test(
+  "detects TON mainnet address",
+  async () => {
+    const result =
+      await detect(
+        "UQBKgXCNLPexWhs2L79kiARR1phGH1LwXxRbNsCFF9doczSI"
+      );
+
+    assert.equal(
+      result.status,
+      200
+    );
+
+    assert.equal(
+      result.body.network,
+      "ton"
+    );
+  }
+);

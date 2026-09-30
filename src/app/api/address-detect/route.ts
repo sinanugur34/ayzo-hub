@@ -23,6 +23,10 @@ import {
 } from "@/lib/intelligence/sui/address";
 
 import {
+  isTonAddress,
+} from "@/lib/intelligence/ton/address";
+
+import {
   isTronAddress,
 } from "@/lib/intelligence/tron/address";
 
@@ -65,6 +69,7 @@ type DetectedNetwork =
   | "dogecoin"
   | "litecoin"
   | "sui"
+  | "ton"
   | "tron"
   | "xrp"
   | "solana"
@@ -163,6 +168,13 @@ export async function POST(
   ) {
     network =
       "litecoin";
+  } else if (
+    isTonAddress(
+      address
+    )
+  ) {
+    network =
+      "ton";
   } else if (
     isTronAddress(
       address

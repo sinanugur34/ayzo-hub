@@ -39,6 +39,7 @@ export type AddressKind =
   | "dogecoin"
   | "litecoin"
   | "sui"
+  | "ton"
   | "tron"
   | "xrp"
   | "invalid";
@@ -58,6 +59,7 @@ export function resolveSelectedNetworkForAddress<
   | "dogecoin"
   | "litecoin"
   | "sui"
+  | "ton"
   | "tron"
   | "xrp"
   | null {
@@ -101,6 +103,13 @@ export function resolveSelectedNetworkForAddress<
     "sui"
   ) {
     return "sui";
+  }
+
+  if (
+    addressKind ===
+    "ton"
+  ) {
+    return "ton";
   }
 
   if (

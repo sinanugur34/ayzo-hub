@@ -50,6 +50,14 @@ import {
 } from "@/lib/intelligence/sui/engine";
 
 import {
+  isTonAddress,
+} from "@/lib/intelligence/ton/address";
+
+import {
+  runTonIntelligence,
+} from "@/lib/intelligence/ton/engine";
+
+import {
   isTronAddress,
 } from "@/lib/intelligence/tron/address";
 
@@ -450,6 +458,13 @@ export async function POST(
       ) ||
       (
         resolution.engine ===
+          "ton" &&
+        !isTonAddress(
+          address
+        )
+      ) ||
+      (
+        resolution.engine ===
           "tron" &&
         !isTronAddress(
           address
@@ -765,6 +780,22 @@ export async function POST(
       case "sui": {
         const result =
           await runSuiIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "ton": {
+        const result =
+          await runTonIntelligence({
             address,
 
             analysisPlan:

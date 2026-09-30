@@ -1,15 +1,20 @@
 const RAW_TON_ADDRESS =
-  /^(?:0|-1):[0-9a-fA-F]{64}$/;
+  /^(-1|0):([0-9a-fA-F]{64})$/;
 
 function crc16Xmodem(
-  bytes: Uint8Array
-): number {
+  bytes:
+    Uint8Array
+) {
   let crc =
     0;
 
-  for (const byte of bytes) {
+  for (
+    const byte of
+    bytes
+  ) {
     crc ^=
-      byte << 8;
+      byte <<
+      8;
 
     for (
       let bit = 0;
@@ -20,16 +25,19 @@ function crc16Xmodem(
         (
           crc &
           0x8000
-        ) !== 0
+        ) !==
+          0
           ? (
               (
-                crc << 1
+                crc <<
+                1
               ) ^
               0x1021
             ) &
             0xffff
           : (
-              crc << 1
+              crc <<
+              1
             ) &
             0xffff;
     }
@@ -39,121 +47,173 @@ function crc16Xmodem(
 }
 
 function decodeFriendly(
-  value: string
-): Uint8Array | null {
-  if (
-    value.length !==
-    48
-  ) {
-    return null;
-  }
-
-  if (
-    !/^[A-Za-z0-9_-]{48}$/.test(
-      value
-    )
-  ) {
-    return null;
-  }
-
-  try {
-    const normalized =
-      value
-        .replace(
-          /-/g,
-          "+"
-        )
-        .replace(
-          /_/g,
-          "/"
-        );
-
-    const buffer =
-      Buffer.from(
-        normalized,
-        "base64"
+  value:
+    string
+) {
+  const normalized =
+    value
+      .replace(
+        /-/g,
+        "+"
+      )
+      .replace(
+        /_/g,
+        "/"
       );
 
-    return buffer.length ===
-      36
-      ? new Uint8Array(
-          buffer
-        )
-      : null;
+  const padding =
+    normalized.length %
+      4 ===
+    0
+      ? ""
+      : "=".repeat(
+          4 -
+            (
+              normalized.length %
+              4
+            )
+        );
+
+  try {
+    return Buffer.from(
+      normalized +
+        padding,
+      "base64"
+    );
   } catch {
     return null;
   }
 }
 
-export function isTonAddress(
-  value: string
-): boolean {
-  const normalized =
+export function normalizeTonAddress(
+  value:
+    string
+): string | null {
+  const trimmed =
     value.trim();
 
+  const raw =
+    RAW_TON_ADDRESS.exec(
+      trimmed
+    );
+
+  if (raw) {
+    return (
+      `${raw[1]}:` +
+      raw[2].toLowerCase()
+    );
+  }
+
   if (
-    RAW_TON_ADDRESS.test(
-      normalized
+    trimmed.length !==
+      48 ||
+    !/^[A-Za-z0-9_-]{48}$/.test(
+      trimmed
     )
   ) {
-    return true;
+    return null;
   }
 
   const decoded =
     decodeFriendly(
-      normalized
+      trimmed
     );
 
-  if (!decoded) {
-    return false;
-  }
-
-  const tag =
-    decoded[0];
-
   if (
-    tag !== 0x11 &&
-    tag !== 0x51 &&
-    tag !== 0x91 &&
-    tag !== 0xd1
+    !decoded ||
+    decoded.length !==
+      36
   ) {
-    return false;
+    return null;
   }
 
-  const workchain =
-    decoded[1];
-
-  if (
-    workchain !== 0x00 &&
-    workchain !== 0xff
-  ) {
-    return false;
-  }
-
-  const payload =
-    decoded.slice(
+  const body =
+    decoded.subarray(
       0,
       34
     );
 
-  const expected =
-    crc16Xmodem(
-      payload
-    );
-
-  const supplied =
+  const suppliedCrc =
     (
-      (
-        decoded[34] ??
-        0
-      ) <<
+      decoded[34]! <<
       8
     ) |
-    (
-      decoded[35] ??
-      0
-    );
+    decoded[35]!;
 
-  return expected ===
-    supplied;
+  if (
+    crc16Xmodem(
+      body
+    ) !==
+    suppliedCrc
+  ) {
+    return null;
+  }
+
+  const tag =
+    decoded[0]!;
+
+  const testOnly =
+    (
+      tag &
+      0x80
+    ) !==
+    0;
+
+  const baseTag =
+    tag &
+    0x7f;
+
+  if (
+    testOnly ||
+    (
+      baseTag !==
+        0x11 &&
+      baseTag !==
+        0x51
+    )
+  ) {
+    return null;
+  }
+
+  const workchainByte =
+    decoded[1]!;
+
+  const workchain =
+    workchainByte ===
+      0xff
+      ? -1
+      : workchainByte ===
+          0x00
+        ? 0
+        : null;
+
+  if (
+    workchain ===
+    null
+  ) {
+    return null;
+  }
+
+  return (
+    `${workchain}:` +
+    decoded
+      .subarray(
+        2,
+        34
+      )
+      .toString(
+        "hex"
+      )
+  );
+}
+
+export function isTonAddress(
+  value:
+    string
+): boolean {
+  return (
+    normalizeTonAddress(
+      value
+    ) !== null
+  );
 }

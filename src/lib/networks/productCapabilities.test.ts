@@ -98,6 +98,20 @@ test(
 );
 
 test(
+  "maps TON native evidence to wallet funding and connections tools",
+  () => {
+    assert.deepEqual(
+      toolIds("ton"),
+      [
+        "walletAnalysis",
+        "fundingTrace",
+        "connections",
+      ]
+    );
+  }
+);
+
+test(
   "returns every currently live canonical network",
   () => {
     const liveNetworks =

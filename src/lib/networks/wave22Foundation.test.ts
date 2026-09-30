@@ -13,32 +13,29 @@ import {
 const PROMOTED = [
   "litecoin",
   "sui",
+  "ton",
 ] as const;
 
 const REMAINING = [
-  "ton",
-  "hyperliquid",
   "stellar",
+  "hyperliquid",
 ] as const;
 
 test(
-  "registry has 22 networks with Litecoin and Sui live",
+  "wave 22 has twenty live networks after TON promotion",
   () => {
     assert.equal(
       NETWORK_IDS.length,
       22
     );
 
-    const live =
+    assert.equal(
       NETWORK_IDS.filter(
         id =>
           NETWORKS[id].status ===
           "live"
-      );
-
-    assert.equal(
-      live.length,
-      19
+      ).length,
+      20
     );
 
     for (

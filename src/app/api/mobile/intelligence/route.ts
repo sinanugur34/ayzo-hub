@@ -52,6 +52,14 @@ import {
 } from "@/lib/intelligence/sui/engine";
 
 import {
+  isTonAddress,
+} from "@/lib/intelligence/ton/address";
+
+import {
+  runTonIntelligence,
+} from "@/lib/intelligence/ton/engine";
+
+import {
   isTronAddress,
 } from "@/lib/intelligence/tron/address";
 
@@ -467,6 +475,27 @@ export async function POST(
 
     if (
       resolution.engine ===
+        "ton" &&
+      !isTonAddress(
+        address
+      )
+    ) {
+      return json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid TON address.",
+          network:
+            resolution.networkId,
+        },
+        400
+      );
+    }
+
+    if (
+      resolution.engine ===
         "xrpl" &&
       !isXrplClassicAddress(
         address
@@ -833,6 +862,33 @@ export async function POST(
       case "sui": {
         const result =
           await runSuiIntelligence({
+            address,
+
+            analysisPlan:
+              entitlement.planId,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
+        return json(
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
+          result.status
+        );
+      }
+
+      case "ton": {
+        const result =
+          await runTonIntelligence({
             address,
 
             analysisPlan:

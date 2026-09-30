@@ -728,6 +728,123 @@ function suiSnapshot(
   };
 }
 
+function tonSnapshot(
+  network:
+    string,
+  root:
+    JsonRecord
+): HistoricalSnapshotV1 {
+  const account =
+    record(
+      root.account
+    );
+
+  const history =
+    record(
+      root.history
+    );
+
+  const transactions =
+    Array.isArray(
+      history?.transactions
+    )
+      ? history.transactions
+      : [];
+
+  const latest =
+    record(
+      transactions[0]
+    );
+
+  const jettons =
+    record(
+      root.jettons
+    );
+
+  const wallets =
+    Array.isArray(
+      jettons?.wallets
+    )
+      ? jettons.wallets
+      : [];
+
+  const derived =
+    record(
+      root.derived
+    );
+
+  const flow =
+    record(
+      derived?.flow
+    );
+
+  const counterparties =
+    record(
+      derived?.counterparties
+    );
+
+  return {
+    version:
+      1,
+
+    capturedAt:
+      new Date().toISOString(),
+
+    network,
+
+    coverage:
+      text(
+        root.coverage
+      ),
+
+    subjectKind:
+      "wallet",
+
+    metrics: {
+      nativeBalanceRaw:
+        text(
+          account?.balanceNano
+        ),
+
+      assetBalanceTypeCount:
+        wallets.length,
+
+      transactionCount:
+        transactions.length,
+
+      latestTransactionHash:
+        text(
+          latest?.transactionHash
+        ),
+
+      latestTransactionTimestamp:
+        text(
+          latest?.timestamp
+        ),
+
+      relationshipsDetected:
+        numberValue(
+          counterparties?.count
+        ),
+
+      incomingTransfersDetected:
+        numberValue(
+          flow?.incomingMessageCount
+        ),
+    },
+
+    modules:
+      moduleSnapshot(
+        root.modules
+      ),
+
+    findings:
+      findingSnapshot(
+        root.findings
+      ),
+  };
+}
+
 function tronSnapshot(
   network:
     string,
@@ -872,6 +989,16 @@ export function buildHistoricalSnapshot(
       "xrp"
   ) {
     return utxoSnapshot(
+      network,
+      root
+    );
+  }
+
+  if (
+    network ===
+      "ton"
+  ) {
+    return tonSnapshot(
       network,
       root
     );

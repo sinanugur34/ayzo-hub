@@ -7,6 +7,7 @@ export type AskAyzoAdapterId =
   | "evm"
   | "utxo"
   | "sui"
+  | "ton"
   | "tron"
   | "xrpl"
   | "generic";
@@ -69,6 +70,16 @@ const CAPABILITIES:
     "transaction-history",
   ],
 
+  ton: [
+    "summary",
+    "coverage",
+    "relationships",
+    "funding",
+    "transaction-history",
+    "transaction-value",
+    "transaction-cost",
+  ],
+
   tron: [
     "summary",
     "coverage",
@@ -122,6 +133,12 @@ const QUESTIONS:
     "What funding and relationship evidence was observed?",
   ],
 
+  ton: [
+    "What are the most important TON findings?",
+    "What direct funding and relationship evidence was observed?",
+    "What Jetton holdings and transfers were observed?",
+  ],
+
   tron: [
     "What was the transaction fee?",
     "How much energy was used?",
@@ -158,6 +175,9 @@ function adapterForFamily(
 
     case "sui":
       return "sui";
+
+    case "ton":
+      return "ton";
 
     case "tron":
       return "tron";

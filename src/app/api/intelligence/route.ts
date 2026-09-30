@@ -43,6 +43,14 @@ import {
 import {
   runSuiIntelligence,
 } from "@/lib/intelligence/sui/engine";
+
+import {
+  isTonAddress,
+} from "@/lib/intelligence/ton/address";
+
+import {
+  runTonIntelligence,
+} from "@/lib/intelligence/ton/engine";
 import {
   runTronIntelligence,
 } from "@/lib/intelligence/tron/engine";
@@ -279,6 +287,23 @@ export async function POST(request: Request) {
           ok: false,
           code: "INVALID_ADDRESS",
           error: "Invalid Sui address.",
+          network: resolution.networkId,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      resolution.engine === "ton" &&
+      !isTonAddress(
+        address
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          code: "INVALID_ADDRESS",
+          error: "Invalid TON address.",
           network: resolution.networkId,
         },
         { status: 400 }
@@ -683,6 +708,33 @@ export async function POST(request: Request) {
       case "sui": {
         const result =
           await runSuiIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "ton": {
+        const result =
+          await runTonIntelligence({
             address,
             analysisPlan,
           });

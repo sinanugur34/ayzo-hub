@@ -64,6 +64,9 @@ const SUI_CAPABILITIES = [
 
 const TON_CAPABILITIES = [
   "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
 ] as const satisfies readonly NetworkCapability[];
 
 const HYPERLIQUID_CAPABILITIES = [
@@ -307,7 +310,7 @@ export const NETWORKS = {
     name: "TON",
     shortName: "TON",
     family: "ton",
-    status: "development",
+    status: "live",
     chainId: null,
     nativeCurrency: "TON",
     explorerUrl: "https://tonviewer.com",

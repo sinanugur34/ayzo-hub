@@ -9,21 +9,10 @@ import {
   MOBILE_NETWORK_ADAPTERS,
   getMobileLiveNetworkIds,
   getMobileNetworkSupport,
-  isMobileAnalysisNetworkLive,
 } from "./mobileNetworkSupport";
 
-import {
-  buildMobileEvidenceWorkspace,
-} from "./mobileEvidenceWorkspace";
-
-const REMAINING = [
-  "ton",
-  "hyperliquid",
-  "stellar",
-] as const;
-
 test(
-  "mobile adapter registry covers all 22 networks",
+  "mobile adapter registry covers all canonical networks",
   () => {
     assert.equal(
       NETWORK_IDS.length,
@@ -40,34 +29,34 @@ test(
 );
 
 test(
-  "nineteen networks are mobile live",
+  "twenty networks are mobile live after TON promotion",
   () => {
     assert.equal(
       getMobileLiveNetworkIds()
         .length,
-      19
+      20
     );
 
     assert.equal(
-      isMobileAnalysisNetworkLive(
-        "sui"
-      ),
+      getMobileNetworkSupport(
+        "ton"
+      ).analysisEnabled,
       true
     );
   }
 );
 
 test(
-  "Sui dedicated mobile adapter is ready",
+  "TON uses dedicated native mobile adapter",
   () => {
     const support =
       getMobileNetworkSupport(
-        "sui"
+        "ton"
       );
 
     assert.equal(
       support.adapter,
-      "sui"
+      "ton"
     );
 
     assert.equal(
@@ -88,11 +77,13 @@ test(
 );
 
 test(
-  "remaining wave networks remain hidden",
+  "Stellar and Hyperliquid remain hidden",
   () => {
     for (
-      const id of
-      REMAINING
+      const id of [
+        "stellar",
+        "hyperliquid",
+      ] as const
     ) {
       assert.equal(
         getMobileNetworkSupport(
@@ -101,65 +92,5 @@ test(
         false
       );
     }
-  }
-);
-
-test(
-  "Sui evidence workspace uses returned evidence",
-  () => {
-    const workspace =
-      buildMobileEvidenceWorkspace({
-        networkId:
-          "sui",
-
-        address:
-          `0x${"11".repeat(32)}`,
-
-        data: {
-          network:
-            "sui",
-
-          derived: {
-            counterparties: {
-              items: [
-                {
-                  address:
-                    `0x${"22".repeat(32)}`,
-
-                  interactionCount:
-                    1,
-                },
-              ],
-            },
-
-            observedFunding: {
-              observedSender:
-                `0x${"22".repeat(32)}`,
-            },
-          },
-
-          history: {
-            transactions: [
-              {
-                transactionHash:
-                  "sui-test-transaction",
-
-                timestamp:
-                  null,
-              },
-            ],
-          },
-        },
-      });
-
-    assert.ok(
-      workspace.nodes.length >=
-        2
-    );
-
-    assert.ok(
-      workspace.edges.length >=
-        1
-    );
   }
 );

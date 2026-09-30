@@ -183,6 +183,7 @@ export async function detectMobileAddressNetwork({
       "dogecoin",
       "litecoin",
       "sui",
+      "ton",
       "tron",
       "xrp",
     ];

@@ -1551,6 +1551,115 @@ export function buildMobileEvidenceWorkspace({
   }
 
   /*
+   * TON:
+   * Direct indexed message and Jetton-transfer evidence.
+   */
+  if (
+    networkId ===
+    "ton"
+  ) {
+    const derived =
+      recordChild(
+        root,
+        "derived"
+      );
+
+    const counterparties =
+      recordChild(
+        derived,
+        "counterparties"
+      );
+
+    for (
+      const item of
+      arrayChild(
+        counterparties,
+        "items"
+      )
+    ) {
+      const address =
+        stringValue(
+          item.address
+        );
+
+      if (!address) {
+        continue;
+      }
+
+      const id =
+        addWallet(
+          address,
+          `${
+            numberValue(
+              item.interactionCount
+            ) ??
+            1
+          } direct TON/Jetton signal(s)`
+        );
+
+      if (!id) {
+        continue;
+      }
+
+      addEdge({
+        id:
+          `ton:${id}`,
+
+        source:
+          rootId,
+
+        target:
+          id,
+
+        label:
+          "Observed TON relationship",
+
+        direction:
+          "observed",
+      });
+    }
+
+    const funding =
+      recordChild(
+        derived,
+        "observedFunding"
+      );
+
+    const source =
+      stringValue(
+        funding?.sourceAddress
+      );
+
+    if (source) {
+      const id =
+        addWallet(
+          source,
+          "Observed early inbound TON source",
+          "funding"
+        );
+
+      if (id) {
+        addEdge({
+          id:
+            `ton-funding:${id}`,
+
+          source:
+            id,
+
+          target:
+            rootId,
+
+          label:
+            "Observed inbound TON",
+
+          direction:
+            "forward",
+        });
+      }
+    }
+  }
+
+  /*
    * TRON:
    * explicit canonical owner/destination
    * relationships and observed inbound funding.
