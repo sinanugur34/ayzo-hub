@@ -20,6 +20,11 @@ import {
   getAptosEvidence,
 } from "./provider";
 
+import {
+  getAptosIndexedEvidence,
+  type AptosIndexedEvidence,
+} from "./providers/indexer";
+
 import type {
   AptosEvidence,
   AptosProviderResult,
@@ -158,12 +163,29 @@ export type AptosEngineDependencies = {
       AptosEvidence
     >
   >;
+
+  loadIndexedEvidence?(
+    input: {
+      address:
+        string;
+
+      analysisPlan:
+        AnalysisDepthPlan;
+    }
+  ): Promise<
+    AptosProviderResult<
+      AptosIndexedEvidence
+    >
+  >;
 };
 
 const DEFAULT_DEPENDENCIES:
   AptosEngineDependencies = {
     loadEvidence:
       getAptosEvidence,
+
+    loadIndexedEvidence:
+      getAptosIndexedEvidence,
   };
 
 export async function runAptosIntelligence(
@@ -245,8 +267,35 @@ export async function runAptosIntelligence(
     };
   }
 
-  const evidence =
+  let evidence =
     result.data;
+
+  const indexed =
+    deps.loadIndexedEvidence
+      ? await deps.loadIndexedEvidence({
+          address:
+            normalized,
+
+          analysisPlan,
+        })
+      : null;
+
+  if (
+    indexed &&
+    indexed.ok
+  ) {
+    evidence = {
+      ...evidence,
+
+      fungibleAssets:
+        indexed.data
+          .fungibleAssets,
+
+      objects:
+        indexed.data
+          .objects,
+    };
+  }
 
   const derived =
     buildAptosDerivedAnalysis({
@@ -364,9 +413,16 @@ export async function runAptosIntelligence(
         },
         flow: {
           status:
-            "unavailable",
+            derived
+              .flow
+              .transfers
+              .length >
+              0
+              ? "limited"
+              : "unavailable",
+
           error:
-            "APT and fungible-asset transfer derivation requires indexed transfer evidence.",
+            null,
         },
         counterparties: {
           status:
@@ -381,9 +437,13 @@ export async function runAptosIntelligence(
         },
         funding: {
           status:
-            "unavailable",
+            derived
+              .observedFunding
+              ? "limited"
+              : "unavailable",
+
           error:
-            "Observed Aptos funding requires explicit indexed transfer evidence.",
+            null,
         },
       },
       findings,
@@ -391,7 +451,8 @@ export async function runAptosIntelligence(
         "AYZO reports observed Aptos on-chain evidence and does not establish ownership, identity, intent, or control.",
         "Aptos fullnode account history may be pruned.",
         "Move module interaction does not imply ownership of the module or counterparty account.",
-        "Fungible assets, objects, transfer flow, and observed funding remain unavailable until indexed evidence is connected.",
+        "Fungible-asset and object state is included only when indexed evidence is available.",
+        "Observed funding means a directly observed inbound source in the bounded evidence window; it is not proof of ultimate provenance.",
       ],
     },
   };

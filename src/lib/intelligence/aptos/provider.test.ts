@@ -127,9 +127,35 @@ test(
               payload: {
                 function:
                   "0x1::aptos_account::transfer",
+
+                arguments: [
+                  `0x${"22".repeat(32)}`,
+                  "25000000",
+                ],
               },
-              events:
-                [],
+
+              events: [
+                {
+                  type:
+                    "0x1::coin::WithdrawEvent",
+
+                  sequence_number:
+                    "1",
+
+                  guid: {
+                    account_address:
+                      ADDRESS,
+
+                    creation_number:
+                      "2",
+                  },
+
+                  data: {
+                    amount:
+                      "25000000",
+                  },
+                },
+              ],
               changes:
                 [],
             },
@@ -188,6 +214,30 @@ test(
         .resources
         .length,
       1
+    );
+
+    assert.equal(
+      result.data
+        .transactions[0]
+        ?.functionName,
+      "transfer"
+    );
+
+    assert.equal(
+      result.data
+        .transactions[0]
+        ?.payloadArguments
+        .length,
+      2
+    );
+
+    assert.equal(
+      result.data
+        .transactions[0]
+        ?.events[0]
+        ?.data
+        ?.amount,
+      "25000000"
     );
   }
 );

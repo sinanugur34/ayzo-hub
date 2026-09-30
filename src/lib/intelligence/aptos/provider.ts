@@ -267,6 +267,11 @@ function parseTransaction(
     functionName:
       methodName,
 
+    payloadArguments:
+      array(
+        payload?.arguments
+      ),
+
     events:
       array(
         row?.events
@@ -305,6 +310,11 @@ function parseTransaction(
               text(
                 guid
                   ?.creation_number
+              ),
+
+            data:
+              record(
+                event.data
               ),
           };
         })

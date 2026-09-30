@@ -117,6 +117,14 @@ export type AptosEventEvidence = {
 
   creationNumber:
     string | null;
+
+  data:
+    Readonly<
+      Record<
+        string,
+        unknown
+      >
+    > | null;
 };
 
 export type AptosChangeEvidence = {
@@ -172,6 +180,9 @@ export type AptosObservedTransaction = {
 
   functionName:
     string | null;
+
+  payloadArguments:
+    readonly unknown[];
 
   events:
     readonly AptosEventEvidence[];
