@@ -66,21 +66,46 @@ test(
 );
 
 test(
-  "Bitcoin V1 keeps canonical transaction fanout fixed",
+  "Bitcoin V2 increases canonical verification depth by plan",
   () => {
-    for (
-      const plan of [
-        "free",
-        "pro",
-        "advanced",
-      ] as const
-    ) {
-      assert.equal(
-        getBitcoinAnalysisPolicy(
-          plan
-        ).canonicalSampleLimit,
-        1
+    const free =
+      getBitcoinAnalysisPolicy(
+        "free"
       );
-    }
+
+    const pro =
+      getBitcoinAnalysisPolicy(
+        "pro"
+      );
+
+    const advanced =
+      getBitcoinAnalysisPolicy(
+        "advanced"
+      );
+
+    assert.equal(
+      free.canonicalSampleLimit,
+      1
+    );
+
+    assert.equal(
+      pro.canonicalSampleLimit,
+      2
+    );
+
+    assert.equal(
+      advanced.canonicalSampleLimit,
+      3
+    );
+
+    assert.ok(
+      free.canonicalSampleLimit <
+        pro.canonicalSampleLimit
+    );
+
+    assert.ok(
+      pro.canonicalSampleLimit <
+        advanced.canonicalSampleLimit
+    );
   }
 );

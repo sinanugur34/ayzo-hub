@@ -515,13 +515,214 @@ export default function HyperliquidIntelligenceReport({
           </div>
         )}
 
+        <div className="border-b border-zinc-900 p-6 sm:p-8">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="text-xs font-medium tracking-[0.18em] text-violet-400">
+                NON-FUNDING LEDGER INTELLIGENCE
+              </div>
+
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-500">
+                Bounded HyperCore deposits, withdrawals and transfers. AYZO
+                separates these movements from perpetual funding-rate payments.
+              </p>
+            </div>
+
+            <span className="rounded-full border border-zinc-800 px-3 py-1 text-[9px] uppercase tracking-wide text-zinc-500">
+              {data.evidenceCoverage.ledgerLookbackDays}d /{" "}
+              {data.evidenceCoverage.ledgerLimit} records
+            </span>
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              [
+                "Ledger events",
+                String(
+                  data.derived
+                    .hyperCore
+                    .ledgerEventCount
+                ),
+              ],
+              [
+                "Deposits",
+                String(
+                  data.derived
+                    .hyperCore
+                    .depositCount
+                ),
+              ],
+              [
+                "Withdrawals",
+                String(
+                  data.derived
+                    .hyperCore
+                    .withdrawalCount
+                ),
+              ],
+              [
+                "Transfers",
+                String(
+                  data.derived
+                    .hyperCore
+                    .transferCount
+                ),
+              ],
+              [
+                "Account-class",
+                String(
+                  data.derived
+                    .hyperCore
+                    .accountClassTransferCount
+                ),
+              ],
+              [
+                "Counterparties",
+                String(
+                  data.derived
+                    .hyperCore
+                    .counterparties
+                    .count
+                ),
+              ],
+            ].map(
+              (
+                [
+                  label,
+                  value,
+                ]
+              ) => (
+                <div
+                  key={label}
+                  className="rounded-2xl border border-zinc-900 bg-black/20 p-4"
+                >
+                  <div className="text-[9px] tracking-[0.12em] text-zinc-700">
+                    {label.toUpperCase()}
+                  </div>
+
+                  <div className="mt-2 text-sm font-medium text-zinc-200">
+                    {value}
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+
+          {core.nonFundingLedger.length > 0 ? (
+            <div className="mt-6 space-y-2">
+              {core.nonFundingLedger
+                .slice(
+                  0,
+                  12
+                )
+                .map(
+                  (
+                    item,
+                    index
+                  ) => (
+                    <div
+                      key={`${item.hash ?? "ledger"}:${index}`}
+                      className="rounded-xl border border-zinc-900 bg-black/20 p-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <strong className="text-xs text-zinc-300">
+                          {item.type}
+                        </strong>
+
+                        <span className="font-mono text-[10px] text-zinc-700">
+                          {item.timestamp ??
+                            "Timestamp unavailable"}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 grid gap-2 text-[10px] text-zinc-600 sm:grid-cols-2 lg:grid-cols-4">
+                        <span className="break-all">
+                          user:{" "}
+                          {item.user ??
+                            "—"}
+                        </span>
+
+                        <span className="break-all">
+                          destination:{" "}
+                          {item.destination ??
+                            "—"}
+                        </span>
+
+                        <span>
+                          asset:{" "}
+                          {item.token ??
+                            (
+                              item.usdc !==
+                                null
+                                ? "USDC"
+                                : "—"
+                            )}
+                        </span>
+
+                        <span>
+                          amount:{" "}
+                          {item.amount ??
+                            item.usdc ??
+                            "—"}
+                        </span>
+                      </div>
+
+                      {item.hash && (
+                        <div className="mt-2 break-all font-mono text-[9px] text-zinc-800">
+                          evidence:{" "}
+                          {item.hash}
+                        </div>
+                      )}
+                    </div>
+                  )
+                )}
+            </div>
+          ) : (
+            <p className="mt-5 text-xs leading-5 text-zinc-600">
+              No non-funding ledger movement was returned inside the current
+              plan-aware evidence window.
+            </p>
+          )}
+
+          {data.derived.hyperCore.counterparties.addresses.length > 0 && (
+            <div className="mt-6 rounded-2xl border border-zinc-900 bg-black/20 p-5">
+              <div className="text-[10px] font-medium tracking-[0.14em] text-zinc-600">
+                EXPLICIT LEDGER COUNTERPARTIES
+              </div>
+
+              <div className="mt-3 space-y-2">
+                {data.derived.hyperCore.counterparties.addresses
+                  .slice(
+                    0,
+                    12
+                  )
+                  .map(
+                    counterparty => (
+                      <div
+                        key={counterparty}
+                        className="break-all rounded-lg border border-zinc-900 px-3 py-2 font-mono text-[10px] text-zinc-400"
+                      >
+                        {counterparty}
+                      </div>
+                    )
+                  )}
+              </div>
+
+              <p className="mt-3 text-[10px] leading-5 text-zinc-700">
+                These are explicit address fields observed in HyperCore ledger
+                evidence. AYZO does not infer common ownership, identity or control.
+              </p>
+            </div>
+          )}
+        </div>
+
         <div className="border-b border-amber-500/10 bg-amber-500/[0.025] p-6 sm:p-8">
           <div className="text-xs font-medium tracking-[0.18em] text-amber-400">
             FUNDING TERMINOLOGY
           </div>
 
           <p className="mt-3 text-sm leading-6 text-zinc-500">
-            HyperCore funding payments shown here are perpetual funding-rate settlements. AYZO does not classify them as wallet funding provenance or as evidence of who funded this address.
+            HyperCore funding payments shown here are perpetual funding-rate settlements. They are not wallet funding provenance. Non-funding ledger deposits, withdrawals and transfers are reported separately as observed movement evidence; they do not by themselves prove ultimate funding origin.
           </p>
         </div>
 
@@ -552,6 +753,18 @@ export default function HyperliquidIntelligenceReport({
 
               derived:
                 data.derived,
+
+              evidenceCoverage:
+                data.evidenceCoverage,
+
+              ledgerEvidence:
+                data.executionSurfaces
+                  .hyperCore
+                  .nonFundingLedger
+                  .slice(
+                    0,
+                    96
+                  ),
 
               modules:
                 data.modules,

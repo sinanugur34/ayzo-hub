@@ -52,6 +52,9 @@ const deps:
 
             portfolio:
               [],
+
+            nonFundingLedger:
+              [],
           },
 
           hyperEvm: {
@@ -95,6 +98,12 @@ const deps:
 
             portfolioPointLimit:
               12,
+
+            ledgerLimit:
+              16,
+
+            ledgerLookbackDays:
+              7,
 
             hyperCoreProvider:
               "hyperliquid-info",

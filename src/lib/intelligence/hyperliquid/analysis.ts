@@ -24,6 +24,29 @@ export type HyperliquidDerivedAnalysis = {
 
     nonZeroFundingPaymentCount:
       number;
+
+    ledgerEventCount:
+      number;
+
+    depositCount:
+      number;
+
+    withdrawalCount:
+      number;
+
+    transferCount:
+      number;
+
+    accountClassTransferCount:
+      number;
+
+    counterparties: {
+      count:
+        number;
+
+      addresses:
+        readonly string[];
+    };
   };
 
   hyperEvm: {
@@ -76,6 +99,28 @@ function nonZeroHex(
   }
 }
 
+function ledgerType(
+  value:
+    string
+) {
+  return value
+    .trim()
+    .toLowerCase();
+}
+
+function isAddress(
+  value:
+    string | null
+) {
+  return (
+    value !==
+      null &&
+    /^0x[0-9a-fA-F]{40}$/.test(
+      value
+    )
+  );
+}
+
 export function buildHyperliquidDerivedAnalysis(
   evidence:
     HyperliquidEvidence
@@ -90,6 +135,89 @@ export function buildHyperliquidDerivedAnalysis(
             position.size
           )
       );
+
+  const ledger =
+    evidence
+      .hyperCore
+      .nonFundingLedger;
+
+  const counterparties =
+    new Set<string>();
+
+  let depositCount =
+    0;
+
+  let withdrawalCount =
+    0;
+
+  let transferCount =
+    0;
+
+  let accountClassTransferCount =
+    0;
+
+  for (
+    const update of
+    ledger
+  ) {
+    const type =
+      ledgerType(
+        update.type
+      );
+
+    if (
+      type.includes(
+        "deposit"
+      )
+    ) {
+      depositCount +=
+        1;
+    }
+
+    if (
+      type.includes(
+        "withdraw"
+      )
+    ) {
+      withdrawalCount +=
+        1;
+    }
+
+    if (
+      type.includes(
+        "transfer"
+      )
+    ) {
+      transferCount +=
+        1;
+    }
+
+    if (
+      type ===
+        "accountclasstransfer"
+    ) {
+      accountClassTransferCount +=
+        1;
+    }
+
+    for (
+      const candidate of [
+        update.user,
+        update.destination,
+      ]
+    ) {
+      if (
+        isAddress(
+          candidate
+        )
+      ) {
+        counterparties.add(
+          candidate!
+            .toLowerCase()
+        );
+      }
+    }
+  }
 
   return {
     hyperCore: {
@@ -149,6 +277,27 @@ export function buildHyperliquidDerivedAnalysis(
               )
           )
           .length,
+
+      ledgerEventCount:
+        ledger.length,
+
+      depositCount,
+
+      withdrawalCount,
+
+      transferCount,
+
+      accountClassTransferCount,
+
+      counterparties: {
+        count:
+          counterparties.size,
+
+        addresses:
+          [
+            ...counterparties,
+          ],
+      },
     },
 
     hyperEvm: {

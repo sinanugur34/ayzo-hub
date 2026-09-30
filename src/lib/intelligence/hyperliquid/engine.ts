@@ -93,6 +93,13 @@ export type HyperliquidIntelligence = {
         ][
           "portfolio"
         ];
+
+      nonFundingLedger:
+        HyperliquidEvidence[
+          "hyperCore"
+        ][
+          "nonFundingLedger"
+        ];
     };
 
     hyperEvm:
@@ -146,6 +153,24 @@ export type HyperliquidIntelligence = {
     };
 
     portfolio: {
+      status:
+        "limited" |
+        "unavailable";
+
+      error:
+        string | null;
+    };
+
+    nonFundingLedger: {
+      status:
+        "limited" |
+        "unavailable";
+
+      error:
+        string | null;
+    };
+
+    counterparties: {
       status:
         "limited" |
         "unavailable";
@@ -390,6 +415,67 @@ export async function runHyperliquidIntelligence(
     });
   }
 
+  if (
+    derived
+      .hyperCore
+      .ledgerEventCount >
+    0
+  ) {
+    findings.push({
+      id:
+        "hyperliquid-non-funding-ledger",
+
+      category:
+        "funding",
+
+      title:
+        "HyperCore non-funding ledger activity observed",
+
+      severity:
+        "informational",
+
+      confidence:
+        "high",
+
+      summary:
+        `AYZO observed ${derived.hyperCore.ledgerEventCount} bounded non-funding ledger event(s), including ${derived.hyperCore.depositCount} deposit-like, ${derived.hyperCore.withdrawalCount} withdrawal-like and ${derived.hyperCore.transferCount} transfer-like event(s).`,
+
+      caveat:
+        "These records describe observed HyperCore ledger movements. They do not establish ultimate wallet-funding provenance, ownership, identity or control.",
+    });
+  }
+
+  if (
+    derived
+      .hyperCore
+      .counterparties
+      .count >
+    0
+  ) {
+    findings.push({
+      id:
+        "hyperliquid-ledger-counterparties",
+
+      category:
+        "relationship",
+
+      title:
+        "Explicit ledger counterparties observed",
+
+      severity:
+        "informational",
+
+      confidence:
+        "high",
+
+      summary:
+        `AYZO observed ${derived.hyperCore.counterparties.count} explicit address counterpart${derived.hyperCore.counterparties.count === 1 ? "y" : "ies"} in bounded non-funding ledger evidence.`,
+
+      caveat:
+        "Only explicit address fields returned by HyperCore are treated as counterparties. AYZO does not infer common ownership or control.",
+    });
+  }
+
   return {
     status:
       200,
@@ -473,6 +559,11 @@ export async function runHyperliquidIntelligence(
             data
               .hyperCore
               .portfolio,
+
+          nonFundingLedger:
+            data
+              .hyperCore
+              .nonFundingLedger,
         },
 
         hyperEvm:
@@ -555,6 +646,46 @@ export async function runHyperliquidIntelligence(
             "Portfolio history is provider-supplied HyperCore account performance evidence and remains bounded.",
         },
 
+        nonFundingLedger: {
+          status:
+            data
+              .hyperCore
+              .nonFundingLedger
+              .length >
+              0
+              ? "limited"
+              : "unavailable",
+
+          error:
+            data
+              .hyperCore
+              .nonFundingLedger
+              .length >
+              0
+              ? `Non-funding ledger evidence is bounded to ${data.coverage.ledgerLimit} records across a ${data.coverage.ledgerLookbackDays}-day lookback.`
+              : "No bounded non-funding ledger evidence was returned.",
+        },
+
+        counterparties: {
+          status:
+            derived
+              .hyperCore
+              .counterparties
+              .count >
+              0
+              ? "limited"
+              : "unavailable",
+
+          error:
+            derived
+              .hyperCore
+              .counterparties
+              .count >
+              0
+              ? null
+              : "No explicit address counterparties were present in the bounded HyperCore ledger evidence.",
+        },
+
         hyperEvmState: {
           status:
             "complete",
@@ -570,6 +701,7 @@ export async function runHyperliquidIntelligence(
         "HyperCore and HyperEVM are separate execution surfaces and AYZO does not collapse their evidence into one generic EVM history.",
         "HyperCore fills are exchange execution evidence, not peer-to-peer counterparty or ownership evidence.",
         "HyperCore funding payments are perpetual funding-rate settlements and must not be interpreted as wallet funding provenance.",
+        "HyperCore non-funding ledger updates may contain deposits, withdrawals and transfers. AYZO treats them as observed ledger movement, not proof of ultimate funding origin.",
         "The official HyperEVM JSON-RPC provides latest EVM state; AYZO does not invent indexed HyperEVM address transaction history from that RPC.",
         "A Hyperliquid address has the same 20-byte hexadecimal shape as an EVM address, so automatic detection remains EVM unless Hyperliquid is explicitly selected.",
         "AYZO makes no common-ownership, identity, intent or control inference from Hyperliquid activity.",

@@ -21,6 +21,12 @@ export type HyperliquidAnalysisPolicy = {
   portfolioPointLimit:
     number;
 
+  ledgerLimit:
+    number;
+
+  ledgerLookbackDays:
+    number;
+
   timelineMaxEvents:
     number;
 
@@ -55,6 +61,12 @@ const POLICIES:
     portfolioPointLimit:
       12,
 
+    ledgerLimit:
+      16,
+
+    ledgerLookbackDays:
+      7,
+
     timelineMaxEvents:
       8,
 
@@ -84,6 +96,12 @@ const POLICIES:
     portfolioPointLimit:
       32,
 
+    ledgerLimit:
+      48,
+
+    ledgerLookbackDays:
+      30,
+
     timelineMaxEvents:
       16,
 
@@ -112,6 +130,12 @@ const POLICIES:
 
     portfolioPointLimit:
       64,
+
+    ledgerLimit:
+      96,
+
+    ledgerLookbackDays:
+      90,
 
     timelineMaxEvents:
       32,

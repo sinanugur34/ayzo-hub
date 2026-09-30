@@ -188,6 +188,9 @@ const evidence:
 
       portfolio:
         [],
+
+      nonFundingLedger:
+        [],
     },
 
     hyperEvm: {
@@ -231,6 +234,12 @@ const evidence:
 
       portfolioPointLimit:
         12,
+
+      ledgerLimit:
+        16,
+
+      ledgerLookbackDays:
+        7,
 
       hyperCoreProvider:
         "hyperliquid-info",
@@ -281,6 +290,157 @@ test(
         .hyperEvm
         .hasPriorTransactions,
       true
+    );
+  }
+);
+
+test(
+  "derives non-funding ledger flow and explicit counterparties",
+  () => {
+    const subject =
+      "0x1111111111111111111111111111111111111111";
+
+    const counterparty =
+      "0x2222222222222222222222222222222222222222";
+
+    const result =
+      buildHyperliquidDerivedAnalysis({
+        ...evidence,
+
+        hyperCore: {
+          ...evidence.hyperCore,
+
+          nonFundingLedger: [
+            {
+              hash:
+                "0xledger1",
+
+              timestamp:
+                "2026-09-30T00:00:00.000Z",
+
+              type:
+                "spotTransfer",
+
+              usdc:
+                null,
+
+              amount:
+                "5",
+
+              token:
+                "USDC",
+
+              user:
+                counterparty,
+
+              destination:
+                subject,
+
+              fee:
+                null,
+
+              nativeTokenFee:
+                null,
+
+              feeToken:
+                null,
+
+              toPerp:
+                null,
+
+              vault:
+                null,
+
+              requestedUsd:
+                null,
+
+              sourceDex:
+                null,
+
+              destinationDex:
+                null,
+            },
+
+            {
+              hash:
+                "0xledger2",
+
+              timestamp:
+                "2026-09-30T01:00:00.000Z",
+
+              type:
+                "withdraw",
+
+              usdc:
+                "10",
+
+              amount:
+                null,
+
+              token:
+                null,
+
+              user:
+                null,
+
+              destination:
+                counterparty,
+
+              fee:
+                "1",
+
+              nativeTokenFee:
+                null,
+
+              feeToken:
+                "USDC",
+
+              toPerp:
+                null,
+
+              vault:
+                null,
+
+              requestedUsd:
+                null,
+
+              sourceDex:
+                null,
+
+              destinationDex:
+                null,
+            },
+          ],
+        },
+      });
+
+    assert.equal(
+      result
+        .hyperCore
+        .ledgerEventCount,
+      2
+    );
+
+    assert.equal(
+      result
+        .hyperCore
+        .withdrawalCount,
+      1
+    );
+
+    assert.equal(
+      result
+        .hyperCore
+        .transferCount,
+      1
+    );
+
+    assert.equal(
+      result
+        .hyperCore
+        .counterparties
+        .count,
+      2
     );
   }
 );
