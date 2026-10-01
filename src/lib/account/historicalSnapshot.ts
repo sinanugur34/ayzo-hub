@@ -1688,6 +1688,261 @@ function hederaSnapshot(
   };
 }
 
+
+function zcashSnapshot(
+  network:
+    string,
+  root:
+    JsonRecord
+): HistoricalSnapshotV1 {
+  const transactions =
+    Array.isArray(
+      root.transactions
+    )
+      ? root.transactions
+      : [];
+
+  const latest =
+    record(
+      transactions[0]
+    );
+
+  const derived =
+    record(
+      root.derived
+    );
+
+  const flow =
+    record(
+      derived?.flow
+    );
+
+  const counterparties =
+    record(
+      derived?.counterparties
+    );
+
+  const funding =
+    record(
+      derived?.observedFunding
+    );
+
+  const addressState =
+    record(
+      root.addressState
+    );
+
+  return {
+    version:
+      1,
+
+    capturedAt:
+      new Date().toISOString(),
+
+    network,
+
+    coverage:
+      text(
+        root.coverage
+      ),
+
+    subjectKind:
+      "wallet",
+
+    metrics: {
+      nativeBalanceRaw:
+        text(
+          addressState?.balanceZatoshis
+        ),
+
+      transactionCount:
+        transactions.length,
+
+      latestTransactionHash:
+        text(
+          latest?.txid
+        ) ??
+        text(
+          latest?.transactionHash
+        ),
+
+      latestTransactionTimestamp:
+        text(
+          latest?.timestamp
+        ),
+
+      latestBlockHeight:
+        numberValue(
+          latest?.height
+        ) ??
+        numberValue(
+          latest?.blockHeight
+        ),
+
+      relationshipsDetected:
+        numberValue(
+          counterparties?.count
+        ),
+
+      incomingTransfersDetected:
+        numberValue(
+          flow
+            ?.incomingTransactionCount
+        ),
+
+      fundingSourceCount:
+        funding
+          ? 1
+          : 0,
+    },
+
+    modules:
+      moduleSnapshot(
+        root.modules
+      ),
+
+    findings:
+      findingSnapshot(
+        root.findings
+      ),
+  };
+}
+
+function algorandSnapshot(
+  network:
+    string,
+  root:
+    JsonRecord
+): HistoricalSnapshotV1 {
+  const account =
+    record(
+      root.account
+    );
+
+  const history =
+    record(
+      root.history
+    );
+
+  const transactions =
+    Array.isArray(
+      history?.transactions
+    )
+      ? history.transactions
+      : [];
+
+  const latest =
+    record(
+      transactions[0]
+    );
+
+  const assets =
+    Array.isArray(
+      root.assets
+    )
+      ? root.assets
+      : [];
+
+  const derived =
+    record(
+      root.derived
+    );
+
+  const flow =
+    record(
+      derived?.flow
+    );
+
+  const counterparties =
+    record(
+      derived?.counterparties
+    );
+
+  const funding =
+    record(
+      derived?.observedFunding
+    );
+
+  return {
+    version:
+      1,
+
+    capturedAt:
+      new Date().toISOString(),
+
+    network,
+
+    coverage:
+      text(
+        root.coverage
+      ),
+
+    subjectKind:
+      "wallet",
+
+    metrics: {
+      nativeBalanceRaw:
+        text(
+          account?.amountMicroAlgo
+        ) ??
+        text(
+          account?.amount
+        ),
+
+      assetBalanceTypeCount:
+        assets.length,
+
+      transactionCount:
+        transactions.length,
+
+      latestTransactionHash:
+        text(
+          latest?.transactionId
+        ) ??
+        text(
+          latest?.id
+        ),
+
+      latestTransactionTimestamp:
+        text(
+          latest?.timestamp
+        ),
+
+      latestBlockHeight:
+        numberValue(
+          latest?.round
+        ),
+
+      relationshipsDetected:
+        numberValue(
+          counterparties?.count
+        ),
+
+      incomingTransfersDetected:
+        numberValue(
+          flow
+            ?.incomingTransferCount
+        ),
+
+      fundingSourceCount:
+        funding
+          ? 1
+          : 0,
+    },
+
+    modules:
+      moduleSnapshot(
+        root.modules
+      ),
+
+    findings:
+      findingSnapshot(
+        root.findings
+      ),
+  };
+}
+
+
 export function buildHistoricalSnapshot(
   network: string,
   value: unknown
@@ -1697,6 +1952,26 @@ export function buildHistoricalSnapshot(
 
   if (!root) {
     return null;
+  }
+
+  if (
+    network ===
+      "zcash"
+  ) {
+    return zcashSnapshot(
+      network,
+      root
+    );
+  }
+
+  if (
+    network ===
+      "algorand"
+  ) {
+    return algorandSnapshot(
+      network,
+      root
+    );
   }
 
   if (

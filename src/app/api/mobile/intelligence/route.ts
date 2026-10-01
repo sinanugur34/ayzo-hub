@@ -76,6 +76,22 @@ import {
 } from "@/lib/intelligence/hedera/engine";
 
 import {
+  normalizeZcashTransparentAddress,
+} from "@/lib/intelligence/zcash/address";
+
+import {
+  runZcashIntelligence,
+} from "@/lib/intelligence/zcash/engine";
+
+import {
+  normalizeAlgorandAddress,
+} from "@/lib/intelligence/algorand/address";
+
+import {
+  runAlgorandIntelligence,
+} from "@/lib/intelligence/algorand/engine";
+
+import {
   isTonAddress,
 } from "@/lib/intelligence/ton/address";
 
@@ -548,6 +564,48 @@ export async function POST(
             "INVALID_ADDRESS",
           error:
             "Invalid Cardano mainnet payment address.",
+          network:
+            resolution.networkId,
+        },
+        400
+      );
+    }
+
+    if (
+      resolution.engine ===
+        "zcash" &&
+      !normalizeZcashTransparentAddress(
+        address
+      )
+    ) {
+      return json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid Zcash transparent mainnet address.",
+          network:
+            resolution.networkId,
+        },
+        400
+      );
+    }
+
+    if (
+      resolution.engine ===
+        "algorand" &&
+      !normalizeAlgorandAddress(
+        address
+      )
+    ) {
+      return json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid Algorand address.",
           network:
             resolution.networkId,
         },
@@ -1094,6 +1152,60 @@ export async function POST(
       case "hedera": {
         const result =
           await runHederaIntelligence({
+            address,
+
+            analysisPlan:
+              entitlement.planId,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
+        return json(
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
+          result.status
+        );
+      }
+
+      case "zcash": {
+        const result =
+          await runZcashIntelligence({
+            address,
+
+            analysisPlan:
+              entitlement.planId,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
+        return json(
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
+          result.status
+        );
+      }
+
+      case "algorand": {
+        const result =
+          await runAlgorandIntelligence({
             address,
 
             analysisPlan:

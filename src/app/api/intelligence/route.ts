@@ -69,6 +69,22 @@ import {
 } from "@/lib/intelligence/hedera/engine";
 
 import {
+  normalizeZcashTransparentAddress,
+} from "@/lib/intelligence/zcash/address";
+
+import {
+  runZcashIntelligence,
+} from "@/lib/intelligence/zcash/engine";
+
+import {
+  normalizeAlgorandAddress,
+} from "@/lib/intelligence/algorand/address";
+
+import {
+  runAlgorandIntelligence,
+} from "@/lib/intelligence/algorand/engine";
+
+import {
   isTonAddress,
 } from "@/lib/intelligence/ton/address";
 
@@ -366,6 +382,52 @@ export async function POST(request: Request) {
           network: resolution.networkId,
         },
         { status: 400 }
+      );
+    }
+
+    if (
+      resolution.engine ===
+        "zcash" &&
+      !normalizeZcashTransparentAddress(
+        address
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid Zcash transparent mainnet address.",
+          network:
+            resolution.networkId,
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (
+      resolution.engine ===
+        "algorand" &&
+      !normalizeAlgorandAddress(
+        address
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid Algorand address.",
+          network:
+            resolution.networkId,
+        },
+        {
+          status: 400,
+        }
       );
     }
 
@@ -899,6 +961,60 @@ export async function POST(request: Request) {
       case "near": {
         const result =
           await runNearIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "zcash": {
+        const result =
+          await runZcashIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "algorand": {
+        const result =
+          await runAlgorandIntelligence({
             address,
             analysisPlan,
           });
