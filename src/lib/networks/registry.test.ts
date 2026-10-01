@@ -7,11 +7,11 @@ import {
 } from "./registry";
 
 test(
-  "keeps twenty-four registered networks with all twenty-four currently live",
+  "keeps twenty-five accepted live networks after Hedera Wave B acceptance",
   () => {
     assert.equal(
       NETWORK_IDS.length,
-      24
+      26
     );
 
     const liveNetworkCount =
@@ -24,7 +24,7 @@ test(
 
     assert.equal(
       liveNetworkCount,
-      24
+      25
     );
 
     assert.equal(
@@ -644,6 +644,65 @@ test(
         .includes(
           "fundingIntelligence"
         )
+    );
+  }
+);
+
+test(
+  "keeps NEAR gated and promotes Hedera after Wave B acceptance",
+  () => {
+    assert.equal(
+      NETWORKS.near.status,
+      "development"
+    );
+
+    assert.equal(
+      NETWORKS.near.family,
+      "near"
+    );
+
+    assert.equal(
+      NETWORKS.near.nativeCurrency,
+      "NEAR"
+    );
+
+    assert.ok(
+      NETWORKS.near.capabilities.includes(
+        "addressFlows"
+      )
+    );
+
+    assert.ok(
+      NETWORKS.near.capabilities.includes(
+        "assetVerification"
+      )
+    );
+
+    assert.equal(
+      NETWORKS.hedera.status,
+      "live"
+    );
+
+    assert.equal(
+      NETWORKS.hedera.family,
+      "hedera"
+    );
+
+    assert.equal(
+      NETWORKS.hedera.nativeCurrency,
+      "HBAR"
+    );
+
+    assert.ok(
+      NETWORKS.hedera.capabilities.includes(
+        "addressFlows"
+      )
+    );
+
+    assert.ok(
+      NETWORKS.hedera.capabilities.includes(
+        "assetVerification"
+      )
     );
   }
 );

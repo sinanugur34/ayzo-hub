@@ -66,6 +66,14 @@ import {
 } from "@/lib/intelligence/aptos/engine";
 
 import {
+  runNearIntelligence,
+} from "@/lib/intelligence/near/engine";
+
+import {
+  runHederaIntelligence,
+} from "@/lib/intelligence/hedera/engine";
+
+import {
   isTonAddress,
 } from "@/lib/intelligence/ton/address";
 
@@ -872,6 +880,38 @@ export async function POST(
       case "aptos": {
         const result =
           await runAptosIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "near": {
+        const result =
+          await runNearIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "hedera": {
+        const result =
+          await runHederaIntelligence({
             address,
 
             analysisPlan:

@@ -1431,6 +1431,263 @@ function aptosSnapshot(
   };
 }
 
+
+function nearSnapshot(
+  network:
+    string,
+  root:
+    JsonRecord
+): HistoricalSnapshotV1 {
+  const account =
+    record(
+      root.account
+    );
+
+  const history =
+    record(
+      root.history
+    );
+
+  const transactions =
+    Array.isArray(
+      history?.transactions
+    )
+      ? history.transactions
+      : [];
+
+  const latest =
+    record(
+      transactions[0]
+    );
+
+  const derived =
+    record(
+      root.derived
+    );
+
+  const flow =
+    record(
+      derived?.flow
+    );
+
+  const counterparties =
+    record(
+      derived?.counterparties
+    );
+
+  const funding =
+    record(
+      derived?.observedFunding
+    );
+
+  return {
+    version:
+      1,
+
+    capturedAt:
+      new Date().toISOString(),
+
+    network,
+
+    coverage:
+      text(
+        root.coverage
+      ),
+
+    subjectKind:
+      "wallet",
+
+    metrics: {
+      nativeBalanceRaw:
+        text(
+          account
+            ?.amountYoctoNear
+        ),
+
+      transactionCount:
+        transactions.length,
+
+      latestTransactionHash:
+        text(
+          latest
+            ?.transactionHash
+        ),
+
+      latestTransactionTimestamp:
+        text(
+          latest
+            ?.blockTimestamp
+        ),
+
+      latestBlockHeight:
+        numberValue(
+          latest
+            ?.blockHeight
+        ),
+
+      relationshipsDetected:
+        numberValue(
+          counterparties
+            ?.count
+        ),
+
+      incomingTransfersDetected:
+        numberValue(
+          flow
+            ?.incomingTransferCount
+        ),
+
+      fundingSourceCount:
+        funding
+          ? 1
+          : 0,
+    },
+
+    modules:
+      moduleSnapshot(
+        root.modules
+      ),
+
+    findings:
+      findingSnapshot(
+        root.findings
+      ),
+  };
+}
+
+function hederaSnapshot(
+  network:
+    string,
+  root:
+    JsonRecord
+): HistoricalSnapshotV1 {
+  const account =
+    record(
+      root.account
+    );
+
+  const transactions =
+    Array.isArray(
+      root.transactions
+    )
+      ? root.transactions
+      : [];
+
+  const latest =
+    record(
+      transactions[0]
+    );
+
+  const tokenRelationships =
+    Array.isArray(
+      root.tokenRelationships
+    )
+      ? root.tokenRelationships
+      : [];
+
+  const nfts =
+    Array.isArray(
+      root.nfts
+    )
+      ? root.nfts
+      : [];
+
+  const derived =
+    record(
+      root.derived
+    );
+
+  const flow =
+    record(
+      derived?.flow
+    );
+
+  const counterparties =
+    record(
+      derived?.counterparties
+    );
+
+  const funding =
+    record(
+      derived?.observedFunding
+    );
+
+  return {
+    version:
+      1,
+
+    capturedAt:
+      new Date().toISOString(),
+
+    network,
+
+    coverage:
+      text(
+        root.coverage
+      ),
+
+    subjectKind:
+      "wallet",
+
+    metrics: {
+      nativeBalanceRaw:
+        text(
+          account
+            ?.balanceTinybar
+        ),
+
+      assetBalanceTypeCount:
+        tokenRelationships
+          .length,
+
+      ownedObjectCount:
+        nfts.length,
+
+      transactionCount:
+        transactions.length,
+
+      latestTransactionHash:
+        text(
+          latest
+            ?.transactionId
+        ),
+
+      latestTransactionTimestamp:
+        text(
+          latest
+            ?.consensusTimestamp
+        ),
+
+      relationshipsDetected:
+        numberValue(
+          counterparties
+            ?.count
+        ),
+
+      incomingTransfersDetected:
+        numberValue(
+          flow
+            ?.incomingTransferCount
+        ),
+
+      fundingSourceCount:
+        funding
+          ? 1
+          : 0,
+    },
+
+    modules:
+      moduleSnapshot(
+        root.modules
+      ),
+
+    findings:
+      findingSnapshot(
+        root.findings
+      ),
+  };
+}
+
 export function buildHistoricalSnapshot(
   network: string,
   value: unknown
@@ -1440,6 +1697,26 @@ export function buildHistoricalSnapshot(
 
   if (!root) {
     return null;
+  }
+
+  if (
+    network ===
+      "near"
+  ) {
+    return nearSnapshot(
+      network,
+      root
+    );
+  }
+
+  if (
+    network ===
+      "hedera"
+  ) {
+    return hederaSnapshot(
+      network,
+      root
+    );
   }
 
   if (

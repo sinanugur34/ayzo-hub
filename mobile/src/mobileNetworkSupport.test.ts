@@ -12,41 +12,41 @@ import {
 } from "./mobileNetworkSupport";
 
 test(
-  "mobile adapter registry covers all twenty-four canonical networks",
+  "mobile adapter registry covers all twenty-six canonical registrations",
   () => {
     assert.equal(
       NETWORK_IDS.length,
-      24
+      26
     );
 
     assert.equal(
       Object.keys(
         MOBILE_NETWORK_ADAPTERS
       ).length,
-      24
+      26
     );
   }
 );
 
 test(
-  "all twenty-four canonical networks are mobile live",
+  "twenty-five accepted networks are mobile live after Hedera acceptance",
   () => {
     assert.equal(
       getMobileLiveNetworkIds()
         .length,
-      24
+      25
     );
 
     for (
       const id of
-      NETWORK_IDS
+      getMobileLiveNetworkIds()
     ) {
       assert.equal(
         getMobileNetworkSupport(
           id
         ).analysisEnabled,
         true,
-        `${id} must be enabled`
+        `${id} must remain enabled`
       );
     }
   }
@@ -102,6 +102,61 @@ test(
 
     assert.equal(
       aptos.analysisEnabled,
+      true
+    );
+  }
+);
+
+test(
+  "NEAR remains disabled while Hedera is enabled after Wave B acceptance",
+  () => {
+    const near =
+      getMobileNetworkSupport(
+        "near"
+      );
+
+    const hedera =
+      getMobileNetworkSupport(
+        "hedera"
+      );
+
+    assert.equal(
+      near.adapter,
+      "near"
+    );
+
+    assert.equal(
+      near.canonicalLive,
+      false
+    );
+
+    assert.equal(
+      near.engineReady,
+      false
+    );
+
+    assert.equal(
+      near.analysisEnabled,
+      false
+    );
+
+    assert.equal(
+      hedera.adapter,
+      "hedera"
+    );
+
+    assert.equal(
+      hedera.canonicalLive,
+      true
+    );
+
+    assert.equal(
+      hedera.engineReady,
+      true
+    );
+
+    assert.equal(
+      hedera.analysisEnabled,
       true
     );
   }

@@ -11,6 +11,11 @@ import {
   shouldStopBatchAfterStatus,
 } from "@/lib/account/batchAnalysis";
 
+import {
+  NETWORKS,
+  NETWORK_IDS,
+} from "@/lib/networks/registry";
+
 type ResultStatus =
   | "queued"
   | "running"
@@ -27,30 +32,14 @@ type BatchResult = {
   message: string;
 };
 
-const networks = [
-  "solana",
-  "ethereum",
-  "base",
-  "bnb",
-  "arbitrum",
-  "polygon",
-  "optimism",
-  "avalanche",
-  "linea",
-  "scroll",
-  "mantle",
-  "sonic",
-  "monad",
-  "bitcoin",
-  "dogecoin",
-  "litecoin",
-  "sui",
-  "ton",
-  "stellar",
-  "hyperliquid",
-  "tron",
-  "xrp",
-] as const;
+const networks =
+  NETWORK_IDS.filter(
+    networkId =>
+      NETWORKS[
+        networkId
+      ].status ===
+        "live"
+  );
 
 export default function BatchAnalysisPanel() {
   const [

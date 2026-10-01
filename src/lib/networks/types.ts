@@ -11,7 +11,9 @@ export type NetworkFamily =
   | "hyperliquid"
   | "stellar"
   | "cardano"
-  | "aptos";
+  | "aptos"
+  | "near"
+  | "hedera";
 
 export type NetworkStatus =
   | "live"
