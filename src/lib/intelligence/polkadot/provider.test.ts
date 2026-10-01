@@ -693,3 +693,468 @@ test(
     );
   }
 );
+
+
+test(
+  "Polkadot paginates PubFi Advanced depth without exceeding the free row limit",
+  async () => {
+    const indexedCalls:
+      {
+        pathname:
+          string;
+
+        body:
+          Record<
+            string,
+            unknown
+          >;
+      }[] = [];
+
+    const result =
+      await getPolkadotEvidence(
+        {
+          address:
+            ADDRESS,
+
+          analysisPlan:
+            "advanced",
+        },
+        {
+          fetchImpl:
+            async (
+              input,
+              init
+            ) => {
+              const url =
+                new URL(
+                  input
+                );
+
+              if (
+                url.host ===
+                  "sidecar.test"
+              ) {
+                return json(
+                  sidecarResponse()
+                );
+              }
+
+              assert.equal(
+                url.host,
+                "api.pubfi.test"
+              );
+
+              const body =
+                JSON.parse(
+                  String(
+                    init?.body ??
+                    "{}"
+                  )
+                ) as
+                  Record<
+                    string,
+                    unknown
+                  >;
+
+              indexedCalls.push({
+                pathname:
+                  url.pathname,
+
+                body,
+              });
+
+              const indexed =
+                indexedResponse(
+                  url.pathname
+                ) as {
+                  data:
+                    Record<
+                      string,
+                      unknown
+                    >;
+                };
+
+              const data = {
+                ...indexed.data,
+              };
+
+              const row =
+                typeof body.row ===
+                  "number"
+                  ? body.row
+                  : null;
+
+              if (
+                row !==
+                  null
+              ) {
+                for (
+                  const key of [
+                    "transfers",
+                    "extrinsics",
+                    "multisig",
+                  ]
+                ) {
+                  const source =
+                    data[key];
+
+                  if (
+                    Array.isArray(
+                      source
+                    ) &&
+                    source.length >
+                      0
+                  ) {
+                    data[key] =
+                      Array.from(
+                        {
+                          length:
+                            row,
+                        },
+                        () =>
+                          source[0]
+                      );
+                  }
+                }
+              }
+
+              return json({
+                code:
+                  0,
+
+                message:
+                  "Success",
+
+                data,
+              });
+            },
+
+          sidecarUrl:
+            "https://sidecar.test",
+
+          pubfiUrl:
+            "https://api.pubfi.test",
+
+          pubfiApiKey:
+            "test-pubfi-key",
+
+          pubfiFreeRequestDelayMs:
+            0,
+
+          subscanUrl:
+            "https://subscan.test",
+
+          subscanApiKey:
+            null,
+
+          timeoutMs:
+            2_000,
+        }
+      );
+
+    assert.equal(
+      result.ok,
+      true
+    );
+
+    if (!result.ok) {
+      return;
+    }
+
+    const paged =
+      indexedCalls
+        .filter(
+          call =>
+            typeof call
+              .body
+              .row ===
+              "number"
+        );
+
+    for (
+      const call of
+      paged
+    ) {
+      assert.ok(
+        (
+          call.body.row as
+            number
+        ) <= 20
+      );
+    }
+
+    const transfers =
+      indexedCalls.filter(
+        call =>
+          call.pathname
+            .includes(
+              "/api/v2/scan/transfers"
+            )
+      );
+
+    const extrinsics =
+      indexedCalls.filter(
+        call =>
+          call.pathname
+            .includes(
+              "/api/v2/scan/extrinsics"
+            )
+      );
+
+    const proxies =
+      indexedCalls.filter(
+        call =>
+          call.pathname
+            .includes(
+              "/api/scan/proxy/extrinsics"
+            )
+      );
+
+    const multisig =
+      indexedCalls.filter(
+        call =>
+          call.pathname
+            .includes(
+              "/api/scan/multisigs/details"
+            )
+      );
+
+    assert.deepEqual(
+      transfers.map(
+        call =>
+          call.body.page
+      ),
+      [
+        0, 1, 2, 3, 4,
+        5, 6, 7, 8, 9,
+      ]
+    );
+
+    assert.deepEqual(
+      extrinsics.map(
+        call =>
+          call.body.page
+      ),
+      [
+        0, 1, 2, 3, 4,
+        5, 6, 7, 8, 9,
+      ]
+    );
+
+    assert.deepEqual(
+      proxies.map(
+        call =>
+          call.body.row
+      ),
+      [
+        20,
+        20,
+        20,
+        4,
+      ]
+    );
+
+    assert.deepEqual(
+      multisig.map(
+        call =>
+          call.body.row
+      ),
+      [
+        20,
+        20,
+        20,
+        4,
+      ]
+    );
+
+    assert.equal(
+      indexedCalls.length,
+      29
+    );
+
+    assert.equal(
+      result.data
+        .transfers
+        .length,
+      200
+    );
+
+    assert.equal(
+      result.data
+        .extrinsics
+        .length,
+      200
+    );
+
+    assert.equal(
+      result.data
+        .proxies
+        .length,
+      64
+    );
+
+    assert.equal(
+      result.data
+        .multisig
+        .length,
+      64
+    );
+
+    assert.equal(
+      result.data
+        .coverage
+        .providerRequestsUsed,
+      30
+    );
+
+    assert.equal(
+      result.data
+        .coverage
+        .providerRequestBudget,
+      32
+    );
+
+    assert.deepEqual(
+      result.data
+        .coverage
+        .unavailableEvidence,
+      []
+    );
+
+    assert.equal(
+      result.data
+        .coverage
+        .coverage,
+      "complete"
+    );
+  }
+);
+
+test(
+  "Polkadot fails closed on HTTP 200 Subscan logical errors",
+  async () => {
+    const result =
+      await getPolkadotEvidence(
+        {
+          address:
+            ADDRESS,
+
+          analysisPlan:
+            "free",
+        },
+        {
+          fetchImpl:
+            async (
+              input
+            ) => {
+              const url =
+                new URL(
+                  input
+                );
+
+              if (
+                url.host ===
+                  "sidecar.test"
+              ) {
+                return json(
+                  sidecarResponse()
+                );
+              }
+
+              if (
+                url.pathname
+                  .includes(
+                    "/api/v2/scan/transfers"
+                  )
+              ) {
+                return json({
+                  code:
+                    403,
+
+                  message:
+                    "row_limit_exceeded",
+
+                  data:
+                    null,
+                });
+              }
+
+              const indexed =
+                indexedResponse(
+                  url.pathname
+                ) as {
+                  data:
+                    Record<
+                      string,
+                      unknown
+                    >;
+                };
+
+              return json({
+                code:
+                  0,
+
+                message:
+                  "Success",
+
+                data:
+                  indexed.data,
+              });
+            },
+
+          sidecarUrl:
+            "https://sidecar.test",
+
+          pubfiUrl:
+            "https://api.pubfi.test",
+
+          pubfiApiKey:
+            "test-pubfi-key",
+
+          pubfiFreeRequestDelayMs:
+            0,
+
+          subscanUrl:
+            "https://subscan.test",
+
+          subscanApiKey:
+            null,
+
+          timeoutMs:
+            2_000,
+        }
+      );
+
+    assert.equal(
+      result.ok,
+      true
+    );
+
+    if (!result.ok) {
+      return;
+    }
+
+    assert.equal(
+      result.data
+        .transfers
+        .length,
+      0
+    );
+
+    assert.ok(
+      result.data
+        .coverage
+        .unavailableEvidence
+        .includes(
+          "indexed_transfer_history"
+        )
+    );
+
+    assert.equal(
+      result.data
+        .coverage
+        .coverage,
+      "partial"
+    );
+  }
+);

@@ -30,6 +30,24 @@ const DEFAULT_SUBSCAN =
 const DEFAULT_PUBFI =
   "https://api.pubfi.ai";
 
+/*
+ * Real mainnet acceptance:
+ *
+ * PubFi :free Subscan gateway allows at most
+ * 20 rows per request for the current account.
+ *
+ * Direct Subscan's upstream schema allows at most
+ * 100 rows per request.
+ *
+ * AYZO plan depth remains independent from either
+ * transport's per-request pagination envelope.
+ */
+const PUBFI_FREE_ROW_LIMIT =
+  20;
+
+const SUBSCAN_ROW_LIMIT =
+  100;
+
 type JsonRecord =
   Record<string, unknown>;
 
@@ -869,6 +887,85 @@ export async function getPolkadotEvidence(
           )
       );
 
+  const validateIndexedEnvelope =
+    (
+      result:
+        Awaited<
+          ReturnType<
+            typeof requestJson
+          >
+        >,
+      providerLabel:
+        string
+    ):
+      Awaited<
+        ReturnType<
+          typeof requestJson
+        >
+      > => {
+      if (!result.ok) {
+        return result;
+      }
+
+      if (
+        !Object.prototype
+          .hasOwnProperty
+          .call(
+            result.data,
+            "code"
+          )
+      ) {
+        /*
+         * Compatibility with older/direct mocks and
+         * transports that return only the data object.
+         */
+        return result;
+      }
+
+      const logicalCode =
+        integer(
+          result
+            .data
+            .code
+        );
+
+      if (
+        logicalCode ===
+          null
+      ) {
+        return {
+          ok:
+            false,
+
+          code:
+            "MALFORMED_RESPONSE",
+
+          error:
+            `${providerLabel} returned an invalid logical status.`,
+        };
+      }
+
+      if (
+        logicalCode !==
+          0
+      ) {
+        return {
+          ok:
+            false,
+
+          code:
+            errorCode(
+              logicalCode
+            ),
+
+          error:
+            `${providerLabel} returned logical code ${logicalCode}.`,
+        };
+      }
+
+      return result;
+    };
+
   const indexedPost =
     async (
       path:
@@ -906,8 +1003,45 @@ export async function getPolkadotEvidence(
         pubfiRequests +=
           1;
 
-        return requestJson(
-          `${pubfiBase}/v1/gateway/subscan/polkadot${path}:free`,
+        const result =
+          await requestJson(
+            `${pubfiBase}/v1/gateway/subscan/polkadot${path}:free`,
+            {
+              fetchImpl:
+                deps.fetchImpl,
+
+              timeoutMs:
+                deps.timeoutMs,
+
+              init: {
+                method:
+                  "POST",
+
+                headers: {
+                  Authorization:
+                    `Bearer ${pubfiKey}`,
+
+                  "Content-Type":
+                    "application/json",
+                },
+
+                body:
+                  JSON.stringify(
+                    body
+                  ),
+              },
+            }
+          );
+
+        return validateIndexedEnvelope(
+          result,
+          "Polkadot PubFi/Subscan"
+        );
+      }
+
+      const result =
+        await requestJson(
+          `${subscanBase}${path}`,
           {
             fetchImpl:
               deps.fetchImpl,
@@ -920,11 +1054,12 @@ export async function getPolkadotEvidence(
                 "POST",
 
               headers: {
-                Authorization:
-                  `Bearer ${pubfiKey}`,
-
                 "Content-Type":
                   "application/json",
+
+                "X-API-Key":
+                  subscanKey as
+                    string,
               },
 
               body:
@@ -934,37 +1069,174 @@ export async function getPolkadotEvidence(
             },
           }
         );
+
+      return validateIndexedEnvelope(
+        result,
+        "Polkadot Subscan"
+      );
+    };
+
+  const indexedCollection =
+    async (
+      {
+        path,
+        body,
+        limit,
+        property,
+      }: {
+        path:
+          string;
+
+        body:
+          JsonRecord;
+
+        limit:
+          number;
+
+        property:
+          string;
+      }
+    ): Promise<{
+      ok:
+        boolean;
+
+      items:
+        unknown[];
+    }> => {
+      const items:
+        unknown[] =
+          [];
+
+      const pageLimit =
+        indexedProvider ===
+          "pubfi"
+          ? PUBFI_FREE_ROW_LIMIT
+          : SUBSCAN_ROW_LIMIT;
+
+      let page =
+        0;
+
+      while (
+        items.length <
+          limit
+      ) {
+        const row =
+          Math.min(
+            pageLimit,
+            limit -
+              items.length
+          );
+
+        const result =
+          await indexedPost(
+            path,
+            {
+              ...body,
+
+              page,
+
+              row,
+            }
+          );
+
+        if (
+          !result ||
+          !result.ok
+        ) {
+          return {
+            ok:
+              false,
+
+            items,
+          };
+        }
+
+        const rawData =
+          result
+            .data
+            .data;
+
+        /*
+         * Subscan uses a successful null data payload
+         * for some valid zero-evidence account/module
+         * combinations. Preserve that distinction:
+         * queried-and-empty is not unavailable.
+         */
+        if (
+          rawData ===
+            null
+        ) {
+          return {
+            ok:
+              true,
+
+            items,
+          };
+        }
+
+        if (
+          rawData ===
+            undefined
+        ) {
+          return {
+            ok:
+              false,
+
+            items,
+          };
+        }
+
+        const data =
+          record(
+            rawData
+          );
+
+        if (!data) {
+          return {
+            ok:
+              false,
+
+            items,
+          };
+        }
+
+        const batch =
+          array(
+            data[
+              property
+            ]
+          );
+
+        items.push(
+          ...batch
+        );
+
+        /*
+         * A short page is the canonical bounded stop.
+         * Do not waste PubFi requests after evidence
+         * is exhausted.
+         */
+        if (
+          batch.length <
+            row
+        ) {
+          break;
+        }
+
+        page +=
+          1;
       }
 
-      return requestJson(
-        `${subscanBase}${path}`,
-        {
-          fetchImpl:
-            deps.fetchImpl,
+      return {
+        ok:
+          true,
 
-          timeoutMs:
-            deps.timeoutMs,
-
-          init: {
-            method:
-              "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-
-              "X-API-Key":
-                subscanKey as
-                  string,
-            },
-
-            body:
-              JSON.stringify(
-                body
-              ),
-          },
-        }
-      );
+        items:
+          items.slice(
+            0,
+            limit
+          ),
+      };
     };
 
   if (!indexedProvider) {
@@ -977,45 +1249,49 @@ export async function getPolkadotEvidence(
     );
   } else {
     const transferResult =
-      await indexedPost(
-        "/api/v2/scan/transfers",
-        {
+      await indexedCollection({
+        path:
+          "/api/v2/scan/transfers",
+
+        body: {
           address:
             normalized,
-
-          page:
-            0,
-
-          row:
-            policy
-              .transferLimit,
 
           direction:
             "all",
 
           success:
             true,
-        }
-      );
+        },
+
+        limit:
+          policy
+            .transferLimit,
+
+        property:
+          "transfers",
+      });
 
     const extrinsicResult =
-      await indexedPost(
-        "/api/v2/scan/extrinsics",
-        {
+      await indexedCollection({
+        path:
+          "/api/v2/scan/extrinsics",
+
+        body: {
           address:
             normalized,
 
-          page:
-            0,
-
-          row:
-            policy
-              .extrinsicLimit,
-
           order:
             "desc",
-        }
-      );
+        },
+
+        limit:
+          policy
+            .extrinsicLimit,
+
+        property:
+          "extrinsics",
+      });
 
     const stakingResult =
       await indexedPost(
@@ -1027,101 +1303,91 @@ export async function getPolkadotEvidence(
       );
 
     const proxyResult =
-      await indexedPost(
-        "/api/scan/proxy/extrinsics",
-        {
+      await indexedCollection({
+        path:
+          "/api/scan/proxy/extrinsics",
+
+        body: {
           account:
             normalized,
-
-          page:
-            0,
-
-          row:
-            policy
-              .proxyLimit,
 
           order:
             "desc",
-        }
-      );
+        },
+
+        limit:
+          policy
+            .proxyLimit,
+
+        property:
+          "extrinsics",
+      });
 
     const multisigResult =
-      await indexedPost(
-        "/api/scan/multisigs/details",
-        {
+      await indexedCollection({
+        path:
+          "/api/scan/multisigs/details",
+
+        body: {
           account:
             normalized,
+        },
 
-          page:
-            0,
+        limit:
+          policy
+            .multisigLimit,
 
-          row:
-            policy
-              .multisigLimit,
-        }
-      );
+        property:
+          "multisig",
+      });
 
-    if (
-      transferResult?.ok
-    ) {
-      const data =
-        record(
-          transferResult
-            .data.data
+    transfers =
+      transferResult
+        .items
+        .map(
+          parseTransfer
+        )
+        .filter(
+          (
+            item
+          ): item is PolkadotTransferEvidence =>
+            item !== null
+        )
+        .slice(
+          0,
+          policy
+            .transferLimit
         );
 
-      transfers =
-        array(
-          data?.transfers
-        )
-          .map(
-            parseTransfer
-          )
-          .filter(
-            (
-              item
-            ): item is PolkadotTransferEvidence =>
-              item !== null
-          )
-          .slice(
-            0,
-            policy
-              .transferLimit
-          );
-    } else {
+    if (
+      !transferResult.ok
+    ) {
       unavailableEvidence.push(
         "indexed_transfer_history"
       );
     }
 
-    if (
-      extrinsicResult?.ok
-    ) {
-      const data =
-        record(
-          extrinsicResult
-            .data.data
+    extrinsics =
+      extrinsicResult
+        .items
+        .map(
+          parseExtrinsic
+        )
+        .filter(
+          (
+            item
+          ): item is PolkadotExtrinsicEvidence =>
+            item !== null
+        )
+        .slice(
+          0,
+          policy
+            .extrinsicLimit
         );
 
-      extrinsics =
-        array(
-          data?.extrinsics
-        )
-          .map(
-            parseExtrinsic
-          )
-          .filter(
-            (
-              item
-            ): item is PolkadotExtrinsicEvidence =>
-              item !== null
-          )
-          .slice(
-            0,
-            policy
-              .extrinsicLimit
-          );
-    } else {
+    if (
+      !extrinsicResult.ok
+    ) {
       unavailableEvidence.push(
         "extrinsic_history"
       );
@@ -1133,7 +1399,8 @@ export async function getPolkadotEvidence(
       staking =
         parseStaking(
           stakingResult
-            .data.data
+            .data
+            .data
         );
     } else {
       unavailableEvidence.push(
@@ -1141,67 +1408,53 @@ export async function getPolkadotEvidence(
       );
     }
 
-    if (
-      proxyResult?.ok
-    ) {
-      const data =
-        record(
-          proxyResult
-            .data.data
+    proxies =
+      proxyResult
+        .items
+        .map(
+          parseProxy
+        )
+        .filter(
+          (
+            item
+          ): item is PolkadotProxyEvidence =>
+            item !== null
+        )
+        .slice(
+          0,
+          policy
+            .proxyLimit
         );
 
-      proxies =
-        array(
-          data?.extrinsics
-        )
-          .map(
-            parseProxy
-          )
-          .filter(
-            (
-              item
-            ): item is PolkadotProxyEvidence =>
-              item !== null
-          )
-          .slice(
-            0,
-            policy
-              .proxyLimit
-          );
-    } else {
+    if (
+      !proxyResult.ok
+    ) {
       unavailableEvidence.push(
         "proxy_evidence"
       );
     }
 
-    if (
-      multisigResult?.ok
-    ) {
-      const data =
-        record(
-          multisigResult
-            .data.data
+    multisig =
+      multisigResult
+        .items
+        .map(
+          parseMultisig
+        )
+        .filter(
+          (
+            item
+          ): item is PolkadotMultisigEvidence =>
+            item !== null
+        )
+        .slice(
+          0,
+          policy
+            .multisigLimit
         );
 
-      multisig =
-        array(
-          data?.multisig
-        )
-          .map(
-            parseMultisig
-          )
-          .filter(
-            (
-              item
-            ): item is PolkadotMultisigEvidence =>
-              item !== null
-          )
-          .slice(
-            0,
-            policy
-              .multisigLimit
-          );
-    } else {
+    if (
+      !multisigResult.ok
+    ) {
       unavailableEvidence.push(
         "multisig_evidence"
       );

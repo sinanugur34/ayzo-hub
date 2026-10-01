@@ -82,7 +82,7 @@ const POLICIES:
       96,
 
     providerRequestBudget:
-      12,
+      16,
   },
 
   advanced: {
@@ -108,7 +108,7 @@ const POLICIES:
       240,
 
     providerRequestBudget:
-      16,
+      32,
   },
 };
 
