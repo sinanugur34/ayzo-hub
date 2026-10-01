@@ -805,14 +805,111 @@ test(
                     source.length >
                       0
                   ) {
+                    const base =
+                      source[0] as
+                        Record<
+                          string,
+                          unknown
+                        >;
+
+                    const page =
+                      typeof body.page ===
+                        "number"
+                        ? body.page
+                        : 0;
+
                     data[key] =
                       Array.from(
                         {
                           length:
                             row,
                         },
-                        () =>
-                          source[0]
+                        (
+                          _,
+                          index
+                        ) => {
+                          const ordinal =
+                            page *
+                              100 +
+                            index;
+
+                          if (
+                            key ===
+                              "transfers"
+                          ) {
+                            return {
+                              ...base,
+
+                              block_num:
+                                10_000 +
+                                ordinal,
+
+                              block_timestamp:
+                                1_790_812_800 +
+                                ordinal,
+
+                              extrinsic_index:
+                                `${10_000 + ordinal}-1`,
+
+                              hash:
+                                `0xtransfer-${ordinal}`,
+                            };
+                          }
+
+                          if (
+                            key ===
+                              "multisig"
+                          ) {
+                            return {
+                              ...base,
+
+                              multi_id:
+                                `multi-${ordinal}`,
+
+                              confirm_extrinsic_idx:
+                                `${30_000 + ordinal}-1`,
+
+                              timestamp:
+                                1_790_812_820 +
+                                ordinal,
+                            };
+                          }
+
+                          if (
+                            url.pathname.includes(
+                              "/api/v2/scan/extrinsics"
+                            )
+                          ) {
+                            return {
+                              ...base,
+
+                              block_num:
+                                20_000 +
+                                ordinal,
+
+                              block_timestamp:
+                                1_790_812_800 +
+                                ordinal,
+
+                              extrinsic_index:
+                                `${20_000 + ordinal}-1`,
+
+                              extrinsic_hash:
+                                `0xextrinsic-${ordinal}`,
+                            };
+                          }
+
+                          return {
+                            ...base,
+
+                            extrinsic_index:
+                              `${40_000 + ordinal}-1`,
+
+                            block_timestamp:
+                              1_790_812_810 +
+                              ordinal,
+                          };
+                        }
                       );
                   }
                 }
@@ -1155,6 +1252,374 @@ test(
         .coverage
         .coverage,
       "partial"
+    );
+  }
+);
+
+test(
+  "Polkadot deterministically dedupes overlapping indexed pages",
+  async () => {
+    const makeTransfer =
+      (
+        id:
+          number
+      ) => ({
+        from:
+          OTHER,
+
+        to:
+          ADDRESS,
+
+        amount:
+          String(
+            1_000_000_000 +
+            id
+          ),
+
+        block_num:
+          5_000 +
+          id,
+
+        block_timestamp:
+          1_790_812_800 +
+          id,
+
+        extrinsic_index:
+          `${5_000 + id}-0`,
+
+        hash:
+          `0xtransfer-${id}`,
+
+        success:
+          true,
+      });
+
+    const makeExtrinsic =
+      (
+        id:
+          number
+      ) => ({
+        call_module:
+          "balances",
+
+        call_module_function:
+          "transfer_keep_alive",
+
+        block_num:
+          6_000 +
+          id,
+
+        block_timestamp:
+          1_790_812_800 +
+          id,
+
+        extrinsic_index:
+          `${6_000 + id}-0`,
+
+        extrinsic_hash:
+          `0xextrinsic-${id}`,
+
+        success:
+          true,
+
+        fee:
+          String(
+            1_000 +
+            id
+          ),
+      });
+
+    const pageIds =
+      (
+        page:
+          number
+      ) =>
+        page ===
+          0
+          ? Array.from(
+              {
+                length:
+                  20,
+              },
+              (
+                _,
+                index
+              ) =>
+                index
+            )
+          : page ===
+              1
+            ? Array.from(
+                {
+                  length:
+                    15,
+                },
+                (
+                  _,
+                  index
+                ) =>
+                  15 +
+                  index
+              )
+            : [];
+
+    const result =
+      await getPolkadotEvidence(
+        {
+          address:
+            ADDRESS,
+
+          analysisPlan:
+            "pro",
+        },
+        {
+          fetchImpl:
+            async (
+              input,
+              init
+            ) => {
+              const url =
+                new URL(
+                  input
+                );
+
+              if (
+                url.host ===
+                  "sidecar.test"
+              ) {
+                return json(
+                  sidecarResponse()
+                );
+              }
+
+              const body =
+                JSON.parse(
+                  String(
+                    init?.body ??
+                    "{}"
+                  )
+                ) as {
+                  page?:
+                    number;
+                };
+
+              const page =
+                typeof body.page ===
+                  "number"
+                  ? body.page
+                  : 0;
+
+              if (
+                url.pathname.includes(
+                  "/api/v2/scan/transfers"
+                )
+              ) {
+                return json({
+                  code:
+                    0,
+
+                  message:
+                    "Success",
+
+                  data: {
+                    transfers:
+                      pageIds(
+                        page
+                      ).map(
+                        makeTransfer
+                      ),
+                  },
+                });
+              }
+
+              if (
+                url.pathname.includes(
+                  "/api/v2/scan/extrinsics"
+                )
+              ) {
+                return json({
+                  code:
+                    0,
+
+                  message:
+                    "Success",
+
+                  data: {
+                    extrinsics:
+                      pageIds(
+                        page
+                      ).map(
+                        makeExtrinsic
+                      ),
+                  },
+                });
+              }
+
+              if (
+                url.pathname.includes(
+                  "/api/scan/staking/nominator"
+                )
+              ) {
+                return json({
+                  code:
+                    0,
+
+                  message:
+                    "Success",
+
+                  data:
+                    null,
+                });
+              }
+
+              if (
+                url.pathname.includes(
+                  "/api/scan/proxy/extrinsics"
+                )
+              ) {
+                return json({
+                  code:
+                    0,
+
+                  message:
+                    "Success",
+
+                  data: {
+                    extrinsics:
+                      [],
+                  },
+                });
+              }
+
+              if (
+                url.pathname.includes(
+                  "/api/scan/multisigs/details"
+                )
+              ) {
+                return json({
+                  code:
+                    0,
+
+                  message:
+                    "Success",
+
+                  data: {
+                    multisig:
+                      [],
+                  },
+                });
+              }
+
+              throw new Error(
+                `Unexpected path: ${url.pathname}`
+              );
+            },
+
+          sidecarUrl:
+            "https://sidecar.test",
+
+          pubfiUrl:
+            "https://api.pubfi.test",
+
+          pubfiApiKey:
+            "test-pubfi-key",
+
+          pubfiFreeRequestDelayMs:
+            0,
+
+          subscanUrl:
+            "https://subscan.test",
+
+          subscanApiKey:
+            null,
+
+          timeoutMs:
+            2_000,
+        }
+      );
+
+    assert.equal(
+      result.ok,
+      true
+    );
+
+    if (!result.ok) {
+      return;
+    }
+
+    assert.equal(
+      result.data
+        .transfers
+        .length,
+      30
+    );
+
+    assert.equal(
+      result.data
+        .extrinsics
+        .length,
+      30
+    );
+
+    assert.equal(
+      new Set(
+        result.data
+          .transfers
+          .map(
+            item =>
+              item
+                .extrinsicIndex
+          )
+      ).size,
+      30
+    );
+
+    assert.equal(
+      new Set(
+        result.data
+          .extrinsics
+          .map(
+            item =>
+              item
+                .extrinsicIndex
+          )
+      ).size,
+      30
+    );
+
+    assert.equal(
+      result.data
+        .transfers[0]
+        ?.extrinsicIndex,
+      "5000-0"
+    );
+
+    assert.equal(
+      result.data
+        .transfers[29]
+        ?.extrinsicIndex,
+      "5029-0"
+    );
+
+    assert.equal(
+      result.data
+        .coverage
+        .providerRequestsUsed,
+      8
+    );
+
+    assert.equal(
+      result.data
+        .coverage
+        .providerRequestBudget,
+      16
+    );
+
+    assert.deepEqual(
+      result.data
+        .coverage
+        .unavailableEvidence,
+      []
     );
   }
 );

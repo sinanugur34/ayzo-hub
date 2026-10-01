@@ -708,6 +708,65 @@ function parseStaking(
   };
 }
 
+function deterministicEvidenceIdentity(
+  parts:
+    readonly (
+      string |
+      number |
+      boolean |
+      null
+    )[]
+) {
+  return JSON.stringify(
+    parts
+  );
+}
+
+function dedupeDeterministically<T>(
+  items:
+    readonly T[],
+  identity:
+    (
+      item:
+        T
+    ) => string
+) {
+  const seen =
+    new Set<string>();
+
+  const deduped:
+    T[] =
+      [];
+
+  for (
+    const item of
+    items
+  ) {
+    const key =
+      identity(
+        item
+      );
+
+    if (
+      seen.has(
+        key
+      )
+    ) {
+      continue;
+    }
+
+    seen.add(
+      key
+    );
+
+    deduped.push(
+      item
+    );
+  }
+
+  return deduped;
+}
+
 export async function getPolkadotEvidence(
   {
     address,
@@ -1342,17 +1401,30 @@ export async function getPolkadotEvidence(
       });
 
     transfers =
-      transferResult
-        .items
-        .map(
-          parseTransfer
-        )
-        .filter(
-          (
-            item
-          ): item is PolkadotTransferEvidence =>
-            item !== null
-        )
+      dedupeDeterministically(
+        transferResult
+          .items
+          .map(
+            parseTransfer
+          )
+          .filter(
+            (
+              item
+            ): item is PolkadotTransferEvidence =>
+              item !== null
+          ),
+        item =>
+          deterministicEvidenceIdentity([
+            item.extrinsicHash,
+            item.extrinsicIndex,
+            item.blockNumber,
+            item.timestamp,
+            item.from,
+            item.to,
+            item.amountPlanck,
+            item.success,
+          ])
+      )
         .slice(
           0,
           policy
@@ -1368,17 +1440,30 @@ export async function getPolkadotEvidence(
     }
 
     extrinsics =
-      extrinsicResult
-        .items
-        .map(
-          parseExtrinsic
-        )
-        .filter(
-          (
-            item
-          ): item is PolkadotExtrinsicEvidence =>
-            item !== null
-        )
+      dedupeDeterministically(
+        extrinsicResult
+          .items
+          .map(
+            parseExtrinsic
+          )
+          .filter(
+            (
+              item
+            ): item is PolkadotExtrinsicEvidence =>
+              item !== null
+          ),
+        item =>
+          deterministicEvidenceIdentity([
+            item.extrinsicHash,
+            item.extrinsicIndex,
+            item.blockNumber,
+            item.timestamp,
+            item.module,
+            item.call,
+            item.feePlanck,
+            item.success,
+          ])
+      )
         .slice(
           0,
           policy
@@ -1409,17 +1494,28 @@ export async function getPolkadotEvidence(
     }
 
     proxies =
-      proxyResult
-        .items
-        .map(
-          parseProxy
-        )
-        .filter(
-          (
-            item
-          ): item is PolkadotProxyEvidence =>
-            item !== null
-        )
+      dedupeDeterministically(
+        proxyResult
+          .items
+          .map(
+            parseProxy
+          )
+          .filter(
+            (
+              item
+            ): item is PolkadotProxyEvidence =>
+              item !== null
+          ),
+        item =>
+          deterministicEvidenceIdentity([
+            item.extrinsicIndex,
+            item.timestamp,
+            item.account,
+            item.realAccount,
+            item.module,
+            item.call,
+          ])
+      )
         .slice(
           0,
           policy
@@ -1435,17 +1531,28 @@ export async function getPolkadotEvidence(
     }
 
     multisig =
-      multisigResult
-        .items
-        .map(
-          parseMultisig
-        )
-        .filter(
-          (
-            item
-          ): item is PolkadotMultisigEvidence =>
-            item !== null
-        )
+      dedupeDeterministically(
+        multisigResult
+          .items
+          .map(
+            parseMultisig
+          )
+          .filter(
+            (
+              item
+            ): item is PolkadotMultisigEvidence =>
+              item !== null
+          ),
+        item =>
+          deterministicEvidenceIdentity([
+            item.multiId,
+            item.extrinsicIndex,
+            item.timestamp,
+            item.account,
+            item.multisigAccount,
+            item.status,
+          ])
+      )
         .slice(
           0,
           policy
