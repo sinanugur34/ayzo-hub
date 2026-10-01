@@ -2171,6 +2171,389 @@ export function buildMobileEvidenceWorkspace({
   }
 
   /*
+   * Polkadot:
+   * explicit indexed DOT transfer counterparties.
+   */
+  if (
+    networkId ===
+      "polkadot"
+  ) {
+    const derived =
+      recordChild(
+        root,
+        "derived"
+      );
+
+    const counterparties =
+      recordChild(
+        derived,
+        "counterparties"
+      );
+
+    const funding =
+      recordChild(
+        derived,
+        "observedFunding"
+      );
+
+    const fundingSource =
+      stringValue(
+        funding?.sourceAddress
+      );
+
+    for (
+      const item of
+      arrayChild(
+        counterparties,
+        "items"
+      )
+    ) {
+      const wallet =
+        stringValue(
+          item.address
+        );
+
+      if (!wallet) {
+        continue;
+      }
+
+      const walletId =
+        addWallet(
+          wallet,
+          `${
+            numberValue(
+              item.observationCount
+            ) ??
+            1
+          } explicit DOT transfer observation(s)`,
+          wallet ===
+            fundingSource
+            ? "funding"
+            : "wallet"
+        );
+
+      if (!walletId) {
+        continue;
+      }
+
+      const incoming =
+        numberValue(
+          item.incomingCount
+        ) ??
+        0;
+
+      const outgoing =
+        numberValue(
+          item.outgoingCount
+        ) ??
+        0;
+
+      addEdge({
+        id:
+          `polkadot:${walletId}`,
+
+        source:
+          incoming > 0 &&
+          outgoing === 0
+            ? walletId
+            : rootId,
+
+        target:
+          incoming > 0 &&
+          outgoing === 0
+            ? rootId
+            : walletId,
+
+        label:
+          "Explicit DOT transfer relationship",
+
+        direction:
+          incoming > 0 &&
+          outgoing > 0
+            ? "bidirectional"
+            : "forward",
+      });
+    }
+
+    const flow =
+      recordChild(
+        derived,
+        "flow"
+      );
+
+    for (
+      const [
+        index,
+        item,
+      ] of arrayChild(
+        flow,
+        "transfers"
+      ).entries()
+    ) {
+      const direction =
+        stringValue(
+          item.direction
+        );
+
+      const counterparty =
+        stringValue(
+          item.counterparty
+        );
+
+      const ref =
+        stringValue(
+          item.extrinsicHash
+        ) ??
+        stringValue(
+          item.extrinsicIndex
+        );
+
+      if (
+        !counterparty ||
+        !ref ||
+        (
+          direction !==
+            "incoming" &&
+          direction !==
+            "outgoing"
+        )
+      ) {
+        continue;
+      }
+
+      addEvent({
+        id:
+          `polkadot:${ref}:${index}`,
+
+        title:
+          direction ===
+            "incoming"
+            ? "Incoming DOT transfer"
+            : "Outgoing DOT transfer",
+
+        detail:
+          `${direction ===
+            "incoming"
+            ? "from"
+            : "to"} ${short(
+              counterparty
+            )}`,
+
+        timestamp:
+          stringValue(
+            item.timestamp
+          ),
+
+        direction,
+
+        transactionRef:
+          ref,
+      });
+    }
+  }
+
+  /*
+   * Cosmos Hub / Injective:
+   * explicit bank + IBC transfer counterparties.
+   */
+  if (
+    networkId ===
+      "cosmos" ||
+    networkId ===
+      "injective"
+  ) {
+    const derived =
+      recordChild(
+        root,
+        "derived"
+      );
+
+    const counterparties =
+      recordChild(
+        derived,
+        "counterparties"
+      );
+
+    const funding =
+      recordChild(
+        derived,
+        "observedFunding"
+      );
+
+    const fundingSource =
+      stringValue(
+        funding?.sourceAddress
+      );
+
+    for (
+      const item of
+      arrayChild(
+        counterparties,
+        "items"
+      )
+    ) {
+      const wallet =
+        stringValue(
+          item.address
+        );
+
+      if (!wallet) {
+        continue;
+      }
+
+      const walletId =
+        addWallet(
+          wallet,
+          `${
+            numberValue(
+              item.observationCount
+            ) ??
+            1
+          } explicit native message relationship(s)`,
+          wallet ===
+            fundingSource
+            ? "funding"
+            : "wallet"
+        );
+
+      if (!walletId) {
+        continue;
+      }
+
+      const incoming =
+        numberValue(
+          item.incomingCount
+        ) ??
+        0;
+
+      const outgoing =
+        numberValue(
+          item.outgoingCount
+        ) ??
+        0;
+
+      addEdge({
+        id:
+          `${networkId}:${walletId}`,
+
+        source:
+          incoming > 0 &&
+          outgoing === 0
+            ? walletId
+            : rootId,
+
+        target:
+          incoming > 0 &&
+          outgoing === 0
+            ? rootId
+            : walletId,
+
+        label:
+          "Explicit bank / IBC transfer relationship",
+
+        direction:
+          incoming > 0 &&
+          outgoing > 0
+            ? "bidirectional"
+            : "forward",
+      });
+    }
+
+    const flow =
+      recordChild(
+        derived,
+        "flow"
+      );
+
+    for (
+      const [
+        index,
+        item,
+      ] of arrayChild(
+        flow,
+        "transfers"
+      ).entries()
+    ) {
+      const direction =
+        stringValue(
+          item.direction
+        );
+
+      const counterparty =
+        stringValue(
+          item.counterparty
+        );
+
+      const hash =
+        stringValue(
+          item.transactionHash
+        );
+
+      const denom =
+        stringValue(
+          item.denom
+        );
+
+      const kind =
+        stringValue(
+          item.kind
+        );
+
+      if (
+        !counterparty ||
+        !hash ||
+        (
+          direction !==
+            "incoming" &&
+          direction !==
+            "outgoing"
+        )
+      ) {
+        continue;
+      }
+
+      addEvent({
+        id:
+          `${networkId}:${hash}:${index}`,
+
+        title:
+          direction ===
+            "incoming"
+            ? "Incoming native transfer"
+            : "Outgoing native transfer",
+
+        detail:
+          [
+            denom,
+            kind,
+            `${direction ===
+              "incoming"
+              ? "from"
+              : "to"} ${short(
+                counterparty
+              )}`,
+          ]
+            .filter(
+              Boolean
+            )
+            .join(
+              " · "
+            ),
+
+        timestamp:
+          stringValue(
+            item.timestamp
+          ),
+
+        direction,
+
+        transactionRef:
+          hash,
+      });
+    }
+  }
+
+  /*
    * TRON:
    * explicit canonical owner/destination
    * relationships and observed inbound funding.

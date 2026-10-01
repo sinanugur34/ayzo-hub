@@ -92,6 +92,18 @@ import {
 } from "@/lib/intelligence/algorand/engine";
 
 import {
+  runPolkadotIntelligence,
+} from "@/lib/intelligence/polkadot/engine";
+
+import {
+  runCosmosIntelligence,
+} from "@/lib/intelligence/cosmos/engine";
+
+import {
+  runInjectiveIntelligence,
+} from "@/lib/intelligence/injective/engine";
+
+import {
   isTonAddress,
 } from "@/lib/intelligence/ton/address";
 
@@ -1206,6 +1218,87 @@ export async function POST(
       case "algorand": {
         const result =
           await runAlgorandIntelligence({
+            address,
+
+            analysisPlan:
+              entitlement.planId,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
+        return json(
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
+          result.status
+        );
+      }
+
+      case "polkadot": {
+        const result =
+          await runPolkadotIntelligence({
+            address,
+
+            analysisPlan:
+              entitlement.planId,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
+        return json(
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
+          result.status
+        );
+      }
+
+      case "cosmos": {
+        const result =
+          await runCosmosIntelligence({
+            address,
+
+            analysisPlan:
+              entitlement.planId,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
+        return json(
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
+          result.status
+        );
+      }
+
+      case "injective": {
+        const result =
+          await runInjectiveIntelligence({
             address,
 
             analysisPlan:

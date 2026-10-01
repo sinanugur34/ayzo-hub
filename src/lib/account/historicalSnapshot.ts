@@ -1689,6 +1689,246 @@ function hederaSnapshot(
 }
 
 
+function polkadotSnapshot(
+  network:
+    string,
+  root:
+    JsonRecord
+): HistoricalSnapshotV1 {
+  const account =
+    record(
+      root.account
+    );
+
+  const transfers =
+    Array.isArray(
+      root.transfers
+    )
+      ? root.transfers
+      : [];
+
+  const latest =
+    record(
+      transfers[0]
+    );
+
+  const derived =
+    record(
+      root.derived
+    );
+
+  const flow =
+    record(
+      derived?.flow
+    );
+
+  const counterparties =
+    record(
+      derived?.counterparties
+    );
+
+  const funding =
+    record(
+      derived?.observedFunding
+    );
+
+  return {
+    version:
+      1,
+
+    capturedAt:
+      new Date().toISOString(),
+
+    network,
+
+    coverage:
+      text(
+        root.coverage
+      ),
+
+    subjectKind:
+      "wallet",
+
+    metrics: {
+      nativeBalanceRaw:
+        text(
+          account?.freePlanck
+        ),
+
+      transactionCount:
+        transfers.length,
+
+      latestTransactionHash:
+        text(
+          latest
+            ?.extrinsicHash
+        ) ??
+        text(
+          latest
+            ?.extrinsicIndex
+        ),
+
+      latestTransactionTimestamp:
+        text(
+          latest?.timestamp
+        ),
+
+      latestBlockHeight:
+        numberValue(
+          latest?.blockNumber
+        ),
+
+      relationshipsDetected:
+        numberValue(
+          counterparties?.count
+        ),
+
+      incomingTransfersDetected:
+        numberValue(
+          flow?.incomingCount
+        ),
+
+      fundingSourceCount:
+        funding
+          ? 1
+          : 0,
+    },
+
+    modules:
+      moduleSnapshot(
+        root.modules
+      ),
+
+    findings:
+      findingSnapshot(
+        root.findings
+      ),
+  };
+}
+
+function cosmosSdkSnapshot(
+  network:
+    string,
+  root:
+    JsonRecord
+): HistoricalSnapshotV1 {
+  const balances =
+    Array.isArray(
+      root.balances
+    )
+      ? root.balances
+      : [];
+
+  const delegations =
+    Array.isArray(
+      root.delegations
+    )
+      ? root.delegations
+      : [];
+
+  const transactions =
+    Array.isArray(
+      root.transactions
+    )
+      ? root.transactions
+      : [];
+
+  const latest =
+    record(
+      transactions[0]
+    );
+
+  const derived =
+    record(
+      root.derived
+    );
+
+  const flow =
+    record(
+      derived?.flow
+    );
+
+  const counterparties =
+    record(
+      derived?.counterparties
+    );
+
+  const funding =
+    record(
+      derived?.observedFunding
+    );
+
+  return {
+    version:
+      1,
+
+    capturedAt:
+      new Date().toISOString(),
+
+    network,
+
+    coverage:
+      text(
+        root.coverage
+      ),
+
+    subjectKind:
+      "wallet",
+
+    metrics: {
+      assetBalanceTypeCount:
+        balances.length,
+
+      ownedObjectCount:
+        delegations.length,
+
+      transactionCount:
+        transactions.length,
+
+      latestTransactionHash:
+        text(
+          latest?.hash
+        ),
+
+      latestTransactionTimestamp:
+        text(
+          latest?.timestamp
+        ),
+
+      latestBlockHeight:
+        numberValue(
+          latest?.height
+        ),
+
+      relationshipsDetected:
+        numberValue(
+          counterparties?.count
+        ),
+
+      incomingTransfersDetected:
+        numberValue(
+          flow?.incomingCount
+        ),
+
+      fundingSourceCount:
+        funding
+          ? 1
+          : 0,
+    },
+
+    modules:
+      moduleSnapshot(
+        root.modules
+      ),
+
+    findings:
+      findingSnapshot(
+        root.findings
+      ),
+  };
+}
+
+
 function zcashSnapshot(
   network:
     string,
@@ -1952,6 +2192,28 @@ export function buildHistoricalSnapshot(
 
   if (!root) {
     return null;
+  }
+
+  if (
+    network ===
+      "polkadot"
+  ) {
+    return polkadotSnapshot(
+      network,
+      root
+    );
+  }
+
+  if (
+    network ===
+      "cosmos" ||
+    network ===
+      "injective"
+  ) {
+    return cosmosSdkSnapshot(
+      network,
+      root
+    );
   }
 
   if (

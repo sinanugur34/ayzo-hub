@@ -171,6 +171,16 @@ const MOBILE_ENGINE_READY =
     "cardano",
     "aptos",
     "hedera",
+
+    /*
+     * Product adapters are ready but remain
+     * hidden until canonical registry promotion.
+     */
+    "zcash",
+    "algorand",
+    "polkadot",
+    "cosmos",
+    "injective",
   ]);
 
 export function getMobileNetworkSupport(

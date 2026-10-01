@@ -90,6 +90,18 @@ import {
 } from "@/lib/intelligence/algorand/engine";
 
 import {
+  runPolkadotIntelligence,
+} from "@/lib/intelligence/polkadot/engine";
+
+import {
+  runCosmosIntelligence,
+} from "@/lib/intelligence/cosmos/engine";
+
+import {
+  runInjectiveIntelligence,
+} from "@/lib/intelligence/injective/engine";
+
+import {
   isTonAddress,
 } from "@/lib/intelligence/ton/address";
 
@@ -942,6 +954,54 @@ export async function POST(
       case "algorand": {
         const result =
           await runAlgorandIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "polkadot": {
+        const result =
+          await runPolkadotIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "cosmos": {
+        const result =
+          await runCosmosIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "injective": {
+        const result =
+          await runInjectiveIntelligence({
             address,
 
             analysisPlan:

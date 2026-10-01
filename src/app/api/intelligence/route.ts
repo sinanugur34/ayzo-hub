@@ -85,6 +85,18 @@ import {
 } from "@/lib/intelligence/algorand/engine";
 
 import {
+  runPolkadotIntelligence,
+} from "@/lib/intelligence/polkadot/engine";
+
+import {
+  runCosmosIntelligence,
+} from "@/lib/intelligence/cosmos/engine";
+
+import {
+  runInjectiveIntelligence,
+} from "@/lib/intelligence/injective/engine";
+
+import {
   isTonAddress,
 } from "@/lib/intelligence/ton/address";
 
@@ -1015,6 +1027,87 @@ export async function POST(request: Request) {
       case "algorand": {
         const result =
           await runAlgorandIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "polkadot": {
+        const result =
+          await runPolkadotIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "cosmos": {
+        const result =
+          await runCosmosIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "injective": {
+        const result =
+          await runInjectiveIntelligence({
             address,
             analysisPlan,
           });
