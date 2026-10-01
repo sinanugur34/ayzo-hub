@@ -53,6 +53,13 @@ export type AnalysisQuota =
       kind: "fixed";
       period: "24h";
       count: number;
+
+      /*
+       * Null means the plan has no additional
+       * per-network analysis restriction.
+       */
+      perNetworkCount:
+        number | null;
     }
   | {
       kind: "not-configured";

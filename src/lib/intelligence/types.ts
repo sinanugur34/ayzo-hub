@@ -19,6 +19,8 @@ export type IntelligenceErrorCode =
   | "RATE_LIMITED"
   | "DAILY_FREE_LIMIT"
   | "DAILY_PRO_LIMIT"
+  | "DAILY_ADVANCED_LIMIT"
+  | "DAILY_NETWORK_LIMIT"
   | "UPSTREAM_ERROR";
 
 export type IntelligenceRequest = {

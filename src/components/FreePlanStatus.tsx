@@ -6,8 +6,21 @@ import {
   useState,
 } from "react";
 
+import {
+  NETWORKS,
+} from "@/lib/networks/registry";
+
+import type {
+  LiveAnalysisNetworkId,
+} from "@/lib/networks/addressSelection";
+
+import {
+  PLANS,
+} from "@/lib/plans/registry";
+
 type PlanStatus = {
-  ok: true;
+  ok:
+    true;
 
   plan:
     | "free"
@@ -25,9 +38,55 @@ type PlanStatus = {
 
   resetAt:
     number | null;
+
+  network:
+    string | null;
+
+  networkLimit:
+    number | null;
+
+  networkRemaining:
+    number | null;
+
+  networkResetAt:
+    number | null;
 };
 
-export default function FreePlanStatus() {
+function quotaCount(
+  plan:
+    "free" |
+    "pro" |
+    "advanced"
+) {
+  const quota =
+    PLANS[
+      plan
+    ].analysisQuota;
+
+  return quota.kind ===
+    "fixed"
+    ? quota.count
+    : 0;
+}
+
+function freeNetworkLimit() {
+  const quota =
+    PLANS.free
+      .analysisQuota;
+
+  return quota.kind ===
+    "fixed"
+    ? quota
+        .perNetworkCount
+    : null;
+}
+
+export default function FreePlanStatus({
+  network,
+}: {
+  network:
+    LiveAnalysisNetworkId;
+}) {
   const [
     status,
     setStatus,
@@ -45,7 +104,9 @@ export default function FreePlanStatus() {
         try {
           const response =
             await fetch(
-              "/api/free/status",
+              `/api/free/status?network=${encodeURIComponent(
+                network
+              )}`,
               {
                 cache:
                   "no-store",
@@ -69,13 +130,14 @@ export default function FreePlanStatus() {
           }
         } catch {
           /*
-           * Product remains usable
-           * when quota status cannot
-           * be displayed.
+           * Product remains usable when
+           * quota status cannot be shown.
            */
         }
       },
-      []
+      [
+        network,
+      ]
     );
 
   useEffect(() => {
@@ -115,22 +177,33 @@ export default function FreePlanStatus() {
     status?.plan ??
     "free";
 
-  const exhausted =
+  const fallbackLimit =
+    quotaCount(
+      plan
+    );
+
+  const perNetworkLimit =
+    status?.networkLimit ??
+    freeNetworkLimit();
+
+  const totalExhausted =
     status?.remaining ===
     0;
 
-  const fallbackLimit =
+  const networkExhausted =
     plan ===
-    "advanced"
-      ? 90
-      : plan ===
-          "pro"
-        ? 25
-        : 3;
+      "free" &&
+    status
+      ?.networkRemaining ===
+      0;
+
+  const exhausted =
+    totalExhausted ||
+    networkExhausted;
 
   const planLabel =
     plan ===
-    "advanced"
+      "advanced"
       ? "ADVANCED PLAN"
       : plan ===
           "pro"
@@ -166,7 +239,27 @@ export default function FreePlanStatus() {
         status.remaining ===
           null
           ? `${fallbackLimit} analyses per 24 hours`
-          : `${status.remaining} of ${status.limit} analyses remaining`}
+          : `${status.remaining} of ${status.limit} total analyses remaining`}
+      </span>
+
+      <span className="text-zinc-700">
+        ·
+      </span>
+
+      <span>
+        {plan ===
+          "free"
+          ? status
+              ?.networkRemaining !==
+              null &&
+            status
+              ?.networkRemaining !==
+              undefined &&
+            perNetworkLimit !==
+              null
+            ? `${NETWORKS[network].name}: ${status.networkRemaining} of ${perNetworkLimit} same-network analyses remaining`
+            : `Max ${perNetworkLimit ?? 2} analyses on the same network per 24 hours`
+          : "No per-network analysis limit"}
       </span>
     </div>
   );

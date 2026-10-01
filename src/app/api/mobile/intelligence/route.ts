@@ -177,9 +177,26 @@ type MobileResponseMeta = {
   plan: "free" | "pro" | "advanced";
   billingAvailable: boolean;
   quota: {
-    limit: number;
-    remaining: number | null;
-    resetAt: number | null;
+    limit:
+      number;
+
+    remaining:
+      number | null;
+
+    resetAt:
+      number | null;
+
+    network:
+      string | null;
+
+    networkLimit:
+      number | null;
+
+    networkRemaining:
+      number | null;
+
+    networkResetAt:
+      number | null;
   };
 };
 
@@ -723,10 +740,34 @@ export async function POST(
     quota =
       await consumeMobileAnalysisQuota(
         quotaUserId,
-        entitlement.planId
+        entitlement.planId,
+        resolution.networkId
       );
 
     if (!quota.allowed) {
+      const networkBlocked =
+        entitlement.planId ===
+          "free" &&
+        quota.blockedBy ===
+          "network";
+
+      const failureCode =
+        networkBlocked
+          ? "DAILY_NETWORK_LIMIT"
+          : entitlement.planId ===
+              "advanced"
+            ? "DAILY_ADVANCED_LIMIT"
+            : entitlement.planId ===
+                "pro"
+              ? "DAILY_PRO_LIMIT"
+              : "DAILY_FREE_LIMIT";
+
+      const resetAt =
+        networkBlocked
+          ? quota.networkResetAt ??
+            quota.resetAt
+          : quota.resetAt;
+
       await recordAnalysisActivity({
         userId:
           quotaUserId,
@@ -746,32 +787,25 @@ export async function POST(
         httpStatus:
           429,
 
-        failureCode:
-          entitlement.planId ===
-            "advanced"
-            ? "DAILY_ADVANCED_LIMIT"
-            : entitlement.planId ===
-                "pro"
-              ? "DAILY_PRO_LIMIT"
-              : "DAILY_FREE_LIMIT",
+        failureCode,
 
         quotaLimit:
           quota.limit,
 
         quotaRemaining:
-          0,
+          quota.remaining,
 
         quotaResetAt:
-          quota.resetAt,
+          resetAt,
       });
 
       const retryAfterSeconds =
-        quota.resetAt
+        resetAt
           ? Math.max(
               1,
               Math.ceil(
                 (
-                  quota.resetAt -
+                  resetAt -
                   Date.now()
                 ) /
                   1000
@@ -781,27 +815,46 @@ export async function POST(
 
       return json(
         {
-          ok: false,
+          ok:
+            false,
+
           code:
-            entitlement.planId ===
-              "advanced"
-              ? "DAILY_ADVANCED_LIMIT"
-              : entitlement.planId ===
-                  "pro"
-                ? "DAILY_PRO_LIMIT"
-                : "DAILY_FREE_LIMIT",
+            failureCode,
+
           error:
-            "Daily analysis limit reached.",
+            networkBlocked
+              ? `AYZO Free allows a maximum of ${quota.networkLimit ?? 2} analyses on ${resolution.network.name} within the current rolling 24-hour window. You can continue with another supported network.`
+              : "Daily analysis limit reached.",
+
           plan:
             entitlement.planId,
+
+          network:
+            resolution.networkId,
+
           billingAvailable,
+
           quota: {
             limit:
               quota.limit,
+
             remaining:
-              0,
+              quota.remaining,
+
             resetAt:
               quota.resetAt,
+
+            network:
+              quota.network,
+
+            networkLimit:
+              quota.networkLimit,
+
+            networkRemaining:
+              quota.networkRemaining,
+
+            networkResetAt:
+              quota.networkResetAt,
           },
         },
         429,
@@ -821,10 +874,24 @@ export async function POST(
       quota: {
         limit:
           quota.limit,
+
         remaining:
           quota.remaining,
+
         resetAt:
           quota.resetAt,
+
+        network:
+          quota.network,
+
+        networkLimit:
+          quota.networkLimit,
+
+        networkRemaining:
+          quota.networkRemaining,
+
+        networkResetAt:
+          quota.networkResetAt,
       },
     };
 

@@ -223,7 +223,7 @@ export default function AnalysisLimitCard() {
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
               {isFree &&
-                `You have used the ${freeQuota ?? "current"} analyses available to AYZO Free in the current rolling 24-hour window.`}
+                `AYZO Free includes ${freeQuota ?? "the current"} total analyses per rolling 24-hour window, with a maximum of ${PLANS.free.analysisQuota.kind === "fixed" ? PLANS.free.analysisQuota.perNetworkCount ?? 2 : 2} analyses on the same network. If total analyses remain, you can continue with another supported network.`}
 
               {isPro &&
                 `You have used the ${proQuota ?? "current"} analyses available to AYZO Pro in the current rolling 24-hour window.`}
@@ -269,7 +269,7 @@ export default function AnalysisLimitCard() {
                 </div>
 
                 <p className="mt-2 text-xs leading-5 text-zinc-500">
-                  Adds monitoring, historical research, Ask AYZO, reporting and export capabilities.
+                  Adds monitoring, historical research, Ask AYZO, reporting and export capabilities. No per-network analysis limit.
                 </p>
               </div>
 
@@ -283,7 +283,7 @@ export default function AnalysisLimitCard() {
                 </div>
 
                 <p className="mt-2 text-xs leading-5 text-zinc-500">
-                  Adds structured investigation, automation, API and advanced account workflows.
+                  Adds structured investigation, automation, API and advanced account workflows. No per-network analysis limit.
                 </p>
               </div>
             </div>
@@ -321,7 +321,7 @@ export default function AnalysisLimitCard() {
               </div>
 
               <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-500">
-                Advanced includes every live Pro capability plus Cases, Evidence Locker, Compare Investigations, Batch Analysis, API Access and other investigation workflows.
+                Advanced includes every live Pro capability plus Cases, Evidence Locker, Compare Investigations, Batch Analysis, API Access and other investigation workflows. No per-network analysis limit.
               </p>
             </div>
 

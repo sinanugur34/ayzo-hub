@@ -18,6 +18,14 @@ export type AnalysisQuotaPolicy = {
   limit:
     number;
 
+  /*
+   * Free has an additional provider-protection
+   * cap for repeated use of one canonical
+   * network. Paid plans intentionally do not.
+   */
+  perNetworkLimit:
+    number | null;
+
   windowSeconds:
     number;
 };
@@ -31,9 +39,9 @@ export function getAnalysisQuotaPolicy(
    * analysis allowance in the central
    * plan registry.
    *
-   * Free:     3 / 24h
-   * Pro:      25 / 24h
-   * Advanced: 90 / 24h
+   * Free:     3 / 24h, max 2 / network / 24h
+   * Pro:      25 / 24h, no per-network limit
+   * Advanced: 90 / 24h, no per-network limit
    */
   const quota =
     PLANS[
@@ -55,6 +63,9 @@ export function getAnalysisQuotaPolicy(
 
     limit:
       quota.count,
+
+    perNetworkLimit:
+      quota.perNetworkCount,
 
     windowSeconds:
       24 * 60 * 60,

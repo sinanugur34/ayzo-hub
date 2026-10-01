@@ -435,7 +435,10 @@ async function consumePaid(
 
 export async function getAnalysisQuotaStatus(
   request:
-    Request
+    Request,
+  networkId:
+    string | null =
+      null
 ): Promise<AnalysisQuotaState> {
   const {
     entitlement,
@@ -460,7 +463,8 @@ export async function getAnalysisQuotaStatus(
 
   const free =
     await getFreeQuotaStatus(
-      request
+      request,
+      networkId
     );
 
   return {
@@ -475,7 +479,10 @@ export async function getAnalysisQuotaStatus(
 
 export async function consumeAnalysisQuota(
   request:
-    Request
+    Request,
+  networkId:
+    string | null =
+      null
 ): Promise<AnalysisQuotaState> {
   const {
     entitlement,
@@ -500,7 +507,8 @@ export async function consumeAnalysisQuota(
 
   const free =
     await consumeFreeAnalysis(
-      request
+      request,
+      networkId
     );
 
   return {
@@ -581,7 +589,9 @@ export async function refundAnalysisQuota(
 
   await refundFreeAnalysis(
     request,
-    quota.deviceCookie
+    quota.deviceCookie,
+    quota.network ??
+      null
   );
 }
 

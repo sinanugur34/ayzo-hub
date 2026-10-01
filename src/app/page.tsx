@@ -1912,7 +1912,9 @@ export default function Home() {
           )}
         </form>
 
-        <FreePlanStatus />
+        <FreePlanStatus
+          network={network}
+        />
 
         {solanaResult && (
           <section

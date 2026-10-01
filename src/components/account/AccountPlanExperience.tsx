@@ -221,7 +221,14 @@ function quotaLabel(
     return "Usage configured separately";
   }
 
-  return `${plan.analysisQuota.count} analyses / 24h`;
+  const networkRule =
+    plan.analysisQuota
+      .perNetworkCount ===
+      null
+      ? "No per-network analysis limit"
+      : `Max ${plan.analysisQuota.perNetworkCount} / network / 24h`;
+
+  return `${plan.analysisQuota.count} analyses / 24h · ${networkRule}`;
 }
 
 export default function AccountPlanExperience({

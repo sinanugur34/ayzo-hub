@@ -6,7 +6,7 @@ import {
 } from "@/lib/analysisQuotaPolicy";
 
 test(
-  "Free receives 3 analyses per 24h",
+  "Free receives 3 analyses per 24h with max 2 per network",
   () => {
     const policy =
       getAnalysisQuotaPolicy(
@@ -24,6 +24,11 @@ test(
     );
 
     assert.equal(
+      policy.perNetworkLimit,
+      2
+    );
+
+    assert.equal(
       policy.windowSeconds,
       86400
     );
@@ -31,7 +36,7 @@ test(
 );
 
 test(
-  "Pro receives 25 analyses per 24h",
+  "Pro receives 25 analyses per 24h with no per-network cap",
   () => {
     const policy =
       getAnalysisQuotaPolicy(
@@ -49,6 +54,11 @@ test(
     );
 
     assert.equal(
+      policy.perNetworkLimit,
+      null
+    );
+
+    assert.equal(
       policy.windowSeconds,
       86400
     );
@@ -56,25 +66,30 @@ test(
 );
 
 test(
-  "Advanced receives 90 analyses per 24h",
+  "Advanced receives 90 analyses per 24h with no per-network cap",
   () => {
-    const advanced =
+    const policy =
       getAnalysisQuotaPolicy(
         "advanced"
       );
 
     assert.equal(
-      advanced.plan,
+      policy.plan,
       "advanced"
     );
 
     assert.equal(
-      advanced.limit,
+      policy.limit,
       90
     );
 
     assert.equal(
-      advanced.windowSeconds,
+      policy.perNetworkLimit,
+      null
+    );
+
+    assert.equal(
+      policy.windowSeconds,
       86400
     );
   }

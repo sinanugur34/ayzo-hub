@@ -120,6 +120,25 @@ export default function MobileQuotaCard({
           quota.resetAt
         )}
       </div>
+
+      <div className="mobile-quota-reset">
+        {plan ===
+        "free"
+          ? `Free: max ${quota.networkLimit ?? 2} analyses on the same network per 24h.`
+          : "No per-network analysis limit."}
+      </div>
+
+      {plan ===
+        "free" &&
+        quota.network &&
+        quota.networkRemaining !==
+          null &&
+        quota.networkLimit !==
+          null && (
+          <div className="mobile-quota-reset">
+            {quota.network}: {quota.networkRemaining}/{quota.networkLimit} same-network analyses left
+          </div>
+        )}
     </div>
   );
 }

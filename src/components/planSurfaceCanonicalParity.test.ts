@@ -220,6 +220,11 @@ test(
     );
 
     assert.equal(
+      PLANS.free.analysisQuota.perNetworkCount,
+      2
+    );
+
+    assert.equal(
       PLANS.pro.analysisQuota.kind,
       "fixed"
     );
@@ -230,6 +235,11 @@ test(
     );
 
     assert.equal(
+      PLANS.pro.analysisQuota.perNetworkCount,
+      null
+    );
+
+    assert.equal(
       PLANS.advanced.analysisQuota.kind,
       "fixed"
     );
@@ -237,6 +247,11 @@ test(
     assert.equal(
       PLANS.advanced.analysisQuota.count,
       90
+    );
+
+    assert.equal(
+      PLANS.advanced.analysisQuota.perNetworkCount,
+      null
     );
 
     assert.equal(

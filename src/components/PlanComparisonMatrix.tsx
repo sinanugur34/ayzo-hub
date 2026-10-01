@@ -197,6 +197,41 @@ const sections:
 
         {
           label:
+            "Per-network analysis limit",
+
+          detail:
+            "Free allows at most 2 analyses on the same network in each rolling 24-hour window. Pro and Advanced have no per-network analysis limit.",
+
+          free: {
+            kind:
+              "value",
+
+            label:
+              `${PLANS.free.analysisQuota.kind === "fixed" &&
+              PLANS.free.analysisQuota.perNetworkCount !== null
+                ? `Max ${PLANS.free.analysisQuota.perNetworkCount} / network / 24h`
+                : "—"}`,
+          },
+
+          pro: {
+            kind:
+              "value",
+
+            label:
+              "No limit",
+          },
+
+          advanced: {
+            kind:
+              "value",
+
+            label:
+              "No limit",
+          },
+        },
+
+        {
+          label:
             "Live network coverage",
           detail:
             `AYZO currently supports ${LIVE_NETWORK_COUNT} live networks.`,
