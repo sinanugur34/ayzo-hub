@@ -6,7 +6,32 @@ import {
 } from "./policy";
 
 test(
-  "increases XRPL evidence depth by plan",
+  "XRPL Free preserves established entry depth",
+  () => {
+    const free =
+      getXrplAnalysisPolicy(
+        "free"
+      );
+
+    assert.equal(
+      free.historyLimit,
+      10
+    );
+
+    assert.equal(
+      free.trustLineLimit,
+      10
+    );
+
+    assert.equal(
+      free.graphMaxNodes,
+      8
+    );
+  }
+);
+
+test(
+  "XRPL Pro and Advanced increase every evidence-depth axis",
   () => {
     const free =
       getXrplAnalysisPolicy(
@@ -23,24 +48,46 @@ test(
         "advanced"
       );
 
-    assert.ok(
-      pro.historyLimit >
-        free.historyLimit
+    const keys =
+      Object.keys(
+        free
+      ) as (
+        keyof typeof free
+      )[];
+
+    for (
+      const key of keys
+    ) {
+      assert.ok(
+        free[key] <
+          pro[key],
+        `${String(
+          key
+        )}: Free must be shallower than Pro`
+      );
+
+      assert.ok(
+        pro[key] <
+          advanced[key],
+        `${String(
+          key
+        )}: Pro must be shallower than Advanced`
+      );
+    }
+
+    assert.equal(
+      pro.historyLimit,
+      30
     );
 
-    assert.ok(
-      advanced.historyLimit >
-        pro.historyLimit
+    assert.equal(
+      advanced.historyLimit,
+      72
     );
 
-    assert.ok(
-      advanced.trustLineLimit >
-        pro.trustLineLimit
-    );
-
-    assert.ok(
-      advanced.graphMaxNodes >
-        free.graphMaxNodes
+    assert.equal(
+      advanced.trustLineLimit,
+      80
     );
   }
 );

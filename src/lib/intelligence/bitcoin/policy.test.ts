@@ -6,82 +6,17 @@ import {
 } from "./policy";
 
 test(
-  "Bitcoin Free preserves five-transaction history depth",
+  "Bitcoin Free preserves existing history and canonical entry depth",
   () => {
-    const policy =
+    const free =
       getBitcoinAnalysisPolicy(
         "free"
       );
 
     assert.equal(
-      policy.historyLimit,
+      free.historyLimit,
       5
     );
-
-    assert.equal(
-      policy.canonicalSampleLimit,
-      1
-    );
-  }
-);
-
-test(
-  "Bitcoin paid plans widen bounded history depth",
-  () => {
-    const free =
-      getBitcoinAnalysisPolicy(
-        "free"
-      );
-
-    const pro =
-      getBitcoinAnalysisPolicy(
-        "pro"
-      );
-
-    const advanced =
-      getBitcoinAnalysisPolicy(
-        "advanced"
-      );
-
-    assert.equal(
-      pro.historyLimit,
-      10
-    );
-
-    assert.equal(
-      advanced.historyLimit,
-      20
-    );
-
-    assert.ok(
-      free.historyLimit <
-        pro.historyLimit
-    );
-
-    assert.ok(
-      pro.historyLimit <
-        advanced.historyLimit
-    );
-  }
-);
-
-test(
-  "Bitcoin V2 increases canonical verification depth by plan",
-  () => {
-    const free =
-      getBitcoinAnalysisPolicy(
-        "free"
-      );
-
-    const pro =
-      getBitcoinAnalysisPolicy(
-        "pro"
-      );
-
-    const advanced =
-      getBitcoinAnalysisPolicy(
-        "advanced"
-      );
 
     assert.equal(
       free.canonicalSampleLimit,
@@ -89,23 +24,100 @@ test(
     );
 
     assert.equal(
+      free.graphMaxNodes,
+      8
+    );
+
+    assert.equal(
+      free.timelineMaxEvents,
+      5
+    );
+  }
+);
+
+test(
+  "Bitcoin Pro and Advanced materially deepen native evidence",
+  () => {
+    const free =
+      getBitcoinAnalysisPolicy(
+        "free"
+      );
+
+    const pro =
+      getBitcoinAnalysisPolicy(
+        "pro"
+      );
+
+    const advanced =
+      getBitcoinAnalysisPolicy(
+        "advanced"
+      );
+
+    const keys =
+      Object.keys(
+        free
+      ) as (
+        keyof typeof free
+      )[];
+
+    for (
+      const key of keys
+    ) {
+      assert.ok(
+        free[key] <
+          pro[key],
+        `${String(
+          key
+        )}: Free must be shallower than Pro`
+      );
+
+      assert.ok(
+        pro[key] <
+          advanced[key],
+        `${String(
+          key
+        )}: Pro must be shallower than Advanced`
+      );
+    }
+
+    assert.equal(
+      pro.historyLimit,
+      15
+    );
+
+    assert.equal(
+      advanced.historyLimit,
+      30
+    );
+
+    assert.equal(
       pro.canonicalSampleLimit,
-      2
+      3
     );
 
     assert.equal(
       advanced.canonicalSampleLimit,
-      3
+      5
+    );
+  }
+);
+
+test(
+  "Bitcoin Advanced canonical verification remains bounded",
+  () => {
+    const advanced =
+      getBitcoinAnalysisPolicy(
+        "advanced"
+      );
+
+    assert.ok(
+      advanced.canonicalSampleLimit <=
+        5
     );
 
     assert.ok(
-      free.canonicalSampleLimit <
-        pro.canonicalSampleLimit
-    );
-
-    assert.ok(
-      pro.canonicalSampleLimit <
-        advanced.canonicalSampleLimit
+      advanced.timelineMaxEvents <=
+        25
     );
   }
 );

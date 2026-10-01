@@ -756,14 +756,14 @@ export function buildSolanaVisualEvidenceGraph(
     bounded(
       input.maxNodes,
       DEFAULT_MAX_NODES,
-      12
+      32
     );
 
   const maxEdges =
     bounded(
       input.maxEdges,
       DEFAULT_MAX_EDGES,
-      20
+      64
     );
 
   const nodes:
@@ -1229,14 +1229,14 @@ export function buildBitcoinVisualEvidenceGraph(
     bounded(
       input.maxNodes,
       DEFAULT_MAX_NODES,
-      10
+      32
     );
 
   const maxEdges =
     bounded(
       input.maxEdges,
       DEFAULT_MAX_EDGES,
-      16
+      64
     );
 
   const nodes:
@@ -1280,7 +1280,10 @@ export function buildBitcoinVisualEvidenceGraph(
     const transaction of
     input.history.transactions.slice(
       0,
-      5
+      Math.max(
+        1,
+        maxNodes - 1
+      )
     )
   ) {
     if (

@@ -73,6 +73,15 @@ export type BitcoinIntelligence = {
     canonicalSampleLimit:
       number;
 
+    graphMaxNodes:
+      number;
+
+    graphMaxEdges:
+      number;
+
+    timelineMaxEvents:
+      number;
+
     historyHasMore:
       boolean;
   };
@@ -386,6 +395,15 @@ export async function runBitcoinIntelligence(
 
           canonicalSampleLimit:
             policy.canonicalSampleLimit,
+
+          graphMaxNodes:
+            policy.graphMaxNodes,
+
+          graphMaxEdges:
+            policy.graphMaxEdges,
+
+          timelineMaxEvents:
+            policy.timelineMaxEvents,
 
           historyHasMore:
             history.nextCursor !==
@@ -706,6 +724,15 @@ export async function runBitcoinIntelligence(
 
         canonicalSampleLimit:
           policy.canonicalSampleLimit,
+
+        graphMaxNodes:
+          policy.graphMaxNodes,
+
+        graphMaxEdges:
+          policy.graphMaxEdges,
+
+        timelineMaxEvents:
+          policy.timelineMaxEvents,
 
         historyHasMore:
           history.nextCursor !==

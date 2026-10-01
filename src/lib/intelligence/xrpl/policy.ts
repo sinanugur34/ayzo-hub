@@ -55,48 +55,48 @@ const POLICIES:
 
   pro: {
     historyLimit:
-      20,
+      30,
 
     earliestHistoryLimit:
-      20,
-
-    trustLineLimit:
-      25,
-
-    accountObjectLimit:
-      25,
-
-    graphMaxNodes:
-      14,
-
-    graphMaxEdges:
       24,
 
+    trustLineLimit:
+      32,
+
+    accountObjectLimit:
+      32,
+
+    graphMaxNodes:
+      16,
+
+    graphMaxEdges:
+      28,
+
     timelineMaxEvents:
-      20,
+      24,
   },
 
   advanced: {
     historyLimit:
-      30,
+      72,
 
     earliestHistoryLimit:
-      30,
-
-    trustLineLimit:
-      50,
-
-    accountObjectLimit:
-      50,
-
-    graphMaxNodes:
-      28,
-
-    graphMaxEdges:
       48,
 
+    trustLineLimit:
+      80,
+
+    accountObjectLimit:
+      80,
+
+    graphMaxNodes:
+      32,
+
+    graphMaxEdges:
+      64,
+
     timelineMaxEvents:
-      25,
+      48,
   },
 };
 

@@ -156,6 +156,15 @@ type BitcoinSuccess = {
     canonicalSampleLimit:
       number;
 
+    graphMaxNodes:
+      number;
+
+    graphMaxEdges:
+      number;
+
+    timelineMaxEvents:
+      number;
+
     historyHasMore:
       boolean;
   };
@@ -842,6 +851,14 @@ export default function BitcoinIntelligenceReport({
 
       canonicalTransaction:
         data.canonicalTransaction,
+
+      maxNodes:
+        data.evidenceCoverage
+          .graphMaxNodes,
+
+      maxEdges:
+        data.evidenceCoverage
+          .graphMaxEdges,
     });
 
   const activityTimeline =
@@ -851,6 +868,10 @@ export default function BitcoinIntelligenceReport({
 
       nextCursor:
         data.history.nextCursor,
+
+      maxEvents:
+        data.evidenceCoverage
+          .timelineMaxEvents,
     });
 
   return (
@@ -1366,6 +1387,10 @@ export default function BitcoinIntelligenceReport({
 
                 nextCursor:
                   data.history.nextCursor,
+
+                maxEvents:
+                  data.evidenceCoverage
+                    .timelineMaxEvents,
               }),
 
             historyTransactionCount:

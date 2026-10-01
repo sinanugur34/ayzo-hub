@@ -6,7 +6,7 @@ import {
 } from "./policy";
 
 test(
-  "Solana Free preserves current five-wallet evidence depth",
+  "Solana Free preserves the established core depth",
   () => {
     const policy =
       getSolanaAnalysisPolicy(
@@ -24,14 +24,29 @@ test(
     );
 
     assert.equal(
+      policy.relationshipSharedTxDetailLimit,
+      25
+    );
+
+    assert.equal(
       policy.fundingTransactionLimitPerWallet,
       12
+    );
+
+    assert.equal(
+      policy.graphMaxNodes,
+      8
+    );
+
+    assert.equal(
+      policy.timelineMaxEvents,
+      8
     );
   }
 );
 
 test(
-  "Solana paid plans increase bounded wallet evidence depth",
+  "Solana Pro and Advanced deepen every bounded evidence axis",
   () => {
     const free =
       getSolanaAnalysisPolicy(
@@ -48,58 +63,66 @@ test(
         "advanced"
       );
 
-    assert.equal(
-      pro.walletLimit,
-      7
-    );
+    const keys =
+      Object.keys(
+        free
+      ) as (
+        keyof typeof free
+      )[];
 
-    assert.equal(
-      advanced.walletLimit,
-      10
-    );
+    for (
+      const key of keys
+    ) {
+      assert.ok(
+        free[key] <
+          pro[key],
+        `${String(
+          key
+        )}: Free must be shallower than Pro`
+      );
 
-    assert.ok(
-      free.walletLimit <
-        pro.walletLimit
-    );
-
-    assert.ok(
-      pro.walletLimit <
-        advanced.walletLimit
-    );
+      assert.ok(
+        pro[key] <
+          advanced[key],
+        `${String(
+          key
+        )}: Pro must be shallower than Advanced`
+      );
+    }
   }
 );
 
 test(
-  "Solana V1 widens wallets without multiplying per-wallet RPC depth",
+  "Solana Advanced remains provider-bounded",
   () => {
-    const plans =
-      [
-        "free",
-        "pro",
-        "advanced",
-      ] as const;
-
-    for (const plan of plans) {
-      const policy =
-        getSolanaAnalysisPolicy(
-          plan
-        );
-
-      assert.equal(
-        policy.relationshipSignatureLimit,
-        50
+    const advanced =
+      getSolanaAnalysisPolicy(
+        "advanced"
       );
 
-      assert.equal(
-        policy.relationshipSharedTxDetailLimit,
-        25
-      );
-
-      assert.equal(
-        policy.fundingTransactionLimitPerWallet,
+    assert.ok(
+      advanced.walletLimit <=
         12
-      );
-    }
+    );
+
+    assert.ok(
+      advanced.relationshipSignatureLimit <=
+        120
+    );
+
+    assert.ok(
+      advanced.relationshipSharedTxDetailLimit <=
+        50
+    );
+
+    assert.ok(
+      advanced.fundingTransactionLimitPerWallet <=
+        32
+    );
+
+    assert.ok(
+      advanced.timelineMaxEvents <=
+        25
+    );
   }
 );

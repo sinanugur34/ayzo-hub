@@ -9,6 +9,10 @@ import {
   runBitcoinIntelligence,
 } from "./engine";
 
+import {
+  getBitcoinAnalysisPolicy,
+} from "./policy";
+
 const HASH =
   "a".repeat(64);
 
@@ -527,7 +531,9 @@ test(
         ) {
           assert.equal(
             request.limit,
-            20
+            getBitcoinAnalysisPolicy(
+              "advanced"
+            ).historyLimit
           );
 
           return {

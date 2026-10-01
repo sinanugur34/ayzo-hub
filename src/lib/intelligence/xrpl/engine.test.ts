@@ -229,16 +229,25 @@ test(
                     "advanced",
 
                   historyLimit:
-                    30,
+                    72,
 
                   earliestHistoryLimit:
-                    30,
+                    48,
 
                   trustLineLimit:
-                    50,
+                    80,
 
                   accountObjectLimit:
-                    50,
+                    80,
+
+                  graphMaxNodes:
+                    32,
+
+                  graphMaxEdges:
+                    64,
+
+                  timelineMaxEvents:
+                    48,
 
                   historyHasMore:
                     false,
