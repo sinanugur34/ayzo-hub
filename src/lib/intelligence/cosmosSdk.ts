@@ -1046,12 +1046,17 @@ export async function loadCosmosSdkEvidence(
     new URLSearchParams();
 
   senderParams.set(
-    "events",
+    "query",
     `message.sender='${normalized}'`
   );
 
   senderParams.set(
-    "pagination.limit",
+    "page",
+    "1"
+  );
+
+  senderParams.set(
+    "limit",
     String(
       Math.max(
         1,
@@ -1073,12 +1078,17 @@ export async function loadCosmosSdkEvidence(
     new URLSearchParams();
 
   recipientParams.set(
-    "events",
+    "query",
     `transfer.recipient='${normalized}'`
   );
 
   recipientParams.set(
-    "pagination.limit",
+    "page",
+    "1"
+  );
+
+  recipientParams.set(
+    "limit",
     String(
       Math.max(
         1,
