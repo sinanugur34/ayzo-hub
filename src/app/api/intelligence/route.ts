@@ -158,6 +158,10 @@ import {
   recordAnalysisActivity,
 } from "@/lib/adminAnalytics";
 
+import {
+  isAuthorizedAnalysisSmokeRequest,
+} from "@/lib/intelligence/analysisSmokeRequest";
+
 const EVM_ADDRESS =
   /^0x[0-9a-fA-F]{40}$/;
 
@@ -174,8 +178,9 @@ export async function POST(request: Request) {
     null = null;
 
   const isDevelopmentTestRequest =
-    process.env.NODE_ENV !== "production" &&
-    request.headers.get("x-ayzo-test-request") === "smoke";
+    isAuthorizedAnalysisSmokeRequest(
+      request
+    );
 
   const clientIp =
     getClientIp(request);
