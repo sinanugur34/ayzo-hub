@@ -4,6 +4,7 @@ import type {
 
 export type PolkadotProviderId =
   | "polkadot-sidecar"
+  | "polkadot-sidecar-pubfi"
   | "polkadot-sidecar-subscan";
 
 export type PolkadotProviderErrorCode =

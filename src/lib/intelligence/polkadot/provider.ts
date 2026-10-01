@@ -27,6 +27,9 @@ const DEFAULT_SIDECAR =
 const DEFAULT_SUBSCAN =
   "https://polkadot.api.subscan.io";
 
+const DEFAULT_PUBFI =
+  "https://api.pubfi.ai";
+
 type JsonRecord =
   Record<string, unknown>;
 
@@ -54,6 +57,15 @@ export type PolkadotProviderDependencies = {
   sidecarUrl:
     string;
 
+  pubfiUrl?:
+    string;
+
+  pubfiApiKey?:
+    string | null;
+
+  pubfiFreeRequestDelayMs?:
+    number;
+
   subscanUrl:
     string;
 
@@ -74,6 +86,28 @@ const DEFAULT_DEPS:
         .POLKADOT_SIDECAR_URL
         ?.trim() ||
       DEFAULT_SIDECAR,
+
+    pubfiUrl:
+      process.env
+        .PUBFI_API_URL
+        ?.trim() ||
+      DEFAULT_PUBFI,
+
+    pubfiApiKey:
+      process.env
+        .PUBFI_API_KEY
+        ?.trim() ||
+      null,
+
+    /*
+     * PubFi advertises 2 free requests / second
+     * for these Subscan routes.
+     *
+     * Sequential ~550 ms spacing keeps AYZO
+     * below that advertised window.
+     */
+    pubfiFreeRequestDelayMs:
+      550,
 
     subscanUrl:
       process.env
@@ -775,10 +809,67 @@ export async function getPolkadotEvidence(
     null =
       null;
 
-  const key =
-    deps.subscanApiKey;
+  const pubfiKey =
+    deps.pubfiApiKey
+      ?.trim() ||
+    null;
 
-  const subscanPost =
+  const subscanKey =
+    deps.subscanApiKey
+      ?.trim() ||
+    null;
+
+  const indexedProvider:
+    "pubfi" |
+    "subscan" |
+    null =
+      pubfiKey
+        ? "pubfi"
+        : subscanKey
+          ? "subscan"
+          : null;
+
+  const pubfiBase =
+    (
+      deps.pubfiUrl ??
+      DEFAULT_PUBFI
+    ).replace(
+      /\/+$/,
+      ""
+    );
+
+  const subscanBase =
+    deps.subscanUrl
+      .replace(
+        /\/+$/,
+        ""
+      );
+
+  const pubfiDelayMs =
+    Math.max(
+      0,
+      deps
+        .pubfiFreeRequestDelayMs ??
+      550
+    );
+
+  let pubfiRequests =
+    0;
+
+  const wait =
+    (
+      ms:
+        number
+    ) =>
+      new Promise<void>(
+        resolve =>
+          setTimeout(
+            resolve,
+            ms
+          )
+      );
+
+  const indexedPost =
     async (
       path:
         string,
@@ -786,7 +877,7 @@ export async function getPolkadotEvidence(
         JsonRecord
     ) => {
       if (
-        !key ||
+        !indexedProvider ||
         requestsUsed >=
           policy
             .providerRequestBudget
@@ -797,8 +888,56 @@ export async function getPolkadotEvidence(
       requestsUsed +=
         1;
 
+      if (
+        indexedProvider ===
+          "pubfi"
+      ) {
+        if (
+          pubfiRequests >
+            0 &&
+          pubfiDelayMs >
+            0
+        ) {
+          await wait(
+            pubfiDelayMs
+          );
+        }
+
+        pubfiRequests +=
+          1;
+
+        return requestJson(
+          `${pubfiBase}/v1/gateway/subscan/polkadot${path}:free`,
+          {
+            fetchImpl:
+              deps.fetchImpl,
+
+            timeoutMs:
+              deps.timeoutMs,
+
+            init: {
+              method:
+                "POST",
+
+              headers: {
+                Authorization:
+                  `Bearer ${pubfiKey}`,
+
+                "Content-Type":
+                  "application/json",
+              },
+
+              body:
+                JSON.stringify(
+                  body
+                ),
+            },
+          }
+        );
+      }
+
       return requestJson(
-        `${deps.subscanUrl}${path}`,
+        `${subscanBase}${path}`,
         {
           fetchImpl:
             deps.fetchImpl,
@@ -815,7 +954,8 @@ export async function getPolkadotEvidence(
                 "application/json",
 
               "X-API-Key":
-                key,
+                subscanKey as
+                  string,
             },
 
             body:
@@ -827,7 +967,7 @@ export async function getPolkadotEvidence(
       );
     };
 
-  if (!key) {
+  if (!indexedProvider) {
     unavailableEvidence.push(
       "indexed_transfer_history",
       "extrinsic_history",
@@ -836,94 +976,90 @@ export async function getPolkadotEvidence(
       "multisig_evidence"
     );
   } else {
-    const [
-      transferResult,
-      extrinsicResult,
-      stakingResult,
-      proxyResult,
-      multisigResult,
-    ] =
-      await Promise.all([
-        subscanPost(
-          "/api/v2/scan/transfers",
-          {
-            address:
-              normalized,
+    const transferResult =
+      await indexedPost(
+        "/api/v2/scan/transfers",
+        {
+          address:
+            normalized,
 
-            page:
-              0,
+          page:
+            0,
 
-            row:
-              policy
-                .transferLimit,
+          row:
+            policy
+              .transferLimit,
 
-            direction:
-              "all",
+          direction:
+            "all",
 
-            success:
-              true,
-          }
-        ),
+          success:
+            true,
+        }
+      );
 
-        subscanPost(
-          "/api/v2/scan/extrinsics",
-          {
-            address:
-              normalized,
+    const extrinsicResult =
+      await indexedPost(
+        "/api/v2/scan/extrinsics",
+        {
+          address:
+            normalized,
 
-            page:
-              0,
+          page:
+            0,
 
-            row:
-              policy
-                .extrinsicLimit,
+          row:
+            policy
+              .extrinsicLimit,
 
-            order:
-              "desc",
-          }
-        ),
+          order:
+            "desc",
+        }
+      );
 
-        subscanPost(
-          "/api/scan/staking/nominator",
-          {
-            address:
-              normalized,
-          }
-        ),
+    const stakingResult =
+      await indexedPost(
+        "/api/scan/staking/nominator",
+        {
+          address:
+            normalized,
+        }
+      );
 
-        subscanPost(
-          "/api/scan/proxy/extrinsics",
-          {
-            account:
-              normalized,
+    const proxyResult =
+      await indexedPost(
+        "/api/scan/proxy/extrinsics",
+        {
+          account:
+            normalized,
 
-            page:
-              0,
+          page:
+            0,
 
-            row:
-              policy
-                .proxyLimit,
+          row:
+            policy
+              .proxyLimit,
 
-            order:
-              "desc",
-          }
-        ),
+          order:
+            "desc",
+        }
+      );
 
-        subscanPost(
-          "/api/scan/multisigs/details",
-          {
-            account:
-              normalized,
+    const multisigResult =
+      await indexedPost(
+        "/api/scan/multisigs/details",
+        {
+          account:
+            normalized,
 
-            page:
-              0,
+          page:
+            0,
 
-            row:
-              policy
-                .multisigLimit,
-          }
-        ),
-      ]);
+          row:
+            policy
+              .multisigLimit,
+        }
+      );
 
     if (
       transferResult?.ok
@@ -1077,9 +1213,13 @@ export async function getPolkadotEvidence(
       true,
 
     providerId:
-      key
-        ? "polkadot-sidecar-subscan"
-        : "polkadot-sidecar",
+      indexedProvider ===
+        "pubfi"
+        ? "polkadot-sidecar-pubfi"
+        : indexedProvider ===
+            "subscan"
+          ? "polkadot-sidecar-subscan"
+          : "polkadot-sidecar",
 
     latencyMs:
       Date.now() -
@@ -1177,7 +1317,7 @@ export async function getPolkadotEvidence(
 
         indexedProviderConfigured:
           Boolean(
-            key
+            indexedProvider
           ),
 
         unavailableEvidence:
