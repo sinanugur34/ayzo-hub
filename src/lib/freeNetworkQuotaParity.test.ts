@@ -10,9 +10,9 @@ import {
   getAnalysisQuotaPolicy,
 } from "@/lib/analysisQuotaPolicy";
 
-const freeQuota =
+const analysisQuota =
   fs.readFileSync(
-    "src/lib/freeQuota.ts",
+    "src/lib/analysisQuota.ts",
     "utf8"
   );
 
@@ -28,7 +28,7 @@ const solanaRoute =
     "utf8"
   );
 
-const mobileQuota =
+const accountQuota =
   fs.readFileSync(
     "src/lib/account/mobileAnalysisQuota.ts",
     "utf8"
@@ -53,7 +53,7 @@ const upfront =
   );
 
 test(
-  "Free alone owns the per-network analysis cap",
+  "signed-in Free alone owns the per-network analysis cap",
   () => {
     assert.equal(
       PLANS.free
@@ -106,64 +106,41 @@ test(
 );
 
 test(
-  "Free web quota uses separate canonical network counters",
+  "signed-in Free web and mobile share user-scoped network counters",
   () => {
     assert.ok(
-      freeQuota.includes(
-        "FREE_NETWORK_ANALYSIS_LIMIT"
+      analysisQuota.includes(
+        "getMobileAnalysisQuotaStatus"
       )
     );
 
     assert.ok(
-      freeQuota.includes(
-        ":network:${networkId}"
+      analysisQuota.includes(
+        "consumeMobileAnalysisQuota"
       )
     );
 
     assert.ok(
-      webRoute.includes(
-        "resolution.networkId"
-      )
-    );
-
-    assert.ok(
-      webRoute.includes(
-        "DAILY_NETWORK_LIMIT"
-      )
-    );
-
-    assert.ok(
-      solanaRoute.includes(
-        '"solana"'
-      )
-    );
-
-    assert.ok(
-      solanaRoute.includes(
-        "DAILY_NETWORK_LIMIT"
-      )
-    );
-  }
-);
-
-test(
-  "Free mobile enforces network quota without adding a paid cap",
-  () => {
-    assert.ok(
-      mobileQuota.includes(
-        'plan ===\n      "free"'
-      )
-    );
-
-    assert.ok(
-      mobileQuota.includes(
+      accountQuota.includes(
         "networkQuotaKey"
       )
     );
 
     assert.ok(
-      mobileRoute.includes(
-        "resolution.networkId"
+      accountQuota.includes(
+        "mobile-free-quota"
+      )
+    );
+
+    assert.ok(
+      webRoute.includes(
+        "DAILY_NETWORK_LIMIT"
+      )
+    );
+
+    assert.ok(
+      solanaRoute.includes(
+        "DAILY_NETWORK_LIMIT"
       )
     );
 
@@ -176,11 +153,34 @@ test(
 );
 
 test(
-  "plan surfaces disclose Free network cap and paid absence",
+  "Guest does not consume the signed-in Free per-network counter",
+  () => {
+    assert.ok(
+      analysisQuota.includes(
+        "getFreeQuotaStatus(\n      request,\n      null"
+      )
+    );
+
+    assert.ok(
+      analysisQuota.includes(
+        "consumeFreeAnalysis(\n      request,\n      null"
+      )
+    );
+
+    assert.ok(
+      analysisQuota.includes(
+        "networkLimit:\n      null"
+      )
+    );
+  }
+);
+
+test(
+  "plan surfaces disclose signed-in Free network cap and paid absence",
   () => {
     assert.ok(
       pricing.includes(
-        "Per-network analysis limit"
+        "signed-in Free accounts"
       )
     );
 

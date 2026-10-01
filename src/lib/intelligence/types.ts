@@ -17,6 +17,7 @@ export type IntelligenceErrorCode =
   | "NETWORK_NOT_AVAILABLE"
   | "INVALID_ADDRESS"
   | "RATE_LIMITED"
+  | "DAILY_GUEST_LIMIT"
   | "DAILY_FREE_LIMIT"
   | "DAILY_PRO_LIMIT"
   | "DAILY_ADVANCED_LIMIT"

@@ -15,6 +15,14 @@ import {
   resolveIntelligenceNetwork,
 } from "@/lib/intelligence/router";
 
+import {
+  PLANS,
+} from "@/lib/plans/registry";
+
+import {
+  GUEST_ANALYSIS_POLICY,
+} from "@/lib/guestAnalysisPolicy";
+
 export const dynamic =
   "force-dynamic";
 
@@ -76,6 +84,15 @@ export async function GET(
       networkId
     );
 
+  const authenticated =
+    quota.userId !==
+    null;
+
+  const accessMode =
+    authenticated
+      ? "account"
+      : "guest";
+
   if (
     quota.deviceCookie
   ) {
@@ -105,10 +122,18 @@ export async function GET(
     );
   }
 
+  const freePlanQuota =
+    PLANS.free
+      .analysisQuota;
+
   return Response.json(
     {
       ok:
         true,
+
+      authenticated,
+
+      accessMode,
 
       plan:
         quota.plan,
@@ -116,11 +141,6 @@ export async function GET(
       available:
         quota.available,
 
-      /*
-       * Legacy field names stay for existing
-       * clients. total* fields make the contract
-       * explicit for new quota UI.
-       */
       limit:
         quota.limit,
 
@@ -140,17 +160,27 @@ export async function GET(
         quota.resetAt,
 
       network:
-        quota.network ??
-        networkId,
+        authenticated
+          ? quota.network ??
+            networkId
+          : null,
 
       networkLimit:
+        authenticated &&
         quota.plan ===
           "free"
           ? quota.networkLimit ??
-            2
+            (
+              freePlanQuota.kind ===
+                "fixed"
+                ? freePlanQuota
+                    .perNetworkCount
+                : null
+            )
           : null,
 
       networkRemaining:
+        authenticated &&
         quota.plan ===
           "free"
           ? quota.networkRemaining ??
@@ -158,10 +188,32 @@ export async function GET(
           : null,
 
       networkResetAt:
+        authenticated &&
         quota.plan ===
           "free"
           ? quota.networkResetAt ??
             null
+          : null,
+
+      /*
+       * Explicit conversion contract for clients.
+       * This is informational only; enforcement
+       * remains server-side.
+       */
+      guestLimit:
+        GUEST_ANALYSIS_POLICY.limit,
+
+      freeAccountLimit:
+        freePlanQuota.kind ===
+          "fixed"
+          ? freePlanQuota.count
+          : null,
+
+      freeAccountNetworkLimit:
+        freePlanQuota.kind ===
+          "fixed"
+          ? freePlanQuota
+              .perNetworkCount
           : null,
     },
     {

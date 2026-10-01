@@ -13,6 +13,10 @@ import {
 } from "@/lib/analysisQuotaPolicy";
 
 import {
+  GUEST_ANALYSIS_POLICY,
+} from "@/lib/guestAnalysisPolicy";
+
+import {
   getClientIp,
 } from "@/lib/rateLimit";
 
@@ -42,15 +46,20 @@ if (
   );
 }
 
+/*
+ * Historical symbol retained so existing route
+ * imports remain stable. This device/IP quota is
+ * now the unauthenticated Guest allowance.
+ */
 export const FREE_ANALYSIS_LIMIT =
-  FREE_POLICY.limit;
+  GUEST_ANALYSIS_POLICY.limit;
 
 export const FREE_NETWORK_ANALYSIS_LIMIT:
   number =
     configuredNetworkLimit;
 
 export const FREE_ANALYSIS_WINDOW_SECONDS =
-  FREE_POLICY
+  GUEST_ANALYSIS_POLICY
     .windowSeconds;
 
 export const FREE_DEVICE_COOKIE =

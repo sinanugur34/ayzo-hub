@@ -25,6 +25,13 @@ import {
 } from "@/lib/freeQuota";
 
 import {
+  consumeMobileAnalysisQuota,
+  getMobileAnalysisQuotaStatus,
+  refundMobileAnalysisQuota,
+  type MobileAnalysisQuotaState,
+} from "@/lib/account/mobileAnalysisQuota";
+
+import {
   getInternalApiKey,
 } from "@/lib/apiSecurity";
 
@@ -165,6 +172,98 @@ function resetAtFromTtl(
     Date.now() +
     ttl * 1000
   );
+}
+
+function accountQuotaState(
+  userId:
+    string,
+  quota:
+    MobileAnalysisQuotaState
+): AnalysisQuotaState {
+  return {
+    plan:
+      quota.plan,
+
+    userId,
+
+    allowed:
+      quota.allowed,
+
+    available:
+      quota.available,
+
+    limit:
+      quota.limit,
+
+    remaining:
+      quota.remaining,
+
+    resetAt:
+      quota.resetAt,
+
+    deviceCookie:
+      null,
+
+    network:
+      quota.network,
+
+    networkLimit:
+      quota.networkLimit,
+
+    networkRemaining:
+      quota.networkRemaining,
+
+    networkResetAt:
+      quota.networkResetAt,
+
+    blockedBy:
+      quota.blockedBy,
+  };
+}
+
+function accountQuotaForRefund(
+  quota:
+    AnalysisQuotaState
+): MobileAnalysisQuotaState {
+  return {
+    plan:
+      quota.plan,
+
+    allowed:
+      quota.allowed,
+
+    available:
+      quota.available,
+
+    limit:
+      quota.limit,
+
+    remaining:
+      quota.remaining,
+
+    resetAt:
+      quota.resetAt,
+
+    network:
+      quota.network ??
+      null,
+
+    networkLimit:
+      quota.networkLimit ??
+      null,
+
+    networkRemaining:
+      quota.networkRemaining ??
+      null,
+
+    networkResetAt:
+      quota.networkResetAt ??
+      null,
+
+    blockedBy:
+      quota.blockedBy ??
+      null,
+  };
 }
 
 async function getPaidStatus(
@@ -461,19 +560,60 @@ export async function getAnalysisQuotaStatus(
     );
   }
 
-  const free =
+  /*
+   * Authenticated Free is account-scoped and
+   * shares its counter with the mobile app.
+   */
+  if (userId) {
+    const accountFree =
+      await getMobileAnalysisQuotaStatus(
+        userId,
+        "free",
+        networkId
+      );
+
+    return accountQuotaState(
+      userId,
+      accountFree
+    );
+  }
+
+  /*
+   * Guest is deliberately device/IP scoped.
+   * Guest has only one total analysis, so no
+   * additional per-network counter is needed.
+   */
+  const guest =
     await getFreeQuotaStatus(
       request,
-      networkId
+      null
     );
 
   return {
-    ...free,
+    ...guest,
 
     plan:
       "free",
 
-    userId,
+    userId:
+      null,
+
+    network:
+      null,
+
+    networkLimit:
+      null,
+
+    networkRemaining:
+      null,
+
+    networkResetAt:
+      null,
+
+    blockedBy:
+      guest.allowed
+        ? null
+        : "total",
   };
 }
 
@@ -505,19 +645,51 @@ export async function consumeAnalysisQuota(
     );
   }
 
-  const free =
+  if (userId) {
+    const accountFree =
+      await consumeMobileAnalysisQuota(
+        userId,
+        "free",
+        networkId
+      );
+
+    return accountQuotaState(
+      userId,
+      accountFree
+    );
+  }
+
+  const guest =
     await consumeFreeAnalysis(
       request,
-      networkId
+      null
     );
 
   return {
-    ...free,
+    ...guest,
 
     plan:
       "free",
 
-    userId,
+    userId:
+      null,
+
+    network:
+      null,
+
+    networkLimit:
+      null,
+
+    networkRemaining:
+      null,
+
+    networkResetAt:
+      null,
+
+    blockedBy:
+      guest.allowed
+        ? null
+        : "total",
   };
 }
 
@@ -587,11 +759,31 @@ export async function refundAnalysisQuota(
     return;
   }
 
+  /*
+   * Signed-in Free uses the same user-scoped
+   * counter as Android. Refund that account
+   * reservation rather than the Guest device/IP
+   * counter.
+   */
+  if (
+    quota.plan ===
+      "free" &&
+    quota.userId
+  ) {
+    await refundMobileAnalysisQuota(
+      quota.userId,
+      accountQuotaForRefund(
+        quota
+      )
+    );
+
+    return;
+  }
+
   await refundFreeAnalysis(
     request,
     quota.deviceCookie,
-    quota.network ??
-      null
+    null
   );
 }
 

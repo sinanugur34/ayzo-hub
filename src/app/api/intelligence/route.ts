@@ -606,22 +606,31 @@ export async function POST(request: Request) {
       }
 
       if (!quota.allowed) {
+        const guestBlocked =
+          quota.plan ===
+            "free" &&
+          quota.userId ===
+            null;
+
         const networkBlocked =
+          !guestBlocked &&
           quota.plan ===
             "free" &&
           quota.blockedBy ===
             "network";
 
         const failureCode =
-          networkBlocked
-            ? "DAILY_NETWORK_LIMIT"
-            : quota.plan ===
-                "advanced"
-              ? "DAILY_ADVANCED_LIMIT"
+          guestBlocked
+            ? "DAILY_GUEST_LIMIT"
+            : networkBlocked
+              ? "DAILY_NETWORK_LIMIT"
               : quota.plan ===
-                  "pro"
-                ? "DAILY_PRO_LIMIT"
-                : "DAILY_FREE_LIMIT";
+                  "advanced"
+                ? "DAILY_ADVANCED_LIMIT"
+                : quota.plan ===
+                    "pro"
+                  ? "DAILY_PRO_LIMIT"
+                  : "DAILY_FREE_LIMIT";
 
         const resetAt =
           networkBlocked
@@ -683,18 +692,25 @@ export async function POST(request: Request) {
               failureCode,
 
             error:
-              networkBlocked
-                ? `AYZO Free allows a maximum of ${quota.networkLimit ?? 2} analyses on ${resolution.network.name} within the current rolling 24-hour window. You can continue with another supported network.`
-                : quota.plan ===
-                    "advanced"
-                  ? "Daily Advanced analysis limit reached."
+              guestBlocked
+                ? "Guest access includes 1 analysis per rolling 24-hour window. Create a free AYZO account to unlock 3 analyses per 24 hours."
+                : networkBlocked
+                  ? `AYZO Free allows a maximum of ${quota.networkLimit ?? 2} analyses on ${resolution.network.name} within the current rolling 24-hour window. You can continue with another supported network.`
                   : quota.plan ===
-                      "pro"
-                    ? "Daily Pro analysis limit reached."
-                    : "Daily free analysis limit reached.",
+                      "advanced"
+                    ? "Daily Advanced analysis limit reached."
+                    : quota.plan ===
+                        "pro"
+                      ? "Daily Pro analysis limit reached."
+                      : "Daily free analysis limit reached.",
 
             plan:
               quota.plan,
+
+            accessMode:
+              guestBlocked
+                ? "guest"
+                : "account",
 
             network:
               resolution.networkId,
@@ -710,10 +726,13 @@ export async function POST(request: Request) {
                 quota.resetAt,
 
               network:
-                quota.network ??
-                resolution.networkId,
+                guestBlocked
+                  ? null
+                  : quota.network ??
+                    resolution.networkId,
 
               networkLimit:
+                !guestBlocked &&
                 quota.plan ===
                   "free"
                   ? quota.networkLimit ??
@@ -721,6 +740,7 @@ export async function POST(request: Request) {
                   : null,
 
               networkRemaining:
+                !guestBlocked &&
                 quota.plan ===
                   "free"
                   ? quota.networkRemaining ??
@@ -728,6 +748,7 @@ export async function POST(request: Request) {
                   : null,
 
               networkResetAt:
+                !guestBlocked &&
                 quota.plan ===
                   "free"
                   ? quota.networkResetAt ??
