@@ -39,7 +39,10 @@ export type InjectiveIndexedFetch =
       Promise<unknown>;
   }>;
 
-export type InjectiveIndexedProvider = {
+export type InjectiveIndexedRestProvider = {
+  transport?:
+    "rest";
+
   id:
     string;
 
@@ -50,6 +53,70 @@ export type InjectiveIndexedProvider = {
     string | null;
 };
 
+export type InjectiveIndexedQuickNodeProvider = {
+  transport:
+    "quicknode-grpc";
+
+  id:
+    string;
+
+  grpcEndpoint:
+    string;
+
+  token:
+    string;
+};
+
+export type InjectiveIndexedProvider =
+  | InjectiveIndexedRestProvider
+  | InjectiveIndexedQuickNodeProvider;
+
+export type InjectiveQuickNodeRawResult =
+  | {
+      ok:
+        true;
+
+      data:
+        unknown;
+    }
+  | {
+      ok:
+        false;
+
+      code:
+        | "INVALID_ADDRESS"
+        | "NOT_FOUND"
+        | "RATE_LIMITED"
+        | "TIMEOUT"
+        | "UPSTREAM_ERROR"
+        | "MALFORMED_RESPONSE";
+
+      error:
+        string;
+    };
+
+export type InjectiveQuickNodeLoad =
+  (
+    input: {
+      grpcEndpoint:
+        string;
+
+      token:
+        string;
+
+      address:
+        string;
+
+      limit:
+        number;
+
+      timeoutMs:
+        number;
+    }
+  ) => Promise<
+    InjectiveQuickNodeRawResult
+  >;
+
 export type InjectiveIndexedHistoryDependencies = {
   fetchImpl?:
     InjectiveIndexedFetch;
@@ -59,6 +126,9 @@ export type InjectiveIndexedHistoryDependencies = {
 
   providers?:
     readonly InjectiveIndexedProvider[];
+
+  quickNodeLoad?:
+    InjectiveQuickNodeLoad;
 };
 
 export type InjectiveIndexedHistoryResult =
@@ -646,6 +716,25 @@ function defaultProviders():
       ?.trim() ||
     DEFAULT_OFFICIAL_EXPLORER;
 
+  const quickNodeEndpoint =
+    process.env
+      .INJECTIVE_QUICKNODE_GRPC_ENDPOINT
+      ?.trim() ||
+    null;
+
+  const quickNodeToken =
+    process.env
+      .INJECTIVE_QUICKNODE_TOKEN
+      ?.trim() ||
+    null;
+
+  const nownodesEnabled =
+    process.env
+      .INJECTIVE_NOWNODES_ENABLED
+      ?.trim()
+      .toLowerCase() ===
+    "true";
+
   const nownodesKey =
     process.env
       .INJECTIVE_NOWNODES_API_KEY
@@ -658,6 +747,9 @@ function defaultProviders():
   const providers:
     InjectiveIndexedProvider[] = [
       {
+        transport:
+          "rest",
+
         id:
           "injective-official-explorer",
 
@@ -669,8 +761,42 @@ function defaultProviders():
       },
     ];
 
-  if (nownodesKey) {
+  /*
+   * Independent indexed-history fallback.
+   * The credentials are configured only on the server.
+   */
+  if (
+    quickNodeEndpoint &&
+    quickNodeToken
+  ) {
     providers.push({
+      transport:
+        "quicknode-grpc",
+
+      id:
+        "injective-quicknode-indexer",
+
+      grpcEndpoint:
+        quickNodeEndpoint,
+
+      token:
+        quickNodeToken,
+    });
+  }
+
+  /*
+   * NOWNodes remains available as an explicitly
+   * enabled tertiary adapter only. A valid API key
+   * alone does not imply Injective Indexer entitlement.
+   */
+  if (
+    nownodesEnabled &&
+    nownodesKey
+  ) {
+    providers.push({
+      transport:
+        "rest",
+
       id:
         "injective-nownodes-explorer",
 
@@ -790,244 +916,235 @@ export async function getInjectiveIndexedHistory(
       continue;
     }
 
-    const base =
-      provider.baseUrl
-        .replace(
-          /\/+$/,
-          ""
-        );
-
-    if (!base) {
-      continue;
-    }
-
     requestsUsed +=
       1;
 
-    const params =
-      new URLSearchParams();
+    let raw:
+      unknown;
 
-    params.set(
-      "limit",
-      String(
-        policy
-          .transactionLimit
-      )
-    );
+    if (
+      provider.transport ===
+        "quicknode-grpc"
+    ) {
+      const quickNodeLoad =
+        deps.quickNodeLoad ??
+        (
+          async input => {
+            const {
+              getInjectiveQuickNodeRawHistory,
+            } =
+              await import(
+                "./quicknode"
+              );
 
-    params.set(
-      "skip",
-      "0"
-    );
-
-    const controller =
-      new AbortController();
-
-    const timer =
-      setTimeout(
-        () =>
-          controller.abort(),
-        timeoutMs
-      );
-
-    try {
-      const headers =
-        new Headers({
-          Accept:
-            "application/json",
-
-          "User-Agent":
-            "AYZO/1.0 (+https://ayzo.io)",
-        });
-
-      if (
-        provider.apiKey
-      ) {
-        headers.set(
-          "api-key",
-          provider.apiKey
-        );
-      }
-
-      const response =
-        await fetchImpl(
-          `${base}/api/explorer/v1/accountTxs/${encodeURIComponent(normalized)}?${params.toString()}`,
-          {
-            method:
-              "GET",
-
-            headers,
-
-            cache:
-              "no-store",
-
-            signal:
-              controller.signal,
+            return getInjectiveQuickNodeRawHistory(
+              input
+            );
           }
         );
 
-      if (!response.ok) {
-        last = {
-          ok:
-            false,
+      const result =
+        await quickNodeLoad({
+          grpcEndpoint:
+            provider
+              .grpcEndpoint,
 
-          providerId:
-            provider.id,
+          token:
+            provider.token,
 
-          latencyMs:
-            Date.now() -
-            started,
+          address:
+            normalized,
 
-          providerRequestsUsed:
-            requestsUsed,
-
-          code:
-            providerErrorCode(
-              response.status
-            ),
-
-          error:
-            `${provider.id} HTTP ${response.status}.`,
-        };
-
-        continue;
-      }
-
-      const raw =
-        await response.json();
-
-      const root =
-        record(
-          raw
-        );
-
-      if (
-        !root ||
-        !Array.isArray(
-          root.data
-        )
-      ) {
-        last = {
-          ok:
-            false,
-
-          providerId:
-            provider.id,
-
-          latencyMs:
-            Date.now() -
-            started,
-
-          providerRequestsUsed:
-            requestsUsed,
-
-          code:
-            "MALFORMED_RESPONSE",
-
-          error:
-            `${provider.id} returned malformed transaction history.`,
-        };
-
-        continue;
-      }
-
-      const transactions =
-        root.data
-          .map(
-            parseTransaction
-          )
-          .filter(
-            (
-              item
-            ): item is CosmosSdkTransactionEvidence =>
-              item !== null
-          )
-          .slice(
-            0,
+          limit:
             policy
-              .transactionLimit
+              .transactionLimit,
+
+          timeoutMs,
+        });
+
+      if (!result.ok) {
+        last = {
+          ok:
+            false,
+
+          providerId:
+            provider.id,
+
+          latencyMs:
+            Date.now() -
+            started,
+
+          providerRequestsUsed:
+            requestsUsed,
+
+          code:
+            result.code,
+
+          error:
+            result.error,
+        };
+
+        continue;
+      }
+
+      raw =
+        result.data;
+    } else {
+      const base =
+        provider
+          .baseUrl
+          .replace(
+            /\/+$/,
+            ""
           );
 
-      if (
-        root.data.length >
-          0 &&
-        transactions.length ===
-          0
-      ) {
-        last = {
-          ok:
-            false,
-
-          providerId:
-            provider.id,
-
-          latencyMs:
-            Date.now() -
-            started,
-
-          providerRequestsUsed:
-            requestsUsed,
-
-          code:
-            "MALFORMED_RESPONSE",
-
-          error:
-            `${provider.id} returned unparseable transaction evidence.`,
-        };
-
+      if (!base) {
         continue;
       }
 
-      const paging =
-        record(
-          root.paging
+      const params =
+        new URLSearchParams();
+
+      params.set(
+        "limit",
+        String(
+          policy
+            .transactionLimit
+        )
+      );
+
+      params.set(
+        "skip",
+        "0"
+      );
+
+      const controller =
+        new AbortController();
+
+      const timer =
+        setTimeout(
+          () =>
+            controller.abort(),
+          timeoutMs
         );
 
-      const total =
-        integer(
-          paging?.total
-        );
+      try {
+        const headers =
+          new Headers({
+            Accept:
+              "application/json",
 
-      return {
-        ok:
-          true,
+            "User-Agent":
+              "AYZO/1.0 (+https://ayzo.io)",
+          });
 
-        providerId:
-          provider.id,
+        if (
+          provider.apiKey
+        ) {
+          headers.set(
+            "api-key",
+            provider.apiKey
+          );
+        }
 
-        latencyMs:
-          Date.now() -
-          started,
+        const response =
+          await fetchImpl(
+            `${base}/api/explorer/v1/accountTxs/${encodeURIComponent(normalized)}?${params.toString()}`,
+            {
+              method:
+                "GET",
 
-        data: {
-          transactions,
+              headers,
 
-          coverage: {
-            transactionLimit:
-              policy
-                .transactionLimit,
+              cache:
+                "no-store",
+
+              signal:
+                controller.signal,
+            }
+          );
+
+        if (!response.ok) {
+          last = {
+            ok:
+              false,
+
+            providerId:
+              provider.id,
+
+            latencyMs:
+              Date.now() -
+              started,
 
             providerRequestsUsed:
               requestsUsed,
 
-            transportFailoverUsed:
-              index > 0,
+            code:
+              providerErrorCode(
+                response.status
+              ),
 
-            historyHasMore:
-              total !==
-                null
-                ? total >
-                  transactions.length
-                : transactions.length >=
-                  policy
-                    .transactionLimit,
+            error:
+              `${provider.id} HTTP ${response.status}.`,
+          };
 
-            total,
-          },
-        },
-      };
-    } catch (
-      error
+          continue;
+        }
+
+        raw =
+          await response.json();
+      } catch (
+        error
+      ) {
+        last = {
+          ok:
+            false,
+
+          providerId:
+            provider.id,
+
+          latencyMs:
+            Date.now() -
+            started,
+
+          providerRequestsUsed:
+            requestsUsed,
+
+          code:
+            error instanceof
+                Error &&
+              error.name ===
+                "AbortError"
+              ? "TIMEOUT"
+              : "UPSTREAM_ERROR",
+
+          error:
+            error instanceof
+                Error &&
+              error.name ===
+                "AbortError"
+              ? `${provider.id} timed out.`
+              : `${provider.id} request failed.`,
+        };
+
+        continue;
+      } finally {
+        clearTimeout(
+          timer
+        );
+      }
+    }
+
+    const root =
+      record(
+        raw
+      );
+
+    if (
+      !root ||
+      !Array.isArray(
+        root.data
+      )
     ) {
       last = {
         ok:
@@ -1044,26 +1161,139 @@ export async function getInjectiveIndexedHistory(
           requestsUsed,
 
         code:
-          error instanceof
-              Error &&
-            error.name ===
-              "AbortError"
-            ? "TIMEOUT"
-            : "UPSTREAM_ERROR",
+          "MALFORMED_RESPONSE",
 
         error:
-          error instanceof
-              Error &&
-            error.name ===
-              "AbortError"
-            ? `${provider.id} timed out.`
-            : `${provider.id} request failed.`,
+          `${provider.id} returned malformed transaction history.`,
       };
-    } finally {
-      clearTimeout(
-        timer
-      );
+
+      continue;
     }
+
+    const transactions =
+      root.data
+        .map(
+          parseTransaction
+        )
+        .filter(
+          (
+            item
+          ): item is CosmosSdkTransactionEvidence =>
+            item !== null
+        )
+        .slice(
+          0,
+          policy
+            .transactionLimit
+        );
+
+    if (
+      root.data.length >
+        0 &&
+      transactions.length ===
+        0
+    ) {
+      last = {
+        ok:
+          false,
+
+        providerId:
+          provider.id,
+
+        latencyMs:
+          Date.now() -
+          started,
+
+        providerRequestsUsed:
+          requestsUsed,
+
+        code:
+          "MALFORMED_RESPONSE",
+
+        error:
+          `${provider.id} returned unparseable transaction evidence.`,
+      };
+
+      continue;
+    }
+
+    const paging =
+      record(
+        root.paging
+      );
+
+    const total =
+      integer(
+        paging?.total
+      );
+
+    const nextTokens =
+      array(
+        paging?.next
+      )
+        .map(
+          text
+        )
+        .filter(
+          (
+            item
+          ): item is string =>
+            item !== null
+        );
+
+    const nextFieldKnown =
+      paging !==
+        null &&
+      Object.prototype
+        .hasOwnProperty
+        .call(
+          paging,
+          "next"
+        );
+
+    return {
+      ok:
+        true,
+
+      providerId:
+        provider.id,
+
+      latencyMs:
+        Date.now() -
+        started,
+
+      data: {
+        transactions,
+
+        coverage: {
+          transactionLimit:
+            policy
+              .transactionLimit,
+
+          providerRequestsUsed:
+            requestsUsed,
+
+          transportFailoverUsed:
+            index > 0,
+
+          historyHasMore:
+            total !==
+              null
+              ? total >
+                transactions.length
+              : nextFieldKnown
+                ? nextTokens
+                    .length >
+                  0
+                : transactions
+                    .length >=
+                  policy
+                    .transactionLimit,
+
+          total,
+        },
+      },
+    };
   }
 
   return {

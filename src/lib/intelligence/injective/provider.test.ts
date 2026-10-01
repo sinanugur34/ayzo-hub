@@ -709,3 +709,163 @@ test(
     );
   }
 );
+
+test(
+  "Injective indexed history uses QuickNode before tertiary REST fallback",
+  async () => {
+    const restHosts:
+      string[] = [];
+
+    let quickNodeCalls =
+      0;
+
+    const result =
+      await getInjectiveIndexedHistory(
+        {
+          address:
+            ADDRESS,
+
+          analysisPlan:
+            "free",
+        },
+        {
+          providers: [
+            {
+              transport:
+                "rest",
+
+              id:
+                "official",
+
+              baseUrl:
+                "https://official.test",
+
+              apiKey:
+                null,
+            },
+
+            {
+              transport:
+                "quicknode-grpc",
+
+              id:
+                "quicknode",
+
+              grpcEndpoint:
+                "unit-test.injective-mainnet.quiknode.pro:443",
+
+              token:
+                "unit-token",
+            },
+
+            {
+              transport:
+                "rest",
+
+              id:
+                "tertiary",
+
+              baseUrl:
+                "https://tertiary.test",
+
+              apiKey:
+                "unit-key",
+            },
+          ],
+
+          fetchImpl:
+            async input => {
+              const url =
+                new URL(
+                  input
+                );
+
+              restHosts.push(
+                url.host
+              );
+
+              if (
+                url.host ===
+                  "official.test"
+              ) {
+                return json(
+                  {
+                    error:
+                      "upstream",
+                  },
+                  503
+                );
+              }
+
+              throw new Error(
+                "Tertiary provider must not be reached after QuickNode success."
+              );
+            },
+
+          quickNodeLoad:
+            async input => {
+              quickNodeCalls +=
+                1;
+
+              assert.equal(
+                input.address,
+                ADDRESS
+              );
+
+              assert.equal(
+                input.limit,
+                20
+              );
+
+              return {
+                ok:
+                  true,
+
+                data:
+                  indexedPayload(),
+              };
+            },
+        }
+      );
+
+    assert.equal(
+      result.ok,
+      true
+    );
+
+    if (!result.ok) {
+      return;
+    }
+
+    assert.equal(
+      result.providerId,
+      "quicknode"
+    );
+
+    assert.equal(
+      result.data
+        .coverage
+        .providerRequestsUsed,
+      2
+    );
+
+    assert.equal(
+      result.data
+        .coverage
+        .transportFailoverUsed,
+      true
+    );
+
+    assert.equal(
+      quickNodeCalls,
+      1
+    );
+
+    assert.deepEqual(
+      restHosts,
+      [
+        "official.test",
+      ]
+    );
+  }
+);
