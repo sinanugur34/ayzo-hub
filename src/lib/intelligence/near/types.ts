@@ -156,6 +156,81 @@ export type NearObservedAction = {
     string | null;
 };
 
+
+export type NearIndexedTransaction = {
+  transactionHash:
+    string;
+
+  signerId:
+    string | null;
+
+  receiverId:
+    string | null;
+
+  blockHeight:
+    number | null;
+
+  blockTimestamp:
+    string | null;
+
+  actions:
+    readonly NearObservedAction[];
+};
+
+export type NearReceiptEvidence = {
+  receiptId:
+    string;
+
+  predecessorId:
+    string | null;
+
+  receiverId:
+    string | null;
+
+  transactionHash:
+    string | null;
+
+  blockHeight:
+    number | null;
+
+  blockTimestamp:
+    string | null;
+
+  actions:
+    readonly NearObservedAction[];
+};
+
+export type NearIndexedEvidence = {
+  transactions:
+    readonly NearIndexedTransaction[];
+
+  receipts:
+    readonly NearReceiptEvidence[];
+
+  coverage: {
+    transactionLimit:
+      number;
+
+    receiptLimit:
+      number;
+
+    providerRequestsUsed:
+      number;
+
+    historyAvailable:
+      boolean;
+
+    receiptsAvailable:
+      boolean;
+
+    truncated:
+      boolean;
+
+    unavailableEvidence:
+      readonly string[];
+  };
+};
+
 export type NearEvidenceCoverage = {
   plan:
     AnalysisDepthPlan;

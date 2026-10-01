@@ -1,11 +1,8 @@
 import type {
+  NearIndexedEvidence,
   NearObservedAction,
   NearRpcEvidence,
 } from "./types";
-
-import type {
-  NearIndexedEvidence,
-} from "./providers/nearblocks";
 
 export type NearTransferEvidence = {
   transactionHash:

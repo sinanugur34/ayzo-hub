@@ -11,8 +11,11 @@ import {
 } from "../policy";
 
 import type {
+  NearIndexedEvidence,
+  NearIndexedTransaction,
   NearObservedAction,
   NearProviderResult,
+  NearReceiptEvidence,
 } from "../types";
 
 const DEFAULT_NEARBLOCKS_URL =
@@ -20,80 +23,6 @@ const DEFAULT_NEARBLOCKS_URL =
 
 type JsonRecord =
   Record<string, unknown>;
-
-export type NearIndexedTransaction = {
-  transactionHash:
-    string;
-
-  signerId:
-    string | null;
-
-  receiverId:
-    string | null;
-
-  blockHeight:
-    number | null;
-
-  blockTimestamp:
-    string | null;
-
-  actions:
-    readonly NearObservedAction[];
-};
-
-export type NearReceiptEvidence = {
-  receiptId:
-    string;
-
-  predecessorId:
-    string | null;
-
-  receiverId:
-    string | null;
-
-  transactionHash:
-    string | null;
-
-  blockHeight:
-    number | null;
-
-  blockTimestamp:
-    string | null;
-
-  actions:
-    readonly NearObservedAction[];
-};
-
-export type NearIndexedEvidence = {
-  transactions:
-    readonly NearIndexedTransaction[];
-
-  receipts:
-    readonly NearReceiptEvidence[];
-
-  coverage: {
-    transactionLimit:
-      number;
-
-    receiptLimit:
-      number;
-
-    providerRequestsUsed:
-      number;
-
-    historyAvailable:
-      boolean;
-
-    receiptsAvailable:
-      boolean;
-
-    truncated:
-      boolean;
-
-    unavailableEvidence:
-      readonly string[];
-  };
-};
 
 export type NearBlocksFetch =
   (

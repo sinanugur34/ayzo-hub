@@ -22,10 +22,10 @@ import {
 
 import {
   getNearIndexedEvidence,
-  type NearIndexedEvidence,
 } from "./providers/nearblocks";
 
 import type {
+  NearIndexedEvidence,
   NearProviderResult,
   NearRpcEvidence,
 } from "./types";
@@ -503,7 +503,7 @@ export async function runNearIntelligence(
         "Signed transactions, actions and receipts remain distinct evidence surfaces.",
         "Contract method names are observed evidence; AYZO does not infer method intent.",
         "Access-key permissions are authority evidence and are not proof of beneficial ownership.",
-        "NearBlocks indexed history is intentionally bounded.",
+        "Indexed NEAR history is intentionally bounded and provider coverage may vary.",
         "Observed funding means the earliest explicit inbound source inside the bounded evidence window, not ultimate provenance.",
       ],
     },
