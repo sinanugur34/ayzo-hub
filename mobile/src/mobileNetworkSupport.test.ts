@@ -12,29 +12,29 @@ import {
 } from "./mobileNetworkSupport";
 
 test(
-  "mobile adapter registry covers all twenty-six canonical registrations",
+  "mobile adapter registry covers all thirty-one canonical registrations",
   () => {
     assert.equal(
       NETWORK_IDS.length,
-      26
+      31
     );
 
     assert.equal(
       Object.keys(
         MOBILE_NETWORK_ADAPTERS
       ).length,
-      26
+      31
     );
   }
 );
 
 test(
-  "twenty-five accepted networks are mobile live after Hedera acceptance",
+  "thirty accepted networks are mobile live after Final Five acceptance",
   () => {
     assert.equal(
       getMobileLiveNetworkIds()
         .length,
-      25
+      30
     );
 
     for (
@@ -159,5 +159,43 @@ test(
       hedera.analysisEnabled,
       true
     );
+  }
+);
+
+test(
+  "Final Five canonical promotion enables prepared mobile adapters",
+  () => {
+    for (
+      const id of [
+        "zcash",
+        "algorand",
+        "polkadot",
+        "cosmos",
+        "injective",
+      ] as const
+    ) {
+      const support =
+        getMobileNetworkSupport(
+          id
+        );
+
+      assert.equal(
+        support.canonicalLive,
+        true,
+        id
+      );
+
+      assert.equal(
+        support.engineReady,
+        true,
+        id
+      );
+
+      assert.equal(
+        support.analysisEnabled,
+        true,
+        id
+      );
+    }
   }
 );

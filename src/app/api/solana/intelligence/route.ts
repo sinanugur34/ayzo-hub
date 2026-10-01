@@ -102,7 +102,10 @@ export async function POST(request: Request) {
 
     if (!isDevelopmentTestRequest) {
       quota =
-        await consumeAnalysisQuota(request);
+        await consumeAnalysisQuota(
+          request,
+          "solana"
+        );
 
       if (quota.deviceCookie) {
         const cookieStore = await cookies();
@@ -122,12 +125,34 @@ export async function POST(request: Request) {
       }
 
       if (!quota.allowed) {
+        const guestBlocked =
+          quota.plan ===
+            "free" &&
+          quota.userId ===
+            null;
+
+        const networkBlocked =
+          !guestBlocked &&
+          quota.plan ===
+            "free" &&
+          quota.blockedBy ===
+            "network";
+
+        const resetAt =
+          networkBlocked
+            ? quota.networkResetAt ??
+              quota.resetAt
+            : quota.resetAt;
+
         const retryAfterSeconds =
-          quota.resetAt
+          resetAt
             ? Math.max(
                 1,
                 Math.ceil(
-                  (quota.resetAt - Date.now()) /
+                  (
+                    resetAt -
+                    Date.now()
+                  ) /
                     1000
                 )
               )
@@ -135,33 +160,99 @@ export async function POST(request: Request) {
 
         return Response.json(
           {
-            ok: false,
+            ok:
+              false,
+
             code:
-              quota.plan === "advanced"
-                ? "DAILY_ADVANCED_LIMIT"
-                : quota.plan === "pro"
-                  ? "DAILY_PRO_LIMIT"
-                  : "DAILY_FREE_LIMIT",
+              guestBlocked
+                ? "DAILY_GUEST_LIMIT"
+                : networkBlocked
+                  ? "DAILY_NETWORK_LIMIT"
+                  : quota.plan ===
+                      "advanced"
+                    ? "DAILY_ADVANCED_LIMIT"
+                    : quota.plan ===
+                        "pro"
+                      ? "DAILY_PRO_LIMIT"
+                      : "DAILY_FREE_LIMIT",
+
             error:
-              quota.plan === "advanced"
-                ? "Daily Advanced analysis limit reached."
-                : quota.plan === "pro"
-                  ? "Daily Pro analysis limit reached."
-                  : "Daily free analysis limit reached.",
-            plan: quota.plan,
+              guestBlocked
+                ? "Guest access includes 1 analysis per rolling 24-hour window. Create a free AYZO account to unlock 3 analyses per 24 hours."
+                : networkBlocked
+                  ? `AYZO Free allows a maximum of ${quota.networkLimit ?? 2} analyses on Solana within the current rolling 24-hour window. You can continue with another supported network.`
+                  : quota.plan ===
+                      "advanced"
+                    ? "Daily Advanced analysis limit reached."
+                    : quota.plan ===
+                        "pro"
+                      ? "Daily Pro analysis limit reached."
+                      : "Daily free analysis limit reached.",
+
+            plan:
+              quota.plan,
+
+            accessMode:
+              guestBlocked
+                ? "guest"
+                : "account",
+
+            network:
+              "solana",
+
             quota: {
-              limit: quota.limit,
-              remaining: 0,
-              resetAt: quota.resetAt,
+              limit:
+                quota.limit,
+
+              remaining:
+                quota.remaining,
+
+              resetAt:
+                quota.resetAt,
+
+              network:
+                guestBlocked
+                  ? null
+                  : quota.network ??
+                    "solana",
+
+              networkLimit:
+                !guestBlocked &&
+                quota.plan ===
+                  "free"
+                  ? quota.networkLimit ??
+                    2
+                  : null,
+
+              networkRemaining:
+                !guestBlocked &&
+                quota.plan ===
+                  "free"
+                  ? quota.networkRemaining ??
+                    null
+                  : null,
+
+              networkResetAt:
+                !guestBlocked &&
+                quota.plan ===
+                  "free"
+                  ? quota.networkResetAt ??
+                    null
+                  : null,
             },
           },
           {
-            status: 429,
+            status:
+              429,
+
             headers: {
-              "Retry-After": String(
-                retryAfterSeconds
-              ),
-              "Cache-Control": "no-store",
+              "Retry-After":
+                String(
+                  retryAfterSeconds
+                ),
+
+              "Cache-Control":
+                "no-store",
             },
           }
         );

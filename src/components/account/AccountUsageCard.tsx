@@ -13,6 +13,7 @@ type AccountQuotaStatus = {
   limit: number;
   remaining: number | null;
   resetAt: number | null;
+  networkLimit?: number | null;
 };
 
 function planLabel(plan: AccountQuotaStatus["plan"]) {
@@ -162,6 +163,13 @@ export default function AccountUsageCard() {
             {resetLabel
               ? ` Resets ${resetLabel}.`
               : ""}
+          </div>
+
+          <div className="mt-2 text-[10px] leading-5 text-zinc-600">
+            {status.plan ===
+            "free"
+              ? `Free includes a maximum of ${status.networkLimit ?? 2} analyses on the same network per rolling 24-hour window.`
+              : "No per-network analysis limit applies to this plan."}
           </div>
 
           {remainingPercent !== null && (

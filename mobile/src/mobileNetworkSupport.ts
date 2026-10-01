@@ -17,7 +17,12 @@ export type MobileAnalysisAdapterId =
   | "cardano"
   | "aptos"
   | "near"
-  | "hedera";
+  | "hedera"
+  | "zcash"
+  | "algorand"
+  | "polkadot"
+  | "cosmos"
+  | "injective";
 
 /*
  * Exhaustive mapping.
@@ -107,6 +112,21 @@ export const MOBILE_NETWORK_ADAPTERS:
 
   hedera:
     "hedera",
+
+  zcash:
+    "zcash",
+
+  algorand:
+    "algorand",
+
+  polkadot:
+    "polkadot",
+
+  cosmos:
+    "cosmos",
+
+  injective:
+    "injective",
 };
 
 /*
@@ -151,6 +171,16 @@ const MOBILE_ENGINE_READY =
     "cardano",
     "aptos",
     "hedera",
+
+    /*
+     * Product adapters are ready but remain
+     * hidden until canonical registry promotion.
+     */
+    "zcash",
+    "algorand",
+    "polkadot",
+    "cosmos",
+    "injective",
   ]);
 
 export function getMobileNetworkSupport(

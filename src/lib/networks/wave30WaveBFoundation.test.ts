@@ -15,7 +15,7 @@ test(
   () => {
     assert.equal(
       NETWORK_IDS.length,
-      26
+      31
     );
 
     const live =
@@ -28,7 +28,7 @@ test(
 
     assert.equal(
       live.length,
-      25
+      30
     );
 
     assert.equal(

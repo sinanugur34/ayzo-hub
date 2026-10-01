@@ -74,6 +74,34 @@ import {
 } from "@/lib/intelligence/hedera/engine";
 
 import {
+  normalizeZcashTransparentAddress,
+} from "@/lib/intelligence/zcash/address";
+
+import {
+  runZcashIntelligence,
+} from "@/lib/intelligence/zcash/engine";
+
+import {
+  normalizeAlgorandAddress,
+} from "@/lib/intelligence/algorand/address";
+
+import {
+  runAlgorandIntelligence,
+} from "@/lib/intelligence/algorand/engine";
+
+import {
+  runPolkadotIntelligence,
+} from "@/lib/intelligence/polkadot/engine";
+
+import {
+  runCosmosIntelligence,
+} from "@/lib/intelligence/cosmos/engine";
+
+import {
+  runInjectiveIntelligence,
+} from "@/lib/intelligence/injective/engine";
+
+import {
   isTonAddress,
 } from "@/lib/intelligence/ton/address";
 
@@ -544,6 +572,20 @@ export async function POST(
         !normalizeAptosAddress(
           address
         )
+      ) ||
+      (
+        resolution.engine ===
+          "zcash" &&
+        !normalizeZcashTransparentAddress(
+          address
+        )
+      ) ||
+      (
+        resolution.engine ===
+          "algorand" &&
+        !normalizeAlgorandAddress(
+          address
+        )
       );
 
     if (invalid) {
@@ -880,6 +922,86 @@ export async function POST(
       case "aptos": {
         const result =
           await runAptosIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "zcash": {
+        const result =
+          await runZcashIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "algorand": {
+        const result =
+          await runAlgorandIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "polkadot": {
+        const result =
+          await runPolkadotIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "cosmos": {
+        const result =
+          await runCosmosIntelligence({
+            address,
+
+            analysisPlan:
+              auth.identity
+                .planId,
+          });
+
+        return finish(
+          result.status,
+          result.data
+        );
+      }
+
+      case "injective": {
+        const result =
+          await runInjectiveIntelligence({
             address,
 
             analysisPlan:

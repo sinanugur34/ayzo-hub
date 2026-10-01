@@ -5,6 +5,8 @@ import {
   useState,
 } from "react";
 
+import Link from "next/link";
+
 import PlanComparisonMatrix from "@/components/PlanComparisonMatrix";
 import PlanCheckoutButton from "@/components/billing/PlanCheckoutButton";
 
@@ -15,6 +17,10 @@ import {
 import {
   PLANS,
 } from "@/lib/plans/registry";
+
+import {
+  GUEST_ANALYSIS_POLICY,
+} from "@/lib/guestAnalysisPolicy";
 
 import type {
   PlanId,
@@ -213,6 +219,41 @@ export default function PricingPlans() {
             ? "Your current plan and available upgrade paths."
             : "Compare Free, Pro and Advanced access in one place."}
         </p>
+
+        {!account.authenticated && (
+          <div className="mx-auto mt-5 max-w-2xl rounded-2xl border border-cyan-500/15 bg-cyan-500/[0.035] px-4 py-3">
+            <div className="text-[9px] font-semibold tracking-[0.14em] text-cyan-300">
+              TRY AYZO WITHOUT AN ACCOUNT
+            </div>
+
+            <p className="mt-1.5 text-xs leading-5 text-zinc-500">
+              Guest access includes{" "}
+              <strong className="font-medium text-zinc-300">
+                {GUEST_ANALYSIS_POLICY.limit} analysis / 24h
+              </strong>
+              . Create a free account for{" "}
+              <strong className="font-medium text-zinc-300">
+                {PLANS.free.analysisQuota.kind === "fixed"
+                  ? PLANS.free.analysisQuota.count
+                  : 3} analyses / 24h
+              </strong>
+              {" "}and up to{" "}
+              <strong className="font-medium text-zinc-300">
+                {PLANS.free.analysisQuota.kind === "fixed"
+                  ? PLANS.free.analysisQuota.perNetworkCount ?? 2
+                  : 2} on the same network
+              </strong>
+              .
+            </p>
+
+            <Link
+              href="/login?mode=signup"
+              className="mt-2 inline-flex text-xs font-medium text-violet-300 transition hover:text-violet-200"
+            >
+              Create Free Account →
+            </Link>
+          </div>
+        )}
       </div>
 
       <PlanComparisonMatrix

@@ -42,6 +42,26 @@ import {
   isCardanoMainnetAddress,
 } from "@/lib/intelligence/cardano/address";
 
+import {
+  normalizeZcashTransparentAddress,
+} from "@/lib/intelligence/zcash/address";
+
+import {
+  normalizeAlgorandAddress,
+} from "@/lib/intelligence/algorand/address";
+
+import {
+  normalizePolkadotAddress,
+} from "@/lib/intelligence/polkadot/address";
+
+import {
+  normalizeCosmosAddress,
+} from "@/lib/intelligence/cosmos/address";
+
+import {
+  normalizeInjectiveAddress,
+} from "@/lib/intelligence/injective/address";
+
 const EVM_ADDRESS =
   /^0x[0-9a-fA-F]{40}$/;
 
@@ -82,6 +102,11 @@ type DetectedNetwork =
   | "tron"
   | "xrp"
   | "cardano"
+  | "zcash"
+  | "algorand"
+  | "polkadot"
+  | "cosmos"
+  | "injective"
   | "solana"
   | "evm"
   | null;
@@ -213,6 +238,41 @@ export async function POST(
   ) {
     network =
       "cardano";
+  } else if (
+    normalizeZcashTransparentAddress(
+      address
+    )
+  ) {
+    network =
+      "zcash";
+  } else if (
+    normalizeAlgorandAddress(
+      address
+    )
+  ) {
+    network =
+      "algorand";
+  } else if (
+    normalizePolkadotAddress(
+      address
+    )
+  ) {
+    network =
+      "polkadot";
+  } else if (
+    normalizeCosmosAddress(
+      address
+    )
+  ) {
+    network =
+      "cosmos";
+  } else if (
+    normalizeInjectiveAddress(
+      address
+    )
+  ) {
+    network =
+      "injective";
   } else if (
     EVM_ADDRESS.test(
       address

@@ -1,13 +1,39 @@
 "use client";
 
+import Link from "next/link";
+
 import {
   useCallback,
   useEffect,
   useState,
 } from "react";
 
+import {
+  NETWORKS,
+} from "@/lib/networks/registry";
+
+import type {
+  LiveAnalysisNetworkId,
+} from "@/lib/networks/addressSelection";
+
+import {
+  PLANS,
+} from "@/lib/plans/registry";
+
+import {
+  GUEST_ANALYSIS_POLICY,
+} from "@/lib/guestAnalysisPolicy";
+
 type PlanStatus = {
-  ok: true;
+  ok:
+    true;
+
+  authenticated:
+    boolean;
+
+  accessMode:
+    "guest" |
+    "account";
 
   plan:
     | "free"
@@ -25,9 +51,55 @@ type PlanStatus = {
 
   resetAt:
     number | null;
+
+  network:
+    string | null;
+
+  networkLimit:
+    number | null;
+
+  networkRemaining:
+    number | null;
+
+  networkResetAt:
+    number | null;
 };
 
-export default function FreePlanStatus() {
+function quotaCount(
+  plan:
+    "free" |
+    "pro" |
+    "advanced"
+) {
+  const quota =
+    PLANS[
+      plan
+    ].analysisQuota;
+
+  return quota.kind ===
+    "fixed"
+    ? quota.count
+    : 0;
+}
+
+function freeNetworkLimit() {
+  const quota =
+    PLANS.free
+      .analysisQuota;
+
+  return quota.kind ===
+    "fixed"
+    ? quota
+        .perNetworkCount
+    : null;
+}
+
+export default function FreePlanStatus({
+  network,
+}: {
+  network:
+    LiveAnalysisNetworkId;
+}) {
   const [
     status,
     setStatus,
@@ -45,7 +117,9 @@ export default function FreePlanStatus() {
         try {
           const response =
             await fetch(
-              "/api/free/status",
+              `/api/free/status?network=${encodeURIComponent(
+                network
+              )}`,
               {
                 cache:
                   "no-store",
@@ -69,13 +143,14 @@ export default function FreePlanStatus() {
           }
         } catch {
           /*
-           * Product remains usable
-           * when quota status cannot
-           * be displayed.
+           * Quota display must never prevent
+           * the analysis form from working.
            */
         }
       },
-      []
+      [
+        network,
+      ]
     );
 
   useEffect(() => {
@@ -111,31 +186,60 @@ export default function FreePlanStatus() {
     loadStatus,
   ]);
 
-  const plan =
-    status?.plan ??
-    "free";
+  if (!status) {
+    return (
+      <div className="mt-4 text-center text-xs text-zinc-600">
+        Checking analysis access…
+      </div>
+    );
+  }
 
-  const exhausted =
-    status?.remaining ===
-    0;
+  const plan =
+    status.plan;
+
+  const guest =
+    status.accessMode ===
+      "guest";
+
+  const freeAccount =
+    !guest &&
+    plan ===
+      "free";
 
   const fallbackLimit =
-    plan ===
-    "advanced"
-      ? 90
-      : plan ===
-          "pro"
-        ? 25
-        : 3;
+    guest
+      ? GUEST_ANALYSIS_POLICY.limit
+      : quotaCount(
+          plan
+        );
+
+  const perNetworkLimit =
+    status.networkLimit ??
+    freeNetworkLimit();
+
+  const totalExhausted =
+    status.remaining ===
+      0;
+
+  const networkExhausted =
+    freeAccount &&
+    status.networkRemaining ===
+      0;
+
+  const exhausted =
+    totalExhausted ||
+    networkExhausted;
 
   const planLabel =
-    plan ===
-    "advanced"
-      ? "ADVANCED PLAN"
+    guest
+      ? "GUEST ACCESS"
       : plan ===
-          "pro"
-        ? "PRO PLAN"
-        : "FREE PLAN";
+          "advanced"
+        ? "ADVANCED PLAN"
+        : plan ===
+            "pro"
+          ? "PRO PLAN"
+          : "FREE ACCOUNT";
 
   return (
     <div
@@ -149,25 +253,57 @@ export default function FreePlanStatus() {
         className={`rounded-full border px-2.5 py-1 text-[9px] font-medium tracking-[0.14em] ${
           exhausted
             ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
-            : plan ===
-                "pro" ||
+            : guest ||
               plan ===
-                "advanced"
-              ? "border-violet-400/30 bg-violet-500/10 text-violet-200"
-              : "border-violet-500/20 bg-violet-500/5 text-violet-300"
+                "free"
+              ? "border-cyan-500/20 bg-cyan-500/5 text-cyan-300"
+              : "border-violet-400/30 bg-violet-500/10 text-violet-200"
         }`}
       >
         {planLabel}
       </span>
 
       <span>
-        {status ===
-          null ||
-        status.remaining ===
+        {status.remaining ===
           null
           ? `${fallbackLimit} analyses per 24 hours`
-          : `${status.remaining} of ${status.limit} analyses remaining`}
+          : guest
+            ? `${status.remaining} of ${status.limit} guest analysis remaining`
+            : `${status.remaining} of ${status.limit} total analyses remaining`}
       </span>
+
+      <span className="text-zinc-700">
+        ·
+      </span>
+
+      {guest ? (
+        <span>
+          Create a free account for{" "}
+          <strong className="font-medium text-cyan-300">
+            {quotaCount(
+              "free"
+            )} analyses / 24h
+          </strong>
+          {" · "}
+          <Link
+            href="/login?mode=signup"
+            className="font-medium text-violet-300 transition hover:text-violet-200"
+          >
+            Create Free Account
+          </Link>
+        </span>
+      ) : (
+        <span>
+          {freeAccount
+            ? status.networkRemaining !==
+                null &&
+              perNetworkLimit !==
+                null
+              ? `${NETWORKS[network].name}: ${status.networkRemaining} of ${perNetworkLimit} same-network analyses remaining`
+              : `Max ${perNetworkLimit ?? 2} analyses on the same network per 24 hours`
+            : "No per-network analysis limit"}
+        </span>
+      )}
     </div>
   );
 }

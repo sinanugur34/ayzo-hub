@@ -10,6 +10,10 @@ import {
   NETWORKS,
 } from "@/lib/networks/registry";
 
+import {
+  GUEST_ANALYSIS_POLICY,
+} from "@/lib/guestAnalysisPolicy";
+
 import type {
   FeatureId,
   PlanId,
@@ -168,14 +172,14 @@ const sections:
           label:
             "Analysis allowance",
           detail:
-            "Rolling 24-hour allowance.",
+            `Guest access: ${GUEST_ANALYSIS_POLICY.limit} analysis / 24h without an account. Signed-in Free: ${PLANS.free.analysisQuota.kind === "fixed" ? PLANS.free.analysisQuota.count : "—"} analyses / 24h.`,
 
           free: {
             kind: "value",
             label:
-              `${PLANS.free.analysisQuota.kind === "fixed"
+              `${GUEST_ANALYSIS_POLICY.limit} guest · ${PLANS.free.analysisQuota.kind === "fixed"
                 ? PLANS.free.analysisQuota.count
-                : "—"} / 24h`,
+                : "—"} account / 24h`,
           },
 
           pro: {
@@ -192,6 +196,41 @@ const sections:
               `${PLANS.advanced.analysisQuota.kind === "fixed"
                 ? PLANS.advanced.analysisQuota.count
                 : "—"} / 24h`,
+          },
+        },
+
+        {
+          label:
+            "Per-network analysis limit",
+
+          detail:
+            "The per-network cap applies only to signed-in Free accounts. Guest access is already limited to one total analysis per 24 hours. Pro and Advanced have no per-network analysis limit.",
+
+          free: {
+            kind:
+              "value",
+
+            label:
+              `${PLANS.free.analysisQuota.kind === "fixed" &&
+              PLANS.free.analysisQuota.perNetworkCount !== null
+                ? `Max ${PLANS.free.analysisQuota.perNetworkCount} / network / 24h`
+                : "—"}`,
+          },
+
+          pro: {
+            kind:
+              "value",
+
+            label:
+              "No limit",
+          },
+
+          advanced: {
+            kind:
+              "value",
+
+            label:
+              "No limit",
           },
         },
 

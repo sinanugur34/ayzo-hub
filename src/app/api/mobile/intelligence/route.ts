@@ -76,6 +76,34 @@ import {
 } from "@/lib/intelligence/hedera/engine";
 
 import {
+  normalizeZcashTransparentAddress,
+} from "@/lib/intelligence/zcash/address";
+
+import {
+  runZcashIntelligence,
+} from "@/lib/intelligence/zcash/engine";
+
+import {
+  normalizeAlgorandAddress,
+} from "@/lib/intelligence/algorand/address";
+
+import {
+  runAlgorandIntelligence,
+} from "@/lib/intelligence/algorand/engine";
+
+import {
+  runPolkadotIntelligence,
+} from "@/lib/intelligence/polkadot/engine";
+
+import {
+  runCosmosIntelligence,
+} from "@/lib/intelligence/cosmos/engine";
+
+import {
+  runInjectiveIntelligence,
+} from "@/lib/intelligence/injective/engine";
+
+import {
   isTonAddress,
 } from "@/lib/intelligence/ton/address";
 
@@ -149,9 +177,26 @@ type MobileResponseMeta = {
   plan: "free" | "pro" | "advanced";
   billingAvailable: boolean;
   quota: {
-    limit: number;
-    remaining: number | null;
-    resetAt: number | null;
+    limit:
+      number;
+
+    remaining:
+      number | null;
+
+    resetAt:
+      number | null;
+
+    network:
+      string | null;
+
+    networkLimit:
+      number | null;
+
+    networkRemaining:
+      number | null;
+
+    networkResetAt:
+      number | null;
   };
 };
 
@@ -557,6 +602,48 @@ export async function POST(
 
     if (
       resolution.engine ===
+        "zcash" &&
+      !normalizeZcashTransparentAddress(
+        address
+      )
+    ) {
+      return json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid Zcash transparent mainnet address.",
+          network:
+            resolution.networkId,
+        },
+        400
+      );
+    }
+
+    if (
+      resolution.engine ===
+        "algorand" &&
+      !normalizeAlgorandAddress(
+        address
+      )
+    ) {
+      return json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid Algorand address.",
+          network:
+            resolution.networkId,
+        },
+        400
+      );
+    }
+
+    if (
+      resolution.engine ===
         "ton" &&
       !isTonAddress(
         address
@@ -653,10 +740,34 @@ export async function POST(
     quota =
       await consumeMobileAnalysisQuota(
         quotaUserId,
-        entitlement.planId
+        entitlement.planId,
+        resolution.networkId
       );
 
     if (!quota.allowed) {
+      const networkBlocked =
+        entitlement.planId ===
+          "free" &&
+        quota.blockedBy ===
+          "network";
+
+      const failureCode =
+        networkBlocked
+          ? "DAILY_NETWORK_LIMIT"
+          : entitlement.planId ===
+              "advanced"
+            ? "DAILY_ADVANCED_LIMIT"
+            : entitlement.planId ===
+                "pro"
+              ? "DAILY_PRO_LIMIT"
+              : "DAILY_FREE_LIMIT";
+
+      const resetAt =
+        networkBlocked
+          ? quota.networkResetAt ??
+            quota.resetAt
+          : quota.resetAt;
+
       await recordAnalysisActivity({
         userId:
           quotaUserId,
@@ -676,32 +787,25 @@ export async function POST(
         httpStatus:
           429,
 
-        failureCode:
-          entitlement.planId ===
-            "advanced"
-            ? "DAILY_ADVANCED_LIMIT"
-            : entitlement.planId ===
-                "pro"
-              ? "DAILY_PRO_LIMIT"
-              : "DAILY_FREE_LIMIT",
+        failureCode,
 
         quotaLimit:
           quota.limit,
 
         quotaRemaining:
-          0,
+          quota.remaining,
 
         quotaResetAt:
-          quota.resetAt,
+          resetAt,
       });
 
       const retryAfterSeconds =
-        quota.resetAt
+        resetAt
           ? Math.max(
               1,
               Math.ceil(
                 (
-                  quota.resetAt -
+                  resetAt -
                   Date.now()
                 ) /
                   1000
@@ -711,27 +815,46 @@ export async function POST(
 
       return json(
         {
-          ok: false,
+          ok:
+            false,
+
           code:
-            entitlement.planId ===
-              "advanced"
-              ? "DAILY_ADVANCED_LIMIT"
-              : entitlement.planId ===
-                  "pro"
-                ? "DAILY_PRO_LIMIT"
-                : "DAILY_FREE_LIMIT",
+            failureCode,
+
           error:
-            "Daily analysis limit reached.",
+            networkBlocked
+              ? `AYZO Free allows a maximum of ${quota.networkLimit ?? 2} analyses on ${resolution.network.name} within the current rolling 24-hour window. You can continue with another supported network.`
+              : "Daily analysis limit reached.",
+
           plan:
             entitlement.planId,
+
+          network:
+            resolution.networkId,
+
           billingAvailable,
+
           quota: {
             limit:
               quota.limit,
+
             remaining:
-              0,
+              quota.remaining,
+
             resetAt:
               quota.resetAt,
+
+            network:
+              quota.network,
+
+            networkLimit:
+              quota.networkLimit,
+
+            networkRemaining:
+              quota.networkRemaining,
+
+            networkResetAt:
+              quota.networkResetAt,
           },
         },
         429,
@@ -751,10 +874,24 @@ export async function POST(
       quota: {
         limit:
           quota.limit,
+
         remaining:
           quota.remaining,
+
         resetAt:
           quota.resetAt,
+
+        network:
+          quota.network,
+
+        networkLimit:
+          quota.networkLimit,
+
+        networkRemaining:
+          quota.networkRemaining,
+
+        networkResetAt:
+          quota.networkResetAt,
       },
     };
 
@@ -1094,6 +1231,141 @@ export async function POST(
       case "hedera": {
         const result =
           await runHederaIntelligence({
+            address,
+
+            analysisPlan:
+              entitlement.planId,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
+        return json(
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
+          result.status
+        );
+      }
+
+      case "zcash": {
+        const result =
+          await runZcashIntelligence({
+            address,
+
+            analysisPlan:
+              entitlement.planId,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
+        return json(
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
+          result.status
+        );
+      }
+
+      case "algorand": {
+        const result =
+          await runAlgorandIntelligence({
+            address,
+
+            analysisPlan:
+              entitlement.planId,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
+        return json(
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
+          result.status
+        );
+      }
+
+      case "polkadot": {
+        const result =
+          await runPolkadotIntelligence({
+            address,
+
+            analysisPlan:
+              entitlement.planId,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
+        return json(
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
+          result.status
+        );
+      }
+
+      case "cosmos": {
+        const result =
+          await runCosmosIntelligence({
+            address,
+
+            analysisPlan:
+              entitlement.planId,
+          });
+
+        await refundOnFailure(
+          result.status
+        );
+
+        await recordMobileResult(
+          result.status,
+          result.data
+        );
+
+        return json(
+          withMobileMeta(
+            result.data,
+            mobileMeta
+          ),
+          result.status
+        );
+      }
+
+      case "injective": {
+        const result =
+          await runInjectiveIntelligence({
             address,
 
             analysisPlan:

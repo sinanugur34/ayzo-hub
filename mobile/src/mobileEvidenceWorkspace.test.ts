@@ -404,3 +404,161 @@ test(
     );
   }
 );
+
+test(
+  "Zcash mobile workspace preserves transparent evidence boundary",
+  () => {
+    const workspace =
+      buildMobileEvidenceWorkspace({
+        networkId:
+          "zcash",
+
+        address:
+          "t1root",
+
+        data: {
+          derived: {
+            counterparties: {
+              items: [
+                {
+                  address:
+                    "t1source",
+
+                  incomingCount:
+                    1,
+
+                  outgoingCount:
+                    0,
+
+                  observationCount:
+                    1,
+                },
+              ],
+            },
+
+            observedFunding: {
+              sourceAddress:
+                "t1source",
+            },
+
+            flow: {
+              transfers: [
+                {
+                  txid:
+                    "z-tx",
+
+                  direction:
+                    "incoming",
+
+                  counterparty:
+                    "t1source",
+
+                  timestamp:
+                    "2026-01-01T00:00:00.000Z",
+                },
+              ],
+            },
+          },
+        },
+      });
+
+    assert.equal(
+      workspace.edges.length,
+      1
+    );
+
+    assert.equal(
+      workspace.timeline.length,
+      1
+    );
+
+    assert.equal(
+      workspace.timeline[0]
+        ?.direction,
+      "incoming"
+    );
+
+    assert.match(
+      workspace.limitation,
+      /does not establish identity/i
+    );
+  }
+);
+
+test(
+  "Algorand mobile workspace uses explicit transfer evidence",
+  () => {
+    const workspace =
+      buildMobileEvidenceWorkspace({
+        networkId:
+          "algorand",
+
+        address:
+          "ALGOROOT",
+
+        data: {
+          derived: {
+            counterparties: {
+              items: [
+                {
+                  address:
+                    "ALGOSOURCE",
+
+                  incomingCount:
+                    1,
+
+                  outgoingCount:
+                    0,
+
+                  observationCount:
+                    1,
+                },
+              ],
+            },
+
+            observedFunding: {
+              sourceAddress:
+                "ALGOSOURCE",
+            },
+
+            flow: {
+              transfers: [
+                {
+                  transactionId:
+                    "ALGO-TX",
+
+                  roundTime:
+                    1_700_000_000,
+
+                  direction:
+                    "incoming",
+
+                  counterparty:
+                    "ALGOSOURCE",
+
+                  asset:
+                    "ALGO",
+                },
+              ],
+            },
+          },
+        },
+      });
+
+    assert.equal(
+      workspace.edges.length,
+      1
+    );
+
+    assert.equal(
+      workspace.timeline.length,
+      1
+    );
+
+    assert.equal(
+      workspace.timeline[0]
+        ?.transactionRef,
+      "ALGO-TX"
+    );
+  }
+);

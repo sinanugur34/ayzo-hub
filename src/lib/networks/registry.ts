@@ -110,6 +110,44 @@ const HEDERA_CAPABILITIES = [
   "fundingIntelligence",
 ] as const satisfies readonly NetworkCapability[];
 
+const ZCASH_CAPABILITIES = [
+  "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
+] as const satisfies readonly NetworkCapability[];
+
+const ALGORAND_CAPABILITIES = [
+  "assetVerification",
+  "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
+] as const satisfies readonly NetworkCapability[];
+
+const POLKADOT_CAPABILITIES = [
+  "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
+] as const satisfies readonly NetworkCapability[];
+
+const COSMOS_CAPABILITIES = [
+  "assetVerification",
+  "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
+] as const satisfies readonly NetworkCapability[];
+
+const INJECTIVE_CAPABILITIES = [
+  "assetVerification",
+  "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
+] as const satisfies readonly NetworkCapability[];
+
 export const NETWORKS = {
   solana: {
     id: "solana",
@@ -396,6 +434,66 @@ export const NETWORKS = {
     nativeCurrency: "APT",
     explorerUrl: "https://explorer.aptoslabs.com",
     capabilities: APTOS_CAPABILITIES,
+  },
+
+  zcash: {
+    id: "zcash",
+    name: "Zcash",
+    shortName: "ZEC",
+    family: "zcash",
+    status: "live",
+    chainId: null,
+    nativeCurrency: "ZEC",
+    explorerUrl: "https://blockchair.com/zcash",
+    capabilities: ZCASH_CAPABILITIES,
+  },
+
+  algorand: {
+    id: "algorand",
+    name: "Algorand",
+    shortName: "ALGO",
+    family: "algorand",
+    status: "live",
+    chainId: null,
+    nativeCurrency: "ALGO",
+    explorerUrl: "https://allo.info",
+    capabilities: ALGORAND_CAPABILITIES,
+  },
+
+  polkadot: {
+    id: "polkadot",
+    name: "Polkadot",
+    shortName: "DOT",
+    family: "polkadot",
+    status: "live",
+    chainId: null,
+    nativeCurrency: "DOT",
+    explorerUrl: "https://polkadot.subscan.io",
+    capabilities: POLKADOT_CAPABILITIES,
+  },
+
+  cosmos: {
+    id: "cosmos",
+    name: "Cosmos Hub",
+    shortName: "ATOM",
+    family: "cosmos",
+    status: "live",
+    chainId: null,
+    nativeCurrency: "ATOM",
+    explorerUrl: "https://www.mintscan.io/cosmos",
+    capabilities: COSMOS_CAPABILITIES,
+  },
+
+  injective: {
+    id: "injective",
+    name: "Injective",
+    shortName: "INJ",
+    family: "injective",
+    status: "live",
+    chainId: null,
+    nativeCurrency: "INJ",
+    explorerUrl: "https://explorer.injective.network",
+    capabilities: INJECTIVE_CAPABILITIES,
   },
 
   near: {

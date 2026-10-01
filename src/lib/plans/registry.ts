@@ -96,6 +96,7 @@ export const PLANS = {
       kind: "fixed",
       period: "24h",
       count: 3,
+      perNetworkCount: 2,
     },
 
     features: {
@@ -130,6 +131,7 @@ export const PLANS = {
       kind: "fixed",
       period: "24h",
       count: 25,
+      perNetworkCount: null,
     },
 
     features: {
@@ -169,6 +171,7 @@ export const PLANS = {
       kind: "fixed",
       period: "24h",
       count: 90,
+      perNetworkCount: null,
     },
 
     features: {

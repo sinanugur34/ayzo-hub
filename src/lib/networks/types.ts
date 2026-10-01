@@ -13,7 +13,12 @@ export type NetworkFamily =
   | "cardano"
   | "aptos"
   | "near"
-  | "hedera";
+  | "hedera"
+  | "zcash"
+  | "algorand"
+  | "polkadot"
+  | "cosmos"
+  | "injective";
 
 export type NetworkStatus =
   | "live"

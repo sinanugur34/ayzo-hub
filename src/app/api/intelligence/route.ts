@@ -69,6 +69,34 @@ import {
 } from "@/lib/intelligence/hedera/engine";
 
 import {
+  normalizeZcashTransparentAddress,
+} from "@/lib/intelligence/zcash/address";
+
+import {
+  runZcashIntelligence,
+} from "@/lib/intelligence/zcash/engine";
+
+import {
+  normalizeAlgorandAddress,
+} from "@/lib/intelligence/algorand/address";
+
+import {
+  runAlgorandIntelligence,
+} from "@/lib/intelligence/algorand/engine";
+
+import {
+  runPolkadotIntelligence,
+} from "@/lib/intelligence/polkadot/engine";
+
+import {
+  runCosmosIntelligence,
+} from "@/lib/intelligence/cosmos/engine";
+
+import {
+  runInjectiveIntelligence,
+} from "@/lib/intelligence/injective/engine";
+
+import {
   isTonAddress,
 } from "@/lib/intelligence/ton/address";
 
@@ -130,6 +158,10 @@ import {
   recordAnalysisActivity,
 } from "@/lib/adminAnalytics";
 
+import {
+  isAuthorizedAnalysisSmokeRequest,
+} from "@/lib/intelligence/analysisSmokeRequest";
+
 const EVM_ADDRESS =
   /^0x[0-9a-fA-F]{40}$/;
 
@@ -146,8 +178,9 @@ export async function POST(request: Request) {
     null = null;
 
   const isDevelopmentTestRequest =
-    process.env.NODE_ENV !== "production" &&
-    request.headers.get("x-ayzo-test-request") === "smoke";
+    isAuthorizedAnalysisSmokeRequest(
+      request
+    );
 
   const clientIp =
     getClientIp(request);
@@ -370,6 +403,52 @@ export async function POST(request: Request) {
     }
 
     if (
+      resolution.engine ===
+        "zcash" &&
+      !normalizeZcashTransparentAddress(
+        address
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid Zcash transparent mainnet address.",
+          network:
+            resolution.networkId,
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (
+      resolution.engine ===
+        "algorand" &&
+      !normalizeAlgorandAddress(
+        address
+      )
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          code:
+            "INVALID_ADDRESS",
+          error:
+            "Invalid Algorand address.",
+          network:
+            resolution.networkId,
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (
       resolution.engine === "ton" &&
       !isTonAddress(
         address
@@ -506,7 +585,10 @@ export async function POST(request: Request) {
 
     if (!isDevelopmentTestRequest) {
       quota =
-        await consumeAnalysisQuota(request);
+        await consumeAnalysisQuota(
+          request,
+          resolution.networkId
+        );
 
       analysisPlan =
         quota.plan;
@@ -529,6 +611,38 @@ export async function POST(request: Request) {
       }
 
       if (!quota.allowed) {
+        const guestBlocked =
+          quota.plan ===
+            "free" &&
+          quota.userId ===
+            null;
+
+        const networkBlocked =
+          !guestBlocked &&
+          quota.plan ===
+            "free" &&
+          quota.blockedBy ===
+            "network";
+
+        const failureCode =
+          guestBlocked
+            ? "DAILY_GUEST_LIMIT"
+            : networkBlocked
+              ? "DAILY_NETWORK_LIMIT"
+              : quota.plan ===
+                  "advanced"
+                ? "DAILY_ADVANCED_LIMIT"
+                : quota.plan ===
+                    "pro"
+                  ? "DAILY_PRO_LIMIT"
+                  : "DAILY_FREE_LIMIT";
+
+        const resetAt =
+          networkBlocked
+            ? quota.networkResetAt ??
+              quota.resetAt
+            : quota.resetAt;
+
         await recordAnalysisActivity({
           userId:
             quota.userId,
@@ -548,29 +662,27 @@ export async function POST(request: Request) {
           httpStatus:
             429,
 
-          failureCode:
-            quota.plan === "advanced"
-              ? "DAILY_ADVANCED_LIMIT"
-              : quota.plan === "pro"
-                ? "DAILY_PRO_LIMIT"
-                : "DAILY_FREE_LIMIT",
+          failureCode,
 
           quotaLimit:
             quota.limit,
 
           quotaRemaining:
-            0,
+            quota.remaining,
 
           quotaResetAt:
-            quota.resetAt,
+            resetAt,
         });
 
         const retryAfterSeconds =
-          quota.resetAt
+          resetAt
             ? Math.max(
                 1,
                 Math.ceil(
-                  (quota.resetAt - Date.now()) /
+                  (
+                    resetAt -
+                    Date.now()
+                  ) /
                     1000
                 )
               )
@@ -578,33 +690,89 @@ export async function POST(request: Request) {
 
         return Response.json(
           {
-            ok: false,
+            ok:
+              false,
+
             code:
-              quota.plan === "advanced"
-                ? "DAILY_ADVANCED_LIMIT"
-                : quota.plan === "pro"
-                  ? "DAILY_PRO_LIMIT"
-                  : "DAILY_FREE_LIMIT",
+              failureCode,
+
             error:
-              quota.plan === "advanced"
-                ? "Daily Advanced analysis limit reached."
-                : quota.plan === "pro"
-                  ? "Daily Pro analysis limit reached."
-                  : "Daily free analysis limit reached.",
-            plan: quota.plan,
+              guestBlocked
+                ? "Guest access includes 1 analysis per rolling 24-hour window. Create a free AYZO account to unlock 3 analyses per 24 hours."
+                : networkBlocked
+                  ? `AYZO Free allows a maximum of ${quota.networkLimit ?? 2} analyses on ${resolution.network.name} within the current rolling 24-hour window. You can continue with another supported network.`
+                  : quota.plan ===
+                      "advanced"
+                    ? "Daily Advanced analysis limit reached."
+                    : quota.plan ===
+                        "pro"
+                      ? "Daily Pro analysis limit reached."
+                      : "Daily free analysis limit reached.",
+
+            plan:
+              quota.plan,
+
+            accessMode:
+              guestBlocked
+                ? "guest"
+                : "account",
+
+            network:
+              resolution.networkId,
+
             quota: {
-              limit: quota.limit,
-              remaining: 0,
-              resetAt: quota.resetAt,
+              limit:
+                quota.limit,
+
+              remaining:
+                quota.remaining,
+
+              resetAt:
+                quota.resetAt,
+
+              network:
+                guestBlocked
+                  ? null
+                  : quota.network ??
+                    resolution.networkId,
+
+              networkLimit:
+                !guestBlocked &&
+                quota.plan ===
+                  "free"
+                  ? quota.networkLimit ??
+                    2
+                  : null,
+
+              networkRemaining:
+                !guestBlocked &&
+                quota.plan ===
+                  "free"
+                  ? quota.networkRemaining ??
+                    null
+                  : null,
+
+              networkResetAt:
+                !guestBlocked &&
+                quota.plan ===
+                  "free"
+                  ? quota.networkResetAt ??
+                    null
+                  : null,
             },
           },
           {
-            status: 429,
+            status:
+              429,
+
             headers: {
-              "Retry-After": String(
-                retryAfterSeconds
-              ),
-              "Cache-Control": "no-store",
+              "Retry-After":
+                String(
+                  retryAfterSeconds
+                ),
+
+              "Cache-Control":
+                "no-store",
             },
           }
         );
@@ -899,6 +1067,141 @@ export async function POST(request: Request) {
       case "near": {
         const result =
           await runNearIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "zcash": {
+        const result =
+          await runZcashIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "algorand": {
+        const result =
+          await runAlgorandIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "polkadot": {
+        const result =
+          await runPolkadotIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "cosmos": {
+        const result =
+          await runCosmosIntelligence({
+            address,
+            analysisPlan,
+          });
+
+        await refundAnalysisQuotaOnFailure(
+          request,
+          quota,
+          result.status
+        );
+
+        await recordWebResult(
+          result.status,
+          result.data
+        );
+
+        return Response.json(
+          result.data,
+          {
+            status:
+              result.status,
+          }
+        );
+      }
+
+      case "injective": {
+        const result =
+          await runInjectiveIntelligence({
             address,
             analysisPlan,
           });

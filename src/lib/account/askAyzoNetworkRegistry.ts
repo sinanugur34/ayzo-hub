@@ -13,6 +13,11 @@ export type AskAyzoAdapterId =
   | "aptos"
   | "near"
   | "hedera"
+  | "zcash"
+  | "algorand"
+  | "polkadot"
+  | "cosmos"
+  | "injective"
   | "hyperliquid"
   | "tron"
   | "xrpl"
@@ -148,6 +153,63 @@ const CAPABILITIES:
     "resource-usage",
   ],
 
+  zcash: [
+    "summary",
+    "coverage",
+    "relationships",
+    "funding",
+    "transaction-history",
+    "canonical-transaction",
+    "transaction-value",
+    "transaction-cost",
+  ],
+
+  algorand: [
+    "summary",
+    "coverage",
+    "authorities",
+    "relationships",
+    "funding",
+    "transaction-history",
+    "transaction-value",
+    "execution",
+    "resource-usage",
+  ],
+
+  polkadot: [
+    "summary",
+    "coverage",
+    "authorities",
+    "relationships",
+    "funding",
+    "transaction-history",
+    "transaction-value",
+    "execution",
+  ],
+
+  cosmos: [
+    "summary",
+    "coverage",
+    "authorities",
+    "relationships",
+    "funding",
+    "transaction-history",
+    "transaction-value",
+    "execution",
+  ],
+
+  injective: [
+    "summary",
+    "coverage",
+    "authorities",
+    "relationships",
+    "funding",
+    "transaction-history",
+    "transaction-value",
+    "execution",
+    "contract-type",
+  ],
+
   tron: [
     "summary",
     "coverage",
@@ -246,6 +308,41 @@ const QUESTIONS:
     "What staking and reward evidence was observed?",
   ],
 
+  zcash: [
+    "What are the most important Zcash transparent findings?",
+    "What explicit transparent counterparties and funding evidence were observed?",
+    "What canonical transparent transaction evidence was verified?",
+    "What evidence remains unavailable because of privacy boundaries?",
+  ],
+
+  algorand: [
+    "What are the most important Algorand findings?",
+    "What ALGO and ASA transfer evidence was observed?",
+    "What rekey, asset authority and application evidence was observed?",
+    "What explicit counterparties and bounded funding evidence were observed?",
+  ],
+
+  polkadot: [
+    "What are the most important Polkadot findings?",
+    "What DOT transfer and extrinsic evidence was observed?",
+    "What staking, proxy and multisig evidence was observed?",
+    "What explicit counterparties and bounded funding evidence were observed?",
+  ],
+
+  cosmos: [
+    "What are the most important Cosmos Hub findings?",
+    "What ATOM balances, delegations and rewards were observed?",
+    "What bank and IBC transfer evidence was observed?",
+    "What explicit counterparties and bounded funding evidence were observed?",
+  ],
+
+  injective: [
+    "What are the most important Injective findings?",
+    "What INJ balances and staking evidence were observed?",
+    "What exchange, CosmWasm or token-factory module activity was observed?",
+    "What bank, IBC, counterparty and bounded funding evidence was observed?",
+  ],
+
   tron: [
     "What was the transaction fee?",
     "How much energy was used?",
@@ -303,6 +400,21 @@ function adapterForFamily(
 
     case "hedera":
       return "hedera";
+
+    case "zcash":
+      return "zcash";
+
+    case "algorand":
+      return "algorand";
+
+    case "polkadot":
+      return "polkadot";
+
+    case "cosmos":
+      return "cosmos";
+
+    case "injective":
+      return "injective";
 
     case "tron":
       return "tron";

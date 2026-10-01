@@ -14,12 +14,18 @@ import {
   PLANS,
 } from "@/lib/plans/registry";
 
+import {
+  GUEST_ANALYSIS_POLICY,
+} from "@/lib/guestAnalysisPolicy";
+
 import type {
   PlanId,
 } from "@/lib/plans/types";
 
 type QuotaStatus = {
   ok: true;
+  authenticated: boolean;
+  accessMode: "guest" | "account";
   plan: PlanId;
   available: boolean;
   limit: number;
@@ -176,6 +182,10 @@ export default function AnalysisLimitCard() {
       "advanced"
     );
 
+  const isGuest =
+    status?.accessMode ===
+    "guest";
+
   const isFree =
     plan ===
     "free";
@@ -210,11 +220,13 @@ export default function AnalysisLimitCard() {
                     : "text-purple-300"
               }`}
             >
-              {isFree
-                ? "FREE · CORE INTELLIGENCE"
-                : isPro
-                  ? "PRO · RESEARCH WORKSPACE"
-                  : "ADVANCED · INVESTIGATION WORKSPACE"}
+              {isGuest
+                ? "GUEST · NO ACCOUNT"
+                : isFree
+                  ? "FREE · CORE INTELLIGENCE"
+                  : isPro
+                    ? "PRO · RESEARCH WORKSPACE"
+                    : "ADVANCED · INVESTIGATION WORKSPACE"}
             </div>
 
             <h3 className="mt-2 text-2xl font-semibold text-zinc-100">
@@ -223,7 +235,11 @@ export default function AnalysisLimitCard() {
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
               {isFree &&
-                `You have used the ${freeQuota ?? "current"} analyses available to AYZO Free in the current rolling 24-hour window.`}
+                (
+                  isGuest
+                    ? `Guest access includes ${GUEST_ANALYSIS_POLICY.limit} analysis per rolling 24-hour window. Create a free AYZO account to unlock ${freeQuota ?? 3} analyses per 24 hours.`
+                    : `AYZO Free includes ${freeQuota ?? "the current"} total analyses per rolling 24-hour window, with a maximum of ${PLANS.free.analysisQuota.kind === "fixed" ? PLANS.free.analysisQuota.perNetworkCount ?? 2 : 2} analyses on the same network. If total analyses remain, you can continue with another supported network.`
+                )}
 
               {isPro &&
                 `You have used the ${proQuota ?? "current"} analyses available to AYZO Pro in the current rolling 24-hour window.`}
@@ -248,15 +264,49 @@ export default function AnalysisLimitCard() {
                   : "border-purple-500/20 bg-purple-500/5 text-purple-300"
             }`}
           >
-            {isFree
-              ? "AYZO FREE"
-              : isPro
-                ? "AYZO PRO"
-                : "AYZO ADVANCED"}
+            {isGuest
+              ? "GUEST"
+              : isFree
+                ? "AYZO FREE"
+                : isPro
+                  ? "AYZO PRO"
+                  : "AYZO ADVANCED"}
           </span>
         </div>
 
-        {isFree && (
+        {isGuest && (
+          <div className="mt-6 rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.04] p-5">
+            <div className="text-[9px] font-semibold tracking-[0.14em] text-cyan-300">
+              CREATE A FREE AYZO ACCOUNT
+            </div>
+
+            <div className="mt-2 text-lg font-semibold text-white">
+              {freeQuota ?? 3} analyses / 24h
+            </div>
+
+            <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-500">
+              Free accounts receive three rolling analyses per 24 hours, with a maximum of two analyses on the same network. No payment method is required.
+            </p>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link
+                href="/login?mode=signup"
+                className="inline-flex rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-black transition hover:bg-zinc-200"
+              >
+                Create Free Account
+              </Link>
+
+              <Link
+                href="/login"
+                className="inline-flex rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs font-medium text-zinc-300 transition hover:border-zinc-700 hover:text-white"
+              >
+                Sign In
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {isFree && !isGuest && (
           <>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl border border-violet-500/20 bg-violet-500/[0.04] p-4">
@@ -269,7 +319,7 @@ export default function AnalysisLimitCard() {
                 </div>
 
                 <p className="mt-2 text-xs leading-5 text-zinc-500">
-                  Adds monitoring, historical research, Ask AYZO, reporting and export capabilities.
+                  Adds monitoring, historical research, Ask AYZO, reporting and export capabilities. No per-network analysis limit.
                 </p>
               </div>
 
@@ -283,7 +333,7 @@ export default function AnalysisLimitCard() {
                 </div>
 
                 <p className="mt-2 text-xs leading-5 text-zinc-500">
-                  Adds structured investigation, automation, API and advanced account workflows.
+                  Adds structured investigation, automation, API and advanced account workflows. No per-network analysis limit.
                 </p>
               </div>
             </div>
@@ -321,7 +371,7 @@ export default function AnalysisLimitCard() {
               </div>
 
               <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-500">
-                Advanced includes every live Pro capability plus Cases, Evidence Locker, Compare Investigations, Batch Analysis, API Access and other investigation workflows.
+                Advanced includes every live Pro capability plus Cases, Evidence Locker, Compare Investigations, Batch Analysis, API Access and other investigation workflows. No per-network analysis limit.
               </p>
             </div>
 
