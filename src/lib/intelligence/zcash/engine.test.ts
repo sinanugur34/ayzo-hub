@@ -11,7 +11,7 @@ test(
     const result =
       await runZcashIntelligence({
         address:
-          "t1Z7U8gYQpJ7A7xQYk7JgqvLqPjTvV7hFxx",
+          "t1RyCw14wRXrh3mp21uxgr9ynjem7cNUkMH",
       });
 
     assert.equal(

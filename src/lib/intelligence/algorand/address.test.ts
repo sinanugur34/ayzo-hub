@@ -5,27 +5,65 @@ import {
   normalizeAlgorandAddress,
 } from "./address";
 
-test(
-  "normalizes Algorand address shape",
-  () => {
-    const address =
-      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ";
+const ZERO_ADDRESS =
+  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ";
 
+test(
+  "accepts checksum-valid Algorand address",
+  () => {
     assert.equal(
       normalizeAlgorandAddress(
-        address
+        ZERO_ADDRESS
       ),
-      address
+      ZERO_ADDRESS
     );
   }
 );
 
 test(
-  "rejects malformed Algorand address shape",
+  "normalizes lowercase Algorand representation",
+  () => {
+    assert.equal(
+      normalizeAlgorandAddress(
+        ZERO_ADDRESS.toLowerCase()
+      ),
+      ZERO_ADDRESS
+    );
+  }
+);
+
+test(
+  "rejects Algorand checksum mutation",
+  () => {
+    const mutated =
+      ZERO_ADDRESS.slice(
+        0,
+        -1
+      ) +
+      "A";
+
+    assert.equal(
+      normalizeAlgorandAddress(
+        mutated
+      ),
+      null
+    );
+  }
+);
+
+test(
+  "rejects malformed Algorand address",
   () => {
     assert.equal(
       normalizeAlgorandAddress(
         "not-an-algorand-address"
+      ),
+      null
+    );
+
+    assert.equal(
+      normalizeAlgorandAddress(
+        "A".repeat(58)
       ),
       null
     );
