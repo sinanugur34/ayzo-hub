@@ -705,6 +705,8 @@ export async function loadCosmosSdkEvidence(
     validator,
     providerId,
     baseUrls,
+    includeTransactionHistory =
+      true,
   }: {
     network:
       CosmosSdkNetwork;
@@ -726,6 +728,9 @@ export async function loadCosmosSdkEvidence(
 
     baseUrls:
       readonly string[];
+
+    includeTransactionHistory?:
+      boolean;
   },
   deps: {
     fetchImpl?:
@@ -1042,79 +1047,93 @@ export async function loadCosmosSdkEvidence(
       `/cosmos/distribution/v1beta1/delegators/${encoded}/rewards`
     );
 
-  const senderParams =
-    new URLSearchParams();
+  const historyResults:
+    Array<
+      Awaited<
+        ReturnType<
+          typeof request
+        >
+      >
+    > =
+      [];
 
-  senderParams.set(
-    "query",
-    `message.sender='${normalized}'`
-  );
+  if (
+    includeTransactionHistory
+  ) {
+    const senderParams =
+      new URLSearchParams();
 
-  senderParams.set(
-    "page",
-    "1"
-  );
-
-  senderParams.set(
-    "limit",
-    String(
-      Math.max(
-        1,
-        Math.ceil(
-          policy
-            .transactionLimit /
-            2
-        )
-      )
-    )
-  );
-
-  senderParams.set(
-    "order_by",
-    "ORDER_BY_DESC"
-  );
-
-  const recipientParams =
-    new URLSearchParams();
-
-  recipientParams.set(
-    "query",
-    `transfer.recipient='${normalized}'`
-  );
-
-  recipientParams.set(
-    "page",
-    "1"
-  );
-
-  recipientParams.set(
-    "limit",
-    String(
-      Math.max(
-        1,
-        Math.ceil(
-          policy
-            .transactionLimit /
-            2
-        )
-      )
-    )
-  );
-
-  recipientParams.set(
-    "order_by",
-    "ORDER_BY_DESC"
-  );
-
-  const senderTxResult =
-    await request(
-      `/cosmos/tx/v1beta1/txs?${senderParams.toString()}`
+    senderParams.set(
+      "query",
+      `message.sender='${normalized}'`
     );
 
-  const recipientTxResult =
-    await request(
-      `/cosmos/tx/v1beta1/txs?${recipientParams.toString()}`
+    senderParams.set(
+      "page",
+      "1"
     );
+
+    senderParams.set(
+      "limit",
+      String(
+        Math.max(
+          1,
+          Math.ceil(
+            policy
+              .transactionLimit /
+              2
+          )
+        )
+      )
+    );
+
+    senderParams.set(
+      "order_by",
+      "ORDER_BY_DESC"
+    );
+
+    const recipientParams =
+      new URLSearchParams();
+
+    recipientParams.set(
+      "query",
+      `transfer.recipient='${normalized}'`
+    );
+
+    recipientParams.set(
+      "page",
+      "1"
+    );
+
+    recipientParams.set(
+      "limit",
+      String(
+        Math.max(
+          1,
+          Math.ceil(
+            policy
+              .transactionLimit /
+              2
+          )
+        )
+      )
+    );
+
+    recipientParams.set(
+      "order_by",
+      "ORDER_BY_DESC"
+    );
+
+    historyResults.push(
+      await request(
+        `/cosmos/tx/v1beta1/txs?${senderParams.toString()}`
+      ),
+
+      await request(
+        `/cosmos/tx/v1beta1/txs?${recipientParams.toString()}`
+      )
+    );
+  }
 
   const balances =
     balanceResult.ok
@@ -1238,10 +1257,8 @@ export async function loadCosmosSdkEvidence(
     >();
 
   for (
-    const result of [
-      senderTxResult,
-      recipientTxResult,
-    ]
+    const result of
+    historyResults
   ) {
     if (!result.ok) {
       unavailable.push(
