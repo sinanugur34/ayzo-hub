@@ -20,6 +20,7 @@ import TonIntelligenceReport from "@/components/TonIntelligenceReport";
 import StellarIntelligenceReport from "@/components/StellarIntelligenceReport";
 import CardanoIntelligenceReport from "@/components/CardanoIntelligenceReport";
 import AptosIntelligenceReport from "@/components/AptosIntelligenceReport";
+import HederaIntelligenceReport from "@/components/HederaIntelligenceReport";
 import HyperliquidIntelligenceReport from "@/components/HyperliquidIntelligenceReport";
 import TronIntelligenceReport from "@/components/TronIntelligenceReport";
 import XrplIntelligenceReport from "@/components/XrplIntelligenceReport";
@@ -54,6 +55,10 @@ import {
 import {
   normalizeAptosAddress,
 } from "@/lib/intelligence/aptos/address";
+
+import {
+  normalizeHederaAccountId,
+} from "@/lib/intelligence/hedera/address";
 
 const LIVE_NETWORKS =
   NETWORK_IDS.filter(
@@ -399,6 +404,17 @@ export default function Home() {
       null
     );
 
+  const [
+    hederaAnalysis,
+    setHederaAnalysis,
+  ] =
+    useState<{
+      address:
+        string;
+    } | null>(
+      null
+    );
+
   function resetResult() {
     setSolanaResult(
       null
@@ -448,6 +464,10 @@ export default function Home() {
     );
 
     setXrpAnalysis(
+      null
+    );
+
+    setHederaAnalysis(
       null
     );
   }
@@ -704,6 +724,10 @@ export default function Home() {
             );
 
             setXrpAnalysis(
+              null
+            );
+
+            setHederaAnalysis(
               null
             );
 
@@ -979,6 +1003,43 @@ export default function Home() {
       setXrpAnalysis({
         address:
           value,
+      });
+
+      return;
+    }
+
+    if (
+      network ===
+        "hedera"
+    ) {
+      const normalizedHedera =
+        normalizeHederaAccountId(
+          value
+        );
+
+      if (!normalizedHedera) {
+        setIsValid(
+          false
+        );
+
+        setMessage(
+          "This does not look like a valid Hedera account ID."
+        );
+
+        return;
+      }
+
+      setIsValid(
+        true
+      );
+
+      setMessage(
+        "Hedera account accepted. AYZO intelligence is running."
+      );
+
+      setHederaAnalysis({
+        address:
+          normalizedHedera,
       });
 
       return;
@@ -1455,6 +1516,8 @@ export default function Home() {
     tronAnalysis !==
       null ||
     xrpAnalysis !==
+      null ||
+    hederaAnalysis !==
       null;
 
   useEffect(() => {
@@ -1530,6 +1593,7 @@ export default function Home() {
     hyperliquidAnalysis,
     tronAnalysis,
     xrpAnalysis,
+    hederaAnalysis,
   ]);
 
   return (
@@ -1796,7 +1860,10 @@ export default function Home() {
                           : network ===
                               "xrp"
                             ? "Paste an XRP Ledger classic address"
-                            : `Paste a ${networkName(network)} token, contract or wallet address`
+                            : network ===
+                                "hedera"
+                              ? "Paste a Hedera account ID, for example 0.0.2"
+                              : `Paste a ${networkName(network)} token, contract or wallet address`
                 }
                 spellCheck={
                   false
@@ -2130,6 +2197,24 @@ export default function Home() {
                 }
                 address={
                   aptosAnalysis.address
+                }
+              />
+            </AnalysisWorkspaceFrame>
+          </section>
+        )}
+
+        {hederaAnalysis && (
+          <section
+            id="analysis-result"
+            className="mt-12 scroll-mt-4 w-[calc(100vw-16px)] max-w-none shrink-0 self-center"
+          >
+            <AnalysisWorkspaceFrame>
+              <HederaIntelligenceReport
+                key={
+                  hederaAnalysis.address
+                }
+                address={
+                  hederaAnalysis.address
                 }
               />
             </AnalysisWorkspaceFrame>

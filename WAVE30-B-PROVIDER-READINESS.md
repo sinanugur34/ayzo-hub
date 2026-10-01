@@ -9,7 +9,7 @@ Current canonical registry:
 - registered blockchain networks: 26
 - production-live blockchain networks: 24
 - NEAR: development / deferred
-- Hedera: development / production-provider gate complete
+- Hedera: live candidate / production-provider gate complete
 
 Registration does not equal production acceptance.
 
@@ -79,9 +79,11 @@ Fallback identity fix commit:
 
 Hedera provider gate is CLOSED.
 
-Hedera still remains `development` until its remaining
-product activation, Preview HTTP acceptance and
-Production HTTP acceptance gates are completed.
+Hedera is promoted to a `live` candidate on the
+feature branch after local engineering/provider gates.
+
+Preview HTTP acceptance and Production HTTP acceptance
+remain mandatory before final production release.
 
 ---
 

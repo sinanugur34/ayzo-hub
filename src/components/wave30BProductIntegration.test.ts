@@ -180,3 +180,37 @@ test(
     );
   }
 );
+test(
+  "Hedera is connected to the live home analysis surface",
+  () => {
+    const home =
+      fs.readFileSync(
+        "src/app/page.tsx",
+        "utf8"
+      );
+
+    assert.ok(
+      home.includes(
+        "HederaIntelligenceReport"
+      )
+    );
+
+    assert.ok(
+      home.includes(
+        "normalizeHederaAccountId"
+      )
+    );
+
+    assert.ok(
+      home.includes(
+        "setHederaAnalysis"
+      )
+    );
+
+    assert.ok(
+      home.includes(
+        "{hederaAnalysis && ("
+      )
+    );
+  }
+);

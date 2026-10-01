@@ -415,7 +415,7 @@ export const NETWORKS = {
     name: "Hedera",
     shortName: "HBAR",
     family: "hedera",
-    status: "development",
+    status: "live",
     chainId: null,
     nativeCurrency: "HBAR",
     explorerUrl: "https://hashscan.io/mainnet",

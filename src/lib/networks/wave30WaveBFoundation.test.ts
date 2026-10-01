@@ -11,7 +11,7 @@ import {
 } from "../intelligence/router";
 
 test(
-  "Wave30 B registers NEAR and Hedera without changing the accepted live count",
+  "Wave30 B promotes Hedera while NEAR remains deferred",
   () => {
     assert.equal(
       NETWORK_IDS.length,
@@ -28,7 +28,7 @@ test(
 
     assert.equal(
       live.length,
-      24
+      25
     );
 
     assert.equal(
@@ -38,7 +38,7 @@ test(
 
     assert.equal(
       NETWORKS.hedera.status,
-      "development"
+      "live"
     );
   }
 );
@@ -132,40 +132,68 @@ test(
 );
 
 test(
-  "NEAR and Hedera remain unavailable through the public intelligence router",
+  "NEAR remains unavailable through the public intelligence router",
   () => {
-    for (
-      const id of
-      [
-        "near",
-        "hedera",
-      ] as const
-    ) {
-      const result =
-        resolveIntelligenceNetwork(
-          id
-        );
-
-      assert.equal(
-        result.ok,
-        false
+    const result =
+      resolveIntelligenceNetwork(
+        "near"
       );
 
-      if (result.ok) {
-        assert.fail(
-          `${id} must remain gated`
-        );
-      }
+    assert.equal(
+      result.ok,
+      false
+    );
 
-      assert.equal(
-        result.code,
-        "NETWORK_NOT_AVAILABLE"
-      );
-
-      assert.equal(
-        result.networkId,
-        id
+    if (result.ok) {
+      assert.fail(
+        "NEAR must remain deferred."
       );
     }
+
+    assert.equal(
+      result.code,
+      "NETWORK_NOT_AVAILABLE"
+    );
+
+    assert.equal(
+      result.networkId,
+      "near"
+    );
+  }
+);
+
+test(
+  "Hedera resolves through the public intelligence router after acceptance",
+  () => {
+    const result =
+      resolveIntelligenceNetwork(
+        "hedera"
+      );
+
+    assert.equal(
+      result.ok,
+      true
+    );
+
+    if (!result.ok) {
+      assert.fail(
+        "Hedera must resolve after acceptance."
+      );
+    }
+
+    assert.equal(
+      result.networkId,
+      "hedera"
+    );
+
+    assert.equal(
+      result.engine,
+      "hedera"
+    );
+
+    assert.equal(
+      result.network.family,
+      "hedera"
+    );
   }
 );

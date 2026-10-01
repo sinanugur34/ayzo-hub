@@ -29,12 +29,12 @@ test(
 );
 
 test(
-  "only the twenty-four accepted networks are mobile live",
+  "twenty-five accepted networks are mobile live after Hedera acceptance",
   () => {
     assert.equal(
       getMobileLiveNetworkIds()
         .length,
-      24
+      25
     );
 
     for (
@@ -108,7 +108,7 @@ test(
 );
 
 test(
-  "NEAR and Hedera adapters are registered but remain disabled before Wave B acceptance",
+  "NEAR remains disabled while Hedera is enabled after Wave B acceptance",
   () => {
     const near =
       getMobileNetworkSupport(
@@ -147,17 +147,17 @@ test(
 
     assert.equal(
       hedera.canonicalLive,
-      false
+      true
     );
 
     assert.equal(
       hedera.engineReady,
-      false
+      true
     );
 
     assert.equal(
       hedera.analysisEnabled,
-      false
+      true
     );
   }
 );

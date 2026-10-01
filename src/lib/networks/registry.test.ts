@@ -7,7 +7,7 @@ import {
 } from "./registry";
 
 test(
-  "keeps twenty-four accepted live networks while Wave B remains gated",
+  "keeps twenty-five accepted live networks after Hedera Wave B acceptance",
   () => {
     assert.equal(
       NETWORK_IDS.length,
@@ -24,7 +24,7 @@ test(
 
     assert.equal(
       liveNetworkCount,
-      24
+      25
     );
 
     assert.equal(
@@ -649,7 +649,7 @@ test(
 );
 
 test(
-  "registers NEAR and Hedera as gated Wave B native networks",
+  "keeps NEAR gated and promotes Hedera after Wave B acceptance",
   () => {
     assert.equal(
       NETWORKS.near.status,
@@ -680,7 +680,7 @@ test(
 
     assert.equal(
       NETWORKS.hedera.status,
-      "development"
+      "live"
     );
 
     assert.equal(

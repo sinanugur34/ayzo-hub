@@ -11,7 +11,7 @@ import {
 } from "../intelligence/router";
 
 test(
-  "Wave30 A preserves twenty-four accepted live networks after later development registration",
+  "Wave30 A remains intact after Hedera becomes the twenty-fifth live network",
   () => {
     const live =
       NETWORK_IDS.filter(
@@ -23,7 +23,7 @@ test(
 
     assert.equal(
       live.length,
-      24
+      25
     );
 
     assert.equal(

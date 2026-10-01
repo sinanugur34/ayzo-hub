@@ -150,6 +150,7 @@ const MOBILE_ENGINE_READY =
     "xrp",
     "cardano",
     "aptos",
+    "hedera",
   ]);
 
 export function getMobileNetworkSupport(

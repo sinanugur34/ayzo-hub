@@ -201,3 +201,20 @@ test(
     );
   }
 );
+test(
+  "accepts live Hedera SEO handoff after Wave B acceptance",
+  () => {
+    assert.deepEqual(
+      parseSeoAnalysisPrefill(
+        "?network=hedera&source=seo"
+      ),
+      {
+        network:
+          "hedera",
+
+        source:
+          "seo",
+      }
+    );
+  }
+);
