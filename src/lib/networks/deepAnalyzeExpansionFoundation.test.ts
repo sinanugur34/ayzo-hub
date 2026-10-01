@@ -11,42 +11,37 @@ import {
 } from "../../../mobile/src/mobileNetworkSupport";
 
 test(
-  "Zcash and Algorand remain development gated",
+  "Zcash and Algorand are live after full promotion acceptance",
   () => {
-    assert.equal(
-      NETWORKS.zcash.status,
-      "development"
-    );
+    for (
+      const id of [
+        "zcash",
+        "algorand",
+      ] as const
+    ) {
+      assert.equal(
+        NETWORKS[id].status,
+        "live"
+      );
 
-    assert.equal(
-      NETWORKS.algorand.status,
-      "development"
-    );
-
-    assert.equal(
-      getMobileNetworkSupport(
-        "zcash"
-      ).analysisEnabled,
-      false
-    );
-
-    assert.equal(
-      getMobileNetworkSupport(
-        "algorand"
-      ).analysisEnabled,
-      false
-    );
+      assert.equal(
+        getMobileNetworkSupport(
+          id
+        ).analysisEnabled,
+        true
+      );
+    }
   }
 );
 
 test(
-  "expansion registration preserves twenty-five live networks",
+  "expansion promotion exposes thirty live networks",
   () => {
     const live =
       NETWORK_IDS.filter(
         id =>
           NETWORKS[id].status ===
-          "live"
+            "live"
       );
 
     assert.equal(
@@ -56,7 +51,12 @@ test(
 
     assert.equal(
       live.length,
-      25
+      30
+    );
+
+    assert.equal(
+      NETWORKS.near.status,
+      "development"
     );
   }
 );

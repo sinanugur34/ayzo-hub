@@ -28,7 +28,7 @@ test(
 
     assert.equal(
       live.length,
-      25
+      30
     );
 
     assert.equal(

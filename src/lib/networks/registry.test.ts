@@ -7,7 +7,7 @@ import {
 } from "./registry";
 
 test(
-  "keeps twenty-five accepted live networks after Hedera Wave B acceptance",
+  "keeps thirty accepted live networks after Final Five acceptance",
   () => {
     assert.equal(
       NETWORK_IDS.length,
@@ -24,7 +24,7 @@ test(
 
     assert.equal(
       liveNetworkCount,
-      25
+      30
     );
 
     assert.equal(

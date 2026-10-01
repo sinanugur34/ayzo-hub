@@ -15,7 +15,7 @@ import {
 } from "@/lib/networks/registry";
 
 test(
-  "final five remain development gated while native cores are built",
+  "final five are live after native core and product acceptance",
   () => {
     const finalFive = [
       "zcash",
@@ -26,12 +26,11 @@ test(
     ] as const;
 
     for (
-      const id of
-      finalFive
+      const id of finalFive
     ) {
       assert.equal(
         NETWORKS[id].status,
-        "development"
+        "live"
       );
     }
 
@@ -41,7 +40,12 @@ test(
           NETWORKS[id].status ===
             "live"
       ).length,
-      25
+      30
+    );
+
+    assert.equal(
+      NETWORKS.near.status,
+      "development"
     );
   }
 );

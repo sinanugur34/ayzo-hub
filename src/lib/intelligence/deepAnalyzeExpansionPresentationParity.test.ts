@@ -24,7 +24,7 @@ for (
   ] as const
 ) {
   test(
-    `${network} presentation is prepared without live promotion`,
+    `${network} presentation remains intact after live promotion`,
     () => {
       assert.equal(
         fs.existsSync(
@@ -40,38 +40,30 @@ for (
       );
 
       assert.equal(
-        NETWORKS[
-          network
-        ].status,
-        "development"
+        NETWORKS[network].status,
+        "live"
       );
 
-      const resolution =
+      assert.equal(
         resolveIntelligenceNetwork(
           network
-        );
-
-      assert.equal(
-        resolution.ok,
-        false
+        ).ok,
+        true
       );
     }
   );
 }
 
 test(
-  "Wave 2A preserves exactly twenty-five live networks",
+  "Final Five promotion exposes exactly thirty live networks",
   () => {
-    const live =
+    assert.equal(
       NETWORK_IDS.filter(
         id =>
           NETWORKS[id].status ===
             "live"
-      );
-
-    assert.equal(
-      live.length,
-      25
+      ).length,
+      30
     );
   }
 );

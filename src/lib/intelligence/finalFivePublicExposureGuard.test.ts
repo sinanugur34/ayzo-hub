@@ -20,7 +20,7 @@ const batch =
   );
 
 test(
-  "home and batch still derive public choices from canonical live state",
+  "home and batch derive thirty public choices from canonical live state",
   () => {
     assert.ok(
       home.includes(
@@ -43,7 +43,7 @@ test(
 
     assert.equal(
       live.length,
-      25
+      30
     );
 
     for (
@@ -59,8 +59,16 @@ test(
         live.includes(
           id
         ),
-        false
+        true,
+        id
       );
     }
+
+    assert.equal(
+      live.includes(
+        "near"
+      ),
+      false
+    );
   }
 );

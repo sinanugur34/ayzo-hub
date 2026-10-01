@@ -21,6 +21,11 @@ import StellarIntelligenceReport from "@/components/StellarIntelligenceReport";
 import CardanoIntelligenceReport from "@/components/CardanoIntelligenceReport";
 import AptosIntelligenceReport from "@/components/AptosIntelligenceReport";
 import HederaIntelligenceReport from "@/components/HederaIntelligenceReport";
+import ZcashIntelligenceReport from "@/components/ZcashIntelligenceReport";
+import AlgorandIntelligenceReport from "@/components/AlgorandIntelligenceReport";
+import PolkadotIntelligenceReport from "@/components/PolkadotIntelligenceReport";
+import CosmosIntelligenceReport from "@/components/CosmosIntelligenceReport";
+import InjectiveIntelligenceReport from "@/components/InjectiveIntelligenceReport";
 import HyperliquidIntelligenceReport from "@/components/HyperliquidIntelligenceReport";
 import TronIntelligenceReport from "@/components/TronIntelligenceReport";
 import XrplIntelligenceReport from "@/components/XrplIntelligenceReport";
@@ -124,6 +129,14 @@ type TokenResponse =
   | TokenFailure;
 
 
+type FinalFiveNetworkId =
+  | "zcash"
+  | "algorand"
+  | "polkadot"
+  | "cosmos"
+  | "injective";
+
+
 type AddressDetectionResponse =
   | {
       ok: true;
@@ -132,8 +145,16 @@ type AddressDetectionResponse =
         | "dogecoin"
         | "litecoin"
         | "sui"
+        | "ton"
+        | "stellar"
         | "tron"
         | "xrp"
+        | "cardano"
+        | "zcash"
+        | "algorand"
+        | "polkadot"
+        | "cosmos"
+        | "injective"
         | "solana"
         | "evm"
         | null;
@@ -415,6 +436,20 @@ export default function Home() {
       null
     );
 
+  const [
+    finalFiveAnalysis,
+    setFinalFiveAnalysis,
+  ] =
+    useState<{
+      network:
+        FinalFiveNetworkId;
+
+      address:
+        string;
+    } | null>(
+      null
+    );
+
   function resetResult() {
     setSolanaResult(
       null
@@ -468,6 +503,10 @@ export default function Home() {
     );
 
     setHederaAnalysis(
+      null
+    );
+
+    setFinalFiveAnalysis(
       null
     );
   }
@@ -731,6 +770,10 @@ export default function Home() {
               null
             );
 
+            setFinalFiveAnalysis(
+              null
+            );
+
             setIsValid(
               null
             );
@@ -797,6 +840,107 @@ export default function Home() {
           : {}),
       }
     );
+
+    if (
+      network ===
+        "zcash" ||
+      network ===
+        "algorand" ||
+      network ===
+        "polkadot" ||
+      network ===
+        "cosmos" ||
+      network ===
+        "injective"
+    ) {
+      setLoading(
+        true
+      );
+
+      try {
+        const detectionResponse =
+          await fetch(
+            "/api/address-detect",
+            {
+              method:
+                "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body:
+                JSON.stringify({
+                  address:
+                    value,
+                }),
+            }
+          );
+
+        const detection =
+          (
+            await detectionResponse.json()
+          ) as AddressDetectionResponse;
+
+        if (
+          !detectionResponse.ok ||
+          !detection.ok ||
+          detection.network !==
+            network
+        ) {
+          setIsValid(
+            false
+          );
+
+          setMessage(
+            network ===
+              "zcash"
+              ? "AYZO currently supports checksum-valid transparent Zcash mainnet addresses only. Shielded and unified privacy evidence is not reconstructed."
+              : `This does not look like a valid ${networkName(
+                  network
+                )} mainnet address.`
+          );
+
+          return;
+        }
+
+        setIsValid(
+          true
+        );
+
+        setMessage(
+          `${networkName(
+            network
+          )} address accepted. AYZO intelligence is running.`
+        );
+
+        setFinalFiveAnalysis({
+          network,
+
+          address:
+            value,
+        });
+
+        return;
+      } catch {
+        setIsValid(
+          false
+        );
+
+        setMessage(
+          `Unable to verify this ${networkName(
+            network
+          )} address.`
+        );
+
+        return;
+      } finally {
+        setLoading(
+          false
+        );
+      }
+    }
 
     if (
       network ===
@@ -1518,6 +1662,8 @@ export default function Home() {
     xrpAnalysis !==
       null ||
     hederaAnalysis !==
+      null ||
+    finalFiveAnalysis !==
       null;
 
   useEffect(() => {
@@ -1594,6 +1740,7 @@ export default function Home() {
     tronAnalysis,
     xrpAnalysis,
     hederaAnalysis,
+    finalFiveAnalysis,
   ]);
 
   return (
@@ -2253,6 +2400,65 @@ export default function Home() {
                 xrpAnalysis.address
               }
             />
+            </AnalysisWorkspaceFrame>
+          </section>
+        )}
+
+        {finalFiveAnalysis && (
+          <section
+            id="analysis-result"
+            className="mt-12 scroll-mt-4 w-[calc(100vw-16px)] max-w-none shrink-0 self-center"
+          >
+            <AnalysisWorkspaceFrame>
+              {finalFiveAnalysis.network ===
+                "zcash" && (
+                <ZcashIntelligenceReport
+                  key={`zcash:${finalFiveAnalysis.address}`}
+                  address={
+                    finalFiveAnalysis.address
+                  }
+                />
+              )}
+
+              {finalFiveAnalysis.network ===
+                "algorand" && (
+                <AlgorandIntelligenceReport
+                  key={`algorand:${finalFiveAnalysis.address}`}
+                  address={
+                    finalFiveAnalysis.address
+                  }
+                />
+              )}
+
+              {finalFiveAnalysis.network ===
+                "polkadot" && (
+                <PolkadotIntelligenceReport
+                  key={`polkadot:${finalFiveAnalysis.address}`}
+                  address={
+                    finalFiveAnalysis.address
+                  }
+                />
+              )}
+
+              {finalFiveAnalysis.network ===
+                "cosmos" && (
+                <CosmosIntelligenceReport
+                  key={`cosmos:${finalFiveAnalysis.address}`}
+                  address={
+                    finalFiveAnalysis.address
+                  }
+                />
+              )}
+
+              {finalFiveAnalysis.network ===
+                "injective" && (
+                <InjectiveIntelligenceReport
+                  key={`injective:${finalFiveAnalysis.address}`}
+                  address={
+                    finalFiveAnalysis.address
+                  }
+                />
+              )}
             </AnalysisWorkspaceFrame>
           </section>
         )}

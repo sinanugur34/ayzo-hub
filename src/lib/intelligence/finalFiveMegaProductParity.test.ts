@@ -36,7 +36,7 @@ const finalFive = [
 ] as const;
 
 test(
-  "final five remain development gated while product surfaces are prepared",
+  "final five product surfaces are live after promotion acceptance",
   () => {
     assert.equal(
       NETWORK_IDS.filter(
@@ -44,23 +44,22 @@ test(
           NETWORKS[id].status ===
             "live"
       ).length,
-      25
+      30
     );
 
     for (
-      const id of
-      finalFive
+      const id of finalFive
     ) {
       assert.equal(
         NETWORKS[id].status,
-        "development"
+        "live"
       );
 
       assert.equal(
         getMobileNetworkSupport(
           id
         ).analysisEnabled,
-        false
+        true
       );
 
       assert.equal(
@@ -70,11 +69,16 @@ test(
         true
       );
     }
+
+    assert.equal(
+      NETWORKS.near.status,
+      "development"
+    );
   }
 );
 
 test(
-  "new native reports exist before promotion",
+  "native reports remain present after promotion",
   () => {
     for (
       const path of [
@@ -406,7 +410,7 @@ test(
 );
 
 test(
-  "registry capabilities expose appropriate product tools without live promotion",
+  "registry capabilities expose appropriate product tools after live promotion",
   () => {
     for (
       const id of [

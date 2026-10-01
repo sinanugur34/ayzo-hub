@@ -14,7 +14,7 @@ const batch =
   );
 
 test(
-  "Batch Analysis remains canonical-live derived before expansion promotion",
+  "Batch Analysis remains canonical-live derived after Final Five promotion",
   () => {
     assert.ok(
       batch.includes(
@@ -43,19 +43,30 @@ test(
 
     assert.equal(
       selectable.length,
-      25
+      30
     );
+
+    for (
+      const id of [
+        "zcash",
+        "algorand",
+        "polkadot",
+        "cosmos",
+        "injective",
+      ] as const
+    ) {
+      assert.equal(
+        selectable.includes(
+          id
+        ),
+        true,
+        id
+      );
+    }
 
     assert.equal(
       selectable.includes(
-        "zcash"
-      ),
-      false
-    );
-
-    assert.equal(
-      selectable.includes(
-        "algorand"
+        "near"
       ),
       false
     );

@@ -29,12 +29,12 @@ test(
 );
 
 test(
-  "twenty-five accepted networks are mobile live after Hedera acceptance",
+  "thirty accepted networks are mobile live after Final Five acceptance",
   () => {
     assert.equal(
       getMobileLiveNetworkIds()
         .length,
-      25
+      30
     );
 
     for (
@@ -159,5 +159,43 @@ test(
       hedera.analysisEnabled,
       true
     );
+  }
+);
+
+test(
+  "Final Five canonical promotion enables prepared mobile adapters",
+  () => {
+    for (
+      const id of [
+        "zcash",
+        "algorand",
+        "polkadot",
+        "cosmos",
+        "injective",
+      ] as const
+    ) {
+      const support =
+        getMobileNetworkSupport(
+          id
+        );
+
+      assert.equal(
+        support.canonicalLive,
+        true,
+        id
+      );
+
+      assert.equal(
+        support.engineReady,
+        true,
+        id
+      );
+
+      assert.equal(
+        support.analysisEnabled,
+        true,
+        id
+      );
+    }
   }
 );

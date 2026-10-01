@@ -14,7 +14,7 @@ const home =
   );
 
 test(
-  "Zcash and Algorand reports exist before public promotion",
+  "Zcash and Algorand reports exist after public promotion",
   () => {
     assert.equal(
       fs.existsSync(
@@ -33,17 +33,15 @@ test(
 );
 
 test(
-  "development expansion networks remain outside canonical live selection",
+  "Final Five are present in canonical live selection",
   () => {
-    assert.equal(
-      NETWORKS.zcash.status,
-      "development"
-    );
-
-    assert.equal(
-      NETWORKS.algorand.status,
-      "development"
-    );
+    const finalFive = [
+      "zcash",
+      "algorand",
+      "polkadot",
+      "cosmos",
+      "injective",
+    ] as const;
 
     const liveNetworks =
       NETWORK_IDS.filter(
@@ -54,21 +52,28 @@ test(
 
     assert.equal(
       liveNetworks.length,
-      25
+      30
     );
 
-    assert.equal(
-      liveNetworks.includes(
-        "zcash"
-      ),
-      false
-    );
+    for (
+      const id of finalFive
+    ) {
+      assert.equal(
+        NETWORKS[id].status,
+        "live"
+      );
+
+      assert.equal(
+        liveNetworks.includes(
+          id
+        ),
+        true
+      );
+    }
 
     assert.equal(
-      liveNetworks.includes(
-        "algorand"
-      ),
-      false
+      NETWORKS.near.status,
+      "development"
     );
   }
 );
@@ -88,12 +93,6 @@ test(
       )
     );
 
-    /*
-     * Keep this assertion formatting- and
-     * variable-name tolerant. What matters is
-     * that the home selector derives its set
-     * from NETWORKS[*].status === "live".
-     */
     assert.match(
       home,
       /NETWORKS\s*\[\s*[A-Za-z_$][A-Za-z0-9_$]*\s*\]\s*\.status\s*===\s*"live"/

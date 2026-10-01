@@ -13,7 +13,7 @@ const files = [
 ];
 
 test(
-  "Zcash and Algorand engines are prepared across API surfaces",
+  "Zcash and Algorand engines remain prepared across API surfaces",
   () => {
     for (
       const file of files
@@ -24,19 +24,17 @@ test(
           "utf8"
         );
 
-      assert.equal(
+      assert.ok(
         source.includes(
           "runZcashIntelligence"
         ),
-        true,
         file
       );
 
-      assert.equal(
+      assert.ok(
         source.includes(
           "runAlgorandIntelligence"
         ),
-        true,
         file
       );
     }
@@ -44,30 +42,21 @@ test(
 );
 
 test(
-  "prepared expansion routes remain fail closed while development",
+  "Zcash and Algorand resolve after promotion",
   () => {
     for (
       const network of [
         "zcash",
         "algorand",
-      ]
+      ] as const
     ) {
-      const resolution =
+      assert.equal(
         resolveIntelligenceNetwork(
           network
-        );
-
-      assert.equal(
-        resolution.ok,
-        false
+        ).ok,
+        true,
+        network
       );
-
-      if (!resolution.ok) {
-        assert.equal(
-          resolution.code,
-          "NETWORK_NOT_AVAILABLE"
-        );
-      }
     }
   }
 );

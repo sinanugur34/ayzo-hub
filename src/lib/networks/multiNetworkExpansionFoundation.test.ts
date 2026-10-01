@@ -21,7 +21,7 @@ const expansion = [
 ] as const;
 
 test(
-  "multi-network expansion registers all three networks",
+  "multi-network expansion promotes all three accepted networks",
   () => {
     assert.equal(
       NETWORK_IDS.length,
@@ -29,56 +29,50 @@ test(
     );
 
     for (
-      const id of
-      expansion
+      const id of expansion
     ) {
       assert.equal(
         NETWORKS[id].status,
-        "development"
+        "live"
       );
     }
   }
 );
 
 test(
-  "multi-network expansion preserves twenty-five live networks",
+  "multi-network expansion reaches thirty live networks",
   () => {
-    const live =
+    assert.equal(
       NETWORK_IDS.filter(
         id =>
           NETWORKS[id].status ===
             "live"
-      );
-
-    assert.equal(
-      live.length,
-      25
+      ).length,
+      30
     );
   }
 );
 
 test(
-  "new networks remain fail closed on public and mobile surfaces",
+  "promoted native networks resolve on public and mobile surfaces",
   () => {
     for (
-      const id of
-      expansion
+      const id of expansion
     ) {
-      const resolution =
+      assert.equal(
         resolveIntelligenceNetwork(
           id
-        );
-
-      assert.equal(
-        resolution.ok,
-        false
+        ).ok,
+        true,
+        id
       );
 
       assert.equal(
         getMobileNetworkSupport(
           id
         ).analysisEnabled,
-        false
+        true,
+        id
       );
     }
   }

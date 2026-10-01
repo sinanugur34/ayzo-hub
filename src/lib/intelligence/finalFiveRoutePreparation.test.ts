@@ -17,11 +17,10 @@ const routes = [
 ];
 
 test(
-  "Polkadot Cosmos and Injective engines are prepared across API surfaces",
+  "Polkadot Cosmos and Injective engines remain prepared across API surfaces",
   () => {
     for (
-      const path of
-      routes
+      const path of routes
     ) {
       const source =
         fs.readFileSync(
@@ -48,7 +47,7 @@ test(
 );
 
 test(
-  "all final five routes remain fail closed before promotion",
+  "all final five resolve through public router after promotion",
   () => {
     for (
       const id of [
@@ -61,14 +60,15 @@ test(
     ) {
       assert.equal(
         NETWORKS[id].status,
-        "development"
+        "live"
       );
 
       assert.equal(
         resolveIntelligenceNetwork(
           id
         ).ok,
-        false
+        true,
+        id
       );
     }
   }

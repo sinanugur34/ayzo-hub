@@ -22,7 +22,7 @@ import {
 } from "@/lib/networks/registry";
 
 test(
-  "Zcash product parity remains prepared but development gated",
+  "Zcash product parity remains intact after live promotion",
   () => {
     const profile =
       getAskAyzoNetworkProfile(
@@ -72,20 +72,20 @@ test(
 
     assert.equal(
       NETWORKS.zcash.status,
-      "development"
+      "live"
     );
 
     assert.equal(
       getMobileNetworkSupport(
         "zcash"
       ).analysisEnabled,
-      false
+      true
     );
   }
 );
 
 test(
-  "Algorand product parity remains prepared but development gated",
+  "Algorand product parity remains intact after live promotion",
   () => {
     const profile =
       getAskAyzoNetworkProfile(
@@ -142,14 +142,14 @@ test(
 
     assert.equal(
       NETWORKS.algorand.status,
-      "development"
+      "live"
     );
 
     assert.equal(
       getMobileNetworkSupport(
         "algorand"
       ).analysisEnabled,
-      false
+      true
     );
   }
 );
