@@ -1034,6 +1034,7 @@ export async function getHederaMirrorEvidence(
       true,
 
     providerId:
+      deps.providerId ??
       "hedera-mirror-public",
 
     latencyMs:

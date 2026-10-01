@@ -290,6 +290,9 @@ test(
 
           timeoutMs:
             1000,
+
+          providerId:
+            "hedera-hgraph",
         }
       );
 
@@ -303,6 +306,11 @@ test(
         "Expected Hedera evidence."
       );
     }
+
+    assert.equal(
+      result.providerId,
+      "hedera-hgraph"
+    );
 
     assert.equal(
       result.data
