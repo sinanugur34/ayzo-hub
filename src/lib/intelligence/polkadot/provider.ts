@@ -1166,11 +1166,129 @@ export async function getPolkadotEvidence(
         unknown[] =
           [];
 
+      const seen =
+        new Set<string>();
+
       const pageLimit =
         indexedProvider ===
           "pubfi"
           ? PUBFI_FREE_ROW_LIMIT
           : SUBSCAN_ROW_LIMIT;
+
+      /*
+       * Page size must remain stable across a paginated
+       * Subscan/PubFi walk. Changing row size on the last
+       * page can change page offset semantics.
+       */
+      const row =
+        Math.min(
+          pageLimit,
+          limit
+        );
+
+      const evidenceIdentity =
+        (
+          value:
+            unknown
+        ): string | null => {
+          if (
+            path ===
+              "/api/v2/scan/transfers"
+          ) {
+            const item =
+              parseTransfer(
+                value
+              );
+
+            if (!item) {
+              return null;
+            }
+
+            return deterministicEvidenceIdentity([
+              item.extrinsicHash,
+              item.extrinsicIndex,
+              item.blockNumber,
+              item.timestamp,
+              item.from,
+              item.to,
+              item.amountPlanck,
+              item.success,
+            ]);
+          }
+
+          if (
+            path ===
+              "/api/v2/scan/extrinsics"
+          ) {
+            const item =
+              parseExtrinsic(
+                value
+              );
+
+            if (!item) {
+              return null;
+            }
+
+            return deterministicEvidenceIdentity([
+              item.extrinsicHash,
+              item.extrinsicIndex,
+              item.blockNumber,
+              item.timestamp,
+              item.module,
+              item.call,
+              item.feePlanck,
+              item.success,
+            ]);
+          }
+
+          if (
+            path ===
+              "/api/scan/proxy/extrinsics"
+          ) {
+            const item =
+              parseProxy(
+                value
+              );
+
+            if (!item) {
+              return null;
+            }
+
+            return deterministicEvidenceIdentity([
+              item.extrinsicIndex,
+              item.timestamp,
+              item.account,
+              item.realAccount,
+              item.module,
+              item.call,
+            ]);
+          }
+
+          if (
+            path ===
+              "/api/scan/multisigs/details"
+          ) {
+            const item =
+              parseMultisig(
+                value
+              );
+
+            if (!item) {
+              return null;
+            }
+
+            return deterministicEvidenceIdentity([
+              item.multiId,
+              item.extrinsicIndex,
+              item.timestamp,
+              item.account,
+              item.multisigAccount,
+              item.status,
+            ]);
+          }
+
+          return null;
+        };
 
       let page =
         0;
@@ -1179,13 +1297,6 @@ export async function getPolkadotEvidence(
         items.length <
           limit
       ) {
-        const row =
-          Math.min(
-            pageLimit,
-            limit -
-              items.length
-          );
-
         const result =
           await indexedPost(
             path,
@@ -1216,10 +1327,8 @@ export async function getPolkadotEvidence(
             .data;
 
         /*
-         * Subscan uses a successful null data payload
-         * for some valid zero-evidence account/module
-         * combinations. Preserve that distinction:
-         * queried-and-empty is not unavailable.
+         * Subscan uses a successful null payload for
+         * valid zero-evidence module/account queries.
          */
         if (
           rawData ===
@@ -1266,14 +1375,51 @@ export async function getPolkadotEvidence(
             ]
           );
 
-        items.push(
-          ...batch
-        );
+        /*
+         * Count only parseable unique evidence toward
+         * the selected plan depth.
+         *
+         * This prevents cross-page overlap from
+         * consuming the depth budget before unique
+         * evidence reaches the requested limit.
+         */
+        for (
+          const item of
+          batch
+        ) {
+          const key =
+            evidenceIdentity(
+              item
+            );
+
+          if (
+            !key ||
+            seen.has(
+              key
+            )
+          ) {
+            continue;
+          }
+
+          seen.add(
+            key
+          );
+
+          items.push(
+            item
+          );
+
+          if (
+            items.length >=
+              limit
+          ) {
+            break;
+          }
+        }
 
         /*
-         * A short page is the canonical bounded stop.
-         * Do not waste PubFi requests after evidence
-         * is exhausted.
+         * Only a short provider page proves exhaustion.
+         * A full overlapping page must not stop the walk.
          */
         if (
           batch.length <

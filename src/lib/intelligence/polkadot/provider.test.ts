@@ -1047,7 +1047,7 @@ test(
         20,
         20,
         20,
-        4,
+        20,
       ]
     );
 
@@ -1060,7 +1060,7 @@ test(
         20,
         20,
         20,
-        4,
+        20,
       ]
     );
 
@@ -1257,7 +1257,7 @@ test(
 );
 
 test(
-  "Polkadot deterministically dedupes overlapping indexed pages",
+  "Polkadot fills plan depth across full overlapping indexed pages",
   async () => {
     const makeTransfer =
       (
@@ -1334,8 +1334,10 @@ test(
         page:
           number
       ) =>
-        page ===
-          0
+        page >=
+            0 &&
+        page <=
+            4
           ? Array.from(
               {
                 length:
@@ -1345,23 +1347,11 @@ test(
                 _,
                 index
               ) =>
+                page *
+                  15 +
                 index
             )
-          : page ===
-              1
-            ? Array.from(
-                {
-                  length:
-                    15,
-                },
-                (
-                  _,
-                  index
-                ) =>
-                  15 +
-                  index
-              )
-            : [];
+          : [];
 
     const result =
       await getPolkadotEvidence(
@@ -1551,14 +1541,14 @@ test(
       result.data
         .transfers
         .length,
-      30
+      80
     );
 
     assert.equal(
       result.data
         .extrinsics
         .length,
-      30
+      80
     );
 
     assert.equal(
@@ -1571,7 +1561,7 @@ test(
                 .extrinsicIndex
           )
       ).size,
-      30
+      80
     );
 
     assert.equal(
@@ -1584,7 +1574,7 @@ test(
                 .extrinsicIndex
           )
       ).size,
-      30
+      80
     );
 
     assert.equal(
@@ -1596,16 +1586,16 @@ test(
 
     assert.equal(
       result.data
-        .transfers[29]
+        .transfers[79]
         ?.extrinsicIndex,
-      "5029-0"
+      "5079-0"
     );
 
     assert.equal(
       result.data
         .coverage
         .providerRequestsUsed,
-      8
+      14
     );
 
     assert.equal(
