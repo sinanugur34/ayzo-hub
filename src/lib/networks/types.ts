@@ -13,7 +13,9 @@ export type NetworkFamily =
   | "cardano"
   | "aptos"
   | "near"
-  | "hedera";
+  | "hedera"
+  | "zcash"
+  | "algorand";
 
 export type NetworkStatus =
   | "live"

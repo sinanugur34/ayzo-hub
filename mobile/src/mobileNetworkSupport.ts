@@ -17,7 +17,9 @@ export type MobileAnalysisAdapterId =
   | "cardano"
   | "aptos"
   | "near"
-  | "hedera";
+  | "hedera"
+  | "zcash"
+  | "algorand";
 
 /*
  * Exhaustive mapping.
@@ -107,6 +109,12 @@ export const MOBILE_NETWORK_ADAPTERS:
 
   hedera:
     "hedera",
+
+  zcash:
+    "zcash",
+
+  algorand:
+    "algorand",
 };
 
 /*

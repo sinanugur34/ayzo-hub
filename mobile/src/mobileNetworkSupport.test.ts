@@ -12,18 +12,18 @@ import {
 } from "./mobileNetworkSupport";
 
 test(
-  "mobile adapter registry covers all twenty-six canonical registrations",
+  "mobile adapter registry covers all twenty-eight canonical registrations",
   () => {
     assert.equal(
       NETWORK_IDS.length,
-      26
+      28
     );
 
     assert.equal(
       Object.keys(
         MOBILE_NETWORK_ADAPTERS
       ).length,
-      26
+      28
     );
   }
 );

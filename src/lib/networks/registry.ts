@@ -110,6 +110,21 @@ const HEDERA_CAPABILITIES = [
   "fundingIntelligence",
 ] as const satisfies readonly NetworkCapability[];
 
+const ZCASH_CAPABILITIES = [
+  "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
+] as const satisfies readonly NetworkCapability[];
+
+const ALGORAND_CAPABILITIES = [
+  "assetVerification",
+  "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
+] as const satisfies readonly NetworkCapability[];
+
 export const NETWORKS = {
   solana: {
     id: "solana",
@@ -396,6 +411,30 @@ export const NETWORKS = {
     nativeCurrency: "APT",
     explorerUrl: "https://explorer.aptoslabs.com",
     capabilities: APTOS_CAPABILITIES,
+  },
+
+  zcash: {
+    id: "zcash",
+    name: "Zcash",
+    shortName: "ZEC",
+    family: "zcash",
+    status: "development",
+    chainId: null,
+    nativeCurrency: "ZEC",
+    explorerUrl: "https://blockchair.com/zcash",
+    capabilities: ZCASH_CAPABILITIES,
+  },
+
+  algorand: {
+    id: "algorand",
+    name: "Algorand",
+    shortName: "ALGO",
+    family: "algorand",
+    status: "development",
+    chainId: null,
+    nativeCurrency: "ALGO",
+    explorerUrl: "https://allo.info",
+    capabilities: ALGORAND_CAPABILITIES,
   },
 
   near: {
