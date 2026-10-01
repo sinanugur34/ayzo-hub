@@ -3,7 +3,8 @@ import type {
 } from "@/lib/analysisDepthPolicy";
 
 export type ZcashProviderId =
-  "zcash-blockchair";
+  | "zcash-blockchair"
+  | "zcash-nownodes";
 
 export type ZcashProviderErrorCode =
   | "INVALID_ADDRESS"

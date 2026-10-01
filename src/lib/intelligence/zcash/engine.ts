@@ -19,8 +19,8 @@ import {
 } from "./address";
 
 import {
-  getZcashBlockchairEvidence,
-} from "./provider";
+  getZcashResilientEvidence,
+} from "./resilience";
 
 import {
   getZcashAnalysisPolicy,
@@ -171,7 +171,7 @@ export type ZcashEngineDependencies = {
 const DEFAULT_DEPENDENCIES:
   ZcashEngineDependencies = {
     loadEvidence:
-      getZcashBlockchairEvidence,
+      getZcashResilientEvidence,
   };
 
 export async function runZcashIntelligence(

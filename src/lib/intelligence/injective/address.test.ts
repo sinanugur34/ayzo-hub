@@ -30,3 +30,18 @@ test(
     );
   }
 );
+
+test(
+  "accepts checksum-valid Injective mainnet account",
+  () => {
+    const value =
+      "inj17vytdwqczqz72j65saukplrktd4gyfme5agf6c";
+
+    assert.equal(
+      normalizeInjectiveAddress(
+        value
+      ),
+      value
+    );
+  }
+);

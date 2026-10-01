@@ -5,43 +5,65 @@ import {
   normalizePolkadotAddress,
 } from "./address";
 
+/*
+ * Polkadot-format mainnet account published
+ * in current Substrate/Subscan documentation.
+ */
+const VALID =
+  "14RYaXRSqb9rPqMaAVp1UZW2czQ6dMNGMbvukwfifi6m8ZgZ";
+
 test(
-  "Polkadot foundation fails closed for malformed addresses",
+  "accepts checksum-valid Polkadot SS58 mainnet account",
   () => {
     assert.equal(
       normalizePolkadotAddress(
-        ""
+        VALID
       ),
-      null
-    );
-
-    assert.equal(
-      normalizePolkadotAddress(
-        "cosmos1deadbeef"
-      ),
-      null
-    );
-
-    assert.equal(
-      normalizePolkadotAddress(
-        "5FHneW46xGXgs5mUiveU4sbTyGBzmst1YyX8Z9cZLZ1A9M"
-      ),
-      null
+      VALID
     );
   }
 );
 
 test(
-  "Polkadot foundation preserves canonical-looking network-1 shape",
+  "trims whitespace without weakening Polkadot checksum validation",
   () => {
-    const address =
-      "13V9z4eW2FQ7xJYq5oQkK1bW2z6X8nM3vT7sP9rL5cD1fG2";
+    assert.equal(
+      normalizePolkadotAddress(
+        ` ${VALID} `
+      ),
+      VALID
+    );
+  }
+);
+
+test(
+  "rejects mutated and non-Polkadot SS58 accounts",
+  () => {
+    const mutated =
+      VALID.slice(
+        0,
+        -1
+      ) +
+      (
+        VALID.endsWith(
+          "1"
+        )
+          ? "2"
+          : "1"
+      );
 
     assert.equal(
       normalizePolkadotAddress(
-        ` ${address} `
+        mutated
       ),
-      address
+      null
+    );
+
+    assert.equal(
+      normalizePolkadotAddress(
+        "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+      ),
+      null
     );
   }
 );
