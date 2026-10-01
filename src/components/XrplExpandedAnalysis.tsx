@@ -166,6 +166,9 @@ export default function XrplExpandedAnalysis({
           <Stat label="History limit" value={String(data.evidenceCoverage.historyLimit)} />
           <Stat label="Trust-line limit" value={String(data.evidenceCoverage.trustLineLimit)} />
           <Stat label="Account-object limit" value={String(data.evidenceCoverage.accountObjectLimit)} />
+          <Stat label="Graph node limit" value={String(data.evidenceCoverage.graphMaxNodes)} />
+          <Stat label="Graph edge limit" value={String(data.evidenceCoverage.graphMaxEdges)} />
+          <Stat label="Timeline limit" value={String(data.evidenceCoverage.timelineMaxEvents)} />
         </div>
         <p className="mt-5 text-xs leading-5 text-zinc-600">
           Evidence depth is intentionally bounded according to the current Free, Pro or Advanced analysis plan.

@@ -226,6 +226,15 @@ export type XrplEvidenceCoverage = {
   accountObjectLimit:
     number;
 
+  graphMaxNodes:
+    number;
+
+  graphMaxEdges:
+    number;
+
+  timelineMaxEvents:
+    number;
+
   historyHasMore:
     boolean;
 

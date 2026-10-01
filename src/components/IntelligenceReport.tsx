@@ -64,6 +64,24 @@ type FundingWallet = {
 
 type IntelligenceData = {
   ok: true;
+
+  analysisPlan:
+    | "free"
+    | "pro"
+    | "advanced";
+
+  evidenceCoverage: {
+    walletLimit: number;
+    relationshipSignatureLimit: number;
+    relationshipSharedTxDetailLimit: number;
+    fundingTransactionLimitPerWallet: number;
+    fundingRecentTransferLimitPerWallet: number;
+    fundingSharedSourceTransferLimit: number;
+    graphMaxNodes: number;
+    graphMaxEdges: number;
+    timelineMaxEvents: number;
+  };
+
   coverage?: "full" | "limited" | "partial";
   holders: {
     coverage?: "full" | "limited";
@@ -351,6 +369,12 @@ export default function IntelligenceReport({
                 data.holders.coverage ??
                 "full",
 
+              analysisPlan:
+                data.analysisPlan,
+
+              evidenceCoverage:
+                data.evidenceCoverage,
+
               tokenVerification: {
                 tokenProgram:
                   tokenSnapshot.tokenProgram,
@@ -575,12 +599,24 @@ export default function IntelligenceReport({
 
       funding:
         data.funding,
+
+      maxNodes:
+        data.evidenceCoverage
+          .graphMaxNodes,
+
+      maxEdges:
+        data.evidenceCoverage
+          .graphMaxEdges,
     });
 
   const activityTimeline =
     buildSolanaFundingActivityTimeline({
       funding:
         data.funding,
+
+      maxEvents:
+        data.evidenceCoverage
+          .timelineMaxEvents,
     });
 
   if (limitedCoverage) {

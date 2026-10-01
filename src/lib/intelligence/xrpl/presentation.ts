@@ -108,7 +108,8 @@ export function buildXrplActivityTimeline(
     Math.max(
       1,
       Math.min(
-        data.evidenceCoverage.historyLimit,
+        data.evidenceCoverage
+          .timelineMaxEvents,
         data.history.transactions.length
       )
     );
@@ -433,22 +434,12 @@ export function buildXrplVisualEvidenceGraph(
     XrplIntelligence
 ): VisualEvidenceGraph {
   const maxNodes =
-    data.analysisPlan ===
-      "advanced"
-      ? 28
-      : data.analysisPlan ===
-          "pro"
-        ? 14
-        : 8;
+    data.evidenceCoverage
+      .graphMaxNodes;
 
   const maxEdges =
-    data.analysisPlan ===
-      "advanced"
-      ? 48
-      : data.analysisPlan ===
-          "pro"
-        ? 24
-        : 12;
+    data.evidenceCoverage
+      .graphMaxEdges;
 
   const nodes:
     VisualEvidenceNode[] =

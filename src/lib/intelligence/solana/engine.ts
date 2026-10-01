@@ -212,8 +212,7 @@ export async function runSolanaIntelligence({
       address,
       analysisPlan,
       evidenceCoverage: {
-        walletLimit:
-          policy.walletLimit,
+        ...policy,
       },
       coverage: holderCoverageLimited
         ? "limited"
@@ -495,8 +494,7 @@ export async function runSolanaIntelligence({
     address,
     analysisPlan,
     evidenceCoverage: {
-      walletLimit:
-        policy.walletLimit,
+      ...policy,
     },
     coverage: "full",
     wallets,

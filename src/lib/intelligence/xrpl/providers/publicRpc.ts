@@ -1036,6 +1036,15 @@ export async function getXrplAccountEvidence({
           accountObjectLimit:
             policy.accountObjectLimit,
 
+          graphMaxNodes:
+            policy.graphMaxNodes,
+
+          graphMaxEdges:
+            policy.graphMaxEdges,
+
+          timelineMaxEvents:
+            policy.timelineMaxEvents,
+
           historyHasMore:
             false,
 
@@ -1418,6 +1427,15 @@ export async function getXrplAccountEvidence({
 
         accountObjectLimit:
           policy.accountObjectLimit,
+
+        graphMaxNodes:
+          policy.graphMaxNodes,
+
+        graphMaxEdges:
+          policy.graphMaxEdges,
+
+        timelineMaxEvents:
+          policy.timelineMaxEvents,
 
         historyHasMore:
           history.result
