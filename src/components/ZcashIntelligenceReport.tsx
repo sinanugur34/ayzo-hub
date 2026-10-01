@@ -73,25 +73,6 @@ function formatZec(
   }
 }
 
-function short(
-  value:
-    string | null
-) {
-  if (!value) {
-    return "Unavailable";
-  }
-
-  return value.length <=
-    28
-    ? value
-    : `${value.slice(
-        0,
-        12
-      )}...${value.slice(
-        -10
-      )}`;
-}
-
 export default function ZcashIntelligenceReport({
   address,
 }: {

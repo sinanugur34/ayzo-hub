@@ -11,7 +11,7 @@ test(
   () => {
     assert.equal(
       NETWORK_IDS.length,
-      28
+      31
     );
 
     const liveNetworkCount =

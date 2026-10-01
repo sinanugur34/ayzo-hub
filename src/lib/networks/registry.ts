@@ -125,6 +125,29 @@ const ALGORAND_CAPABILITIES = [
   "fundingProvenance",
 ] as const satisfies readonly NetworkCapability[];
 
+const POLKADOT_CAPABILITIES = [
+  "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
+] as const satisfies readonly NetworkCapability[];
+
+const COSMOS_CAPABILITIES = [
+  "assetVerification",
+  "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
+] as const satisfies readonly NetworkCapability[];
+
+const INJECTIVE_CAPABILITIES = [
+  "assetVerification",
+  "addressFlows",
+  "walletRelationships",
+  "fundingIntelligence",
+  "fundingProvenance",
+] as const satisfies readonly NetworkCapability[];
+
 export const NETWORKS = {
   solana: {
     id: "solana",
@@ -435,6 +458,42 @@ export const NETWORKS = {
     nativeCurrency: "ALGO",
     explorerUrl: "https://allo.info",
     capabilities: ALGORAND_CAPABILITIES,
+  },
+
+  polkadot: {
+    id: "polkadot",
+    name: "Polkadot",
+    shortName: "DOT",
+    family: "polkadot",
+    status: "development",
+    chainId: null,
+    nativeCurrency: "DOT",
+    explorerUrl: "https://polkadot.subscan.io",
+    capabilities: POLKADOT_CAPABILITIES,
+  },
+
+  cosmos: {
+    id: "cosmos",
+    name: "Cosmos Hub",
+    shortName: "ATOM",
+    family: "cosmos",
+    status: "development",
+    chainId: null,
+    nativeCurrency: "ATOM",
+    explorerUrl: "https://www.mintscan.io/cosmos",
+    capabilities: COSMOS_CAPABILITIES,
+  },
+
+  injective: {
+    id: "injective",
+    name: "Injective",
+    shortName: "INJ",
+    family: "injective",
+    status: "development",
+    chainId: null,
+    nativeCurrency: "INJ",
+    explorerUrl: "https://explorer.injective.network",
+    capabilities: INJECTIVE_CAPABILITIES,
   },
 
   near: {

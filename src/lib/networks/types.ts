@@ -15,7 +15,10 @@ export type NetworkFamily =
   | "near"
   | "hedera"
   | "zcash"
-  | "algorand";
+  | "algorand"
+  | "polkadot"
+  | "cosmos"
+  | "injective";
 
 export type NetworkStatus =
   | "live"

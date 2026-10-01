@@ -51,7 +51,7 @@ test(
 
     assert.equal(
       NETWORK_IDS.length,
-      28
+      31
     );
 
     assert.equal(

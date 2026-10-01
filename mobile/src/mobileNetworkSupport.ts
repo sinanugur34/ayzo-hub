@@ -19,7 +19,10 @@ export type MobileAnalysisAdapterId =
   | "near"
   | "hedera"
   | "zcash"
-  | "algorand";
+  | "algorand"
+  | "polkadot"
+  | "cosmos"
+  | "injective";
 
 /*
  * Exhaustive mapping.
@@ -115,6 +118,15 @@ export const MOBILE_NETWORK_ADAPTERS:
 
   algorand:
     "algorand",
+
+  polkadot:
+    "polkadot",
+
+  cosmos:
+    "cosmos",
+
+  injective:
+    "injective",
 };
 
 /*
