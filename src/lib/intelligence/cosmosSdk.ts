@@ -707,6 +707,9 @@ export async function loadCosmosSdkEvidence(
     baseUrls,
     includeTransactionHistory =
       true,
+
+    historyReadPasses =
+      1,
   }: {
     network:
       CosmosSdkNetwork;
@@ -731,6 +734,18 @@ export async function loadCosmosSdkEvidence(
 
     includeTransactionHistory?:
       boolean;
+
+    /*
+     * Some public Cosmos REST load balancers can
+     * expose different indexed snapshots across
+     * otherwise identical transaction searches.
+     *
+     * Re-reading a bounded query and unioning by
+     * immutable tx hash stabilizes evidence
+     * without inventing transactions.
+     */
+    historyReadPasses?:
+      number;
   },
   deps: {
     fetchImpl?:
@@ -772,6 +787,17 @@ export async function loadCosmosSdkEvidence(
     getCosmosSdkPolicy(
       analysisPlan
     );
+
+  const boundedHistoryReadPasses =
+    Number.isSafeInteger(
+      historyReadPasses
+    ) &&
+    historyReadPasses >=
+      1 &&
+    historyReadPasses <=
+      3
+      ? historyReadPasses
+      : 1;
 
   const fetchImpl =
     deps.fetchImpl ??
@@ -1047,14 +1073,19 @@ export async function loadCosmosSdkEvidence(
       `/cosmos/distribution/v1beta1/delegators/${encoded}/rewards`
     );
 
-  const historyResults:
-    Array<
-      Awaited<
-        ReturnType<
-          typeof request
-        >
+  type HistoryResult =
+    Awaited<
+      ReturnType<
+        typeof request
       >
-    > =
+    >;
+
+  const senderHistoryResults:
+    HistoryResult[] =
+      [];
+
+  const recipientHistoryResults:
+    HistoryResult[] =
       [];
 
   if (
@@ -1124,15 +1155,42 @@ export async function loadCosmosSdkEvidence(
       "ORDER_BY_DESC"
     );
 
-    historyResults.push(
-      await request(
-        `/cosmos/tx/v1beta1/txs?${senderParams.toString()}`
-      ),
+    for (
+      let pass =
+        0;
+      pass <
+        boundedHistoryReadPasses;
+      pass +=
+        1
+    ) {
+      /*
+       * One sender + one recipient request is a
+       * complete history snapshot pass.
+       *
+       * Never begin another pass unless at least
+       * two logical request slots remain.
+       */
+      if (
+        requestsUsed +
+          2 >
+        policy
+          .providerRequestBudget
+      ) {
+        break;
+      }
 
-      await request(
-        `/cosmos/tx/v1beta1/txs?${recipientParams.toString()}`
-      )
-    );
+      senderHistoryResults.push(
+        await request(
+          `/cosmos/tx/v1beta1/txs?${senderParams.toString()}`
+        )
+      );
+
+      recipientHistoryResults.push(
+        await request(
+          `/cosmos/tx/v1beta1/txs?${recipientParams.toString()}`
+        )
+      );
+    }
   }
 
   const balances =
@@ -1256,35 +1314,75 @@ export async function loadCosmosSdkEvidence(
       CosmosSdkTransactionEvidence
     >();
 
-  for (
-    const result of
-    historyResults
-  ) {
-    if (!result.ok) {
-      unavailable.push(
-        "transaction_history"
-      );
+  const collectHistory =
+    (
+      results:
+        readonly HistoryResult[]
+    ) => {
+      let successful =
+        0;
 
-      continue;
-    }
-
-    for (
-      const tx of
-      parseTransactions(
-        result.data
-      )
-    ) {
-      if (
-        !txMap.has(
-          tx.hash
-        )
+      for (
+        const result of
+        results
       ) {
-        txMap.set(
-          tx.hash,
-          tx
-        );
+        if (!result.ok) {
+          continue;
+        }
+
+        successful +=
+          1;
+
+        for (
+          const tx of
+          parseTransactions(
+            result.data
+          )
+        ) {
+          /*
+           * Cosmos transaction hashes identify
+           * immutable chain evidence. Repeated
+           * snapshot reads are therefore merged
+           * only by exact hash.
+           */
+          if (
+            !txMap.has(
+              tx.hash
+            )
+          ) {
+            txMap.set(
+              tx.hash,
+              tx
+            );
+          }
+        }
       }
-    }
+
+      return successful;
+    };
+
+  const senderHistorySuccesses =
+    collectHistory(
+      senderHistoryResults
+    );
+
+  const recipientHistorySuccesses =
+    collectHistory(
+      recipientHistoryResults
+    );
+
+  if (
+    includeTransactionHistory &&
+    (
+      senderHistorySuccesses ===
+        0 ||
+      recipientHistorySuccesses ===
+        0
+    )
+  ) {
+    unavailable.push(
+      "transaction_history"
+    );
   }
 
   const transactions =
@@ -1293,14 +1391,28 @@ export async function loadCosmosSdkEvidence(
         (
           left,
           right
-        ) =>
-          (
-            right.timestamp ??
-            ""
-          ).localeCompare(
-            left.timestamp ??
-            ""
-          )
+        ) => {
+          const timestampOrder =
+            (
+              right.timestamp ??
+              ""
+            ).localeCompare(
+              left.timestamp ??
+              ""
+            );
+
+          if (
+            timestampOrder !==
+            0
+          ) {
+            return timestampOrder;
+          }
+
+          return left.hash
+            .localeCompare(
+              right.hash
+            );
+        }
       )
       .slice(
         0,

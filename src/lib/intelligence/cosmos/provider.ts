@@ -96,6 +96,19 @@ export async function getCosmosHubEvidence(
 
           DEFAULT_FALLBACK,
         ]),
+
+      /*
+       * Cosmos Hub public REST indexing can
+       * expose different snapshots between
+       * identical searches. Three bounded reads
+       * fit every AYZO plan request budget.
+       *
+       * Injective does not inherit this because
+       * its transaction history is provided by
+       * its dedicated indexed adapter.
+       */
+      historyReadPasses:
+        3,
     },
     {
       fetchImpl:
