@@ -1099,13 +1099,39 @@ export default function PlanComparisonMatrix({
       return;
     }
 
+    const candidates =
+      Array.from(
+        document.querySelectorAll<
+          HTMLElement
+        >(
+          `[data-ayzo-plan-category="${CSS.escape(
+            title
+          )}"]`
+        )
+      );
+
     const target =
-      document.querySelector<
-        HTMLElement
-      >(
-        `[data-ayzo-plan-category="${CSS.escape(
-          title
-        )}"]`
+      candidates.find(
+        element => {
+          const style =
+            window.getComputedStyle(
+              element
+            );
+
+          const rect =
+            element.getBoundingClientRect();
+
+          return (
+            style.display !==
+              "none" &&
+            style.visibility !==
+              "hidden" &&
+            rect.width >
+              0 &&
+            rect.height >
+              0
+          );
+        }
       );
 
     target?.scrollIntoView({
