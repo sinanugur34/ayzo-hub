@@ -6,7 +6,6 @@ import {
   useState,
 } from "react";
 
-import Image from "next/image";
 import dynamic from "next/dynamic";
 
 import {
@@ -14,6 +13,7 @@ import {
 } from "@solana/kit";
 
 import FreePlanStatus from "@/components/FreePlanStatus";
+import AppResearchDesk from "@/components/AppResearchDesk";
 import AnalysisWorkspaceFrame from "@/components/AnalysisWorkspaceFrame";
 import HeaderAuthControls from "@/components/auth/HeaderAuthControls";
 import {
@@ -2021,354 +2021,49 @@ export default function Home() {
   ]);
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#050506] text-white">
-      <div className="pointer-events-none absolute left-1/2 top-[-300px] h-[650px] w-[650px] -translate-x-1/2 rounded-full bg-violet-700/20 blur-[150px]" />
+    <main className="relative min-h-screen overflow-x-clip bg-[#0b1020] text-[#f3f6fc]">
 
-      <div className="pointer-events-none absolute bottom-[-350px] right-[-200px] h-[600px] w-[600px] rounded-full bg-purple-800/10 blur-[160px]" />
-
-      <header className="relative z-10 mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:gap-4 sm:px-6 sm:py-7 lg:px-8">
-        <div className="relative h-11 w-44 sm:h-16 sm:w-64">
-          <Image
-            src="/ayzo-logo.png"
-            alt="AYZO"
-            fill
-            priority
-            sizes="256px"
-            className="object-contain object-left"
+      <AppResearchDesk
+        network={network}
+        liveNetworks={LIVE_NETWORKS}
+        address={tokenAddress}
+        loading={loading}
+        isValid={isValid}
+        message={message}
+        accountControls={
+          <HeaderAuthControls />
+        }
+        accessStatus={
+          <FreePlanStatus
+            network={network}
           />
-        </div>
+        }
+        onNetworkChange={
+          selectNetwork
+        }
+        onAddressChange={
+          value => {
+            setTokenAddress(
+              value
+            );
 
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <div className="rounded-full border border-zinc-800 bg-zinc-950/80 px-4 py-2 text-xs text-zinc-400">
-            Early Access
-          </div>
+            setMessage(
+              ""
+            );
 
-          <div className="min-h-9 min-w-[9.75rem]">
-            <HeaderAuthControls />
-          </div>
-        </div>
-      </header>
+            setIsValid(
+              null
+            );
 
-      <section className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-4 pb-20 pt-7 text-center sm:px-6 sm:pb-28 sm:pt-14">
-        <div className="mb-5 rounded-full border border-violet-500/20 bg-violet-500/5 px-4 py-2 text-[10px] font-medium tracking-[0.2em] text-violet-300 sm:text-xs">
-          EVIDENCE-FIRST ON-CHAIN INTELLIGENCE
-        </div>
-
-        <h1 className="max-w-4xl text-4xl font-semibold tracking-[-0.045em] sm:text-6xl lg:text-7xl">
-          Understand the wallet.
-
-          <span className="block bg-gradient-to-r from-violet-300 via-purple-400 to-cyan-300 bg-clip-text text-transparent">
-            Follow the evidence.
-          </span>
-        </h1>
-
-        <p className="mt-5 max-w-2xl text-sm leading-6 text-zinc-400 sm:text-base sm:leading-7">
-          Analyze wallets, tokens and transaction evidence across{" "}
-          {LIVE_NETWORKS.length} live networks — without connecting a
-          wallet.
-        </p>
-
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-          <span className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-3.5 py-2 text-[11px] font-medium text-zinc-300 shadow-[0_0_24px_rgba(16,185,129,0.04)] sm:text-xs">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]" />
-            {LIVE_NETWORKS.length} live networks
-          </span>
-
-          <span className="flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/[0.06] px-3.5 py-2 text-[11px] font-medium text-zinc-300 sm:text-xs">
-            <span className="text-violet-400">
-              ◇
-            </span>
-            No wallet connection
-          </span>
-
-          <span className="flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/[0.06] px-3.5 py-2 text-[11px] font-medium text-zinc-300 sm:text-xs">
-            <span className="text-violet-400">
-              ✓
-            </span>
-            Evidence-first results
-          </span>
-        </div>
-
-        <form
-          id="analyzer"
-          onSubmit={
-            handleAnalyze
+            resetResult();
           }
-          className="mt-7 w-full max-w-4xl sm:mt-9"
-        >
-          <div
-            data-mobile-analyzer-network-shell
-            className="relative z-40 mb-3 w-full overflow-visible rounded-2xl border border-zinc-800/80 bg-zinc-950/70 p-2 backdrop-blur-xl"
-          >
-            <div
-              data-mobile-network-row
-              className="flex flex-col gap-2 sm:flex-row sm:items-center"
-            >
-              <div
-                data-mobile-network-quick
-                className="flex flex-1 gap-1.5 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0"
-              >
-                {(
-                  [
-                    "ethereum",
-                    "solana",
-                    "bitcoin",
-                    "dogecoin",
-                    "tron",
-                    "xrp",
-                  ] as const
-                ).map(
-                  id => {
-                    const definition =
-                      NETWORKS[id];
+        }
+        onSubmit={
+          handleAnalyze
+        }
+      />
 
-                    const active =
-                      network ===
-                      id;
-
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        aria-pressed={active}
-                        onClick={() =>
-                          selectNetwork(
-                            id
-                          )
-                        }
-                        className={`flex min-h-[44px] shrink-0 items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-medium transition ${
-                          active
-                            ? "bg-white text-black shadow-lg"
-                            : "text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200"
-                        }`}
-                      >
-                        <span>
-                          {definition.name}
-                        </span>
-
-                        <span
-                          className={
-                            active
-                              ? "text-zinc-500"
-                              : "text-zinc-700"
-                          }
-                        >
-                          {
-                            definition.shortName
-                          }
-                        </span>
-                      </button>
-                    );
-                  }
-                )}
-              </div>
-
-              <details
-                data-mobile-network-menu
-                className="group relative z-50 w-full shrink-0 sm:w-52"
-              >
-                <summary
-                  data-mobile-network-summary
-                  className="relative flex min-h-14 cursor-pointer list-none flex-col justify-center rounded-xl border border-violet-500/30 bg-violet-500/[0.06] px-3 pr-10 text-left shadow-[0_0_24px_rgba(139,92,246,0.06)] transition hover:border-violet-400/50 hover:bg-violet-500/[0.09]"
-                >
-                  <span className="text-[8px] font-semibold tracking-[0.16em] text-violet-400">
-                    ALL NETWORKS · {LIVE_NETWORKS.length} LIVE
-                  </span>
-
-                  <span className="mt-1 text-xs font-medium text-zinc-100">
-                    {NETWORKS[network].name}
-                    {" · "}
-                    {NETWORKS[network].shortName}
-                  </span>
-
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-violet-400 transition group-open:rotate-180">
-                    ↓
-                  </span>
-                </summary>
-
-                <div
-                  data-mobile-network-panel
-                  className="absolute right-0 top-[calc(100%+8px)] z-[100] w-[min(28rem,calc(100vw-3rem))] overflow-y-auto rounded-2xl border border-violet-500/30 bg-zinc-950/98 p-2.5 shadow-[0_24px_80px_rgba(0,0,0,0.75)] backdrop-blur-xl"
-                >
-                  <div className="flex items-center justify-between px-2 pb-2 pt-1">
-                    <span className="text-[9px] font-semibold tracking-[0.16em] text-violet-400">
-                      SELECT NETWORK
-                    </span>
-
-                    <span className="text-[9px] text-zinc-600">
-                      {LIVE_NETWORKS.length} LIVE
-                    </span>
-                  </div>
-
-                  <div
-                    data-mobile-network-grid
-                    className="grid grid-cols-2 gap-1"
-                  >
-                    {LIVE_NETWORKS.map(
-                      id => {
-                        const definition =
-                          NETWORKS[id];
-
-                        const active =
-                          network === id;
-
-                        return (
-                          <button
-                            key={id}
-                            type="button"
-                            aria-pressed={active}
-                            onClick={event => {
-                              selectNetwork(id);
-
-                              event.currentTarget
-                                .closest("details")
-                                ?.removeAttribute(
-                                  "open"
-                                );
-                            }}
-                            className={`flex min-h-[44px] min-w-0 items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-xs transition ${
-                              active
-                                ? "bg-violet-500/15 text-white"
-                                : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
-                            }`}
-                          >
-                            <span className="truncate font-medium">
-                              {definition.name}
-                            </span>
-
-                            <span
-                              className={`shrink-0 ${
-                                active
-                                  ? "text-violet-300"
-                                  : "text-zinc-700"
-                              }`}
-                            >
-                              {
-                                definition.shortName
-                              }
-                            </span>
-                          </button>
-                        );
-                      }
-                    )}
-                  </div>
-                </div>
-              </details>
-            </div>
-          </div>
-          <div
-            className={`rounded-2xl border bg-zinc-950/80 p-3 shadow-2xl backdrop-blur-xl sm:p-2 ${
-              isValid ===
-              false
-                ? "border-red-500/40"
-                : isValid ===
-                    true
-                  ? "border-emerald-500/40"
-                  : "border-zinc-800/80"
-            }`}
-          >
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                type="text"
-                value={
-                  tokenAddress
-                }
-                onChange={
-                  event => {
-                    setTokenAddress(
-                      event.target
-                        .value
-                    );
-
-                    setMessage(
-                      ""
-                    );
-
-                    setIsValid(
-                      null
-                    );
-
-                    resetResult();
-                  }
-                }
-                placeholder={
-                  network ===
-                  "solana"
-                    ? "Paste a Solana token address"
-                    : network ===
-                        "bitcoin"
-                      ? "Paste a Bitcoin address"
-                      : network ===
-                          "dogecoin"
-                        ? "Paste a Dogecoin address"
-                        : network ===
-                            "tron"
-                          ? "Paste a TRON address"
-                          : network ===
-                              "xrp"
-                            ? "Paste an XRP Ledger classic address"
-                            : network ===
-                                "hedera"
-                              ? "Paste a Hedera account ID, for example 0.0.2"
-                              : `Paste a ${networkName(network)} token, contract or wallet address`
-                }
-                spellCheck={
-                  false
-                }
-                autoComplete="off"
-                autoCapitalize="none"
-                autoCorrect="off"
-                enterKeyHint="go"
-                aria-label={`${networkName(
-                  network
-                )} address to analyze`}
-                className="h-16 min-w-0 flex-1 rounded-2xl border-2 border-zinc-400/90 bg-zinc-900/95 px-4 py-3 text-base text-white outline-none transition placeholder:text-zinc-500 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/30 sm:h-14 sm:rounded-xl sm:border-0 sm:bg-transparent sm:px-5 sm:py-0 sm:text-sm sm:focus:ring-0"
-              />
-
-              <button
-                type="submit"
-                disabled={
-                  loading
-                }
-                className="h-14 w-full rounded-xl bg-white px-5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:self-stretch sm:px-7"
-              >
-                {loading
-                  ? "Analyzing..."
-                  : "Analyze"}
-              </button>
-            </div>
-          </div>
-
-          {message ? (
-            <div
-              className={`mt-4 text-xs ${
-                isValid ===
-                false
-                  ? "text-red-400"
-                  : isValid ===
-                      true
-                    ? "text-emerald-400"
-                    : "text-violet-300"
-              }`}
-            >
-              {message}
-            </div>
-          ) : (
-            <div className="mt-4 flex items-center justify-center gap-2 text-xs text-zinc-600">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-
-              {networkName(
-                network
-              )}{" "}
-              · No wallet connection required
-            </div>
-          )}
-        </form>
-
-        <FreePlanStatus
-          network={network}
-        />
-
+      <section className="relative z-10 mx-auto flex w-full max-w-[1600px] flex-col items-center px-2 pb-20 sm:px-4">
         {solanaResult && (
           <section
             id="analysis-result"
@@ -2846,6 +2541,7 @@ function PlansAccessPanel() {
   return (
     <div className="mt-14 w-full max-w-4xl border-t border-zinc-900 pt-7 text-left">
       <button
+        id="ayzo-plans-access-trigger"
         type="button"
         aria-expanded={isOpen}
         aria-controls="ayzo-plans-access"

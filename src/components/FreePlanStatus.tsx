@@ -230,80 +230,65 @@ export default function FreePlanStatus({
     totalExhausted ||
     networkExhausted;
 
-  const planLabel =
-    guest
-      ? "GUEST ACCESS"
-      : plan ===
-          "advanced"
-        ? "ADVANCED PLAN"
-        : plan ===
-            "pro"
-          ? "PRO PLAN"
-          : "FREE ACCOUNT";
-
   return (
     <div
-      className={`mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs ${
+      className={`mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-left text-xs ${
         exhausted
           ? "text-amber-300"
-          : "text-zinc-500"
+          : "text-[#a8b5cc]"
       }`}
     >
-      <span
-        className={`rounded-full border px-2.5 py-1 text-[9px] font-medium tracking-[0.14em] ${
-          exhausted
-            ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
-            : guest ||
-              plan ===
-                "free"
-              ? "border-cyan-500/20 bg-cyan-500/5 text-cyan-300"
-              : "border-violet-400/30 bg-violet-500/10 text-violet-200"
-        }`}
-      >
-        {planLabel}
+      <span>
+        <strong className="font-semibold text-[#f3f6fc]">
+          {guest
+            ? "Guest"
+            : plan ===
+                "advanced"
+              ? "Advanced"
+              : plan ===
+                  "pro"
+                ? "Pro"
+                : "Free"}
+        </strong>
+
+        {" · "}
+
+        {status.remaining ===
+          null
+          ? `${fallbackLimit} analyses / 24h`
+          : `${status.remaining} of ${status.limit} analyses remaining`}
       </span>
 
       <span>
-        {status.remaining ===
-          null
-          ? `${fallbackLimit} analyses per 24 hours`
-          : guest
-            ? `${status.remaining} of ${status.limit} guest analysis remaining`
-            : `${status.remaining} of ${status.limit} total analyses remaining`}
-      </span>
-
-      <span className="text-zinc-700">
-        ·
-      </span>
-
-      {guest ? (
-        <span>
-          Create a free account for{" "}
-          <strong className="font-medium text-cyan-300">
-            {quotaCount(
+        {guest
+          ? `Free account · ${quotaCount(
               "free"
-            )} analyses / 24h
-          </strong>
-          {" · "}
-          <Link
-            href="/login?mode=signup"
-            className="font-medium text-violet-300 transition hover:text-violet-200"
-          >
-            Create Free Account
-          </Link>
-        </span>
-      ) : (
-        <span>
-          {freeAccount
+            )} analyses / 24h`
+          : freeAccount
             ? status.networkRemaining !==
                 null &&
               perNetworkLimit !==
                 null
-              ? `${NETWORKS[network].name}: ${status.networkRemaining} of ${perNetworkLimit} same-network analyses remaining`
-              : `Max ${perNetworkLimit ?? 2} analyses on the same network per 24 hours`
-            : "No per-network analysis limit"}
-        </span>
+              ? `${NETWORKS[network].name}: ${status.networkRemaining} of ${perNetworkLimit} remaining`
+              : `Max ${perNetworkLimit ?? 2} per network / 24h`
+            : "No per-network analysis cap"}
+      </span>
+
+      {guest && (
+        <Link
+          href="/login?mode=signup"
+          className="inline-flex min-h-11 items-center font-semibold text-[#a8fcdb] transition hover:text-white"
+        >
+          Create free account →
+        </Link>
       )}
+
+      <Link
+        href="#ayzo-plans-access-trigger"
+        className="inline-flex min-h-11 items-center font-semibold text-[#a8fcdb] transition hover:text-white"
+      >
+        View plans ↗
+      </Link>
     </div>
   );
 }

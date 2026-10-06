@@ -13,6 +13,12 @@ const home =
     "utf8"
   );
 
+const desk =
+  fs.readFileSync(
+    "src/components/AppResearchDesk.tsx",
+    "utf8"
+  );
+
 test(
   "Zcash and Algorand reports exist after public promotion",
   () => {
@@ -98,10 +104,40 @@ test(
       /NETWORKS\s*\[\s*[A-Za-z_$][A-Za-z0-9_$]*\s*\]\s*\.status\s*===\s*"live"/
     );
 
-    assert.ok(
-      home.includes(
-        "LIVE_NETWORKS.map"
-      )
+    /*
+     * The approved redesign moved network rendering into
+     * AppResearchDesk, while page.tsx remains the canonical
+     * registry owner and passes the exact LIVE_NETWORKS array.
+     */
+    assert.match(
+      home,
+      /liveNetworks=\{LIVE_NETWORKS\}/
+    );
+
+    /*
+     * AppResearchDesk intentionally filters the canonical
+     * liveNetworks prop before rendering. Rendering therefore
+     * happens through filteredNetworks.map rather than directly
+     * through liveNetworks.map.
+     */
+    assert.match(
+      desk,
+      /const filteredNetworks/
+    );
+
+    assert.match(
+      desk,
+      /return liveNetworks/
+    );
+
+    assert.match(
+      desk,
+      /filteredNetworks\.map/
+    );
+
+    assert.match(
+      desk,
+      /NETWORKS\[id\]/
     );
   }
 );
