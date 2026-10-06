@@ -60,6 +60,86 @@ function annualLabel(
     : value.toFixed(2);
 }
 
+
+function paidPlanDisplayPrice(
+  plan:
+    | "pro"
+    | "advanced",
+  period:
+    BillingPeriod
+) {
+  const definition =
+    PLANS[plan];
+
+  if (
+    period ===
+      "annual"
+  ) {
+    const annual =
+      definition
+        .annualPriceUsd;
+
+    return annual === null
+      ? "—"
+      : (
+          annual /
+          12
+        ).toFixed(
+          2
+        );
+  }
+
+  return definition
+    .monthlyPriceUsd
+    ?.toFixed(
+      0
+    ) ??
+    "—";
+}
+
+function paidPlanPriceSuffix(
+  period:
+    BillingPeriod
+) {
+  return period ===
+    "annual"
+    ? "/mo eq."
+    : "/mo";
+}
+
+function paidPlanChargeLabel(
+  plan:
+    | "pro"
+    | "advanced",
+  period:
+    BillingPeriod
+) {
+  const definition =
+    PLANS[plan];
+
+  if (
+    period ===
+      "annual"
+  ) {
+    return definition
+      .annualPriceUsd ===
+      null
+      ? "Annual billing unavailable"
+      : `$${definition.annualPriceUsd.toFixed(
+          2
+        )} billed annually`;
+  }
+
+  return definition
+    .monthlyPriceUsd ===
+    null
+    ? "Monthly billing unavailable"
+    : `$${definition.monthlyPriceUsd.toFixed(
+        2
+      )} billed monthly`;
+}
+
+
 export default function PricingPlans() {
   const [
     account,
@@ -333,17 +413,30 @@ export default function PricingPlans() {
                     <div className="text-right">
                       <div className="text-lg font-semibold text-white">
                         $
-                        {PLANS.pro.monthlyPriceUsd?.toFixed(
-                          0
+                        {paidPlanDisplayPrice(
+                          "pro",
+                          billingPeriod
                         )}
 
                         <span className="ml-1 text-[10px] font-normal text-zinc-500">
-                          /mo
+                          {
+                            paidPlanPriceSuffix(
+                              billingPeriod
+                            )
+                          }
                         </span>
                       </div>
 
-                      <div className="mt-1 text-[9px] text-zinc-600">
-                        Founding price
+                      <div
+                        data-ayzo-plan-charge="pro"
+                        className="mt-1 text-[9px] text-zinc-600"
+                      >
+                        {
+                          paidPlanChargeLabel(
+                            "pro",
+                            billingPeriod
+                          )
+                        }
                       </div>
                     </div>
                   )}
@@ -359,22 +452,25 @@ export default function PricingPlans() {
               {!currentPro && (
                 paidCheckoutEnabled ? (
                   <div className="space-y-2">
-                    <PlanCheckoutButton
-                      plan="pro"
-                      interval="monthly"
-                      label={`Start Monthly · $${PLANS.pro.monthlyPriceUsd?.toFixed(
-                        0
-                      )}/mo`}
-                    />
+                    {billingPeriod === "monthly" && (
+                      <PlanCheckoutButton
+                        plan="pro"
+                        interval="monthly"
+                        label={`Start Monthly · $${PLANS.pro.monthlyPriceUsd?.toFixed(
+                          0
+                        )}/mo`}
+                      />
+                    )}
 
-                    <PlanCheckoutButton
-                      plan="pro"
-                      interval="annual"
-                      variant="secondary"
-                      label={`Start Annual · $${annualLabel(
-                        PLANS.pro.annualPriceUsd
-                      )}/yr`}
-                    />
+                    {billingPeriod === "annual" && (
+                      <PlanCheckoutButton
+                        plan="pro"
+                        interval="annual"
+                        label={`Start Annual · $${annualLabel(
+                          PLANS.pro.annualPriceUsd
+                        )}/yr`}
+                      />
+                    )}
                   </div>
                 ) : (
                   <p className="rounded-xl border border-zinc-800 bg-black/20 px-4 py-3 text-xs leading-5 text-zinc-500">
@@ -410,17 +506,30 @@ export default function PricingPlans() {
                     <div className="text-right">
                       <div className="text-lg font-semibold text-white">
                         $
-                        {PLANS.advanced.monthlyPriceUsd?.toFixed(
-                          0
+                        {paidPlanDisplayPrice(
+                          "advanced",
+                          billingPeriod
                         )}
 
                         <span className="ml-1 text-[10px] font-normal text-zinc-500">
-                          /mo
+                          {
+                            paidPlanPriceSuffix(
+                              billingPeriod
+                            )
+                          }
                         </span>
                       </div>
 
-                      <div className="mt-1 text-[9px] text-zinc-600">
-                        Premium individual plan
+                      <div
+                        data-ayzo-plan-charge="advanced"
+                        className="mt-1 text-[9px] text-zinc-600"
+                      >
+                        {
+                          paidPlanChargeLabel(
+                            "advanced",
+                            billingPeriod
+                          )
+                        }
                       </div>
                     </div>
                   )}
@@ -436,22 +545,25 @@ export default function PricingPlans() {
               {!currentAdvanced && (
                 paidCheckoutEnabled ? (
                   <div className="space-y-2">
-                    <PlanCheckoutButton
-                      plan="advanced"
-                      interval="monthly"
-                      label={`Start Monthly · $${PLANS.advanced.monthlyPriceUsd?.toFixed(
-                        0
-                      )}/mo`}
-                    />
+                    {billingPeriod === "monthly" && (
+                      <PlanCheckoutButton
+                        plan="advanced"
+                        interval="monthly"
+                        label={`Start Monthly · $${PLANS.advanced.monthlyPriceUsd?.toFixed(
+                          0
+                        )}/mo`}
+                      />
+                    )}
 
-                    <PlanCheckoutButton
-                      plan="advanced"
-                      interval="annual"
-                      variant="secondary"
-                      label={`Start Annual · $${annualLabel(
-                        PLANS.advanced.annualPriceUsd
-                      )}/yr`}
-                    />
+                    {billingPeriod === "annual" && (
+                      <PlanCheckoutButton
+                        plan="advanced"
+                        interval="annual"
+                        label={`Start Annual · $${annualLabel(
+                          PLANS.advanced.annualPriceUsd
+                        )}/yr`}
+                      />
+                    )}
                   </div>
                 ) : (
                   <p className="rounded-xl border border-zinc-800 bg-black/20 px-4 py-3 text-xs leading-5 text-zinc-500">
