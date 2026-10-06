@@ -2539,7 +2539,7 @@ function PlansAccessPanel() {
   ] = useState(false);
 
   return (
-    <div className="mt-14 w-full max-w-4xl border-t border-zinc-900 pt-7 text-left">
+    <div className="ayzo-plans-access-v2 mt-14 w-full max-w-[1180px] border-t border-zinc-900 pt-7 text-left">
       <button
         id="ayzo-plans-access-trigger"
         type="button"
@@ -2550,7 +2550,7 @@ function PlansAccessPanel() {
             current => !current
           )
         }
-        className="group mx-auto flex w-full max-w-md cursor-pointer items-center gap-4 rounded-2xl border border-violet-500/30 bg-violet-500/[0.07] px-5 py-4 text-left shadow-[0_0_32px_rgba(139,92,246,0.06)] transition hover:border-violet-400/50 hover:bg-violet-500/[0.1]"
+        className="ayzo-plans-trigger-v2 group mx-auto flex w-full max-w-md cursor-pointer items-center gap-4 rounded-2xl border border-violet-500/30 bg-violet-500/[0.07] px-5 py-4 text-left shadow-[0_0_32px_rgba(139,92,246,0.06)] transition hover:border-violet-400/50 hover:bg-violet-500/[0.1]"
       >
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-violet-500/25 bg-violet-500/10 text-sm font-medium text-violet-300">
           {isOpen
@@ -2584,7 +2584,7 @@ function PlansAccessPanel() {
       {isOpen && (
         <div
           id="ayzo-plans-access"
-          className="mt-6"
+          className="ayzo-plans-body-v2 mt-6"
         >
           <PricingPlans />
         </div>

@@ -238,7 +238,11 @@ export default function ExampleInvestigationGallery() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-950/70 p-6">
+    <div
+      data-ayzo-example-gallery
+      data-selected-network={selected}
+      className="ayzo-example-v2 relative overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-950/70 p-6"
+    >
       <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-violet-500/10 blur-3xl" />
 
       <div className="relative">
@@ -260,6 +264,11 @@ export default function ExampleInvestigationGallery() {
                   item.id
                 }
                 type="button"
+                data-ayzo-example-tab
+                aria-pressed={
+                  selected ===
+                  item.id
+                }
                 onClick={() =>
                   openExample(
                     item.id
@@ -327,6 +336,7 @@ export default function ExampleInvestigationGallery() {
 
         <button
           type="button"
+          data-ayzo-example-expand
           aria-expanded={
             expanded
           }
@@ -341,7 +351,10 @@ export default function ExampleInvestigationGallery() {
         </button>
 
         {expanded && (
-          <div className="mt-3 rounded-xl border border-zinc-800 bg-black/30 p-4">
+          <div
+            data-ayzo-example-preview
+            className="mt-3 rounded-xl border border-zinc-800 bg-black/30 p-4"
+          >
             <div className="text-[9px] font-medium uppercase tracking-[0.13em] text-violet-300">
               Evidence-first preview
             </div>

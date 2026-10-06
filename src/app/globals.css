@@ -214,3 +214,632 @@ body {
     );
   }
 }
+
+/* =========================================================
+   AYZO APP VISUAL V2B — PRODUCT SURFACES
+   Example Investigation · Ask AYZO · Pricing & Access
+   Scoped only. No analysis, billing or entitlement logic.
+========================================================= */
+
+.ayzo-example-v2,
+.ayzo-pricing-v2,
+.ayzo-plan-matrix-v2,
+.ayzo-ask-v2,
+.ayzo-plans-access-v2 {
+  --az-bg: #0b1020;
+  --az-panel: #151e30;
+  --az-deep: #101829;
+  --az-border: #2c3952;
+  --az-text: #f3f6fc;
+  --az-muted: #a8b5cc;
+  --az-purple: #baa7ff;
+  --az-mint: #a8fcdb;
+
+  font-family:
+    Manrope,
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+}
+
+/* ---------------- Frozen example investigations ---------------- */
+
+.ayzo-example-v2 {
+  border-color:
+    var(--az-border) !important;
+  border-radius:
+    14px !important;
+  background:
+    linear-gradient(
+      150deg,
+      #151e30,
+      #101829
+    ) !important;
+  box-shadow:
+    inset 0 1px 0
+    rgba(255,255,255,.02);
+}
+
+.ayzo-example-v2::before {
+  position:
+    absolute;
+  inset:
+    0;
+  pointer-events:
+    none;
+  content:
+    "";
+  background:
+    radial-gradient(
+      circle at 92% 8%,
+      rgba(186,167,255,.10),
+      transparent 30%
+    );
+}
+
+.ayzo-example-v2 [data-ayzo-example-tab] {
+  min-height:
+    44px;
+  border-color:
+    var(--az-border) !important;
+  border-radius:
+    8px !important;
+  color:
+    var(--az-muted) !important;
+  background:
+    var(--az-deep) !important;
+}
+
+.ayzo-example-v2
+[data-ayzo-example-tab][aria-pressed="true"] {
+  color:
+    var(--az-text) !important;
+  border-color:
+    var(--az-purple) !important;
+  background:
+    rgba(186,167,255,.09) !important;
+  box-shadow:
+    inset 0 0 0 1px
+    rgba(186,167,255,.07);
+}
+
+.ayzo-example-v2
+[data-ayzo-example-tab]:hover {
+  color:
+    var(--az-text) !important;
+  border-color:
+    rgba(186,167,255,.65) !important;
+}
+
+.ayzo-example-v2
+[data-ayzo-example-expand] {
+  min-height:
+    48px;
+  border-color:
+    rgba(168,252,219,.30) !important;
+  border-radius:
+    9px !important;
+  color:
+    var(--az-bg) !important;
+  background:
+    var(--az-mint) !important;
+  font-weight:
+    800 !important;
+}
+
+.ayzo-example-v2
+[data-ayzo-example-expand]:hover {
+  background:
+    #c0ffe6 !important;
+  border-color:
+    var(--az-mint) !important;
+}
+
+.ayzo-example-v2
+[data-ayzo-example-preview] {
+  border-color:
+    var(--az-border) !important;
+  border-radius:
+    9px !important;
+  background:
+    var(--az-deep) !important;
+}
+
+.ayzo-example-v2
+:is(
+  button,
+  summary,
+  a
+):focus-visible {
+  outline:
+    2px solid
+    var(--az-mint);
+  outline-offset:
+    3px;
+}
+
+/* ---------------- Pricing access trigger ---------------- */
+
+.ayzo-plans-access-v2 {
+  border-color:
+    var(--az-border) !important;
+}
+
+.ayzo-plans-trigger-v2 {
+  max-width:
+    540px !important;
+  min-height:
+    82px;
+  border:
+    1px solid
+    var(--az-border) !important;
+  border-radius:
+    12px !important;
+  color:
+    var(--az-text) !important;
+  background:
+    linear-gradient(
+      145deg,
+      #151e30,
+      #101829
+    ) !important;
+  box-shadow:
+    inset 0 1px 0
+    rgba(255,255,255,.02),
+    0 14px 35px
+    rgba(0,0,0,.13) !important;
+}
+
+.ayzo-plans-trigger-v2:hover {
+  border-color:
+    rgba(186,167,255,.66) !important;
+  background:
+    #182339 !important;
+}
+
+.ayzo-plans-trigger-v2:focus-visible {
+  outline:
+    2px solid
+    var(--az-mint);
+  outline-offset:
+    3px;
+}
+
+/* ---------------- Pricing root ---------------- */
+
+.ayzo-pricing-v2 {
+  margin-top:
+    32px !important;
+  max-width:
+    1180px !important;
+  color:
+    var(--az-text);
+}
+
+.ayzo-pricing-v2 h2,
+.ayzo-pricing-v2 h3 {
+  color:
+    var(--az-text) !important;
+  font-weight:
+    800 !important;
+}
+
+.ayzo-pricing-v2 p {
+  color:
+    var(--az-muted);
+}
+
+.ayzo-pricing-v2
+[data-ayzo-guest-access] {
+  border-color:
+    rgba(168,252,219,.24) !important;
+  border-radius:
+    10px !important;
+  background:
+    rgba(168,252,219,.045) !important;
+}
+
+.ayzo-pricing-v2
+[data-ayzo-plan-card] {
+  border-color:
+    var(--az-border) !important;
+  border-radius:
+    12px !important;
+  background:
+    linear-gradient(
+      155deg,
+      #151e30,
+      #101829
+    ) !important;
+  box-shadow:
+    inset 0 1px 0
+    rgba(255,255,255,.02);
+}
+
+.ayzo-pricing-v2
+[data-ayzo-plan-card="pro"] {
+  border-color:
+    rgba(186,167,255,.42) !important;
+}
+
+.ayzo-pricing-v2
+[data-ayzo-plan-card="advanced"] {
+  border-color:
+    rgba(168,252,219,.30) !important;
+}
+
+.ayzo-pricing-v2
+[data-ayzo-plan-card]
+button {
+  min-height:
+    46px;
+  border-radius:
+    8px !important;
+}
+
+.ayzo-pricing-v2
+[data-ayzo-plan-card]
+button:focus-visible,
+.ayzo-pricing-v2
+a:focus-visible {
+  outline:
+    2px solid
+    var(--az-mint);
+  outline-offset:
+    3px;
+}
+
+/* ---------------- Full feature matrix ---------------- */
+
+.ayzo-plan-matrix-v2 {
+  color:
+    var(--az-text);
+}
+
+.ayzo-plan-matrix-v2 table {
+  border-color:
+    var(--az-border) !important;
+  background:
+    var(--az-deep) !important;
+}
+
+.ayzo-plan-matrix-v2
+:is(
+  th,
+  td
+) {
+  border-color:
+    var(--az-border) !important;
+}
+
+.ayzo-plan-matrix-v2 thead tr {
+  background:
+    #111a2b !important;
+}
+
+.ayzo-plan-matrix-v2 tbody tr {
+  border-color:
+    var(--az-border) !important;
+}
+
+.ayzo-plan-matrix-v2 tbody tr:hover {
+  background:
+    rgba(186,167,255,.025) !important;
+}
+
+.ayzo-plan-matrix-v2 section {
+  border-color:
+    var(--az-border) !important;
+  background:
+    var(--az-panel) !important;
+}
+
+.ayzo-plan-matrix-v2
+[class*="bg-zinc-950"],
+.ayzo-plan-matrix-v2
+[class*="bg-black"] {
+  background:
+    var(--az-deep) !important;
+}
+
+.ayzo-plan-matrix-v2
+[class*="border-zinc"] {
+  border-color:
+    var(--az-border) !important;
+}
+
+.ayzo-plan-matrix-v2
+[class*="text-zinc-2"],
+.ayzo-plan-matrix-v2
+[class*="text-white"] {
+  color:
+    var(--az-text) !important;
+}
+
+.ayzo-plan-matrix-v2
+[class*="text-zinc-5"],
+.ayzo-plan-matrix-v2
+[class*="text-zinc-6"] {
+  color:
+    var(--az-muted) !important;
+}
+
+/* ---------------- Ask AYZO ---------------- */
+
+.ayzo-ask-v2 {
+  border:
+    1px solid
+    var(--az-border) !important;
+  border-radius:
+    14px !important;
+  color:
+    var(--az-text);
+  background:
+    rgba(11,16,32,.985) !important;
+  box-shadow:
+    0 28px 85px
+    rgba(0,0,0,.58) !important;
+}
+
+.ayzo-ask-v2 header {
+  border-color:
+    var(--az-border) !important;
+  background:
+    #101829;
+}
+
+.ayzo-ask-v2 h3 {
+  color:
+    var(--az-text) !important;
+}
+
+.ayzo-ask-v2
+.ayzo-ask-close-v2 {
+  width:
+    44px !important;
+  height:
+    44px !important;
+  border-color:
+    var(--az-border) !important;
+  color:
+    var(--az-muted) !important;
+  background:
+    var(--az-panel);
+}
+
+.ayzo-ask-v2
+.ayzo-ask-close-v2:hover {
+  color:
+    var(--az-text) !important;
+  border-color:
+    var(--az-purple) !important;
+}
+
+.ayzo-ask-suggestion-v2 {
+  min-height:
+    44px;
+  border-color:
+    var(--az-border) !important;
+  border-radius:
+    8px !important;
+  color:
+    var(--az-muted) !important;
+  background:
+    var(--az-deep) !important;
+}
+
+.ayzo-ask-suggestion-v2:hover {
+  color:
+    var(--az-text) !important;
+  border-color:
+    var(--az-purple) !important;
+  background:
+    #182239 !important;
+}
+
+.ayzo-ask-user-v2 {
+  border-color:
+    rgba(186,167,255,.30) !important;
+  color:
+    var(--az-text) !important;
+  background:
+    rgba(186,167,255,.09) !important;
+}
+
+.ayzo-ask-result-v2 {
+  border-color:
+    var(--az-border) !important;
+  border-radius:
+    11px !important;
+  background:
+    var(--az-panel) !important;
+}
+
+.ayzo-ask-form-v2 {
+  border-color:
+    var(--az-border) !important;
+  background:
+    #101829 !important;
+}
+
+.ayzo-ask-input-v2 {
+  min-height:
+    48px !important;
+  border-color:
+    var(--az-border) !important;
+  border-radius:
+    8px !important;
+  color:
+    var(--az-text) !important;
+  background:
+    var(--az-deep) !important;
+  font-size:
+    16px !important;
+}
+
+.ayzo-ask-input-v2::placeholder {
+  color:
+    #78869f !important;
+}
+
+.ayzo-ask-input-v2:focus {
+  border-color:
+    var(--az-mint) !important;
+  box-shadow:
+    0 0 0 3px
+    rgba(168,252,219,.07);
+}
+
+.ayzo-ask-submit-v2 {
+  min-height:
+    48px !important;
+  border:
+    0 !important;
+  border-radius:
+    8px !important;
+  color:
+    var(--az-bg) !important;
+  background:
+    var(--az-mint) !important;
+  font-weight:
+    800 !important;
+}
+
+.ayzo-ask-submit-v2:hover {
+  background:
+    #c0ffe6 !important;
+}
+
+.ayzo-ask-submit-v2:disabled {
+  color:
+    #7f8da4 !important;
+  background:
+    #1b263a !important;
+}
+
+.ayzo-ask-trigger-v2 {
+  min-height:
+    52px !important;
+  border:
+    1px solid
+    rgba(168,252,219,.28) !important;
+  color:
+    var(--az-text) !important;
+  background:
+    rgba(16,24,41,.97) !important;
+  box-shadow:
+    0 16px 45px
+    rgba(0,0,0,.40) !important;
+}
+
+.ayzo-ask-trigger-v2:hover {
+  border-color:
+    var(--az-mint) !important;
+  background:
+    #172337 !important;
+}
+
+.ayzo-ask-v2
+:is(
+  button,
+  input
+):focus-visible,
+.ayzo-ask-trigger-v2:focus-visible {
+  outline:
+    2px solid
+    var(--az-mint);
+  outline-offset:
+    3px;
+}
+
+/* ---------------- Responsive micro parity ---------------- */
+
+@media (max-width: 640px) {
+  .ayzo-example-v2 {
+    padding:
+      18px !important;
+  }
+
+  .ayzo-plans-access-v2 {
+    margin-top:
+      32px !important;
+    padding-top:
+      22px !important;
+  }
+
+  .ayzo-plans-trigger-v2 {
+    max-width:
+      none !important;
+    min-height:
+      86px;
+    padding:
+      14px !important;
+  }
+
+  .ayzo-pricing-v2 {
+    margin-top:
+      24px !important;
+  }
+
+  .ayzo-ask-v2 {
+    right:
+      8px !important;
+    bottom:
+      calc(
+        72px +
+        env(safe-area-inset-bottom)
+      ) !important;
+    left:
+      8px !important;
+    max-height:
+      min(
+        76dvh,
+        680px
+      ) !important;
+    min-height:
+      390px !important;
+    border-radius:
+      14px !important;
+  }
+
+  .ayzo-ask-trigger-v2 {
+    right:
+      10px !important;
+    bottom:
+      max(
+        10px,
+        env(safe-area-inset-bottom)
+      ) !important;
+  }
+}
+
+@media (max-width: 370px) {
+  .ayzo-ask-v2 {
+    min-height:
+      360px !important;
+  }
+
+  .ayzo-ask-trigger-v2 {
+    padding-right:
+      12px !important;
+    padding-left:
+      12px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ayzo-example-v2 *,
+  .ayzo-pricing-v2 *,
+  .ayzo-plan-matrix-v2 *,
+  .ayzo-ask-v2 *,
+  .ayzo-ask-trigger-v2,
+  .ayzo-plans-trigger-v2 {
+    scroll-behavior:
+      auto !important;
+    transition:
+      none !important;
+  }
+}

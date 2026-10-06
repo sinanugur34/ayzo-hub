@@ -203,7 +203,15 @@ export default function PricingPlans() {
   return (
     <section
       id="plans"
-      className="mt-24 w-full max-w-6xl text-left"
+      data-ayzo-pricing
+      data-authenticated={
+        account.authenticated
+      }
+      data-current-plan={
+        currentPlan ??
+        "guest"
+      }
+      className="ayzo-pricing-v2 mt-24 w-full max-w-6xl text-left"
     >
       <div className="mx-auto max-w-3xl text-center">
         <div className="text-xs font-medium tracking-[0.2em] text-violet-300">
@@ -221,7 +229,10 @@ export default function PricingPlans() {
         </p>
 
         {!account.authenticated && (
-          <div className="mx-auto mt-5 max-w-2xl rounded-2xl border border-cyan-500/15 bg-cyan-500/[0.035] px-4 py-3">
+          <div
+            data-ayzo-guest-access
+            className="mx-auto mt-5 max-w-2xl rounded-2xl border border-cyan-500/15 bg-cyan-500/[0.035] px-4 py-3"
+          >
             <div className="text-[9px] font-semibold tracking-[0.14em] text-cyan-300">
               TRY AYZO WITHOUT AN ACCOUNT
             </div>
@@ -256,14 +267,16 @@ export default function PricingPlans() {
         )}
       </div>
 
-      <PlanComparisonMatrix
-        visiblePlans={
-          visiblePlans
-        }
-        currentPlan={
-          currentPlan
-        }
-      />
+      <div className="ayzo-pricing-matrix-shell">
+        <PlanComparisonMatrix
+          visiblePlans={
+            visiblePlans
+          }
+          currentPlan={
+            currentPlan
+          }
+        />
+      </div>
 
       {(showPro ||
         showAdvanced) && (
@@ -276,7 +289,10 @@ export default function PricingPlans() {
           }`}
         >
           {showPro && (
-            <div className="rounded-2xl border border-violet-500/25 bg-violet-500/[0.05] p-5">
+            <div
+              data-ayzo-plan-card="pro"
+              className="rounded-2xl border border-violet-500/25 bg-violet-500/[0.05] p-5"
+            >
               <div className="mb-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -350,7 +366,10 @@ export default function PricingPlans() {
           )}
 
           {showAdvanced && (
-            <div className="rounded-2xl border border-purple-400/25 bg-purple-500/[0.05] p-5">
+            <div
+              data-ayzo-plan-card="advanced"
+              className="rounded-2xl border border-purple-400/25 bg-purple-500/[0.05] p-5"
+            >
               <div className="mb-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>

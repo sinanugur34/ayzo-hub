@@ -248,7 +248,7 @@ function ResultCard({
     AskResult;
 }) {
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-black/30 p-4">
+    <div className="ayzo-ask-result-v2 rounded-2xl border border-zinc-800 bg-black/30 p-4">
       {result.investigatorContext && (
         <div className="mb-3 inline-flex rounded-full border border-violet-500/20 bg-violet-500/[0.07] px-2.5 py-1 text-[8px] font-semibold tracking-[0.12em] text-violet-300">
           INVESTIGATOR CONTEXT
@@ -638,7 +638,7 @@ function FloatingAssistant({
       id="ask-ayzo-assistant"
       role="dialog"
       aria-label="Ask AYZO"
-      className="fixed bottom-20 left-4 right-4 z-[90] flex max-h-[76vh] min-h-[420px] flex-col overflow-hidden rounded-3xl border border-violet-500/25 bg-zinc-950/95 shadow-2xl shadow-black/70 backdrop-blur-xl sm:left-auto sm:right-6 sm:w-[400px]"
+      className="ayzo-ask-v2 fixed bottom-20 left-4 right-4 z-[90] flex max-h-[76vh] min-h-[420px] flex-col overflow-hidden rounded-3xl border border-violet-500/25 bg-zinc-950/95 shadow-2xl shadow-black/70 backdrop-blur-xl sm:left-auto sm:right-6 sm:w-[400px]"
     >
       <header className="shrink-0 border-b border-zinc-900 px-5 py-4">
         <div className="flex items-start justify-between gap-4">
@@ -686,7 +686,7 @@ function FloatingAssistant({
             onClick={
               closeAssistant
             }
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-zinc-800 text-sm text-zinc-500 transition hover:border-zinc-700 hover:text-white"
+            className="ayzo-ask-close-v2 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-zinc-800 text-sm text-zinc-500 transition hover:border-zinc-700 hover:text-white"
           >
             ×
           </button>
@@ -712,7 +712,7 @@ function FloatingAssistant({
                         item
                       )
                     }
-                    className="rounded-lg border border-zinc-900 bg-black/30 px-3 py-1.5 text-left text-[10px] leading-4 text-zinc-500 transition hover:border-zinc-700 hover:text-zinc-300"
+                    className="ayzo-ask-suggestion-v2 rounded-lg border border-zinc-900 bg-black/30 px-3 py-1.5 text-left text-[10px] leading-4 text-zinc-500 transition hover:border-zinc-700 hover:text-zinc-300"
                   >
                     {item}
                   </button>
@@ -735,7 +735,7 @@ function FloatingAssistant({
                     }
                     className="flex justify-end"
                   >
-                    <div className="max-w-[88%] rounded-2xl rounded-br-md border border-violet-500/20 bg-violet-500/10 px-4 py-3 text-sm leading-6 text-zinc-200">
+                    <div className="ayzo-ask-user-v2 max-w-[88%] rounded-2xl rounded-br-md border border-violet-500/20 bg-violet-500/10 px-4 py-3 text-sm leading-6 text-zinc-200">
                       {
                         message
                           .content
@@ -784,7 +784,10 @@ function FloatingAssistant({
 
       <form
         onSubmit={ask}
-        className="shrink-0 border-t border-zinc-900 bg-zinc-950/95 p-4"
+        aria-busy={
+          loading
+        }
+        className="ayzo-ask-form-v2 shrink-0 border-t border-zinc-900 bg-zinc-950/95 p-4"
       >
         <div className="flex gap-2">
           <input
@@ -802,7 +805,7 @@ function FloatingAssistant({
                 ? "Investigate this evidence or ask a follow-up..."
                 : "Ask about AYZO..."
             }
-            className="h-11 min-w-0 flex-1 rounded-xl border border-zinc-800 bg-black/50 px-4 text-sm text-zinc-200 outline-none placeholder:text-zinc-700 focus:border-violet-500"
+            className="ayzo-ask-input-v2 h-11 min-w-0 flex-1 rounded-xl border border-zinc-800 bg-black/50 px-4 text-sm text-zinc-200 outline-none placeholder:text-zinc-700 focus:border-violet-500"
           />
 
           <button
@@ -811,7 +814,7 @@ function FloatingAssistant({
               loading ||
               !question.trim()
             }
-            className="h-11 shrink-0 rounded-xl border border-violet-500/20 bg-violet-500/10 px-5 text-sm font-medium text-violet-200 transition hover:border-violet-400/40 hover:bg-violet-500/15 disabled:cursor-not-allowed disabled:opacity-40"
+            className="ayzo-ask-submit-v2 h-11 shrink-0 rounded-xl border border-violet-500/20 bg-violet-500/10 px-5 text-sm font-medium text-violet-200 transition hover:border-violet-400/40 hover:bg-violet-500/15 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {loading
               ? "..."
@@ -985,7 +988,7 @@ export default function AskAyzoAssistantProvider({
               open
             }
             aria-controls="ask-ayzo-assistant"
-            className="fixed bottom-5 right-5 z-[91] flex h-12 items-center gap-2 rounded-full border border-violet-500/30 bg-zinc-950/95 px-4 text-sm font-semibold text-white shadow-xl shadow-black/50 backdrop-blur-xl transition hover:border-violet-400/50 hover:bg-zinc-900 sm:right-6"
+            className="ayzo-ask-trigger-v2 fixed bottom-5 right-5 z-[91] flex h-12 items-center gap-2 rounded-full border border-violet-500/30 bg-zinc-950/95 px-4 text-sm font-semibold text-white shadow-xl shadow-black/50 backdrop-blur-xl transition hover:border-violet-400/50 hover:bg-zinc-900 sm:right-6"
           >
             <span
               aria-hidden="true"

@@ -1054,7 +1054,13 @@ export default function PlanComparisonMatrix({
   }
 
   return (
-    <div className="mt-12">
+    <div
+      data-ayzo-plan-matrix
+      data-visible-plan-count={
+        visiblePlans.length
+      }
+      className="ayzo-plan-matrix-v2 mt-12"
+    >
       <div className="mx-auto max-w-3xl text-center">
         <div className="text-[10px] font-semibold tracking-[0.2em] text-violet-400">
           COMPLETE FEATURE MATRIX

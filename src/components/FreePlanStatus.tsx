@@ -269,9 +269,9 @@ export default function FreePlanStatus({
                 null &&
               perNetworkLimit !==
                 null
-              ? `${NETWORKS[network].name}: ${status.networkRemaining} of ${perNetworkLimit} remaining`
+              ? `${NETWORKS[network].name}: ${status.networkRemaining} of ${perNetworkLimit} same-network analyses remaining`
               : `Max ${perNetworkLimit ?? 2} per network / 24h`
-            : "No per-network analysis cap"}
+            : "No per-network analysis limit"}
       </span>
 
       {guest && (
@@ -279,7 +279,7 @@ export default function FreePlanStatus({
           href="/login?mode=signup"
           className="inline-flex min-h-11 items-center font-semibold text-[#a8fcdb] transition hover:text-white"
         >
-          Create free account →
+          Create Free Account →
         </Link>
       )}
 
