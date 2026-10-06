@@ -1838,3 +1838,914 @@
     transition: none !important;
   }
 }
+
+/* =========================================================
+   AYZO APP VISUAL V2A — EVIDENCE WORKSPACE
+   Approved research-desk palette:
+   background #0b1020
+   panel      #151e30
+   deep       #101829
+   border     #2c3952
+   text       #f3f6fc
+   muted      #a8b5cc
+   purple     #baa7ff
+   mint       #a8fcdb
+   Presentation only. No evidence fabrication.
+========================================================= */
+
+.layout {
+  --az-bg: #0b1020;
+  --az-panel: #151e30;
+  --az-deep: #101829;
+  --az-border: #2c3952;
+  --az-text: #f3f6fc;
+  --az-muted: #a8b5cc;
+  --az-purple: #baa7ff;
+  --az-mint: #a8fcdb;
+
+  color: var(--az-text);
+  background: var(--az-bg);
+  font-family:
+    Manrope,
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+}
+
+.mainShell {
+  background:
+    radial-gradient(
+      circle at 46% 11%,
+      rgba(186, 167, 255, .045),
+      transparent 29%
+    ),
+    var(--az-bg);
+}
+
+.rail {
+  background:
+    rgba(16, 24, 41, .98);
+  border-color:
+    var(--az-border);
+}
+
+.brand {
+  color:
+    var(--az-mint);
+}
+
+.railLink {
+  color:
+    #75839d;
+  border-color:
+    transparent;
+}
+
+.railLink:hover {
+  color:
+    var(--az-text);
+  background:
+    rgba(186, 167, 255, .07);
+}
+
+.railActive {
+  color:
+    var(--az-mint);
+  background:
+    rgba(168, 252, 219, .06);
+  border-color:
+    rgba(168, 252, 219, .18);
+}
+
+.railHint {
+  color:
+    #66758e;
+}
+
+.workspace {
+  color:
+    var(--az-text);
+}
+
+.eyebrow {
+  color:
+    var(--az-purple);
+}
+
+.title {
+  color:
+    var(--az-text);
+}
+
+.sub,
+.briefSub,
+.panelHead p,
+.metricDetail,
+.activityStatus,
+.disclaimer {
+  color:
+    var(--az-muted);
+}
+
+.chip,
+.softButton {
+  color:
+    var(--az-text);
+  background:
+    var(--az-panel);
+  border-color:
+    var(--az-border);
+}
+
+.softButton {
+  min-height:
+    44px;
+}
+
+.softButton:hover {
+  color:
+    var(--az-text);
+  background:
+    #1b263a;
+  border-color:
+    rgba(186, 167, 255, .5);
+}
+
+.subjectBar {
+  background:
+    var(--az-deep);
+  border-color:
+    var(--az-border);
+  box-shadow:
+    inset 0 1px 0
+    rgba(255, 255, 255, .018);
+}
+
+.subjectSymbol {
+  color:
+    var(--az-mint);
+}
+
+.subjectText strong {
+  color:
+    var(--az-text);
+}
+
+.subjectText small {
+  color:
+    var(--az-muted);
+}
+
+.subjectTag {
+  color:
+    var(--az-mint);
+  background:
+    rgba(168, 252, 219, .06);
+  border-color:
+    rgba(168, 252, 219, .25);
+}
+
+.subjectTagLimited {
+  color:
+    #dccfff;
+  background:
+    rgba(186, 167, 255, .07);
+  border-color:
+    rgba(186, 167, 255, .24);
+}
+
+.metric,
+.card {
+  background:
+    linear-gradient(
+      160deg,
+      #151e30 0%,
+      #101829 100%
+    );
+  border-color:
+    var(--az-border);
+  box-shadow:
+    inset 0 1px 0
+    rgba(255, 255, 255, .02),
+    0 12px 34px
+    rgba(0, 0, 0, .10);
+}
+
+.metricLabel {
+  color:
+    var(--az-muted);
+}
+
+.metricValue {
+  color:
+    var(--az-text);
+}
+
+.metricValueCoverage {
+  color:
+    var(--az-purple);
+}
+
+.panel {
+  border-color:
+    var(--az-border);
+}
+
+.panelHead {
+  border-color:
+    var(--az-border);
+}
+
+.briefTitle {
+  color:
+    var(--az-text);
+}
+
+/* ---------------- Evidence graph ---------------- */
+
+.networkCanvas {
+  min-height:
+    465px;
+  background:
+    radial-gradient(
+      circle at 48% 49%,
+      rgba(186, 167, 255, .07),
+      transparent 32%
+    ),
+    radial-gradient(
+      #35415b .75px,
+      transparent .75px
+    ),
+    var(--az-deep);
+  background-size:
+    auto,
+    20px 20px,
+    auto;
+  border:
+    1px solid
+    var(--az-border);
+  border-radius:
+    12px;
+}
+
+.networkCanvas::before {
+  opacity:
+    .06;
+}
+
+.graphEdge {
+  stroke:
+    #64738f;
+  stroke-width:
+    2;
+  opacity:
+    .55;
+  outline:
+    none;
+}
+
+.graphEdge:hover {
+  stroke:
+    var(--az-purple);
+  opacity:
+    .92;
+}
+
+.graphEdge:focus-visible {
+  stroke:
+    var(--az-mint);
+  stroke-width:
+    3.4;
+  opacity:
+    1;
+  filter:
+    drop-shadow(
+      0 0 5px
+      rgba(168, 252, 219, .46)
+    );
+}
+
+.graphEdgeObserved {
+  stroke:
+    var(--az-purple);
+  stroke-dasharray:
+    7 6;
+  opacity:
+    .7;
+}
+
+.graphEdgeSelected {
+  stroke:
+    var(--az-mint);
+  stroke-width:
+    3.6;
+  opacity:
+    1;
+  filter:
+    drop-shadow(
+      0 0 7px
+      rgba(168, 252, 219, .46)
+    );
+}
+
+.graphNode {
+  min-width:
+    98px;
+  min-height:
+    64px;
+  padding:
+    8px 10px;
+  color:
+    var(--az-text);
+  background:
+    linear-gradient(
+      155deg,
+      #1a2539,
+      #151e30
+    );
+  border:
+    1px solid
+    #4b5872;
+  border-radius:
+    12px;
+  box-shadow:
+    0 10px 24px
+    rgba(0, 0, 0, .18);
+}
+
+.graphNode:hover {
+  color:
+    var(--az-text);
+  background:
+    #1d2940;
+  border-color:
+    var(--az-purple);
+}
+
+.graphNode:focus-visible {
+  outline:
+    2px solid
+    var(--az-mint);
+  outline-offset:
+    3px;
+}
+
+.graphNode small {
+  color:
+    var(--az-muted);
+}
+
+.graphNodeRoot {
+  min-width:
+    112px;
+  min-height:
+    74px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(168, 252, 219, .11),
+      #172235
+    );
+  border-color:
+    rgba(168, 252, 219, .58);
+  box-shadow:
+    0 0 0 3px
+    rgba(168, 252, 219, .035),
+    0 12px 30px
+    rgba(0, 0, 0, .20);
+}
+
+.graphNodeFunding {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(168, 252, 219, .065),
+      #151e30
+    );
+  border-color:
+    rgba(168, 252, 219, .38);
+}
+
+.graphNodeTransaction {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(186, 167, 255, .075),
+      #151e30
+    );
+  border-color:
+    rgba(186, 167, 255, .44);
+}
+
+.graphNodeEvidence {
+  background:
+    #141d2f;
+  border-color:
+    #48566f;
+}
+
+.graphNodeSelected {
+  color:
+    var(--az-text);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(168, 252, 219, .13),
+      #18273a
+    );
+  border-color:
+    var(--az-mint);
+  box-shadow:
+    0 0 0 4px
+    rgba(168, 252, 219, .08),
+    0 0 30px
+    rgba(168, 252, 219, .16);
+}
+
+.legend {
+  color:
+    var(--az-muted);
+}
+
+.legendLine {
+  background:
+    #64738f;
+}
+
+.legendSwap {
+  background:
+    var(--az-purple);
+}
+
+.networkFoot {
+  color:
+    var(--az-muted);
+}
+
+.networkFoot strong {
+  color:
+    var(--az-purple);
+}
+
+/* unavailable graph remains explicitly non-evidence */
+
+.networkUnavailable {
+  background:
+    radial-gradient(
+      ellipse at 50% 46%,
+      rgba(186, 167, 255, .055),
+      transparent 43%
+    ),
+    var(--az-deep);
+}
+
+.graphGhostNode {
+  color:
+    #7e8ca4;
+  background:
+    rgba(21, 30, 48, .62);
+  border-color:
+    #53617a;
+}
+
+.graphGhostNode small {
+  color:
+    #75839a;
+}
+
+.graphUnavailableMessage {
+  color:
+    #8997af;
+}
+
+.graphUnavailableMessage strong {
+  color:
+    var(--az-muted);
+}
+
+/* ---------------- Evidence Inspector ---------------- */
+
+.brief {
+  background:
+    linear-gradient(
+      165deg,
+      #151e30,
+      #111a2b
+    );
+}
+
+.mainFinding {
+  background:
+    rgba(186, 167, 255, .06);
+  border-left-color:
+    var(--az-purple);
+}
+
+.mainFinding strong {
+  color:
+    var(--az-text);
+}
+
+.mainFinding p {
+  color:
+    #c2cbe0;
+}
+
+.detailHead {
+  border-color:
+    var(--az-border);
+}
+
+.detailHead strong {
+  color:
+    var(--az-text);
+}
+
+.detailHead span {
+  color:
+    var(--az-mint);
+}
+
+.detailTitle {
+  color:
+    var(--az-text);
+}
+
+.detailDescription {
+  color:
+    var(--az-muted);
+}
+
+.detailGrid > div {
+  background:
+    var(--az-deep);
+  border-color:
+    var(--az-border);
+}
+
+.detailGrid span {
+  color:
+    var(--az-muted);
+}
+
+.detailGrid b {
+  color:
+    var(--az-text);
+}
+
+.limit {
+  color:
+    #d8d0ee;
+  background:
+    rgba(186, 167, 255, .07);
+  border:
+    1px solid
+    rgba(186, 167, 255, .14);
+}
+
+/* ---------------- Funding / flows ---------------- */
+
+.flow {
+  min-height:
+    44px;
+  color:
+    var(--az-muted);
+  background:
+    var(--az-deep);
+  border-color:
+    var(--az-border);
+}
+
+.flow:hover,
+.flowSelected {
+  color:
+    var(--az-text);
+  background:
+    #19253a;
+  border-color:
+    var(--az-mint);
+}
+
+.flow:focus-visible,
+.event:focus-visible {
+  outline:
+    2px solid
+    var(--az-mint);
+  outline-offset:
+    2px;
+}
+
+.flowBar {
+  background:
+    #2a3650;
+}
+
+.flowBarFill {
+  background:
+    linear-gradient(
+      90deg,
+      var(--az-mint),
+      #79d8c4
+    );
+}
+
+.flowOutgoing
+.flowBarFill {
+  background:
+    linear-gradient(
+      90deg,
+      var(--az-purple),
+      #9988e1
+    );
+}
+
+.flowAmount {
+  color:
+    var(--az-text);
+}
+
+.flowSummary {
+  color:
+    var(--az-muted);
+  border-color:
+    var(--az-border);
+}
+
+.flowSummary strong {
+  color:
+    var(--az-purple);
+}
+
+/* ---------------- Timeline chart ---------------- */
+
+.chartGrid {
+  stroke:
+    #34415a;
+}
+
+.chartArea {
+  fill:
+    rgba(168, 252, 219, .08);
+}
+
+.chartCurve {
+  stroke:
+    var(--az-mint);
+}
+
+.chartAxis {
+  fill:
+    #8997af;
+}
+
+.chartMarker {
+  fill:
+    var(--az-deep);
+  stroke:
+    var(--az-mint);
+}
+
+.chartPointer {
+  stroke:
+    var(--az-purple);
+}
+
+.chartInfo {
+  color:
+    var(--az-muted);
+  border-color:
+    var(--az-border);
+}
+
+.chartInfo strong {
+  color:
+    var(--az-mint);
+}
+
+/* ---------------- Transaction timeline ---------------- */
+
+.ledger {
+  background:
+    linear-gradient(
+      160deg,
+      #151e30,
+      #101829
+    );
+}
+
+.ledgerHead h3 {
+  color:
+    var(--az-text);
+}
+
+.ledgerHead p {
+  color:
+    var(--az-muted);
+}
+
+.event {
+  min-height:
+    78px;
+  color:
+    var(--az-text);
+  background:
+    var(--az-deep);
+  border-color:
+    var(--az-border);
+}
+
+.event:hover,
+.eventSelected {
+  background:
+    #19253a;
+  border-color:
+    var(--az-purple);
+}
+
+.eventSelected {
+  box-shadow:
+    inset 0 0 0 1px
+    rgba(186, 167, 255, .14);
+}
+
+.event time {
+  color:
+    var(--az-muted);
+}
+
+.event strong {
+  color:
+    var(--az-text);
+}
+
+.event span {
+  color:
+    #c0cadf;
+}
+
+/* ---------------- Empty / bounded states ---------------- */
+
+.emptyActivity,
+.emptyActivityCompact,
+.ledgerEmpty {
+  color:
+    var(--az-muted);
+  background:
+    radial-gradient(
+      circle at 50% 34%,
+      rgba(186, 167, 255, .045),
+      transparent 47%
+    ),
+    var(--az-deep);
+  border-color:
+    var(--az-border);
+}
+
+.emptyActivityCompact strong,
+.ledgerEmpty strong {
+  color:
+    var(--az-text);
+}
+
+.emptyActivityIcon {
+  color:
+    var(--az-mint);
+  background:
+    rgba(168, 252, 219, .05);
+  border-color:
+    rgba(168, 252, 219, .22);
+}
+
+.flowGhost,
+.eventGhost {
+  opacity:
+    .56;
+  border-style:
+    dashed;
+}
+
+.disclaimer {
+  padding:
+    13px 15px;
+  background:
+    rgba(16, 24, 41, .56);
+  border:
+    1px solid
+    var(--az-border);
+  border-radius:
+    9px;
+}
+
+/* ---------------- Responsive detail ---------------- */
+
+@media (max-width: 800px) {
+  .rail {
+    background:
+      rgba(16, 24, 41, .98);
+    border-color:
+      var(--az-border);
+  }
+
+  .railLink {
+    min-width:
+      44px;
+    min-height:
+      44px;
+  }
+
+  .sectionGrid {
+    gap:
+      12px;
+  }
+
+  .networkCanvas {
+    min-height:
+      500px;
+  }
+}
+
+@media (max-width: 540px) {
+  .mainShell {
+    padding:
+      18px 10px 26px;
+  }
+
+  .subjectBar {
+    padding:
+      11px 12px;
+  }
+
+  .metrics {
+    gap:
+      8px;
+  }
+
+  .metric {
+    min-height:
+      98px;
+    padding:
+      12px;
+  }
+
+  .networkCanvas {
+    min-height:
+      485px;
+    overflow:
+      hidden;
+  }
+
+  .graphNode {
+    min-width:
+      86px;
+    min-height:
+      58px;
+    padding:
+      6px 7px;
+  }
+
+  .graphNodeRoot {
+    min-width:
+      96px;
+    min-height:
+      66px;
+  }
+
+  .flow,
+  .event {
+    min-height:
+      48px;
+  }
+}
+
+@media (max-width: 370px) {
+  .metric {
+    min-width:
+      0;
+  }
+
+  .graphNode {
+    min-width:
+      78px;
+    font-size:
+      10px;
+  }
+
+  .graphNode small {
+    max-width:
+      94px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .graphEdge,
+  .graphNode,
+  .flow,
+  .event,
+  .softButton {
+    transition:
+      none !important;
+  }
+}
