@@ -230,7 +230,7 @@ export default function LoginForm({
           Check your email
         </div>
 
-        <p className="mt-2 text-sm leading-6 text-zinc-500">
+        <p className="mt-2 text-sm leading-6 text-[#a8b5cc]">
           {isSignup
             ? "We sent a secure AYZO account link. Open it to finish creating your account."
             : "We sent a secure AYZO sign-in link. Open it to continue."}
@@ -281,13 +281,13 @@ export default function LoginForm({
       </button>
 
       <div className="my-5 flex items-center gap-3">
-        <div className="h-px flex-1 bg-zinc-900" />
+        <div className="h-px flex-1 bg-[#2c3952]" />
 
-        <span className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
+        <span className="text-[10px] uppercase tracking-[0.14em] text-[#7f8da8]">
           or continue with email
         </span>
 
-        <div className="h-px flex-1 bg-zinc-900" />
+        <div className="h-px flex-1 bg-[#2c3952]" />
       </div>
 
       <form
@@ -296,7 +296,7 @@ export default function LoginForm({
       >
         <label
           htmlFor="email"
-          className="block text-left text-xs font-medium text-zinc-400"
+          className="block text-left text-xs font-medium text-[#a8b5cc]"
         >
           Email address
         </label>
@@ -315,7 +315,7 @@ export default function LoginForm({
               )
           }
           placeholder="you@email.com"
-          className="h-14 w-full rounded-xl border border-zinc-700 bg-black/40 px-4 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-violet-500"
+          className="h-14 w-full rounded-xl border border-[#2c3952] bg-[#151e30] px-4 text-sm text-[#f3f6fc] outline-none transition placeholder:text-[#7f8da8] focus:border-[#baa7ff]"
         />
 
         <button
@@ -342,7 +342,7 @@ export default function LoginForm({
           </p>
         )}
 
-        <p className="text-center text-[10px] leading-5 text-zinc-600">
+        <p className="text-center text-[10px] leading-5 text-[#7f8da8]">
           Passwordless authentication.
           AYZO never asks for your wallet seed phrase
           or private key.

@@ -51,17 +51,17 @@ export default async function LoginPage({
         : null;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-black px-4 py-12 text-white">
+    <main className="flex min-h-screen items-center justify-center bg-[#0b1020] px-4 py-12 text-[#f3f6fc]">
       <div className="w-full max-w-md">
         <Link
           href="/"
-          className="text-xs font-medium tracking-[0.15em] text-zinc-600 transition hover:text-zinc-300"
+          className="text-xs font-medium tracking-[0.15em] text-[#7f8da8] transition hover:text-[#f3f6fc]"
         >
           ← AYZO
         </Link>
 
-        <section className="mt-8 rounded-3xl border border-zinc-800 bg-zinc-950/80 p-6 shadow-2xl sm:p-8">
-          <div className="text-xs font-medium tracking-[0.18em] text-violet-300">
+        <section className="mt-8 rounded-3xl border border-[#2c3952] bg-[#101829]/95 p-6 shadow-2xl shadow-black/30 sm:p-8">
+          <div className="text-xs font-medium tracking-[0.18em] text-[#baa7ff]">
             AYZO ACCOUNT
           </div>
 
@@ -71,7 +71,7 @@ export default async function LoginPage({
               : "Sign in securely"}
           </h1>
 
-          <p className="mt-3 text-sm leading-6 text-zinc-500">
+          <p className="mt-3 text-sm leading-6 text-[#a8b5cc]">
             {isSignup
               ? "Create an account to save analyses, build watchlists and access your AYZO plan."
               : "Sign in to access your saved research, watchlists and AYZO plan."}
@@ -94,13 +94,13 @@ export default async function LoginPage({
             />
           </div>
 
-          <div className="mt-6 border-t border-zinc-900 pt-5 text-center text-xs text-zinc-500">
+          <div className="mt-6 border-t border-[#2c3952] pt-5 text-center text-xs text-[#a8b5cc]">
             {isSignup ? (
               <>
                 Already have an account?{" "}
                 <Link
                   href="/login?mode=signin"
-                  className="font-medium text-violet-300 transition hover:text-violet-200"
+                  className="font-medium text-[#baa7ff] transition hover:text-[#d8ceff]"
                 >
                   Sign in
                 </Link>
@@ -110,7 +110,7 @@ export default async function LoginPage({
                 New to AYZO?{" "}
                 <Link
                   href="/login?mode=signup"
-                  className="font-medium text-violet-300 transition hover:text-violet-200"
+                  className="font-medium text-[#baa7ff] transition hover:text-[#d8ceff]"
                 >
                   Create account
                 </Link>

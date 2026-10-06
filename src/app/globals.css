@@ -964,3 +964,29 @@ body:has(
     transition: none !important;
   }
 }
+
+/* ==============================================================
+   AYZO APP VISUAL V3F — FINAL FLOATING-SURFACE COORDINATION
+
+   Visual-only rules:
+   - once Ask AYZO is open, the launcher yields to the dialog
+   - while Pricing & Access is expanded, the launcher yields to
+     the feature matrix so no pricing evidence is obscured
+
+   No Ask AYZO request, entitlement or investigator logic changes.
+   ============================================================== */
+
+[data-ayzo-ask-trigger="true"][aria-expanded="true"],
+body:has(#ayzo-plans-access-trigger[aria-expanded="true"])
+  [data-ayzo-ask-trigger="true"] {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: translateY(0.5rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-ayzo-ask-trigger="true"] {
+    transition: none !important;
+  }
+}

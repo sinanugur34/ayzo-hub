@@ -53,7 +53,7 @@ function planLabel(
   if (
     !account.authenticated
   ) {
-    return "Sign in";
+    return "Guest access";
   }
 
   if (
