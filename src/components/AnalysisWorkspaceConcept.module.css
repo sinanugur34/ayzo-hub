@@ -1513,3 +1513,328 @@
     font-size: 11px;
   }
 }
+
+/* =========================================================
+   AYZO MOBILE PRODUCT V1
+   Responsive intelligence workspace
+   ========================================================= */
+
+@media (max-width: 800px) {
+  .layout {
+    width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  .mainShell {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .rail {
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .railLink {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    flex: 0 0 44px;
+  }
+
+  .workspace,
+  .sectionGrid,
+  .sectionGrid > div,
+  .lower,
+  .card,
+  .panel,
+  .ledger {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .top {
+    gap: 14px;
+  }
+
+  .topActions {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+
+  .softButton {
+    min-height: 44px;
+    padding: 10px 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: normal;
+  }
+
+  .subjectBar {
+    min-width: 0;
+  }
+
+  .subjectText,
+  .subjectText strong,
+  .subjectText small {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .sectionGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lower {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .networkCanvas {
+    width: 100%;
+    min-width: 0;
+    min-height: clamp(350px, 72vw, 455px);
+    max-width: 100%;
+    overflow: hidden;
+    touch-action: pan-x pan-y pinch-zoom;
+  }
+
+  .networkSvg {
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    min-height: inherit;
+  }
+
+  .panelHead,
+  .ledgerHead,
+  .chartInfo,
+  .networkFoot {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .flow {
+    min-height: 48px;
+  }
+
+  .event {
+    min-height: 68px;
+  }
+
+  .event strong {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .chartSvg {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .ledgerList {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+  .lower > .card {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 540px) {
+  .mainShell {
+    padding:
+      16px
+      12px
+      calc(
+        24px +
+        env(
+          safe-area-inset-bottom,
+          0px
+        )
+      );
+  }
+
+  .workspace {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .title {
+    font-size: clamp(
+      1.45rem,
+      7vw,
+      1.9rem
+    );
+    line-height: 1.12;
+    overflow-wrap: anywhere;
+  }
+
+  .sub {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .topActions > * {
+    min-height: 44px;
+  }
+
+  .subjectBar {
+    flex-wrap: wrap;
+    padding: 12px;
+  }
+
+  .subjectText {
+    flex-basis:
+      calc(100% - 44px);
+  }
+
+  .metrics {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+    gap: 8px;
+  }
+
+  .metric {
+    min-height: 92px;
+    padding: 12px;
+  }
+
+  .metricValue {
+    font-size: 20px;
+  }
+
+  .detailGrid {
+    grid-template-columns:
+      minmax(0, 1fr);
+  }
+
+  .networkCanvas {
+    min-height: 360px;
+  }
+
+  .graphNode,
+  .graphNodeRoot,
+  .graphGhostNode {
+    min-height: 56px;
+  }
+
+  .flow {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(54px, .65fr)
+      auto;
+    gap: 8px;
+    padding-block: 10px;
+  }
+
+  .flowName {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+
+  .flowAmount {
+    white-space: nowrap;
+  }
+
+  .ledgerList {
+    grid-template-columns:
+      minmax(0, 1fr);
+  }
+
+  .event {
+    min-height: 72px;
+    padding: 12px;
+  }
+
+  .chartSvg {
+    width: 100%;
+    height: auto;
+    min-height: 180px;
+    aspect-ratio: 2.8 / 1;
+  }
+
+  .chartInfo {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .emptyActivity,
+  .emptyActivityCompact {
+    min-height: 140px;
+  }
+
+  .panel {
+    padding: 13px;
+  }
+
+  .brief {
+    min-height: 0;
+  }
+
+  .lower > .card,
+  .ledger {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 390px) {
+  .mainShell {
+    padding-inline: 10px;
+  }
+
+  .metrics {
+    gap: 7px;
+  }
+
+  .metric {
+    padding: 10px;
+  }
+
+  .metricLabel,
+  .metricDetail {
+    font-size: 10px;
+  }
+
+  .networkCanvas {
+    min-height: 340px;
+  }
+
+  .panel {
+    padding: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .graphNode,
+  .graphEdge,
+  .flow,
+  .event,
+  .softButton {
+    transition: none !important;
+  }
+}

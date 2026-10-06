@@ -7,34 +7,14 @@ import {
 } from "react";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
 
 import {
   isAddress,
 } from "@solana/kit";
 
-import BitcoinIntelligenceReport from "@/components/BitcoinIntelligenceReport";
-import DogecoinIntelligenceReport from "@/components/DogecoinIntelligenceReport";
-import LitecoinIntelligenceReport from "@/components/LitecoinIntelligenceReport";
-import SuiIntelligenceReport from "@/components/SuiIntelligenceReport";
-import TonIntelligenceReport from "@/components/TonIntelligenceReport";
-import StellarIntelligenceReport from "@/components/StellarIntelligenceReport";
-import CardanoIntelligenceReport from "@/components/CardanoIntelligenceReport";
-import AptosIntelligenceReport from "@/components/AptosIntelligenceReport";
-import HederaIntelligenceReport from "@/components/HederaIntelligenceReport";
-import ZcashIntelligenceReport from "@/components/ZcashIntelligenceReport";
-import AlgorandIntelligenceReport from "@/components/AlgorandIntelligenceReport";
-import PolkadotIntelligenceReport from "@/components/PolkadotIntelligenceReport";
-import CosmosIntelligenceReport from "@/components/CosmosIntelligenceReport";
-import InjectiveIntelligenceReport from "@/components/InjectiveIntelligenceReport";
-import HyperliquidIntelligenceReport from "@/components/HyperliquidIntelligenceReport";
-import TronIntelligenceReport from "@/components/TronIntelligenceReport";
-import XrplIntelligenceReport from "@/components/XrplIntelligenceReport";
-import EvmIntelligenceReport from "@/components/EvmIntelligenceReport";
 import FreePlanStatus from "@/components/FreePlanStatus";
-import IntelligenceReport from "@/components/IntelligenceReport";
 import AnalysisWorkspaceFrame from "@/components/AnalysisWorkspaceFrame";
-import ExampleInvestigationGallery from "@/components/ExampleInvestigationGallery";
-import PricingPlans from "@/components/PricingPlans";
 import HeaderAuthControls from "@/components/auth/HeaderAuthControls";
 import {
   trackEvent,
@@ -64,6 +44,303 @@ import {
 import {
   normalizeHederaAccountId,
 } from "@/lib/intelligence/hedera/address";
+
+
+/*
+  AYZO MOBILE V1 — DEFERRED INTELLIGENCE REPORTS
+
+  Each network report is loaded only when its UI is actually
+  rendered. This keeps all supported networks available while
+  avoiding a single giant initial client bundle.
+*/
+function DeferredPanelLoading({
+  label,
+}: {
+  label: string;
+}) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="mt-6 overflow-hidden rounded-2xl border border-[#26384f] bg-gradient-to-b from-[#102237] to-[#0b1727] p-5 text-left sm:p-6"
+    >
+      <div className="flex items-center gap-3">
+        <span
+          aria-hidden="true"
+          className="h-2.5 w-2.5 animate-pulse rounded-full bg-cyan-300"
+        />
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-300">
+            Loading investigation
+          </div>
+          <div className="mt-1 text-sm font-medium text-zinc-200">
+            {label}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[#1a2a40]">
+        <div className="h-full w-1/3 animate-pulse rounded-full bg-cyan-400/70" />
+      </div>
+
+      <p className="mt-3 text-[11px] leading-5 text-zinc-500">
+        Preparing the selected evidence workspace.
+      </p>
+    </div>
+  );
+}
+
+const BitcoinIntelligenceReport = dynamic(
+  () =>
+    import("@/components/BitcoinIntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="Bitcoin intelligence"
+      />
+    ),
+  }
+);
+
+const DogecoinIntelligenceReport = dynamic(
+  () =>
+    import("@/components/DogecoinIntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="Dogecoin intelligence"
+      />
+    ),
+  }
+);
+
+const LitecoinIntelligenceReport = dynamic(
+  () =>
+    import("@/components/LitecoinIntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="Litecoin intelligence"
+      />
+    ),
+  }
+);
+
+const SuiIntelligenceReport = dynamic(
+  () =>
+    import("@/components/SuiIntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="Sui intelligence"
+      />
+    ),
+  }
+);
+
+const TonIntelligenceReport = dynamic(
+  () =>
+    import("@/components/TonIntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="TON intelligence"
+      />
+    ),
+  }
+);
+
+const StellarIntelligenceReport = dynamic(
+  () =>
+    import("@/components/StellarIntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="Stellar intelligence"
+      />
+    ),
+  }
+);
+
+const CardanoIntelligenceReport = dynamic(
+  () =>
+    import("@/components/CardanoIntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="Cardano intelligence"
+      />
+    ),
+  }
+);
+
+const AptosIntelligenceReport = dynamic(
+  () =>
+    import("@/components/AptosIntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="Aptos intelligence"
+      />
+    ),
+  }
+);
+
+const HederaIntelligenceReport = dynamic(
+  () =>
+    import("@/components/HederaIntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="Hedera intelligence"
+      />
+    ),
+  }
+);
+
+const ZcashIntelligenceReport = dynamic(
+  () =>
+    import("@/components/ZcashIntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="Zcash intelligence"
+      />
+    ),
+  }
+);
+
+const AlgorandIntelligenceReport = dynamic(
+  () =>
+    import("@/components/AlgorandIntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="Algorand intelligence"
+      />
+    ),
+  }
+);
+
+const PolkadotIntelligenceReport = dynamic(
+  () =>
+    import("@/components/PolkadotIntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="Polkadot intelligence"
+      />
+    ),
+  }
+);
+
+const CosmosIntelligenceReport = dynamic(
+  () =>
+    import("@/components/CosmosIntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="Cosmos intelligence"
+      />
+    ),
+  }
+);
+
+const InjectiveIntelligenceReport = dynamic(
+  () =>
+    import("@/components/InjectiveIntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="Injective intelligence"
+      />
+    ),
+  }
+);
+
+const HyperliquidIntelligenceReport = dynamic(
+  () =>
+    import("@/components/HyperliquidIntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="Hyperliquid intelligence"
+      />
+    ),
+  }
+);
+
+const TronIntelligenceReport = dynamic(
+  () =>
+    import("@/components/TronIntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="TRON intelligence"
+      />
+    ),
+  }
+);
+
+const XrplIntelligenceReport = dynamic(
+  () =>
+    import("@/components/XrplIntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="XRP Ledger intelligence"
+      />
+    ),
+  }
+);
+
+const EvmIntelligenceReport = dynamic(
+  () =>
+    import("@/components/EvmIntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="EVM intelligence"
+      />
+    ),
+  }
+);
+
+const IntelligenceReport = dynamic(
+  () =>
+    import("@/components/IntelligenceReport"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="Solana intelligence"
+      />
+    ),
+  }
+);
+
+const ExampleInvestigationGallery = dynamic(
+  () =>
+    import("@/components/ExampleInvestigationGallery"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="Example investigations"
+      />
+    ),
+  }
+);
+
+const PricingPlans = dynamic(
+  () =>
+    import("@/components/PricingPlans"),
+  {
+    loading: () => (
+      <DeferredPanelLoading
+        label="Plan comparison"
+      />
+    ),
+  }
+);
 
 const LIVE_NETWORKS =
   NETWORK_IDS.filter(

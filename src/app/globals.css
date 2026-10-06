@@ -24,3 +24,84 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* =========================================================
+   AYZO MOBILE PRODUCT V1 — GLOBAL GUARD
+   ========================================================= */
+
+html,
+body {
+  max-width: 100%;
+}
+
+@media (max-width: 800px) {
+  html,
+  body {
+    overflow-x: clip;
+  }
+
+  body {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overscroll-behavior-x: none;
+  }
+
+  main,
+  section,
+  article,
+  header,
+  footer,
+  nav,
+  form {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  img,
+  video,
+  canvas {
+    max-width: 100%;
+    height: auto;
+  }
+
+  button,
+  select,
+  textarea,
+  input:not([type="checkbox"]):not([type="radio"]) {
+    min-height: 44px;
+  }
+
+  input,
+  select,
+  textarea {
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  summary {
+    min-height: 44px;
+  }
+
+  pre {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  [data-mobile-scroll-graph] {
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
