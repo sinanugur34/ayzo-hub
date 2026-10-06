@@ -2026,8 +2026,8 @@ export default function Home() {
 
       <div className="pointer-events-none absolute bottom-[-350px] right-[-200px] h-[600px] w-[600px] rounded-full bg-purple-800/10 blur-[160px]" />
 
-      <header className="relative z-10 mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-7 lg:px-8">
-        <div className="relative h-14 w-56 sm:h-16 sm:w-64">
+      <header className="relative z-10 mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:gap-4 sm:px-6 sm:py-7 lg:px-8">
+        <div className="relative h-11 w-44 sm:h-16 sm:w-64">
           <Image
             src="/ayzo-logo.png"
             alt="AYZO"
@@ -2049,7 +2049,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-6 pb-28 pt-10 text-center sm:pt-14">
+      <section className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-4 pb-20 pt-7 text-center sm:px-6 sm:pb-28 sm:pt-14">
         <div className="mb-5 rounded-full border border-violet-500/20 bg-violet-500/5 px-4 py-2 text-[10px] font-medium tracking-[0.2em] text-violet-300 sm:text-xs">
           EVIDENCE-FIRST ON-CHAIN INTELLIGENCE
         </div>
@@ -2094,11 +2094,20 @@ export default function Home() {
           onSubmit={
             handleAnalyze
           }
-          className="mt-9 w-full max-w-4xl"
+          className="mt-7 w-full max-w-4xl sm:mt-9"
         >
-          <div className="relative z-40 mb-3 w-full overflow-visible rounded-2xl border border-zinc-800/80 bg-zinc-950/70 p-2 backdrop-blur-xl">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="flex flex-1 flex-wrap gap-1.5">
+          <div
+            data-mobile-analyzer-network-shell
+            className="relative z-40 mb-3 w-full overflow-visible rounded-2xl border border-zinc-800/80 bg-zinc-950/70 p-2 backdrop-blur-xl"
+          >
+            <div
+              data-mobile-network-row
+              className="flex flex-col gap-2 sm:flex-row sm:items-center"
+            >
+              <div
+                data-mobile-network-quick
+                className="flex flex-1 gap-1.5 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0"
+              >
                 {(
                   [
                     "ethereum",
@@ -2121,12 +2130,13 @@ export default function Home() {
                       <button
                         key={id}
                         type="button"
+                        aria-pressed={active}
                         onClick={() =>
                           selectNetwork(
                             id
                           )
                         }
-                        className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-medium transition ${
+                        className={`flex min-h-[44px] shrink-0 items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-medium transition ${
                           active
                             ? "bg-white text-black shadow-lg"
                             : "text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200"
@@ -2153,8 +2163,14 @@ export default function Home() {
                 )}
               </div>
 
-              <details className="group relative z-50 w-full shrink-0 sm:w-52">
-                <summary className="relative flex h-14 cursor-pointer list-none flex-col justify-center rounded-xl border border-violet-500/30 bg-violet-500/[0.06] px-3 pr-10 text-left shadow-[0_0_24px_rgba(139,92,246,0.06)] transition hover:border-violet-400/50 hover:bg-violet-500/[0.09]">
+              <details
+                data-mobile-network-menu
+                className="group relative z-50 w-full shrink-0 sm:w-52"
+              >
+                <summary
+                  data-mobile-network-summary
+                  className="relative flex min-h-14 cursor-pointer list-none flex-col justify-center rounded-xl border border-violet-500/30 bg-violet-500/[0.06] px-3 pr-10 text-left shadow-[0_0_24px_rgba(139,92,246,0.06)] transition hover:border-violet-400/50 hover:bg-violet-500/[0.09]"
+                >
                   <span className="text-[8px] font-semibold tracking-[0.16em] text-violet-400">
                     ALL NETWORKS · {LIVE_NETWORKS.length} LIVE
                   </span>
@@ -2170,7 +2186,10 @@ export default function Home() {
                   </span>
                 </summary>
 
-                <div className="absolute right-0 top-[calc(100%+8px)] z-[100] w-[min(28rem,calc(100vw-3rem))] overflow-hidden rounded-2xl border border-violet-500/30 bg-zinc-950/98 p-2.5 shadow-[0_24px_80px_rgba(0,0,0,0.75)] backdrop-blur-xl">
+                <div
+                  data-mobile-network-panel
+                  className="absolute right-0 top-[calc(100%+8px)] z-[100] w-[min(28rem,calc(100vw-3rem))] overflow-y-auto rounded-2xl border border-violet-500/30 bg-zinc-950/98 p-2.5 shadow-[0_24px_80px_rgba(0,0,0,0.75)] backdrop-blur-xl"
+                >
                   <div className="flex items-center justify-between px-2 pb-2 pt-1">
                     <span className="text-[9px] font-semibold tracking-[0.16em] text-violet-400">
                       SELECT NETWORK
@@ -2181,7 +2200,10 @@ export default function Home() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-1">
+                  <div
+                    data-mobile-network-grid
+                    className="grid grid-cols-2 gap-1"
+                  >
                     {LIVE_NETWORKS.map(
                       id => {
                         const definition =
@@ -2194,6 +2216,7 @@ export default function Home() {
                           <button
                             key={id}
                             type="button"
+                            aria-pressed={active}
                             onClick={event => {
                               selectNetwork(id);
 
@@ -2203,7 +2226,7 @@ export default function Home() {
                                   "open"
                                 );
                             }}
-                            className={`flex min-w-0 items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-xs transition ${
+                            className={`flex min-h-[44px] min-w-0 items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-xs transition ${
                               active
                                 ? "bg-violet-500/15 text-white"
                                 : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
@@ -2293,7 +2316,13 @@ export default function Home() {
                   false
                 }
                 autoComplete="off"
-                className="h-[200px] min-w-0 flex-1 rounded-2xl border-2 border-zinc-400/90 bg-zinc-900/95 px-5 py-4 text-lg text-white outline-none transition placeholder:text-zinc-500 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/30 sm:h-14 sm:rounded-xl sm:border-0 sm:bg-transparent sm:px-5 sm:py-0 sm:text-sm sm:focus:ring-0"
+                autoCapitalize="none"
+                autoCorrect="off"
+                enterKeyHint="go"
+                aria-label={`${networkName(
+                  network
+                )} address to analyze`}
+                className="h-16 min-w-0 flex-1 rounded-2xl border-2 border-zinc-400/90 bg-zinc-900/95 px-4 py-3 text-base text-white outline-none transition placeholder:text-zinc-500 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/30 sm:h-14 sm:rounded-xl sm:border-0 sm:bg-transparent sm:px-5 sm:py-0 sm:text-sm sm:focus:ring-0"
               />
 
               <button
@@ -2301,7 +2330,7 @@ export default function Home() {
                 disabled={
                   loading
                 }
-                className="h-12 w-36 self-end rounded-xl bg-white px-5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 sm:h-14 sm:w-auto sm:self-stretch sm:px-7"
+                className="h-14 w-full rounded-xl bg-white px-5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:self-stretch sm:px-7"
               >
                 {loading
                   ? "Analyzing..."
