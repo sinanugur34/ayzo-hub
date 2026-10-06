@@ -37,6 +37,10 @@ type AccountState = {
   authenticated: boolean;
   plan: PlanId;
 };
+type BillingPeriod =
+  | "monthly"
+  | "annual";
+
 
 function isPlanId(
   value: unknown
@@ -64,6 +68,16 @@ export default function PricingPlans() {
     useState<
       AccountState | null
     >(null);
+
+  const [
+    billingPeriod,
+    setBillingPeriod,
+  ] =
+    useState<BillingPeriod>(
+      "monthly"
+    );
+
+
 
   const paidCheckoutEnabled =
     process.env
@@ -275,7 +289,13 @@ export default function PricingPlans() {
           currentPlan={
             currentPlan
           }
-        />
+        billingPeriod={
+          billingPeriod
+        }
+        onBillingPeriodChange={
+          setBillingPeriod
+        }
+      />
       </div>
 
       {(showPro ||

@@ -1,6 +1,11 @@
 "use client";
 
 import {
+  useMemo,
+  useState,
+} from "react";
+
+import {
   planHasFeature,
   planHasRoadmapFeature,
   PLANS,
@@ -27,6 +32,10 @@ const LIVE_NETWORK_COUNT =
       network.status ===
       "live"
   ).length;
+
+type BillingPeriod =
+  | "monthly"
+  | "annual";
 
 type Cell =
   | {
@@ -836,6 +845,54 @@ const sections:
     },
   ];
 
+export const PLAN_COMPARISON_FEATURE_COUNT =
+  sections.reduce(
+    (
+      total,
+      section
+    ) =>
+      total +
+      section.rows.length,
+    0
+  );
+
+export const PLAN_COMPARISON_CATEGORY_COUNT =
+  sections.length;
+
+function cellSignature(
+  cell: Cell
+) {
+  return cell.kind ===
+    "value"
+    ? `${cell.kind}:${cell.label}`
+    : cell.kind;
+}
+
+function rowHasDifference(
+  row: MatrixRow,
+  visiblePlans:
+    readonly PlanId[]
+) {
+  if (
+    visiblePlans.length <
+    2
+  ) {
+    return false;
+  }
+
+  return (
+    new Set(
+      visiblePlans.map(
+        plan =>
+          cellSignature(
+            row[plan]
+          )
+      )
+    ).size >
+    1
+  );
+}
+
 function StatusCell({
   cell,
 }: {
@@ -955,18 +1012,111 @@ function MobileStatusCell({
 export default function PlanComparisonMatrix({
   visiblePlans,
   currentPlan,
-}: {
+  billingPeriod,
+  onBillingPeriodChange,
+}:
+{
   visiblePlans:
     readonly PlanId[];
 
   currentPlan:
     PlanId | null;
+
+  billingPeriod:
+    BillingPeriod;
+
+  onBillingPeriodChange:
+    (
+      period:
+        BillingPeriod
+    ) => void;
 }) {
   const planCount =
     Math.max(
       1,
       visiblePlans.length
     );
+
+  const [
+    differencesOnly,
+    setDifferencesOnly,
+  ] =
+    useState(false);
+
+  const filteredSections =
+    useMemo(
+      () => {
+        if (
+          !differencesOnly ||
+          visiblePlans.length <
+            2
+        ) {
+          return sections;
+        }
+
+        return sections
+          .map(
+            section => ({
+              ...section,
+
+              rows:
+                section.rows.filter(
+                  row =>
+                    rowHasDifference(
+                      row,
+                      visiblePlans
+                    )
+                ),
+            })
+          )
+          .filter(
+            section =>
+              section.rows.length >
+              0
+          );
+      },
+      [
+        differencesOnly,
+        visiblePlans,
+      ]
+    );
+
+  const hasUpgradeBilling =
+    visiblePlans.some(
+      plan =>
+        plan !== "free" &&
+        plan !== currentPlan
+    );
+
+  function jumpToCategory(
+    title: string
+  ) {
+    if (
+      !title ||
+      typeof document ===
+        "undefined"
+    ) {
+      return;
+    }
+
+    const target =
+      document.querySelector<
+        HTMLElement
+      >(
+        `[data-ayzo-plan-category="${CSS.escape(
+          title
+        )}"]`
+      );
+
+    target?.scrollIntoView({
+      behavior:
+        "smooth",
+
+      block:
+        "start",
+    });
+  }
+
 
   function planName(
     plan:
@@ -1000,19 +1150,35 @@ export default function PlanComparisonMatrix({
       return "$0";
     }
 
+    const definition =
+      PLANS[plan];
+
     if (
-      plan ===
-      "pro"
+      billingPeriod ===
+      "annual"
     ) {
+      const annual =
+        definition
+          .annualPriceUsd;
+
+      if (
+        annual === null
+      ) {
+        return "—";
+      }
+
       return (
         <>
           $
-          {PLANS.pro.monthlyPriceUsd?.toFixed(
-            0
+          {(
+            annual /
+            12
+          ).toFixed(
+            2
           )}
 
           <span className="ml-1 text-[9px] font-normal text-zinc-500">
-            /mo
+            /mo eq.
           </span>
         </>
       );
@@ -1021,15 +1187,54 @@ export default function PlanComparisonMatrix({
     return (
       <>
         $
-        {PLANS.advanced.monthlyPriceUsd?.toFixed(
-          0
-        )}
+        {definition
+          .monthlyPriceUsd
+          ?.toFixed(
+            0
+          ) ??
+          "—"}
 
         <span className="ml-1 text-[9px] font-normal text-zinc-500">
           /mo
         </span>
       </>
     );
+  }
+
+  function planCharge(
+    plan:
+      PlanId
+  ) {
+    if (
+      plan ===
+      "free"
+    ) {
+      return null;
+    }
+
+    const definition =
+      PLANS[plan];
+
+    if (
+      billingPeriod ===
+      "annual"
+    ) {
+      return definition
+        .annualPriceUsd ===
+        null
+        ? null
+        : `$${definition.annualPriceUsd.toFixed(
+            2
+          )} billed annually`;
+    }
+
+    return definition
+      .monthlyPriceUsd ===
+      null
+      ? null
+      : `$${definition.monthlyPriceUsd.toFixed(
+          2
+        )} billed monthly`;
   }
 
   function planColor(
@@ -1080,6 +1285,78 @@ export default function PlanComparisonMatrix({
             : "Only your current tier is shown because there is no higher AYZO plan."}
         </p>
 
+        <div className="mt-4 text-[10px] font-medium tracking-[0.08em] text-zinc-500">
+          {PLAN_COMPARISON_FEATURE_COUNT} features ·{" "}
+          {PLAN_COMPARISON_CATEGORY_COUNT} categories · Full descriptions and plan access
+        </div>
+
+        {hasUpgradeBilling && (
+          <>
+            <div className="mx-auto mt-5 flex max-w-xl flex-col items-center justify-center gap-3 sm:flex-row">
+              <span className="text-xs text-zinc-500">
+                Billing period
+              </span>
+
+              <div
+                role="group"
+                aria-label="Billing period"
+                className="flex min-h-11 items-center rounded-xl border border-zinc-700 bg-zinc-900/70 p-1"
+              >
+                <button
+                  type="button"
+                  data-ayzo-billing-period="monthly"
+                  aria-pressed={
+                    billingPeriod ===
+                    "monthly"
+                  }
+                  onClick={() =>
+                    onBillingPeriodChange(
+                      "monthly"
+                    )
+                  }
+                  className={`min-h-9 rounded-lg px-4 text-xs font-medium transition ${
+                    billingPeriod ===
+                    "monthly"
+                      ? "bg-violet-300 text-[#0b1020]"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  Monthly
+                </button>
+
+                <button
+                  type="button"
+                  data-ayzo-billing-period="annual"
+                  aria-pressed={
+                    billingPeriod ===
+                    "annual"
+                  }
+                  onClick={() =>
+                    onBillingPeriodChange(
+                      "annual"
+                    )
+                  }
+                  className={`min-h-9 rounded-lg px-4 text-xs font-medium transition ${
+                    billingPeriod ===
+                    "annual"
+                      ? "bg-violet-300 text-[#0b1020]"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  Annual
+                </button>
+              </div>
+            </div>
+
+            <p className="mt-2 text-[10px] leading-5 text-zinc-600">
+              {billingPeriod ===
+              "annual"
+                ? "Annual plans show the monthly equivalent and the full annual charge. Your current subscription is unchanged."
+                : "Monthly prices are shown for comparison. Your current subscription is unchanged."}
+            </p>
+          </>
+        )}
+
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-[9px]">
           <span className="rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-2.5 py-1 text-emerald-300">
             ✓ AVAILABLE
@@ -1097,6 +1374,80 @@ export default function PlanComparisonMatrix({
             — NOT INCLUDED
           </span>
         </div>
+
+        <div className="mx-auto mt-5 flex max-w-3xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 px-4 text-xs text-zinc-400">
+            <input
+              type="checkbox"
+              checked={
+                differencesOnly
+              }
+              disabled={
+                visiblePlans.length <
+                2
+              }
+              onChange={
+                event =>
+                  setDifferencesOnly(
+                    event.target
+                      .checked
+                  )
+              }
+              className="h-4 w-4 accent-violet-300"
+            />
+
+            Show differences only
+          </label>
+
+          <label className="flex min-h-11 items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 px-3 text-xs text-zinc-500">
+            <span className="shrink-0">
+              Jump to
+            </span>
+
+            <select
+              aria-label="Jump to a feature category"
+              defaultValue=""
+              onChange={
+                event => {
+                  jumpToCategory(
+                    event.target
+                      .value
+                  );
+
+                  event.target
+                    .value = "";
+                }
+              }
+              className="min-h-9 min-w-0 flex-1 bg-transparent text-zinc-300 outline-none"
+            >
+              <option
+                value=""
+                className="bg-zinc-950"
+              >
+                Category
+              </option>
+
+              {filteredSections.map(
+                section => (
+                  <option
+                    key={
+                      section.title
+                    }
+                    value={
+                      section.title
+                    }
+                    className="bg-zinc-950"
+                  >
+                    {
+                      section.title
+                    }
+                  </option>
+                )
+              )}
+            </select>
+          </label>
+        </div>
+
       </div>
 
       {/* Mobile comparison */}
@@ -1138,6 +1489,18 @@ export default function PlanComparisonMatrix({
                   )}
                 </div>
 
+                {planCharge(
+                  plan
+                ) && (
+                  <div className="mt-1 text-[8px] leading-4 text-zinc-600">
+                    {
+                      planCharge(
+                        plan
+                      )
+                    }
+                  </div>
+                )}
+
                 {currentPlan ===
                   plan && (
                   <div className="mt-2 text-[8px] font-semibold tracking-[0.1em] text-emerald-400">
@@ -1149,10 +1512,13 @@ export default function PlanComparisonMatrix({
           )}
         </div>
 
-        {sections.map(
+        {filteredSections.map(
           section => (
             <section
               key={
+                section.title
+              }
+              data-ayzo-plan-category={
                 section.title
               }
               className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950/60"
@@ -1293,6 +1659,18 @@ export default function PlanComparisonMatrix({
                         )}
                       </div>
 
+                      {planCharge(
+                        plan
+                      ) && (
+                        <div className="mt-1 text-[8px] font-normal leading-4 text-zinc-600">
+                          {
+                            planCharge(
+                              plan
+                            )
+                          }
+                        </div>
+                      )}
+
                       {currentPlan ===
                         plan && (
                         <div className="mt-2 text-[8px] font-semibold tracking-[0.12em] text-emerald-400">
@@ -1306,10 +1684,13 @@ export default function PlanComparisonMatrix({
             </thead>
 
             <tbody>
-              {sections.map(
+              {filteredSections.map(
                 section => [
                   <tr
                     key={`${section.title}-heading`}
+                    data-ayzo-plan-category={
+                      section.title
+                    }
                     className="border-y border-zinc-800/80 bg-zinc-900/40"
                   >
                     <td
