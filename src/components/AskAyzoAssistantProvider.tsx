@@ -636,6 +636,7 @@ function FloatingAssistant({
   return (
     <section
       id="ask-ayzo-assistant"
+      data-ayzo-ask-dialog="true"
       role="dialog"
       aria-label="Ask AYZO"
       className="ayzo-ask-v2 fixed bottom-20 left-4 right-4 z-[90] flex max-h-[76vh] min-h-[420px] flex-col overflow-hidden rounded-3xl border border-violet-500/25 bg-zinc-950/95 shadow-2xl shadow-black/70 backdrop-blur-xl sm:left-auto sm:right-6 sm:w-[400px]"
@@ -988,6 +989,7 @@ export default function AskAyzoAssistantProvider({
               open
             }
             aria-controls="ask-ayzo-assistant"
+            data-ayzo-ask-trigger="true"
             className="ayzo-ask-trigger-v2 fixed bottom-5 right-5 z-[91] flex h-12 items-center gap-2 rounded-full border border-violet-500/30 bg-zinc-950/95 px-4 text-sm font-semibold text-white shadow-xl shadow-black/50 backdrop-blur-xl transition hover:border-violet-400/50 hover:bg-zinc-900 sm:right-6"
           >
             <span

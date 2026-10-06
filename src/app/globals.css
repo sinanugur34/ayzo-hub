@@ -843,3 +843,124 @@ a:focus-visible {
       none !important;
   }
 }
+
+/* ================================================================
+   AYZO APP VISUAL V3C — RESPONSIVE COORDINATION
+   Confirmed visual defects only.
+   ================================================================ */
+
+[data-ayzo-analytics-consent="true"] {
+  bottom:
+    max(
+      1rem,
+      env(safe-area-inset-bottom)
+    );
+}
+
+[data-ayzo-analytics-consent="true"] button {
+  min-height: 44px;
+}
+
+/*
+ * The analytics consent surface owns the bottom interaction zone
+ * until the user makes a choice. Ask AYZO must not compete with or
+ * sit behind that privacy choice.
+ */
+body:has(
+  [data-ayzo-analytics-consent="true"]
+)
+[data-ayzo-ask-trigger="true"] {
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px);
+}
+
+/*
+ * Defensive case: if an already-open assistant and the consent
+ * surface coexist, keep the assistant above the consent region.
+ */
+body:has(
+  [data-ayzo-analytics-consent="true"]
+)
+[data-ayzo-ask-dialog="true"] {
+  bottom: 12rem;
+  max-height:
+    calc(
+      100dvh -
+      13.5rem -
+      env(safe-area-inset-top)
+    );
+}
+
+[data-ayzo-access-state="unavailable"] {
+  color: #a8b5cc;
+}
+
+@media (max-width: 640px) {
+  [data-ayzo-analytics-consent="true"] {
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom:
+      max(
+        0.75rem,
+        env(safe-area-inset-bottom)
+      );
+    padding: 1rem;
+    border-radius: 1rem;
+  }
+
+  [data-ayzo-analytics-consent="true"] > div {
+    gap: 0.875rem;
+  }
+
+  [data-ayzo-analytics-consent="true"] p {
+    line-height: 1.5;
+  }
+
+  [data-ayzo-analytics-consent="true"] button {
+    min-height: 44px;
+  }
+
+  body:has(
+    [data-ayzo-analytics-consent="true"]
+  )
+  [data-ayzo-ask-dialog="true"] {
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom:
+      calc(
+        11.5rem +
+        env(safe-area-inset-bottom)
+      );
+    max-height:
+      calc(
+        100dvh -
+        13rem -
+        env(safe-area-inset-top) -
+        env(safe-area-inset-bottom)
+      );
+  }
+}
+
+@media (max-width: 370px) {
+  [data-ayzo-analytics-consent="true"] {
+    left: 0.625rem;
+    right: 0.625rem;
+    padding: 0.875rem;
+  }
+
+  [data-ayzo-analytics-consent="true"] button {
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-ayzo-ask-trigger="true"],
+  [data-ayzo-ask-dialog="true"],
+  [data-ayzo-analytics-consent="true"] {
+    scroll-behavior: auto;
+    transition: none !important;
+  }
+}

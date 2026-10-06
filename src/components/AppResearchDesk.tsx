@@ -84,7 +84,7 @@ function addressPlaceholder(
     return "Paste a Hedera account ID, for example 0.0.2";
   }
 
-  return "Paste a wallet or token contract address";
+  return "Paste wallet or token address";
 }
 
 export default function AppResearchDesk({

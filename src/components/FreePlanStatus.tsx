@@ -111,6 +111,14 @@ export default function FreePlanStatus({
       null
     );
 
+  const [
+    loadFailed,
+    setLoadFailed,
+  ] =
+    useState(
+      false
+    );
+
   const loadStatus =
     useCallback(
       async () => {
@@ -129,6 +137,14 @@ export default function FreePlanStatus({
               }
             );
 
+          if (
+            !response.ok
+          ) {
+            throw new Error(
+              "Analysis access status request failed."
+            );
+          }
+
           const data =
             (
               await response.json()
@@ -140,12 +156,19 @@ export default function FreePlanStatus({
             setStatus(
               data
             );
+
+            setLoadFailed(
+              false
+            );
           }
         } catch {
           /*
            * Quota display must never prevent
            * the analysis form from working.
            */
+          setLoadFailed(
+            true
+          );
         }
       },
       [
@@ -188,8 +211,19 @@ export default function FreePlanStatus({
 
   if (!status) {
     return (
-      <div className="mt-4 text-center text-xs text-zinc-600">
-        Checking analysis access…
+      <div
+        role="status"
+        aria-live="polite"
+        data-ayzo-access-state={
+          loadFailed
+            ? "unavailable"
+            : "loading"
+        }
+        className="mt-4 text-center text-xs text-zinc-600"
+      >
+        {loadFailed
+          ? "Analysis access status is temporarily unavailable. You can still try an analysis."
+          : "Checking analysis access…"}
       </div>
     );
   }

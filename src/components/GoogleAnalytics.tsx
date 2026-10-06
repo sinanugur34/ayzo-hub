@@ -75,7 +75,10 @@ export default function GoogleAnalytics() {
       )}
 
       {ready && consent === null && (
-        <div className="fixed bottom-4 left-4 right-4 z-[9999] mx-auto max-w-2xl rounded-2xl border border-zinc-800 bg-zinc-950/95 p-5 shadow-2xl backdrop-blur-xl">
+        <div
+          data-ayzo-analytics-consent="true"
+          className="fixed bottom-4 left-4 right-4 z-[9999] mx-auto max-w-2xl rounded-2xl border border-zinc-800 bg-zinc-950/95 p-5 shadow-2xl backdrop-blur-xl"
+        >
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="text-sm font-medium text-zinc-100">
