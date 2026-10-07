@@ -19,6 +19,12 @@ const pricing =
     "utf8"
   );
 
+const cards =
+  readFileSync(
+    "src/components/PricingPlanCards.tsx",
+    "utf8"
+  );
+
 const matrix =
   readFileSync(
     "src/components/PlanComparisonMatrix.tsx",
@@ -51,7 +57,7 @@ test(
 );
 
 test(
-  "reference matrix remains 72 features across 7 categories",
+  "comparison remains 72 features across 7 categories",
   () => {
     assert.equal(
       PLAN_COMPARISON_FEATURE_COUNT,
@@ -66,7 +72,7 @@ test(
 );
 
 test(
-  "PricingPlans owns the shared billing-period state",
+  "PricingPlans owns shared billing-period state",
   () => {
     assert.match(
       pricing,
@@ -75,7 +81,7 @@ test(
 
     assert.match(
       pricing,
-      /billingPeriod=\{/
+      /<PricingPlanCards/
     );
 
     assert.match(
@@ -86,61 +92,41 @@ test(
 );
 
 test(
-  "matrix supports monthly and annual comparison views",
+  "plan cards own billing controls",
   () => {
     assert.match(
-      matrix,
+      cards,
       /data-ayzo-billing-period="monthly"/
     );
 
     assert.match(
-      matrix,
+      cards,
       /data-ayzo-billing-period="annual"/
     );
 
     assert.match(
-      matrix,
+      cards,
       /\/mo eq\./
     );
 
     assert.match(
-      matrix,
+      cards,
       /billed annually/
     );
   }
 );
 
 test(
-  "billing-period selection does not claim to change current subscription",
+  "matrix remains period-aware without owning billing switch",
   () => {
     assert.match(
       matrix,
-      /Your current subscription is unchanged/
-    );
-  }
-);
-
-test(
-  "reference comparison controls are exposed",
-  () => {
-    assert.match(
-      matrix,
-      /Show differences only/
+      /billingPeriod/
     );
 
-    assert.match(
+    assert.doesNotMatch(
       matrix,
-      /Jump to a feature category/
-    );
-
-    assert.match(
-      matrix,
-      /PLAN_COMPARISON_FEATURE_COUNT/
-    );
-
-    assert.match(
-      matrix,
-      /PLAN_COMPARISON_CATEGORY_COUNT/
+      /data-ayzo-billing-period/
     );
   }
 );

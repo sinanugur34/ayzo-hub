@@ -18,6 +18,12 @@ const pricing =
     "utf8"
   );
 
+const cards =
+  fs.readFileSync(
+    "src/components/PricingPlanCards.tsx",
+    "utf8"
+  );
+
 const matrix =
   fs.readFileSync(
     "src/components/PlanComparisonMatrix.tsx",
@@ -49,30 +55,42 @@ const overview =
   );
 
 test(
-  "Pricing derives paid prices from canonical PLANS",
+  "Pricing plan cards derive paid prices from canonical PLANS",
   () => {
     assert.ok(
       pricing.includes(
-        "PLANS.pro.monthlyPriceUsd"
+        "<PricingPlanCards"
       )
     );
 
-    assert.ok(
-      pricing.includes(
-        "PLANS.pro.annualPriceUsd"
-      )
+    assert.match(
+      cards,
+      /PLANS\[\s*plan\s*\]\.monthlyPriceUsd/
     );
 
-    assert.ok(
-      pricing.includes(
-        "PLANS.advanced.monthlyPriceUsd"
-      )
+    assert.match(
+      cards,
+      /PLANS\[\s*plan\s*\]\.annualPriceUsd/
     );
 
-    assert.ok(
-      pricing.includes(
-        "PLANS.advanced.annualPriceUsd"
-      )
+    assert.equal(
+      PLANS.pro.monthlyPriceUsd,
+      19
+    );
+
+    assert.equal(
+      PLANS.pro.annualPriceUsd,
+      193.8
+    );
+
+    assert.equal(
+      PLANS.advanced.monthlyPriceUsd,
+      69
+    );
+
+    assert.equal(
+      PLANS.advanced.annualPriceUsd,
+      662
     );
   }
 );

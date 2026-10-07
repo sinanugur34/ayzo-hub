@@ -1013,7 +1013,6 @@ export default function PlanComparisonMatrix({
   visiblePlans,
   currentPlan,
   billingPeriod,
-  onBillingPeriodChange,
 }:
 {
   visiblePlans:
@@ -1025,11 +1024,6 @@ export default function PlanComparisonMatrix({
   billingPeriod:
     BillingPeriod;
 
-  onBillingPeriodChange:
-    (
-      period:
-        BillingPeriod
-    ) => void;
 }) {
   const planCount =
     Math.max(
@@ -1079,13 +1073,6 @@ export default function PlanComparisonMatrix({
         differencesOnly,
         visiblePlans,
       ]
-    );
-
-  const hasUpgradeBilling =
-    visiblePlans.some(
-      plan =>
-        plan !== "free" &&
-        plan !== currentPlan
     );
 
   function jumpToCategory(
@@ -1316,72 +1303,6 @@ export default function PlanComparisonMatrix({
           {PLAN_COMPARISON_CATEGORY_COUNT} categories · Full descriptions and plan access
         </div>
 
-        {hasUpgradeBilling && (
-          <>
-            <div className="mx-auto mt-5 flex max-w-xl flex-col items-center justify-center gap-3 sm:flex-row">
-              <span className="text-xs text-zinc-500">
-                Billing period
-              </span>
-
-              <div
-                role="group"
-                aria-label="Billing period"
-                className="flex min-h-11 items-center rounded-xl border border-zinc-700 bg-zinc-900/70 p-1"
-              >
-                <button
-                  type="button"
-                  data-ayzo-billing-period="monthly"
-                  aria-pressed={
-                    billingPeriod ===
-                    "monthly"
-                  }
-                  onClick={() =>
-                    onBillingPeriodChange(
-                      "monthly"
-                    )
-                  }
-                  className={`min-h-9 rounded-lg px-4 text-xs font-medium transition ${
-                    billingPeriod ===
-                    "monthly"
-                      ? "bg-violet-300 text-[#0b1020]"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
-                >
-                  Monthly
-                </button>
-
-                <button
-                  type="button"
-                  data-ayzo-billing-period="annual"
-                  aria-pressed={
-                    billingPeriod ===
-                    "annual"
-                  }
-                  onClick={() =>
-                    onBillingPeriodChange(
-                      "annual"
-                    )
-                  }
-                  className={`min-h-9 rounded-lg px-4 text-xs font-medium transition ${
-                    billingPeriod ===
-                    "annual"
-                      ? "bg-violet-300 text-[#0b1020]"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
-                >
-                  Annual
-                </button>
-              </div>
-            </div>
-
-            <p className="mt-2 text-[10px] leading-5 text-zinc-600">
-              {billingPeriod ===
-              "annual"
-                ? "Annual plans show the monthly equivalent and the full annual charge. Your current subscription is unchanged."
-                : "Monthly prices are shown for comparison. Your current subscription is unchanged."}
-            </p>
-          </>
-        )}
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-[9px]">
           <span className="rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-2.5 py-1 text-emerald-300">

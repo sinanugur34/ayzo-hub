@@ -14,6 +14,12 @@ const pricing =
     "utf8"
   );
 
+const cards =
+  fs.readFileSync(
+    "src/components/PricingPlanCards.tsx",
+    "utf8"
+  );
+
 const matrix =
   fs.readFileSync(
     "src/components/PlanComparisonMatrix.tsx",
@@ -89,16 +95,11 @@ test(
 );
 
 test(
-  "pricing continues to derive account and plan truth from real sources",
+  "pricing continues to derive account, plan and checkout truth from real sources",
   () => {
     assert.match(
       pricing,
       /"\/api\/account\/plan"/
-    );
-
-    assert.match(
-      pricing,
-      /PLANS/
     );
 
     assert.match(
@@ -111,13 +112,33 @@ test(
       /NEXT_PUBLIC_AYZO_PAID_CHECKOUT_ENABLED/
     );
 
+    assert.match(
+      pricing,
+      /<PricingPlanCards/
+    );
+
+    assert.match(
+      cards,
+      /PLANS/
+    );
+
     assert.equal(
       (
-        pricing.match(
+        cards.match(
           /<PlanCheckoutButton/g
         ) ?? []
       ).length,
-      4
+      2
+    );
+
+    assert.match(
+      cards,
+      /interval="monthly"/
+    );
+
+    assert.match(
+      cards,
+      /interval="annual"/
     );
   }
 );

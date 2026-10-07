@@ -4,13 +4,15 @@ import {
 } from "node:fs";
 import test from "node:test";
 
-import {
-  PLANS,
-} from "@/lib/plans/registry";
-
 const pricing =
   readFileSync(
     "src/components/PricingPlans.tsx",
+    "utf8"
+  );
+
+const cards =
+  readFileSync(
+    "src/components/PricingPlanCards.tsx",
     "utf8"
   );
 
@@ -21,117 +23,47 @@ const checkout =
   );
 
 test(
-  "canonical prices remain registry-owned",
+  "shared billing state reaches cards and matrix",
   () => {
-    assert.equal(
-      PLANS.pro.monthlyPriceUsd,
-      19
+    assert.match(
+      pricing,
+      /<PricingPlanCards[\s\S]*?billingPeriod=\{/
     );
 
-    assert.equal(
-      PLANS.pro.annualPriceUsd,
-      193.8
-    );
-
-    assert.equal(
-      PLANS.advanced.monthlyPriceUsd,
-      69
-    );
-
-    assert.equal(
-      PLANS.advanced.annualPriceUsd,
-      662
+    assert.match(
+      pricing,
+      /<PlanComparisonMatrix[\s\S]*?billingPeriod=\{/
     );
   }
 );
 
 test(
-  "paid plan cards use the shared billing period",
+  "plan cards expose monthly and annual checkout paths",
   () => {
     assert.match(
-      pricing,
-      /paidPlanDisplayPrice/
+      cards,
+      /interval="monthly"/
     );
 
     assert.match(
-      pricing,
-      /paidPlanPriceSuffix/
+      cards,
+      /interval="annual"/
     );
 
     assert.match(
-      pricing,
-      /paidPlanChargeLabel/
+      cards,
+      /billingPeriod ===\s*"monthly"/
     );
 
     assert.match(
-      pricing,
-      /\/mo eq\./
-    );
-
-    assert.match(
-      pricing,
-      /billed annually/
+      cards,
+      /billingPeriod ===\s*"annual"/
     );
   }
 );
 
 test(
-  "monthly checkout CTAs render only in monthly view",
-  () => {
-    const matches =
-      pricing.match(
-        /billingPeriod === "monthly" && \(/g
-      ) ?? [];
-
-    assert.equal(
-      matches.length,
-      2
-    );
-  }
-);
-
-test(
-  "annual checkout CTAs render only in annual view",
-  () => {
-    const matches =
-      pricing.match(
-        /billingPeriod === "annual" && \(/g
-      ) ?? [];
-
-    assert.equal(
-      matches.length,
-      2
-    );
-  }
-);
-
-test(
-  "all four canonical checkout definitions remain explicit",
-  () => {
-    assert.match(
-      pricing,
-      /plan="pro"[\s\S]*?interval="monthly"/
-    );
-
-    assert.match(
-      pricing,
-      /plan="pro"[\s\S]*?interval="annual"/
-    );
-
-    assert.match(
-      pricing,
-      /plan="advanced"[\s\S]*?interval="monthly"/
-    );
-
-    assert.match(
-      pricing,
-      /plan="advanced"[\s\S]*?interval="annual"/
-    );
-  }
-);
-
-test(
-  "checkout implementation still submits plan and interval to billing API",
+  "real checkout component remains unchanged in responsibility",
   () => {
     assert.match(
       checkout,

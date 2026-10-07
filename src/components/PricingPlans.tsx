@@ -7,9 +7,12 @@ import {
 
 import Link from "next/link";
 
-import PlanComparisonMatrix from "@/components/PlanComparisonMatrix";
-import PlanCheckoutButton from "@/components/billing/PlanCheckoutButton";
+import PlanComparisonMatrix, {
+  PLAN_COMPARISON_CATEGORY_COUNT,
+  PLAN_COMPARISON_FEATURE_COUNT,
+} from "@/components/PlanComparisonMatrix";
 
+import PricingPlanCards from "@/components/PricingPlanCards";
 import {
   trackEvent,
 } from "@/lib/analytics/client";
@@ -51,94 +54,6 @@ function isPlanId(
     value === "advanced"
   );
 }
-
-function annualLabel(
-  value: number | null
-) {
-  return value === null
-    ? "—"
-    : value.toFixed(2);
-}
-
-
-function paidPlanDisplayPrice(
-  plan:
-    | "pro"
-    | "advanced",
-  period:
-    BillingPeriod
-) {
-  const definition =
-    PLANS[plan];
-
-  if (
-    period ===
-      "annual"
-  ) {
-    const annual =
-      definition
-        .annualPriceUsd;
-
-    return annual === null
-      ? "—"
-      : (
-          annual /
-          12
-        ).toFixed(
-          2
-        );
-  }
-
-  return definition
-    .monthlyPriceUsd
-    ?.toFixed(
-      0
-    ) ??
-    "—";
-}
-
-function paidPlanPriceSuffix(
-  period:
-    BillingPeriod
-) {
-  return period ===
-    "annual"
-    ? "/mo eq."
-    : "/mo";
-}
-
-function paidPlanChargeLabel(
-  plan:
-    | "pro"
-    | "advanced",
-  period:
-    BillingPeriod
-) {
-  const definition =
-    PLANS[plan];
-
-  if (
-    period ===
-      "annual"
-  ) {
-    return definition
-      .annualPriceUsd ===
-      null
-      ? "Annual billing unavailable"
-      : `$${definition.annualPriceUsd.toFixed(
-          2
-        )} billed annually`;
-  }
-
-  return definition
-    .monthlyPriceUsd ===
-    null
-    ? "Monthly billing unavailable"
-    : `$${definition.monthlyPriceUsd.toFixed(
-        2
-      )} billed monthly`;
-}
-
 
 export default function PricingPlans() {
   const [
@@ -276,24 +191,6 @@ export default function PricingPlans() {
         )
       : [...PLAN_ORDER];
 
-  const showPro =
-    visiblePlans.includes(
-      "pro"
-    );
-
-  const showAdvanced =
-    visiblePlans.includes(
-      "advanced"
-    );
-
-  const currentPro =
-    currentPlan ===
-    "pro";
-
-  const currentAdvanced =
-    currentPlan ===
-    "advanced";
-
   return (
     <section
       id="plans"
@@ -362,219 +259,65 @@ export default function PricingPlans() {
       </div>
 
       <div className="ayzo-pricing-matrix-shell">
-        <PlanComparisonMatrix
-          visiblePlans={
-            visiblePlans
-          }
-          currentPlan={
-            currentPlan
-          }
+        <PricingPlanCards
+        visiblePlans={
+          visiblePlans
+        }
+        currentPlan={
+          currentPlan
+        }
+        authenticated={
+          account.authenticated
+        }
         billingPeriod={
           billingPeriod
         }
         onBillingPeriodChange={
           setBillingPeriod
         }
+        paidCheckoutEnabled={
+          paidCheckoutEnabled
+        }
       />
+
+      <details
+        data-ayzo-plan-comparison="true"
+        className="mx-auto mt-8 w-full max-w-6xl overflow-hidden rounded-2xl border border-zinc-800 bg-[#101829]/55"
+      >
+        <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 marker:hidden">
+          <div>
+            <div className="text-sm font-semibold text-zinc-100">
+              Compare key features
+            </div>
+
+            <div className="mt-1 text-[10px] leading-5 text-zinc-500">
+              {PLAN_COMPARISON_FEATURE_COUNT} features ·{" "}
+              {PLAN_COMPARISON_CATEGORY_COUNT} categories ·
+              full plan-access detail
+            </div>
+          </div>
+
+          <span className="shrink-0 text-xs font-medium text-violet-300">
+            Open comparison ↓
+          </span>
+        </summary>
+
+        <div className="border-t border-zinc-800 px-4 pb-6 sm:px-6">
+          <PlanComparisonMatrix
+            visiblePlans={
+              visiblePlans
+            }
+            currentPlan={
+              currentPlan
+            }
+            billingPeriod={
+              billingPeriod
+            }
+          />
+        </div>
+      </details>
       </div>
 
-      {(showPro ||
-        showAdvanced) && (
-        <div
-          className={`mx-auto mt-8 grid w-full gap-4 ${
-            showPro &&
-            showAdvanced
-              ? "max-w-4xl md:grid-cols-2"
-              : "max-w-2xl md:grid-cols-1"
-          }`}
-        >
-          {showPro && (
-            <div
-              data-ayzo-plan-card="pro"
-              className="rounded-2xl border border-violet-500/25 bg-violet-500/[0.05] p-5"
-            >
-              <div className="mb-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-[10px] font-semibold tracking-[0.16em] text-violet-300">
-                      PRO ACCESS
-                    </div>
-
-                    <div className="mt-1 text-lg font-semibold text-white">
-                      AYZO Pro
-                    </div>
-                  </div>
-
-                  {currentPro ? (
-                    <div className="rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1.5 text-[9px] font-semibold tracking-[0.12em] text-emerald-300">
-                      CURRENT PLAN
-                    </div>
-                  ) : (
-                    <div className="text-right">
-                      <div className="text-lg font-semibold text-white">
-                        $
-                        {paidPlanDisplayPrice(
-                          "pro",
-                          billingPeriod
-                        )}
-
-                        <span className="ml-1 text-[10px] font-normal text-zinc-500">
-                          {
-                            paidPlanPriceSuffix(
-                              billingPeriod
-                            )
-                          }
-                        </span>
-                      </div>
-
-                      <div
-                        data-ayzo-plan-charge="pro"
-                        className="mt-1 text-[9px] text-zinc-600"
-                      >
-                        {
-                          paidPlanChargeLabel(
-                            "pro",
-                            billingPeriod
-                          )
-                        }
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <p className="mt-3 text-xs leading-5 text-zinc-500">
-                  {currentPro
-                    ? "Your AYZO Pro access is active."
-                    : "Higher usage limits and live Pro intelligence features for individual research."}
-                </p>
-              </div>
-
-              {!currentPro && (
-                paidCheckoutEnabled ? (
-                  <div className="space-y-2">
-                    {billingPeriod === "monthly" && (
-                      <PlanCheckoutButton
-                        plan="pro"
-                        interval="monthly"
-                        label={`Start Monthly · $${PLANS.pro.monthlyPriceUsd?.toFixed(
-                          0
-                        )}/mo`}
-                      />
-                    )}
-
-                    {billingPeriod === "annual" && (
-                      <PlanCheckoutButton
-                        plan="pro"
-                        interval="annual"
-                        label={`Start Annual · $${annualLabel(
-                          PLANS.pro.annualPriceUsd
-                        )}/yr`}
-                      />
-                    )}
-                  </div>
-                ) : (
-                  <p className="rounded-xl border border-zinc-800 bg-black/20 px-4 py-3 text-xs leading-5 text-zinc-500">
-                    Secure checkout is temporarily unavailable.
-                  </p>
-                )
-              )}
-            </div>
-          )}
-
-          {showAdvanced && (
-            <div
-              data-ayzo-plan-card="advanced"
-              className="rounded-2xl border border-purple-400/25 bg-purple-500/[0.05] p-5"
-            >
-              <div className="mb-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-[10px] font-semibold tracking-[0.16em] text-purple-300">
-                      ADVANCED ACCESS
-                    </div>
-
-                    <div className="mt-1 text-lg font-semibold text-white">
-                      AYZO Advanced
-                    </div>
-                  </div>
-
-                  {currentAdvanced ? (
-                    <div className="rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1.5 text-[9px] font-semibold tracking-[0.12em] text-emerald-300">
-                      CURRENT PLAN
-                    </div>
-                  ) : (
-                    <div className="text-right">
-                      <div className="text-lg font-semibold text-white">
-                        $
-                        {paidPlanDisplayPrice(
-                          "advanced",
-                          billingPeriod
-                        )}
-
-                        <span className="ml-1 text-[10px] font-normal text-zinc-500">
-                          {
-                            paidPlanPriceSuffix(
-                              billingPeriod
-                            )
-                          }
-                        </span>
-                      </div>
-
-                      <div
-                        data-ayzo-plan-charge="advanced"
-                        className="mt-1 text-[9px] text-zinc-600"
-                      >
-                        {
-                          paidPlanChargeLabel(
-                            "advanced",
-                            billingPeriod
-                          )
-                        }
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <p className="mt-3 text-xs leading-5 text-zinc-500">
-                  {currentAdvanced
-                    ? "Your AYZO Advanced access is active."
-                    : "Includes every live Pro capability plus live Advanced investigation workflows."}
-                </p>
-              </div>
-
-              {!currentAdvanced && (
-                paidCheckoutEnabled ? (
-                  <div className="space-y-2">
-                    {billingPeriod === "monthly" && (
-                      <PlanCheckoutButton
-                        plan="advanced"
-                        interval="monthly"
-                        label={`Start Monthly · $${PLANS.advanced.monthlyPriceUsd?.toFixed(
-                          0
-                        )}/mo`}
-                      />
-                    )}
-
-                    {billingPeriod === "annual" && (
-                      <PlanCheckoutButton
-                        plan="advanced"
-                        interval="annual"
-                        label={`Start Annual · $${annualLabel(
-                          PLANS.advanced.annualPriceUsd
-                        )}/yr`}
-                      />
-                    )}
-                  </div>
-                ) : (
-                  <p className="rounded-xl border border-zinc-800 bg-black/20 px-4 py-3 text-xs leading-5 text-zinc-500">
-                    Secure checkout is temporarily unavailable.
-                  </p>
-                )
-              )}
-            </div>
-          )}
-        </div>
-      )}
 
       <div className="mt-5 text-center text-[10px] leading-5 text-zinc-600">
         Lower tiers are hidden for authenticated paid accounts.
