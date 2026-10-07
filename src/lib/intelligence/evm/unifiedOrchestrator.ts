@@ -104,8 +104,8 @@ import {
 } from "./providers/transactionResilience";
 
 import {
-  alchemyTransfersProvider,
-} from "./providers/alchemyTransfers";
+  getPreferredEvmTokenTransfers,
+} from "./providers/preferredTransfers";
 
 import type {
   EvmContractDeploymentLookup,
@@ -229,10 +229,9 @@ const DEFAULT_DEPENDENCIES:
 
   getTokenTransfers:
     request =>
-      alchemyTransfersProvider
-        .getTokenTransfers(
-          request
-        ),
+      getPreferredEvmTokenTransfers(
+        request
+      ),
 
   getContractDeployment:
     request =>

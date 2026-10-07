@@ -7,12 +7,12 @@ import {
 } from "@/lib/intelligence/evm/engine";
 
 import {
-  alchemyTransactionsProvider,
-} from "@/lib/intelligence/evm/providers/alchemyTransactions";
+  getResilientEvmTransactions,
+} from "@/lib/intelligence/evm/providers/transactionResilience";
 
 import {
-  alchemyTransfersProvider,
-} from "@/lib/intelligence/evm/providers/alchemyTransfers";
+  getPreferredEvmTokenTransfers,
+} from "@/lib/intelligence/evm/providers/preferredTransfers";
 
 import {
   analyzeEvmWalletGraph,
@@ -422,6 +422,14 @@ export async function POST(
     EvmWalletGraphObservation[] =
       [];
 
+  let transactionProviderId:
+    string | null =
+      null;
+
+  let transferProviderId:
+    string | null =
+      null;
+
   const queue:
     QueueItem[] = [
       {
@@ -541,8 +549,7 @@ export async function POST(
         1;
 
       const result =
-        await alchemyTransactionsProvider
-          .getTransactions({
+        await getResilientEvmTransactions({
             network,
             address:
               current.address,
@@ -561,7 +568,7 @@ export async function POST(
             graphDepth:
               current.depth,
             provider:
-              alchemyTransactionsProvider.id,
+              result.providerId,
             result,
           },
           {
@@ -572,6 +579,9 @@ export async function POST(
           }
         );
       }
+
+      transactionProviderId ??=
+        result.providerId;
 
       successfulTransactionRequests +=
         1;
@@ -645,8 +655,7 @@ export async function POST(
           1;
 
         const result =
-          await alchemyTransfersProvider
-            .getTokenTransfers({
+          await getPreferredEvmTokenTransfers({
               network,
               address:
                 current.address,
@@ -667,7 +676,7 @@ export async function POST(
               graphDepth:
                 current.depth,
               provider:
-                alchemyTransfersProvider.id,
+                result.providerId,
               result,
             },
             {
@@ -678,6 +687,9 @@ export async function POST(
             }
           );
         }
+
+        transferProviderId ??=
+          result.providerId;
 
         successfulTransferRequests +=
           1;
@@ -949,12 +961,12 @@ export async function POST(
 
     providers: {
       transactions:
-        alchemyTransactionsProvider.id,
+        transactionProviderId,
 
       transfers:
         tokenAddress === null
           ? null
-          : alchemyTransfersProvider.id,
+          : transferProviderId,
     },
 
     request: {

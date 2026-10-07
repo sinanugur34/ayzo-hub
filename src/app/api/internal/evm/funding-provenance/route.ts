@@ -16,12 +16,12 @@ import {
 } from "@/lib/intelligence/evm/fundingProvenance";
 
 import {
-  alchemyTransactionsProvider,
-} from "@/lib/intelligence/evm/providers/alchemyTransactions";
+  getResilientEvmTransactions,
+} from "@/lib/intelligence/evm/providers/transactionResilience";
 
 import {
-  alchemyTransfersProvider,
-} from "@/lib/intelligence/evm/providers/alchemyTransfers";
+  getPreferredEvmTokenTransfers,
+} from "@/lib/intelligence/evm/providers/preferredTransfers";
 
 import {
   isNetworkId,
@@ -283,8 +283,7 @@ export async function POST(
   }
 
   const transactionResult =
-    await alchemyTransactionsProvider
-      .getTransactions({
+    await getResilientEvmTransactions({
         network,
         address,
         cursor:
@@ -297,7 +296,7 @@ export async function POST(
         ok: false,
         network: networkId,
         provider:
-          alchemyTransactionsProvider.id,
+          transactionResult.providerId,
         result:
           transactionResult,
       },
@@ -319,13 +318,17 @@ export async function POST(
   ];
 
   let transferCount = 0;
+
+  let transferProviderId:
+    string | null =
+      null;
+
   let nextTransferCursor:
     string | null = null;
 
   if (tokenAddress !== null) {
     const transferResult =
-      await alchemyTransfersProvider
-        .getTokenTransfers({
+      await getPreferredEvmTokenTransfers({
           network,
           address,
           tokenAddress,
@@ -334,6 +337,9 @@ export async function POST(
             transferCursor,
         });
 
+    transferProviderId =
+      transferResult.providerId;
+
     if (!transferResult.ok) {
       return Response.json(
         {
@@ -341,7 +347,7 @@ export async function POST(
           network:
             networkId,
           provider:
-            alchemyTransfersProvider.id,
+            transferResult.providerId,
           result:
             transferResult,
         },
@@ -390,11 +396,11 @@ export async function POST(
 
     providers: {
       transactions:
-        alchemyTransactionsProvider.id,
+        transactionResult.providerId,
       transfers:
         tokenAddress === null
           ? null
-          : alchemyTransfersProvider.id,
+          : transferProviderId,
     },
 
     coverage: {

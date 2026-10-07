@@ -7,8 +7,8 @@ import {
 } from "@/lib/intelligence/evm/engine";
 
 import {
-  alchemyTransfersProvider,
-} from "@/lib/intelligence/evm/providers/alchemyTransfers";
+  getPreferredEvmTokenTransfers,
+} from "@/lib/intelligence/evm/providers/preferredTransfers";
 
 import {
   analyzeEvmWalletRelationships,
@@ -205,8 +205,7 @@ export async function POST(
   }
 
   const transferResult =
-    await alchemyTransfersProvider
-      .getTokenTransfers({
+    await getPreferredEvmTokenTransfers({
         network,
         address,
         tokenAddress,
@@ -234,7 +233,7 @@ export async function POST(
         ok: false,
         network: networkId,
         provider:
-          alchemyTransfersProvider.id,
+          transferResult.providerId,
         result:
           transferResult,
       },
@@ -260,7 +259,7 @@ export async function POST(
     ok: true,
     network: networkId,
     provider:
-      alchemyTransfersProvider.id,
+      transferResult.providerId,
 
     coverage: {
       analyzedTransferCount:

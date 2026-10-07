@@ -41,9 +41,9 @@ function shouldUseFallback(
 export async function getBitcoinAddressHistoryWithFallback(
   request: BitcoinPaginatedAddressRequest,
   primary: BitcoinHistoryProvider =
-    goldRushBitcoinProvider,
+    mempoolBitcoinProvider,
   fallback: BitcoinHistoryProvider =
-    mempoolBitcoinProvider
+    goldRushBitcoinProvider
 ): Promise<
   BitcoinProviderResult<
     BitcoinAddressHistoryPage

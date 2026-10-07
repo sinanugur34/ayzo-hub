@@ -266,16 +266,16 @@ test(
         .getTokenTransfers({
           network: {
             networkId:
-              "bnb",
+              "mantle",
 
             name:
-              "BNB Chain",
+              "Mantle",
 
             chainId:
-              56,
+              5000,
 
             nativeCurrency:
-              "BNB",
+              "MNT",
           },
 
           address:

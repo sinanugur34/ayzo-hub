@@ -7,8 +7,8 @@ import {
 } from "@/lib/intelligence/evm/engine";
 
 import {
-  alchemyTransfersProvider,
-} from "@/lib/intelligence/evm/providers/alchemyTransfers";
+  getPreferredEvmTokenTransfers,
+} from "@/lib/intelligence/evm/providers/preferredTransfers";
 
 import {
   isNetworkId,
@@ -205,8 +205,7 @@ export async function POST(
   }
 
   const result =
-    await alchemyTransfersProvider
-      .getTokenTransfers({
+    await getPreferredEvmTokenTransfers({
         network,
         address,
         tokenAddress,
@@ -235,7 +234,7 @@ export async function POST(
       ok: result.ok,
       network: networkId,
       provider:
-        alchemyTransfersProvider.id,
+        result.providerId,
       result,
     },
     { status }

@@ -23,6 +23,10 @@ import {
   getAlchemyEvmNetwork,
 } from "./alchemyNetworks";
 
+import {
+  isAlchemyFreeEapiNetwork,
+} from "./alchemyEapiNetworks";
+
 const CAPABILITIES = [
   "tokenTransfers",
 ] as const satisfies readonly ProviderCapability[];
@@ -46,15 +50,6 @@ const TX_HASH =
  * More chains can be enabled independently
  * after live capability verification.
  */
-const TRANSFERS_NETWORKS =
-  new Set([
-    "ethereum",
-    "base",
-    "polygon",
-    "arbitrum",
-    "optimism",
-  ]);
-
 type JsonObject =
   Record<
     string,
@@ -645,7 +640,7 @@ export class AlchemyTransfersProvider
         null &&
       config.chainId ===
         network.chainId &&
-      TRANSFERS_NETWORKS.has(
+      isAlchemyFreeEapiNetwork(
         network.networkId
       )
     );
@@ -738,7 +733,7 @@ export class AlchemyTransfersProvider
       config.chainId !==
         request.network
           .chainId ||
-      !TRANSFERS_NETWORKS.has(
+      !isAlchemyFreeEapiNetwork(
         request.network
           .networkId
       )

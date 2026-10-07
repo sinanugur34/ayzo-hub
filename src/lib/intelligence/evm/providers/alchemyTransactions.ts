@@ -20,6 +20,10 @@ import {
   getAlchemyEvmNetwork,
 } from "./alchemyNetworks";
 
+import {
+  isAlchemyFreeEapiNetwork,
+} from "./alchemyEapiNetworks";
+
 const CAPABILITIES = [
   "transactions",
 ] as const satisfies readonly ProviderCapability[];
@@ -534,7 +538,10 @@ export class AlchemyTransactionsProvider
     return (
       config !== null &&
       config.chainId ===
-        network.chainId
+        network.chainId &&
+      isAlchemyFreeEapiNetwork(
+        network.networkId
+      )
     );
   }
 
@@ -590,7 +597,11 @@ export class AlchemyTransactionsProvider
     if (
       !config ||
       config.chainId !==
-        request.network.chainId
+        request.network.chainId ||
+      !isAlchemyFreeEapiNetwork(
+        request.network
+          .networkId
+      )
     ) {
       return {
         ok: false,
