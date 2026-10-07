@@ -54,4 +54,9 @@ jobs:
         run: npm run build
 
       - name: Security audit
-        run: npm audit --audit-level=high
+        run: |
+          # Block HIGH+ vulnerabilities in production dependencies.
+          npm audit --omit=dev --audit-level=high
+          # Dev dependencies remain CRITICAL-blocking because the current
+          # eslint-config-next chain includes unpatched braces GHSA-vfj7-8cjw-p6xm.
+          npm audit --include=dev --audit-level=critical
