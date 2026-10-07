@@ -15,12 +15,12 @@ import {
 } from "@/lib/intelligence/evm/engine";
 
 import {
-  goldRushTransactionsProvider,
-} from "@/lib/intelligence/evm/providers/goldrushTransactions";
+  getResilientEvmTransactions,
+} from "@/lib/intelligence/evm/providers/transactionResilience";
 
 import {
-  goldRushTransfersProvider,
-} from "@/lib/intelligence/evm/providers/goldrushTransfers";
+  getPreferredEvmTokenTransfers,
+} from "@/lib/intelligence/evm/providers/preferredTransfers";
 
 import {
   isNetworkId,
@@ -329,6 +329,14 @@ export async function POST(
     EvmCoordinationObservation[] =
       [];
 
+  let transactionProviderId:
+    string | null =
+      null;
+
+  let transferProviderId:
+    string | null =
+      null;
+
   const walletScans = [];
 
   for (
@@ -353,8 +361,7 @@ export async function POST(
       page += 1
     ) {
       const result =
-        await goldRushTransactionsProvider
-          .getTransactions({
+        await getResilientEvmTransactions({
             network,
             address:
               wallet,
@@ -370,7 +377,7 @@ export async function POST(
               networkId,
             wallet,
             provider:
-              goldRushTransactionsProvider.id,
+              result.providerId,
             result,
           },
           {
@@ -381,6 +388,9 @@ export async function POST(
           }
         );
       }
+
+      transactionProviderId ??=
+        result.providerId;
 
       transactionPageCount +=
         1;
@@ -432,8 +442,7 @@ export async function POST(
         page += 1
       ) {
         const result =
-          await goldRushTransfersProvider
-            .getTokenTransfers({
+          await getPreferredEvmTokenTransfers({
               network,
               address:
                 wallet,
@@ -452,7 +461,7 @@ export async function POST(
                 networkId,
               wallet,
               provider:
-                goldRushTransfersProvider.id,
+                result.providerId,
               result,
             },
             {
@@ -463,6 +472,9 @@ export async function POST(
             }
           );
         }
+
+        transferProviderId ??=
+          result.providerId;
 
         transferPageCount +=
           1;
@@ -605,12 +617,12 @@ export async function POST(
 
     providers: {
       transactions:
-        goldRushTransactionsProvider.id,
+        transactionProviderId,
 
       transfers:
         tokenAddress === null
           ? null
-          : goldRushTransfersProvider.id,
+          : transferProviderId,
     },
 
     request: {

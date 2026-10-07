@@ -1,4 +1,3 @@
-import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import { runWithPropagatedProviderUsage } from "@/lib/providerUsagePropagation";
 import { isInternalApiRequest } from "@/lib/apiSecurity";
 import { isAddress } from "@solana/kit";
@@ -8,6 +7,9 @@ import type {
 import {
   getSolanaAnalysisPolicy,
 } from "@/lib/intelligence/solana/policy";
+import {
+  solanaRpcCall as rpcCall,
+} from "@/lib/intelligence/solana/rpcTransport";
 
 type SignatureInfo = {
   signature: string;
@@ -27,53 +29,6 @@ type ParsedInstruction = {
     };
   };
 };
-
-function getRpcUrl() {
-  const apiKey = process.env.HELIUS_API_KEY;
-  if (!apiKey) throw new Error("HELIUS_API_KEY is not configured.");
-  return `https://mainnet.helius-rpc.com/?api-key=${encodeURIComponent(apiKey)}`;
-}
-
-async function rpcCall(method: string, params: unknown[]) {
-  const rpcUrl =
-    getRpcUrl();
-
-  const response =
-    await providerUsageFetch(
-      {
-        provider:
-          "helius",
-
-        operation:
-          `solana.rpc.${method}`,
-      },
-
-      rpcUrl,
-
-      () =>
-        fetch(rpcUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: 1,
-            method,
-            params,
-          }),
-          cache: "no-store",
-        })
-    );
-
-  if (!response.ok) throw new Error(`RPC HTTP ${response.status}`);
-
-  const data = await response.json();
-  if (data.error) throw new Error(data.error.message ?? "Solana RPC error");
-
-  return data.result;
-}
 
 function pairKey(a: string, b: string) {
   return [a, b].sort().join(":");

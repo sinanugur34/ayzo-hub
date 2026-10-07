@@ -33,10 +33,11 @@ test(
 );
 
 test(
-  "all three internal Solana routes restore propagated provider scope",
+  "all Solana routes use shared Alchemy-first RPC transport",
   () => {
     for (
       const path of [
+        "src/app/api/solana/token/route.ts",
         "src/app/api/solana/holders/route.ts",
         "src/app/api/solana/relationships/route.ts",
         "src/app/api/solana/funding/route.ts",
@@ -49,44 +50,89 @@ test(
 
       assert.match(
         source,
-        /runWithPropagatedProviderUsage/
+        /solanaRpcCall|rpcCall/
       );
 
-      assert.match(
+      assert.doesNotMatch(
         source,
-        /providerUsageFetch/
+        /HELIUS_API_KEY/
       );
 
-      assert.match(
+      assert.doesNotMatch(
         source,
-        /provider:\s*"helius"/
+        /mainnet\.helius-rpc\.com/
       );
     }
   }
 );
 
 test(
-  "Helius telemetry uses RPC method as bounded operation name",
+  "shared transport owns physical Solana telemetry and fallback",
   () => {
-    for (
-      const path of [
-        "src/app/api/solana/holders/route.ts",
-        "src/app/api/solana/relationships/route.ts",
-        "src/app/api/solana/funding/route.ts",
-      ]
-    ) {
-      assert.match(
-        read(
-          path
-        ),
-        /solana\.rpc\.\$\{method\}/
+    const source =
+      read(
+        "src/lib/intelligence/solana/rpcTransport.ts"
       );
-    }
+
+    assert.match(
+      source,
+      /providerUsageFetch/
+    );
+
+    assert.match(
+      source,
+      /provider:\s*provider\.id/
+    );
+
+    assert.match(
+      source,
+      /fallbackUsed/
+    );
+
+    assert.match(
+      source,
+      /solana-mainnet\.g\.alchemy\.com/
+    );
+
+    assert.match(
+      source,
+      /mainnet\.helius-rpc\.com/
+    );
   }
 );
 
 test(
-  "direct Solana intelligence route owns an analysis telemetry scope",
+  "Alchemy appears before Helius in Solana transport",
+  () => {
+    const source =
+      read(
+        "src/lib/intelligence/solana/rpcTransport.ts"
+      );
+
+    const alchemy =
+      source.indexOf(
+        '"alchemy"'
+      );
+
+    const helius =
+      source.indexOf(
+        '"helius"'
+      );
+
+    assert.ok(
+      alchemy >=
+        0
+    );
+
+    assert.ok(
+      helius >
+        alchemy
+    );
+  }
+);
+
+test(
+  "direct Solana intelligence route owns provider telemetry scope",
   () => {
     const source =
       read(

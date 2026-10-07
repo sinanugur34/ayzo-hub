@@ -1,19 +1,22 @@
-import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
+import {
+  providerUsageFetch,
+} from "@/lib/providerUsageHttpCore";
+
 import type {
   ProviderCapability,
 } from "@/lib/providers/types";
 
 import type {
-  EvmPaginatedAddressRequest,
-  EvmTransactionsProvider,
+  EvmTokenTransfersRequest,
+  EvmTransfersProvider,
 } from "../provider";
 
 import type {
   EvmNetworkContext,
   EvmProviderErrorCode,
   EvmProviderResult,
-  EvmTransaction,
-  EvmTransactionsPage,
+  EvmTransfer,
+  EvmTransfersPage,
 } from "../types";
 
 import {
@@ -25,7 +28,7 @@ import {
 } from "./alchemyEapiNetworks";
 
 const CAPABILITIES = [
-  "transactions",
+  "tokenTransfers",
 ] as const satisfies readonly ProviderCapability[];
 
 const REQUEST_TIMEOUT_MS =
@@ -37,12 +40,34 @@ const EVM_ADDRESS =
 const TX_HASH =
   /^0x[0-9a-fA-F]{64}$/;
 
+/*
+ * Keep this allow-list conservative.
+ *
+ * These are the networks for which AYZO
+ * deliberately enables Alchemy Transfers API
+ * in this wave.
+ *
+ * More chains can be enabled independently
+ * after live capability verification.
+ */
 type JsonObject =
-  Record<string, unknown>;
+  Record<
+    string,
+    unknown
+  >;
 
-type TransferRequestResult =
+type DirectionCursor = {
+  incoming:
+    string | null;
+
+  outgoing:
+    string | null;
+};
+
+type DirectionResult =
   | {
-      ok: true;
+      ok:
+        true;
 
       transfers:
         readonly unknown[];
@@ -51,7 +76,8 @@ type TransferRequestResult =
         string | null;
     }
   | {
-      ok: false;
+      ok:
+        false;
 
       code:
         EvmProviderErrorCode;
@@ -60,84 +86,160 @@ type TransferRequestResult =
         string;
     };
 
-type AlchemyTransactionCursor = {
-  incoming:
-    string | null;
+type NormalizedTransfer = {
+  key:
+    string;
 
-  outgoing:
-    string | null;
+  transfer:
+    EvmTransfer;
 };
 
 function asObject(
-  value: unknown
+  value:
+    unknown
 ): JsonObject | null {
   if (
-    typeof value !== "object" ||
-    value === null ||
-    Array.isArray(value)
+    typeof value !==
+      "object" ||
+    value ===
+      null ||
+    Array.isArray(
+      value
+    )
   ) {
     return null;
   }
 
-  return value as JsonObject;
+  return value as
+    JsonObject;
 }
 
-function parseAddress(
-  value: unknown
+function parseString(
+  value:
+    unknown
 ): string | null {
   if (
     typeof value !==
-    "string"
-  ) {
-    return null;
-  }
-
-  const normalized =
-    value
-      .trim()
-      .toLowerCase();
-
-  return EVM_ADDRESS.test(
-    normalized
-  )
-    ? normalized
-    : null;
-}
-
-function parseHash(
-  value: unknown
-): string | null {
-  if (
-    typeof value !==
-    "string"
-  ) {
-    return null;
-  }
-
-  const normalized =
-    value
-      .trim()
-      .toLowerCase();
-
-  return TX_HASH.test(
-    normalized
-  )
-    ? normalized
-    : null;
-}
-
-function parseTimestamp(
-  value: unknown
-): string | null {
-  if (
-    typeof value !==
-    "string"
+      "string"
   ) {
     return null;
   }
 
   const normalized =
     value.trim();
+
+  return normalized
+    ? normalized
+    : null;
+}
+
+function parseAddress(
+  value:
+    unknown
+): string | null {
+  const normalized =
+    parseString(
+      value
+    )
+      ?.toLowerCase() ??
+    null;
+
+  return (
+    normalized &&
+    EVM_ADDRESS.test(
+      normalized
+    )
+  )
+    ? normalized
+    : null;
+}
+
+function parseHash(
+  value:
+    unknown
+): string | null {
+  const normalized =
+    parseString(
+      value
+    )
+      ?.toLowerCase() ??
+    null;
+
+  return (
+    normalized &&
+    TX_HASH.test(
+      normalized
+    )
+  )
+    ? normalized
+    : null;
+}
+
+function parseBlockNumber(
+  value:
+    unknown
+): number | null {
+  if (
+    typeof value ===
+      "number" &&
+    Number.isSafeInteger(
+      value
+    ) &&
+    value >=
+      0
+  ) {
+    return value;
+  }
+
+  if (
+    typeof value !==
+      "string"
+  ) {
+    return null;
+  }
+
+  try {
+    const normalized =
+      value.trim();
+
+    const parsed =
+      normalized.startsWith(
+        "0x"
+      )
+        ? BigInt(
+            normalized
+          )
+        : BigInt(
+            normalized
+          );
+
+    if (
+      parsed <
+        0n ||
+      parsed >
+        BigInt(
+          Number.MAX_SAFE_INTEGER
+        )
+    ) {
+      return null;
+    }
+
+    return Number(
+      parsed
+    );
+  } catch {
+    return null;
+  }
+}
+
+function parseTimestamp(
+  value:
+    unknown
+): string | null {
+  const normalized =
+    parseString(
+      value
+    );
 
   if (!normalized) {
     return null;
@@ -157,76 +259,58 @@ function parseTimestamp(
     : null;
 }
 
-function parseBlockNumber(
-  value: unknown
-): number | null {
-  if (
-    typeof value ===
-      "number" &&
-    Number.isSafeInteger(
+function parseRawValue(
+  value:
+    unknown
+): string | null {
+  const normalized =
+    parseString(
       value
-    ) &&
-    value >= 0
-  ) {
-    return value;
-  }
+    );
 
-  if (
-    typeof value !==
-      "string"
-  ) {
+  if (!normalized) {
     return null;
   }
 
   try {
-    const parsed =
-      value.startsWith(
-        "0x"
-      )
-        ? BigInt(value)
-        : BigInt(
-            value.trim()
-          );
-
     if (
-      parsed < 0n ||
-      parsed >
-        BigInt(
-          Number.MAX_SAFE_INTEGER
-        )
+      /^0x[0-9a-fA-F]+$/.test(
+        normalized
+      )
     ) {
-      return null;
+      return BigInt(
+        normalized
+      ).toString();
     }
 
-    return Number(
-      parsed
-    );
+    if (
+      /^\d+$/.test(
+        normalized
+      )
+    ) {
+      return BigInt(
+        normalized
+      ).toString();
+    }
+
+    return null;
   } catch {
     return null;
   }
 }
 
 function parsePageKey(
-  value: unknown
+  value:
+    unknown
 ): string | null {
-  if (
-    typeof value !==
-      "string"
-  ) {
-    return null;
-  }
-
-  const normalized =
-    value.trim();
-
-  return normalized
-    ? normalized
-    : null;
+  return parseString(
+    value
+  );
 }
 
 function encodeCursor(
   cursor:
-    AlchemyTransactionCursor
+    DirectionCursor
 ): string | null {
   if (
     !cursor.incoming &&
@@ -236,7 +320,7 @@ function encodeCursor(
   }
 
   return (
-    "alchemy:" +
+    "alchemy-transfer:" +
     Buffer
       .from(
         JSON.stringify({
@@ -256,16 +340,20 @@ function encodeCursor(
 
 function parseCursor(
   value:
-    string | null | undefined
+    string |
+    null |
+    undefined
 ):
   | {
-      ok: true;
+      ok:
+        true;
 
       cursor:
-        AlchemyTransactionCursor | null;
+        DirectionCursor | null;
     }
   | {
-      ok: false;
+      ok:
+        false;
     } {
   if (
     value ===
@@ -286,7 +374,7 @@ function parseCursor(
 
   if (
     !value.startsWith(
-      "alchemy:"
+      "alchemy-transfer:"
     )
   ) {
     return {
@@ -298,7 +386,8 @@ function parseCursor(
   try {
     const encoded =
       value.slice(
-        "alchemy:".length
+        "alchemy-transfer:"
+          .length
       );
 
     const parsed =
@@ -377,128 +466,139 @@ function parseCursor(
   }
 }
 
-function parseRawValue(
-  value: unknown
-): string | null {
-  if (
-    typeof value !==
-      "string"
-  ) {
-    return null;
-  }
-
-  const normalized =
-    value.trim();
-
-  if (!normalized) {
-    return null;
-  }
-
-  try {
-    if (
-      /^0x[0-9a-fA-F]+$/.test(
-        normalized
-      )
-    ) {
-      return BigInt(
-        normalized
-      ).toString();
-    }
-
-    if (
-      /^\d+$/.test(
-        normalized
-      )
-    ) {
-      return BigInt(
-        normalized
-      ).toString();
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-}
-
 function normalizeTransfer(
-  value: unknown
-): EvmTransaction | null {
-  const transfer =
-    asObject(value);
+  value:
+    unknown,
 
-  if (!transfer) {
-    return null;
-  }
-
-  const hash =
-    parseHash(
-      transfer.hash
+  tokenAddress:
+    string
+): NormalizedTransfer | null {
+  const item =
+    asObject(
+      value
     );
 
-  if (!hash) {
+  if (!item) {
+    return null;
+  }
+
+  const transactionHash =
+    parseHash(
+      item.hash
+    );
+
+  const from =
+    parseAddress(
+      item.from
+    );
+
+  const to =
+    parseAddress(
+      item.to
+    );
+
+  const rawContract =
+    asObject(
+      item.rawContract
+    );
+
+  const rawValue =
+    parseRawValue(
+      rawContract
+        ?.value
+    );
+
+  if (
+    !transactionHash ||
+    !from ||
+    !to ||
+    rawValue ===
+      null
+  ) {
     return null;
   }
 
   const metadata =
     asObject(
-      transfer.metadata
+      item.metadata
     );
 
-  const rawContract =
-    asObject(
-      transfer.rawContract
+  const uniqueId =
+    parseString(
+      item.uniqueId
+    );
+
+  /*
+   * Alchemy normally supplies uniqueId.
+   * The deterministic fallback key prevents
+   * incoming/outgoing self-transfer duplication
+   * if uniqueId is absent.
+   */
+  const key =
+    uniqueId ??
+    [
+      transactionHash,
+      from,
+      to,
+      tokenAddress,
+      rawValue,
+      String(
+        item.blockNum ??
+        ""
+      ),
+    ].join(
+      ":"
     );
 
   return {
-    hash,
+    key,
 
-    blockNumber:
-      parseBlockNumber(
-        transfer.blockNum
-      ),
+    transfer: {
+      transactionHash,
 
-    timestamp:
-      parseTimestamp(
-        metadata
-          ?.blockTimestamp
-      ),
+      blockNumber:
+        parseBlockNumber(
+          item.blockNum
+        ),
 
-    from:
-      parseAddress(
-        transfer.from
-      ),
+      timestamp:
+        parseTimestamp(
+          metadata
+            ?.blockTimestamp
+        ),
 
-    to:
-      parseAddress(
-        transfer.to
-      ),
+      from,
 
-    value:
-      parseRawValue(
-        rawContract
-          ?.value
-      ),
+      to,
+
+      tokenAddress,
+
+      value:
+        rawValue,
+    },
   };
 }
 
 function elapsedMs(
-  startedAt: number
+  startedAt:
+    number
 ) {
   return Math.max(
     0,
     Math.round(
       performance.now() -
-      startedAt
+        startedAt
     )
   );
 }
 
 function classifyError(
-  message: string
+  message:
+    string
 ): EvmProviderErrorCode {
   const normalized =
-    message.toLowerCase();
+    message
+      .toLowerCase();
 
   if (
     normalized.includes(
@@ -517,8 +617,8 @@ function classifyError(
   return "UPSTREAM_ERROR";
 }
 
-export class AlchemyTransactionsProvider
-  implements EvmTransactionsProvider
+export class AlchemyTransfersProvider
+  implements EvmTransfersProvider
 {
   readonly id =
     "alchemy" as const;
@@ -536,7 +636,8 @@ export class AlchemyTransactionsProvider
       );
 
     return (
-      config !== null &&
+      config !==
+        null &&
       config.chainId ===
         network.chainId &&
       isAlchemyFreeEapiNetwork(
@@ -557,16 +658,21 @@ export class AlchemyTransactionsProvider
     );
   }
 
-  async getTransactions(
+  async getTokenTransfers(
     request:
-      EvmPaginatedAddressRequest
+      EvmTokenTransfersRequest
   ): Promise<
     EvmProviderResult<
-      EvmTransactionsPage
+      EvmTransfersPage
     >
   > {
     const address =
       request.address
+        .trim()
+        .toLowerCase();
+
+    const tokenAddress =
+      request.tokenAddress
         .trim()
         .toLowerCase();
 
@@ -576,15 +682,43 @@ export class AlchemyTransactionsProvider
       )
     ) {
       return {
-        ok: false,
+        ok:
+          false,
+
         providerId:
           this.id,
+
         latencyMs:
           null,
+
         code:
           "INVALID_ADDRESS",
+
         error:
           "Invalid EVM address.",
+      };
+    }
+
+    if (
+      !EVM_ADDRESS.test(
+        tokenAddress
+      )
+    ) {
+      return {
+        ok:
+          false,
+
+        providerId:
+          this.id,
+
+        latencyMs:
+          null,
+
+        code:
+          "INVALID_TOKEN_ADDRESS",
+
+        error:
+          "Invalid EVM token address.",
       };
     }
 
@@ -597,32 +731,38 @@ export class AlchemyTransactionsProvider
     if (
       !config ||
       config.chainId !==
-        request.network.chainId ||
+        request.network
+          .chainId ||
       !isAlchemyFreeEapiNetwork(
         request.network
           .networkId
       )
     ) {
       return {
-        ok: false,
+        ok:
+          false,
+
         providerId:
           this.id,
+
         latencyMs:
           null,
+
         code:
           "UNSUPPORTED_NETWORK",
+
         error:
-          `Alchemy transaction history is not enabled for ${request.network.name}.`,
+          `Alchemy Transfers API is not enabled by AYZO for ${request.network.name}.`,
       };
     }
 
-    const parsedCursor =
+    const cursorResult =
       parseCursor(
         request.cursor
       );
 
     if (
-      !parsedCursor.ok
+      !cursorResult.ok
     ) {
       return {
         ok:
@@ -638,7 +778,7 @@ export class AlchemyTransactionsProvider
           "UPSTREAM_ERROR",
 
         error:
-          "Invalid Alchemy transaction pagination cursor.",
+          "Invalid Alchemy transfer pagination cursor.",
       };
     }
 
@@ -649,13 +789,18 @@ export class AlchemyTransactionsProvider
 
     if (!apiKey) {
       return {
-        ok: false,
+        ok:
+          false,
+
         providerId:
           this.id,
+
         latencyMs:
           null,
+
         code:
           "UPSTREAM_ERROR",
+
         error:
           "ALCHEMY_API_KEY is not configured.",
       };
@@ -675,7 +820,9 @@ export class AlchemyTransactionsProvider
       () =>
         controller.abort();
 
-    if (request.signal) {
+    if (
+      request.signal
+    ) {
       if (
         request.signal
           .aborted
@@ -700,17 +847,22 @@ export class AlchemyTransactionsProvider
     const endpoint =
       `https://${config.httpHost}/v2`;
 
+    /*
+     * AYZO's EvmTransfersPage limit is normally
+     * 100. Split it across inbound/outbound so
+     * the merged page stays bounded.
+     */
     const maxPerDirection =
       Math.min(
-        50,
+        100,
         Math.max(
           1,
           Math.ceil(
             (
               request.limit ??
-              50
+              100
             ) /
-            2
+              2
           )
         )
       );
@@ -727,10 +879,16 @@ export class AlchemyTransactionsProvider
           "outgoing",
 
         pageKey:
-          string | null | undefined
+          string |
+          null |
+          undefined
       ): Promise<
-        TransferRequestResult
+        DirectionResult
       > => {
+        /*
+         * null means that this direction was
+         * already exhausted on a prior page.
+         */
         if (
           pageKey ===
             null
@@ -747,7 +905,7 @@ export class AlchemyTransactionsProvider
           };
         }
 
-        const filter =
+        const directionFilter =
           direction ===
             "incoming"
             ? {
@@ -761,78 +919,95 @@ export class AlchemyTransactionsProvider
 
         try {
           const response =
-            await providerUsageFetch({ provider: "alchemy", operation: "evm.transactions" }, endpoint, () => fetch(
-              endpoint,
+            await providerUsageFetch(
               {
-                method:
-                  "POST",
+                provider:
+                  "alchemy",
 
-                headers: {
-                  Authorization:
-                    `Bearer ${apiKey}`,
+                operation:
+                  "evm.transfers",
+              },
 
-                  "Content-Type":
-                    "application/json",
-                },
+              endpoint,
 
-                body:
-                  JSON.stringify({
-                    jsonrpc:
-                      "2.0",
-
-                    id:
-                      direction ===
-                        "incoming"
-                        ? 1
-                        : 2,
-
+              () =>
+                fetch(
+                  endpoint,
+                  {
                     method:
-                      "alchemy_getAssetTransfers",
+                      "POST",
 
-                    params: [
-                      {
-                        fromBlock:
-                          "0x0",
+                    headers: {
+                      Authorization:
+                        `Bearer ${apiKey}`,
 
-                        toBlock:
-                          "latest",
+                      "Content-Type":
+                        "application/json",
+                    },
 
-                        ...filter,
+                    body:
+                      JSON.stringify({
+                        jsonrpc:
+                          "2.0",
 
-                        category: [
-                          "external",
+                        id:
+                          direction ===
+                            "incoming"
+                            ? 1
+                            : 2,
+
+                        method:
+                          "alchemy_getAssetTransfers",
+
+                        params: [
+                          {
+                            fromBlock:
+                              "0x0",
+
+                            toBlock:
+                              "latest",
+
+                            ...directionFilter,
+
+                            contractAddresses: [
+                              tokenAddress,
+                            ],
+
+                            category: [
+                              "erc20",
+                            ],
+
+                            withMetadata:
+                              true,
+
+                            excludeZeroValue:
+                              false,
+
+                            maxCount,
+
+                            order:
+                              "desc",
+
+                            ...(
+                              typeof pageKey ===
+                                "string"
+                                ? {
+                                    pageKey,
+                                  }
+                                : {}
+                            ),
+                          },
                         ],
+                      }),
 
-                        withMetadata:
-                          true,
+                    cache:
+                      "no-store",
 
-                        excludeZeroValue:
-                          false,
-
-                        maxCount,
-
-                        order:
-                          "desc",
-
-                        ...(
-                          typeof pageKey ===
-                            "string"
-                            ? {
-                                pageKey,
-                              }
-                            : {}
-                        ),
-                      },
-                    ],
-                  }),
-
-                cache:
-                  "no-store",
-
-                signal:
-                  controller.signal,
-              }
-            ));
+                    signal:
+                      controller.signal,
+                  }
+                )
+            );
 
           if (
             response.status ===
@@ -841,10 +1016,12 @@ export class AlchemyTransactionsProvider
             return {
               ok:
                 false,
+
               code:
                 "RATE_LIMITED",
+
               error:
-                "Alchemy transaction history rate limit reached.",
+                "Alchemy transfer rate limit reached.",
             };
           }
 
@@ -854,26 +1031,31 @@ export class AlchemyTransactionsProvider
             return {
               ok:
                 false,
+
               code:
                 "UPSTREAM_ERROR",
+
               error:
-                `Alchemy transaction history returned HTTP ${response.status}.`,
+                `Alchemy transfer request returned HTTP ${response.status}.`,
             };
           }
 
           const payload =
             asObject(
-              await response.json()
+              await response
+                .json()
             );
 
           if (!payload) {
             return {
               ok:
                 false,
+
               code:
                 "UPSTREAM_ERROR",
+
               error:
-                "Alchemy returned an invalid transaction-history response.",
+                "Alchemy returned an invalid transfer response.",
             };
           }
 
@@ -890,15 +1072,17 @@ export class AlchemyTransactionsProvider
                 ? rpcError
                     .message
                     .trim()
-                : "Alchemy transaction-history RPC error.";
+                : "Alchemy transfer RPC error.";
 
             return {
               ok:
                 false,
+
               code:
                 classifyError(
                   message
                 ),
+
               error:
                 message,
             };
@@ -918,10 +1102,12 @@ export class AlchemyTransactionsProvider
             return {
               ok:
                 false,
+
               code:
                 "UPSTREAM_ERROR",
+
               error:
-                "Alchemy transaction-history response did not contain transfers.",
+                "Alchemy transfer response did not contain transfers.",
             };
           }
 
@@ -945,20 +1131,24 @@ export class AlchemyTransactionsProvider
             return {
               ok:
                 false,
+
               code:
                 "TIMEOUT",
+
               error:
-                "Alchemy transaction-history request timed out or was aborted.",
+                "Alchemy transfer request timed out or was aborted.",
             };
           }
 
           return {
             ok:
               false,
+
             code:
               "UPSTREAM_ERROR",
+
             error:
-              "Alchemy transaction-history request failed.",
+              "Alchemy transfer request failed.",
           };
         }
       };
@@ -972,14 +1162,16 @@ export class AlchemyTransactionsProvider
           requestDirection(
             "outgoing",
 
-            parsedCursor.cursor
+            cursorResult
+              .cursor
               ?.outgoing
           ),
 
           requestDirection(
             "incoming",
 
-            parsedCursor.cursor
+            cursorResult
+              .cursor
               ?.incoming
           ),
         ]);
@@ -989,102 +1181,128 @@ export class AlchemyTransactionsProvider
           startedAt
         );
 
-      if (!outgoing.ok) {
+      if (
+        !outgoing.ok
+      ) {
         return {
           ok:
             false,
+
           providerId:
             this.id,
+
           latencyMs,
+
           code:
             outgoing.code,
+
           error:
             outgoing.error,
         };
       }
 
-      if (!incoming.ok) {
+      if (
+        !incoming.ok
+      ) {
         return {
           ok:
             false,
+
           providerId:
             this.id,
+
           latencyMs,
+
           code:
             incoming.code,
+
           error:
             incoming.error,
         };
       }
 
-      const normalized =
-        [
+      const unique =
+        new Map<
+          string,
+          EvmTransfer
+        >();
+
+      for (
+        const raw of [
           ...outgoing
             .transfers,
           ...incoming
             .transfers,
         ]
-          .map(
-            normalizeTransfer
-          )
-          .filter(
-            (
-              transaction
-            ): transaction is EvmTransaction =>
-              transaction !==
-              null
+      ) {
+        const normalized =
+          normalizeTransfer(
+            raw,
+            tokenAddress
           );
 
-      const unique =
-        new Map<
-          string,
-          EvmTransaction
-        >();
+        if (
+          !normalized
+        ) {
+          continue;
+        }
 
-      for (
-        const transaction
-        of normalized
-      ) {
         if (
           !unique.has(
-            transaction.hash
+            normalized.key
           )
         ) {
           unique.set(
-            transaction.hash,
-            transaction
+            normalized.key,
+            normalized.transfer
           );
         }
       }
 
-      const transactions =
+      const transfers =
         [
           ...unique.values(),
-        ].sort(
-          (
-            left,
-            right
-          ) =>
+        ]
+          .sort(
             (
+              left,
               right
-                .blockNumber ??
-              -1
-            ) -
-            (
+            ) =>
+              (
+                right
+                  .blockNumber ??
+                -1
+              ) -
+              (
+                left
+                  .blockNumber ??
+                -1
+              ) ||
               left
-                .blockNumber ??
-              -1
-            )
-        );
+                .transactionHash
+                .localeCompare(
+                  right
+                    .transactionHash
+                )
+          )
+          .slice(
+            0,
+            request.limit ??
+              100
+          );
 
       return {
         ok:
           true,
+
         providerId:
           this.id,
+
         latencyMs,
+
         data: {
-          transactions,
+          transfers,
+
           nextCursor:
             encodeCursor({
               incoming:
@@ -1109,5 +1327,5 @@ export class AlchemyTransactionsProvider
   }
 }
 
-export const alchemyTransactionsProvider =
-  new AlchemyTransactionsProvider();
+export const alchemyTransfersProvider =
+  new AlchemyTransfersProvider();

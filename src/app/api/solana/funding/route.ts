@@ -1,4 +1,3 @@
-import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import { runWithPropagatedProviderUsage } from "@/lib/providerUsagePropagation";
 import { isInternalApiRequest } from "@/lib/apiSecurity";
 import { isAddress } from "@solana/kit";
@@ -8,6 +7,9 @@ import type {
 import {
   getSolanaAnalysisPolicy,
 } from "@/lib/intelligence/solana/policy";
+import {
+  solanaRpcCall,
+} from "@/lib/intelligence/solana/rpcTransport";
 
 type ParsedInstruction = {
   program?: string;
@@ -49,90 +51,21 @@ type TransactionsForAddressResult = {
   data?: HistoryTransaction[];
 };
 
-function getRpcUrl() {
-  const apiKey = process.env.HELIUS_API_KEY;
+async function rpcCall(
+  method:
+    string,
 
-  if (!apiKey) {
-    throw new Error("HELIUS_API_KEY is not configured.");
-  }
-
-  return `https://mainnet.helius-rpc.com/?api-key=${encodeURIComponent(apiKey)}`;
-}
-
-async function sleep(ms: number) {
-  await new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function rpcCall(method: string, params: unknown[]) {
-  let lastError: Error | null = null;
-
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const rpcUrl =
-        getRpcUrl();
-
-      const response =
-        await providerUsageFetch(
-          {
-            provider:
-              "helius",
-
-            operation:
-              `solana.rpc.${method}`,
-
-            attempt:
-              attempt + 1,
-          },
-
-          rpcUrl,
-
-          () =>
-            fetch(rpcUrl, {
-              method: "POST",
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
-              body: JSON.stringify({
-                jsonrpc:
-                  "2.0",
-                id:
-                  crypto.randomUUID(),
-                method,
-                params,
-              }),
-              cache:
-                "no-store",
-            })
-        );
-
-      if (response.status === 429 || response.status === 503) {
-        await sleep(300 * 2 ** attempt);
-        continue;
-      }
-
-      if (!response.ok) {
-        throw new Error(`RPC HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.error) {
-        throw new Error(data.error.message ?? "Solana RPC error");
-      }
-
-      return data.result;
-    } catch (error) {
-      lastError =
-        error instanceof Error ? error : new Error("Unknown RPC error");
-
-      if (attempt < 2) {
-        await sleep(300 * 2 ** attempt);
-      }
+  params:
+    unknown[]
+) {
+  return solanaRpcCall(
+    method,
+    params,
+    {
+      attemptsPerProvider:
+        3,
     }
-  }
-
-  throw lastError ?? new Error("RPC request failed.");
+  );
 }
 
 export async function POST(request: Request) {

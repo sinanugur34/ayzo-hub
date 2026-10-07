@@ -104,8 +104,8 @@ import {
 } from "./providers/transactionResilience";
 
 import {
-  goldRushTransfersProvider,
-} from "./providers/goldrushTransfers";
+  getPreferredEvmTokenTransfers,
+} from "./providers/preferredTransfers";
 
 import type {
   EvmContractDeploymentLookup,
@@ -229,10 +229,9 @@ const DEFAULT_DEPENDENCIES:
 
   getTokenTransfers:
     request =>
-      goldRushTransfersProvider
-        .getTokenTransfers(
-          request
-        ),
+      getPreferredEvmTokenTransfers(
+        request
+      ),
 
   getContractDeployment:
     request =>
@@ -857,7 +856,7 @@ async function buildDeveloperHistory(
   const coverage:
     EvmDeveloperHistoryCoverage = {
     transactionHistorySource:
-      "goldrush_transactions_v3",
+      "resilient_evm_transactions",
 
     requestedMaxPages:
       maxPages,

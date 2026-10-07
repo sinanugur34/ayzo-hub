@@ -7,8 +7,8 @@ import {
 } from "@/lib/intelligence/evm/engine";
 
 import {
-  goldRushTransfersProvider,
-} from "@/lib/intelligence/evm/providers/goldrushTransfers";
+  getPreferredEvmTokenTransfers,
+} from "@/lib/intelligence/evm/providers/preferredTransfers";
 
 import {
   analyzeEvmWalletRelationships,
@@ -43,6 +43,14 @@ function isSafeDecimal(
 function isTransferCursor(
   value: string
 ): boolean {
+  if (
+    /^alchemy-transfer:[A-Za-z0-9_-]+$/.test(
+      value
+    )
+  ) {
+    return true;
+  }
+
   if (isSafeDecimal(value)) {
     return true;
   }
@@ -197,8 +205,7 @@ export async function POST(
   }
 
   const transferResult =
-    await goldRushTransfersProvider
-      .getTokenTransfers({
+    await getPreferredEvmTokenTransfers({
         network,
         address,
         tokenAddress,
@@ -226,7 +233,7 @@ export async function POST(
         ok: false,
         network: networkId,
         provider:
-          goldRushTransfersProvider.id,
+          transferResult.providerId,
         result:
           transferResult,
       },
@@ -252,7 +259,7 @@ export async function POST(
     ok: true,
     network: networkId,
     provider:
-      goldRushTransfersProvider.id,
+      transferResult.providerId,
 
     coverage: {
       analyzedTransferCount:

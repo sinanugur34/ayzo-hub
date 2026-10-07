@@ -28,10 +28,10 @@ export type EvmTransactionFallbackDependencies = {
 const DEFAULT_DEPENDENCIES:
   EvmTransactionFallbackDependencies = {
   primary:
-    goldRushTransactionsProvider,
+    alchemyTransactionsProvider,
 
   fallback:
-    alchemyTransactionsProvider,
+    goldRushTransactionsProvider,
 };
 
 const FALLBACK_CODES =

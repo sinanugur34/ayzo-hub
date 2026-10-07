@@ -16,12 +16,12 @@ import {
 } from "@/lib/intelligence/evm/fundingProvenance";
 
 import {
-  goldRushTransactionsProvider,
-} from "@/lib/intelligence/evm/providers/goldrushTransactions";
+  getResilientEvmTransactions,
+} from "@/lib/intelligence/evm/providers/transactionResilience";
 
 import {
-  goldRushTransfersProvider,
-} from "@/lib/intelligence/evm/providers/goldrushTransfers";
+  getPreferredEvmTokenTransfers,
+} from "@/lib/intelligence/evm/providers/preferredTransfers";
 
 import {
   isNetworkId,
@@ -53,6 +53,14 @@ function isSafeDecimal(
 function isTransferCursor(
   value: string
 ): boolean {
+  if (
+    /^alchemy-transfer:[A-Za-z0-9_-]+$/.test(
+      value
+    )
+  ) {
+    return true;
+  }
+
   if (isSafeDecimal(value)) {
     return true;
   }
@@ -217,7 +225,7 @@ export async function POST(
       "__INVALID__" ||
     (
       transactionCursor !== null &&
-      !isSafeDecimal(
+      !/^alchemy:[A-Za-z0-9_-]+$/.test(
         transactionCursor
       )
     )
@@ -275,8 +283,7 @@ export async function POST(
   }
 
   const transactionResult =
-    await goldRushTransactionsProvider
-      .getTransactions({
+    await getResilientEvmTransactions({
         network,
         address,
         cursor:
@@ -289,7 +296,7 @@ export async function POST(
         ok: false,
         network: networkId,
         provider:
-          goldRushTransactionsProvider.id,
+          transactionResult.providerId,
         result:
           transactionResult,
       },
@@ -311,13 +318,17 @@ export async function POST(
   ];
 
   let transferCount = 0;
+
+  let transferProviderId:
+    string | null =
+      null;
+
   let nextTransferCursor:
     string | null = null;
 
   if (tokenAddress !== null) {
     const transferResult =
-      await goldRushTransfersProvider
-        .getTokenTransfers({
+      await getPreferredEvmTokenTransfers({
           network,
           address,
           tokenAddress,
@@ -326,6 +337,9 @@ export async function POST(
             transferCursor,
         });
 
+    transferProviderId =
+      transferResult.providerId;
+
     if (!transferResult.ok) {
       return Response.json(
         {
@@ -333,7 +347,7 @@ export async function POST(
           network:
             networkId,
           provider:
-            goldRushTransfersProvider.id,
+            transferResult.providerId,
           result:
             transferResult,
         },
@@ -382,11 +396,11 @@ export async function POST(
 
     providers: {
       transactions:
-        goldRushTransactionsProvider.id,
+        transactionResult.providerId,
       transfers:
         tokenAddress === null
           ? null
-          : goldRushTransfersProvider.id,
+          : transferProviderId,
     },
 
     coverage: {

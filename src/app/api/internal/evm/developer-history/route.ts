@@ -17,8 +17,8 @@ import {
 } from "@/lib/intelligence/evm/providers/alchemy";
 
 import {
-  goldRushTransactionsProvider,
-} from "@/lib/intelligence/evm/providers/goldrushTransactions";
+  getResilientEvmTransactions,
+} from "@/lib/intelligence/evm/providers/transactionResilience";
 
 import type {
   EvmTransaction,
@@ -263,6 +263,11 @@ export async function POST(
     string | null = null;
 
   let scannedPages = 0;
+
+  let transactionHistoryProviderId:
+    string | null =
+      null;
+
   let historyExhausted =
     false;
 
@@ -272,13 +277,15 @@ export async function POST(
     page += 1
   ) {
     const result =
-      await goldRushTransactionsProvider
-        .getTransactions({
+      await getResilientEvmTransactions({
           network,
           address:
             deployerAddress,
           cursor,
         });
+
+    transactionHistoryProviderId =
+      result.providerId;
 
     if (!result.ok) {
       return Response.json(
@@ -287,7 +294,7 @@ export async function POST(
           network:
             networkId,
           provider:
-            goldRushTransactionsProvider.id,
+            result.providerId,
           result,
         },
         {
@@ -471,7 +478,7 @@ export async function POST(
 
   if (!historyExhausted) {
     limitationParts.push(
-      `Developer transaction history was bounded to ${maxPages} GoldRush page(s); older activity may exist.`
+      `Developer transaction history was bounded to ${maxPages} resilient EVM transaction-history page(s); older activity may exist.`
     );
   }
 
@@ -493,7 +500,7 @@ export async function POST(
   const coverage:
     EvmDeveloperHistoryCoverage = {
     transactionHistorySource:
-      "goldrush_transactions_v3",
+      "resilient_evm_transactions",
 
     requestedMaxPages:
       maxPages,
@@ -573,7 +580,7 @@ export async function POST(
         alchemyEvmProvider.id,
 
       transactionHistory:
-        goldRushTransactionsProvider.id,
+        transactionHistoryProviderId,
 
       receipts:
         alchemyEvmProvider.id,
