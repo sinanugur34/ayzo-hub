@@ -282,7 +282,7 @@ export default function PricingPlans() {
 
       <details
         data-ayzo-plan-comparison="true"
-        className="mx-auto mt-8 w-full max-w-6xl overflow-hidden rounded-2xl border border-zinc-800 bg-[#101829]/55"
+        className="group mx-auto mt-8 w-full max-w-6xl overflow-hidden rounded-2xl border border-zinc-800 bg-[#101829]/55"
       >
         <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 marker:hidden">
           <div>
@@ -290,15 +290,27 @@ export default function PricingPlans() {
               Compare key features
             </div>
 
-            <div className="mt-1 text-[10px] leading-5 text-zinc-500">
+            <div className="mt-1 text-[10px] leading-4 text-zinc-500">
               {PLAN_COMPARISON_FEATURE_COUNT} features ·{" "}
-              {PLAN_COMPARISON_CATEGORY_COUNT} categories ·
-              full plan-access detail
+              {PLAN_COMPARISON_CATEGORY_COUNT} categories ·{" "}
+              full plan details
             </div>
           </div>
 
           <span className="shrink-0 text-xs font-medium text-violet-300">
-            Open comparison ↓
+            <span
+              data-ayzo-comparison-action="open"
+              className="group-open:hidden"
+            >
+              Open comparison ↓
+            </span>
+
+            <span
+              data-ayzo-comparison-action="close"
+              className="hidden group-open:inline"
+            >
+              Close comparison ↑
+            </span>
           </span>
         </summary>
 
