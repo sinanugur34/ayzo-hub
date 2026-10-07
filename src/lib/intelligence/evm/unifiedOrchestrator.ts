@@ -96,8 +96,8 @@ import {
 } from "./providers/alchemy";
 
 import {
-  goldRushEvmProvider,
-} from "./providers/goldrush";
+  getPreferredEvmTokenHolders,
+} from "./providers/preferredHolders";
 
 import {
   getResilientEvmTransactions,
@@ -215,9 +215,8 @@ const DEFAULT_DEPENDENCIES:
       }),
 
   getTokenHolders:
-    request =>
-      goldRushEvmProvider
-        .getTokenHolders(
+      request =>
+        getPreferredEvmTokenHolders(
           request
         ),
 

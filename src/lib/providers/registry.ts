@@ -11,6 +11,13 @@ export const PROVIDERS = {
     role: "primary",
   },
 
+  ankr: {
+    id: "ankr",
+    name: "Ankr",
+    kind: "indexed-data",
+    role: "primary",
+  },
+
   alchemy: {
     id: "alchemy",
     name: "Alchemy",

@@ -7,8 +7,8 @@ import {
 } from "@/lib/intelligence/evm/engine";
 
 import {
-  goldRushEvmProvider,
-} from "@/lib/intelligence/evm/providers/goldrush";
+  getPreferredEvmTokenHolders,
+} from "@/lib/intelligence/evm/providers/preferredHolders";
 
 import {
   isNetworkId,
@@ -117,7 +117,7 @@ export async function POST(
     cursor === "__INVALID__" ||
     (
       cursor !== null &&
-      !/^\d+$/.test(cursor)
+      !/^(?:\d+|ankr:\S{1,12000})$/.test(cursor)
     )
   ) {
     return Response.json(
@@ -126,7 +126,7 @@ export async function POST(
         code:
           "INVALID_CURSOR",
         error:
-          "Holder cursor must be a non-negative page number.",
+          "Holder cursor is invalid.",
       },
       { status: 400 }
     );
@@ -151,8 +151,7 @@ export async function POST(
   }
 
   const result =
-    await goldRushEvmProvider
-      .getTokenHolders({
+      await getPreferredEvmTokenHolders({
         network,
         address,
         limit,
@@ -177,8 +176,7 @@ export async function POST(
     {
       ok: result.ok,
       network: networkId,
-      provider:
-        goldRushEvmProvider.id,
+      provider: result.providerId,
       result,
     },
     { status }

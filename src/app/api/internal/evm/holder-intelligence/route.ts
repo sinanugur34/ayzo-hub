@@ -11,8 +11,8 @@ import {
 } from "@/lib/intelligence/evm/holderIntelligence";
 
 import {
-  goldRushEvmProvider,
-} from "@/lib/intelligence/evm/providers/goldrush";
+  getPreferredEvmTokenHolders,
+} from "@/lib/intelligence/evm/providers/preferredHolders";
 
 import {
   isNetworkId,
@@ -105,8 +105,7 @@ export async function POST(
   }
 
   const holderResult =
-    await goldRushEvmProvider
-      .getTokenHolders({
+      await getPreferredEvmTokenHolders({
         network,
         address,
         limit: 100,
@@ -130,8 +129,7 @@ export async function POST(
       {
         ok: false,
         network: networkId,
-        provider:
-          goldRushEvmProvider.id,
+        provider: holderResult.providerId,
         result:
           holderResult,
       },
@@ -147,8 +145,7 @@ export async function POST(
   return Response.json({
     ok: true,
     network: networkId,
-    provider:
-      goldRushEvmProvider.id,
+    provider: holderResult.providerId,
 
     coverage: {
       totalHolderCount:
