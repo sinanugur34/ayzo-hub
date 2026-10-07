@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   AnalysisDepthPlan,
 } from "@/lib/analysisDepthPolicy";
@@ -986,7 +987,7 @@ export async function getHyperliquidEvidence(
       JsonRecord
   ) {
     const response =
-      await deps.fetchImpl(
+      await providerUsageFetch({ provider: "hyperliquid", operation: "hyperliquid.info" }, deps.infoUrl, () => deps.fetchImpl(
         deps.infoUrl,
         {
           method:
@@ -1011,7 +1012,7 @@ export async function getHyperliquidEvidence(
               body
             ),
         }
-      );
+      ));
 
     if (
       response.status ===
@@ -1050,7 +1051,7 @@ export async function getHyperliquidEvidence(
       1;
 
     const response =
-      await deps.fetchImpl(
+      await providerUsageFetch({ provider: "hyperliquid", operation: `hyperliquid.rpc.${method}` }, deps.evmRpcUrl, () => deps.fetchImpl(
         deps.evmRpcUrl,
         {
           method:
@@ -1083,7 +1084,7 @@ export async function getHyperliquidEvidence(
               params,
             }),
         }
-      );
+      ));
 
     if (
       response.status ===

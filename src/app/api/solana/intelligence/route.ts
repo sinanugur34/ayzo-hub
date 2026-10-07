@@ -1,3 +1,4 @@
+import { runProviderUsageAnalysis } from "@/lib/providerUsageAnalysis";
 import { isAddress } from "@solana/kit";
 import { cookies } from "next/headers";
 import {
@@ -259,15 +260,42 @@ export async function POST(request: Request) {
       }
     }
 
-    const result = await runSolanaIntelligence({
-      address,
-      requestUrl:
-        request.url,
-      analysisPlan:
-        quota?.plan ??
-        "free",
-      testFailure,
-    });
+    const runAnalysis =
+      () =>
+        runSolanaIntelligence({
+          address,
+          requestUrl:
+            request.url,
+          analysisPlan:
+            quota?.plan ??
+            "free",
+          testFailure,
+        });
+
+    const result =
+      isDevelopmentTestRequest
+        ? await runAnalysis()
+        : (
+            await runProviderUsageAnalysis(
+              {
+                userId:
+                  quota?.userId ??
+                  null,
+
+                platform:
+                  "web",
+
+                planId:
+                  quota?.plan ??
+                  "free",
+
+                network:
+                  "solana",
+              },
+
+              runAnalysis
+            )
+          ).value;
 
     await refundAnalysisQuotaOnFailure(
       request,

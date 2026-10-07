@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   AnalysisDepthPlan,
 } from "@/lib/analysisDepthPolicy";
@@ -273,6 +274,9 @@ export async function getAptosIndexedEvidence(
     );
   }
 
+  const graphqlUrl =
+    deps.graphqlUrl;
+
   const policy =
     getAptosAnalysisPolicy(
       analysisPlan
@@ -303,8 +307,8 @@ export async function getAptosIndexedEvidence(
     }
 
     const response =
-      await deps.fetchImpl(
-        deps.graphqlUrl,
+      await providerUsageFetch({ provider: "aptos-labs-indexer", operation: "aptos.indexer" }, graphqlUrl, () => deps.fetchImpl(
+        graphqlUrl,
         {
           method:
             "POST",
@@ -335,7 +339,7 @@ export async function getAptosIndexedEvidence(
               },
             }),
         }
-      );
+      ));
 
     if (!response.ok) {
       return providerFailure(

@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   ProviderCapability,
 } from "@/lib/providers/types";
@@ -407,7 +408,7 @@ export class AlchemyLitecoinRpcProvider
 
     try {
       const response =
-        await fetch(
+        await providerUsageFetch({ provider: "alchemy", operation: "litecoin.getrawtransaction" }, `https://litecoin-mainnet.g.alchemy.com/v2/${encodeURIComponent(apiKey)}`, () => fetch(
           `https://litecoin-mainnet.g.alchemy.com/v2/${encodeURIComponent(apiKey)}`,
           {
             method:
@@ -441,7 +442,7 @@ export class AlchemyLitecoinRpcProvider
             signal:
               controller.signal,
           }
-        );
+        ));
 
       const latencyMs =
         elapsedMs(

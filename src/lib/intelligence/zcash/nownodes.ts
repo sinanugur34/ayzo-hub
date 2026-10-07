@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   AnalysisDepthPlan,
 } from "@/lib/analysisDepthPolicy";
@@ -395,7 +396,7 @@ export async function getZcashNownodesEvidence(
 
       try {
         const response =
-          await fetchImpl(
+          await providerUsageFetch({ provider: "nownodes", operation: "zcash.rpc" }, `${base}${path}`, () => fetchImpl(
             `${base}${path}`,
             {
               method:
@@ -416,7 +417,7 @@ export async function getZcashNownodesEvidence(
                 controller
                   .signal,
             }
-          );
+          ));
 
         if (!response.ok) {
           return {

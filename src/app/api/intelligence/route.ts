@@ -1,3 +1,4 @@
+import { runProviderUsageAnalysis } from "@/lib/providerUsageAnalysis";
 import { isAddress } from "@solana/kit";
 import { cookies } from "next/headers";
 
@@ -845,7 +846,42 @@ export async function POST(request: Request) {
         });
       };
 
-    switch (resolution.engine) {
+        const runMeasuredAnalysis =
+      async <T>(
+        callback:
+          () => Promise<T>
+      ): Promise<T> => {
+        if (
+          isDevelopmentTestRequest
+        ) {
+          return callback();
+        }
+
+        const measured =
+          await runProviderUsageAnalysis(
+            {
+              userId:
+                quota?.userId ?? null,
+
+              platform:
+                "web",
+
+              planId:
+                analysisPlan,
+
+              network:
+                resolution.networkId,
+            },
+
+            callback
+          );
+
+        return measured.value;
+      };
+
+    /* AYZO_PROVIDER_USAGE_SCOPE_V1 */
+    return runMeasuredAnalysis(async () => {
+switch (resolution.engine) {
       case "solana": {
         const result =
           await runSolanaIntelligence({
@@ -1415,6 +1451,7 @@ export async function POST(request: Request) {
       }
     );
 
+    });
   } catch {
     if (
       !isDevelopmentTestRequest &&

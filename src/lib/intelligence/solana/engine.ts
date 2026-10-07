@@ -1,3 +1,4 @@
+import { buildProviderUsagePropagationHeaders } from "@/lib/providerUsagePropagation";
 import { getVercelOidcToken } from "@vercel/oidc";
 import { getInternalApiKey } from "@/lib/apiSecurity";
 import type { IntelligenceEngineResult } from "@/lib/intelligence/types";
@@ -28,6 +29,9 @@ async function postInternal(
   body: JsonObject,
   retries = 3
 ) {
+  const providerUsageHeaders =
+    buildProviderUsagePropagationHeaders();
+
   for (let attempt = 0; attempt < retries; attempt++) {
     const oidcToken =
       process.env.VERCEL
@@ -38,6 +42,9 @@ async function postInternal(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+
+        ...providerUsageHeaders,
+
         "x-ayzo-internal-key":
           getInternalApiKey(),
 

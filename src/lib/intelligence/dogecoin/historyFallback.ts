@@ -1,3 +1,4 @@
+import { runWithProviderUsageHintsCore } from "@/lib/providerUsageScopeCore";
 import type {
   DogecoinAddressTransactionsProvider,
   DogecoinPaginatedAddressRequest,
@@ -62,7 +63,15 @@ export async function getDogecoinAddressHistoryWithFallback(
     return primaryResult;
   }
 
-  return fallback.getAddressTransactions(
-    request
+  return runWithProviderUsageHintsCore(
+    {
+      fallbackUsed:
+        true,
+    },
+
+    () =>
+      fallback.getAddressTransactions(
+        request
+      )
   );
 }

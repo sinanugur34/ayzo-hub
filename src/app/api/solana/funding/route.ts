@@ -1,3 +1,5 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
+import { runWithPropagatedProviderUsage } from "@/lib/providerUsagePropagation";
 import { isInternalApiRequest } from "@/lib/apiSecurity";
 import { isAddress } from "@solana/kit";
 import type {
@@ -66,19 +68,43 @@ async function rpcCall(method: string, params: unknown[]) {
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const response = await fetch(getRpcUrl(), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: crypto.randomUUID(),
-          method,
-          params,
-        }),
-        cache: "no-store",
-      });
+      const rpcUrl =
+        getRpcUrl();
+
+      const response =
+        await providerUsageFetch(
+          {
+            provider:
+              "helius",
+
+            operation:
+              `solana.rpc.${method}`,
+
+            attempt:
+              attempt + 1,
+          },
+
+          rpcUrl,
+
+          () =>
+            fetch(rpcUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+              body: JSON.stringify({
+                jsonrpc:
+                  "2.0",
+                id:
+                  crypto.randomUUID(),
+                method,
+                params,
+              }),
+              cache:
+                "no-store",
+            })
+        );
 
       if (response.status === 429 || response.status === 503) {
         await sleep(300 * 2 ** attempt);
@@ -120,6 +146,9 @@ export async function POST(request: Request) {
     );
   }
 
+  return runWithPropagatedProviderUsage(
+    request,
+    async () => {
   try {
     const body = await request.json();
 
@@ -405,4 +434,6 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+    }
+  );
 }

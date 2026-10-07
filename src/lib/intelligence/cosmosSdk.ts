@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   AnalysisDepthPlan,
 } from "@/lib/analysisDepthPolicy";
@@ -901,7 +902,7 @@ export async function loadCosmosSdkEvidence(
 
         try {
           const response =
-            await fetchImpl(
+            await providerUsageFetch({ operation: "cosmos.http" }, `${base}${path}`, () => fetchImpl(
               `${base}${path}`,
               {
                 method:
@@ -922,7 +923,7 @@ export async function loadCosmosSdkEvidence(
                   controller
                     .signal,
               }
-            );
+            ));
 
           if (!response.ok) {
             last = {

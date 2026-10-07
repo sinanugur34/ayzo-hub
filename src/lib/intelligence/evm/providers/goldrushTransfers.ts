@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   ProviderCapability,
 } from "@/lib/providers/types";
@@ -396,7 +397,7 @@ async function fetchGoldRushJson(
   signal: AbortSignal
 ): Promise<GoldRushJsonResponse> {
   const response =
-    await fetch(
+    await providerUsageFetch({ provider: "goldrush", operation: "evm.transfers" }, url, () => fetch(
       url,
       {
         method: "GET",
@@ -411,7 +412,7 @@ async function fetchGoldRushJson(
         cache: "no-store",
         signal,
       }
-    );
+    ));
 
   let payload:
     unknown = null;

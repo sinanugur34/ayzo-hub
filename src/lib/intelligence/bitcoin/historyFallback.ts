@@ -1,3 +1,4 @@
+import { runWithProviderUsageHintsCore } from "@/lib/providerUsageScopeCore";
 import type {
   BitcoinAddressTransactionsProvider,
   BitcoinPaginatedAddressRequest,
@@ -67,8 +68,16 @@ export async function getBitcoinAddressHistoryWithFallback(
     return primaryResult;
   }
 
-  return fallback
-    .getAddressTransactions(
-      request
-    );
+  return runWithProviderUsageHintsCore(
+    {
+      fallbackUsed:
+        true,
+    },
+
+    () =>
+      fallback
+        .getAddressTransactions(
+          request
+        )
+  );
 }

@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   AnalysisDepthPlan,
 } from "@/lib/analysisDepthPolicy";
@@ -792,7 +793,7 @@ export async function getSuiAccountEvidence(
 
   try {
     const response =
-      await deps.fetchImpl(
+      await providerUsageFetch({ provider: "sui-graphql", operation: "sui.graphql" }, deps.graphqlUrl, () => deps.fetchImpl(
         deps.graphqlUrl,
         {
           method:
@@ -836,7 +837,7 @@ export async function getSuiAccountEvidence(
               },
             }),
         }
-      );
+      ));
 
     const latencyMs =
       Date.now() -

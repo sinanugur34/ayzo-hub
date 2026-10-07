@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   ProviderCapability,
 } from "@/lib/providers/types";
@@ -749,7 +750,7 @@ export class AlchemyTransactionsProvider
 
         try {
           const response =
-            await fetch(
+            await providerUsageFetch({ provider: "alchemy", operation: "evm.transactions" }, endpoint, () => fetch(
               endpoint,
               {
                 method:
@@ -820,7 +821,7 @@ export class AlchemyTransactionsProvider
                 signal:
                   controller.signal,
               }
-            );
+            ));
 
           if (
             response.status ===

@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   ProviderCapability,
 } from "@/lib/providers/types";
@@ -489,7 +490,7 @@ export class AlchemyBitcoinProvider
 
     try {
       const response =
-        await fetch(
+        await providerUsageFetch({ provider: "alchemy", operation: `bitcoin.rpc.${method}` }, "https://bitcoin-mainnet.g.alchemy.com/v2", () => fetch(
           "https://bitcoin-mainnet.g.alchemy.com/v2",
           {
             method:
@@ -521,7 +522,7 @@ export class AlchemyBitcoinProvider
             signal:
               controller.signal,
           }
-        );
+        ));
 
       const latencyMs =
         elapsedMs(

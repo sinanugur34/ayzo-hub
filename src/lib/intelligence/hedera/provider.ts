@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   AnalysisDepthPlan,
 } from "@/lib/analysisDepthPolicy";
@@ -570,7 +571,7 @@ async function request(
 
   try {
     const response =
-      await deps.fetchImpl(
+      await providerUsageFetch({ provider: deps.providerId ?? "hedera-mirror-public", operation: "hedera.mirror" }, url, () => deps.fetchImpl(
         url,
         {
           headers:
@@ -584,7 +585,7 @@ async function request(
           signal:
             controller.signal,
         }
-      );
+      ));
 
     if (
       !response.ok

@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   ProviderCapability,
 } from "@/lib/providers/types";
@@ -407,7 +408,7 @@ export class AlchemyDogecoinRpcProvider
 
     try {
       const response =
-        await fetch(
+        await providerUsageFetch({ provider: "alchemy", operation: "dogecoin.getrawtransaction" }, `https://dogecoin-mainnet.g.alchemy.com/v2/${encodeURIComponent(apiKey)}`, () => fetch(
           `https://dogecoin-mainnet.g.alchemy.com/v2/${encodeURIComponent(apiKey)}`,
           {
             method:
@@ -441,7 +442,7 @@ export class AlchemyDogecoinRpcProvider
             signal:
               controller.signal,
           }
-        );
+        ));
 
       const latencyMs =
         elapsedMs(

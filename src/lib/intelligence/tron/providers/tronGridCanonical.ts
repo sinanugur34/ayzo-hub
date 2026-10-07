@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   ProviderCapability,
 } from "@/lib/providers/types";
@@ -338,7 +339,7 @@ async function postNodeJson(
 
   try {
     const response =
-      await fetch(
+      await providerUsageFetch({ provider: "trongrid", operation: "tron.canonical" }, `${TRONGRID_MAINNET_BASE_URL}${path}`, () => fetch(
         `${TRONGRID_MAINNET_BASE_URL}${path}`,
         {
           method:
@@ -369,7 +370,7 @@ async function postNodeJson(
 
           signal,
         }
-      );
+      ));
 
     const latencyMs =
       elapsedMs(

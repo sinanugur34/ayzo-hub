@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import {
   isDogecoinMainnetAddress,
 } from "../address";
@@ -301,7 +302,7 @@ export class BlockCypherDogecoinProvider
 
     try {
       const response =
-        await fetch(
+        await providerUsageFetch({ provider: "blockcypher", operation: "dogecoin.history" }, url, () => fetch(
           url,
           {
             method: "GET",
@@ -320,7 +321,7 @@ export class BlockCypherDogecoinProvider
             signal:
               controller.signal,
           }
-        );
+        ));
 
       const latencyMs =
         elapsedMs(
