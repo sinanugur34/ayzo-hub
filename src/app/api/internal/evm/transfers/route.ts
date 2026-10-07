@@ -7,8 +7,8 @@ import {
 } from "@/lib/intelligence/evm/engine";
 
 import {
-  goldRushTransfersProvider,
-} from "@/lib/intelligence/evm/providers/goldrushTransfers";
+  alchemyTransfersProvider,
+} from "@/lib/intelligence/evm/providers/alchemyTransfers";
 
 import {
   isNetworkId,
@@ -37,6 +37,14 @@ function isSafeDecimal(
 function isTransferCursor(
   value: string
 ): boolean {
+  if (
+    /^alchemy-transfer:[A-Za-z0-9_-]+$/.test(
+      value
+    )
+  ) {
+    return true;
+  }
+
   if (isSafeDecimal(value)) {
     return true;
   }
@@ -197,7 +205,7 @@ export async function POST(
   }
 
   const result =
-    await goldRushTransfersProvider
+    await alchemyTransfersProvider
       .getTokenTransfers({
         network,
         address,
@@ -227,7 +235,7 @@ export async function POST(
       ok: result.ok,
       network: networkId,
       provider:
-        goldRushTransfersProvider.id,
+        alchemyTransfersProvider.id,
       result,
     },
     { status }

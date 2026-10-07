@@ -17,8 +17,8 @@ import {
 } from "@/lib/intelligence/evm/providers/alchemy";
 
 import {
-  goldRushTransactionsProvider,
-} from "@/lib/intelligence/evm/providers/goldrushTransactions";
+  alchemyTransactionsProvider,
+} from "@/lib/intelligence/evm/providers/alchemyTransactions";
 
 import type {
   EvmTransaction,
@@ -272,7 +272,7 @@ export async function POST(
     page += 1
   ) {
     const result =
-      await goldRushTransactionsProvider
+      await alchemyTransactionsProvider
         .getTransactions({
           network,
           address:
@@ -287,7 +287,7 @@ export async function POST(
           network:
             networkId,
           provider:
-            goldRushTransactionsProvider.id,
+            alchemyTransactionsProvider.id,
           result,
         },
         {
@@ -471,7 +471,7 @@ export async function POST(
 
   if (!historyExhausted) {
     limitationParts.push(
-      `Developer transaction history was bounded to ${maxPages} GoldRush page(s); older activity may exist.`
+      `Developer transaction history was bounded to ${maxPages} Alchemy transaction-history page(s); older activity may exist.`
     );
   }
 
@@ -493,7 +493,7 @@ export async function POST(
   const coverage:
     EvmDeveloperHistoryCoverage = {
     transactionHistorySource:
-      "goldrush_transactions_v3",
+      "alchemy_getAssetTransfers",
 
     requestedMaxPages:
       maxPages,
@@ -573,7 +573,7 @@ export async function POST(
         alchemyEvmProvider.id,
 
       transactionHistory:
-        goldRushTransactionsProvider.id,
+        alchemyTransactionsProvider.id,
 
       receipts:
         alchemyEvmProvider.id,

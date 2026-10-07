@@ -7,12 +7,12 @@ import {
 } from "@/lib/intelligence/evm/engine";
 
 import {
-  goldRushTransactionsProvider,
-} from "@/lib/intelligence/evm/providers/goldrushTransactions";
+  alchemyTransactionsProvider,
+} from "@/lib/intelligence/evm/providers/alchemyTransactions";
 
 import {
-  goldRushTransfersProvider,
-} from "@/lib/intelligence/evm/providers/goldrushTransfers";
+  alchemyTransfersProvider,
+} from "@/lib/intelligence/evm/providers/alchemyTransfers";
 
 import {
   analyzeEvmWalletGraph,
@@ -541,7 +541,7 @@ export async function POST(
         1;
 
       const result =
-        await goldRushTransactionsProvider
+        await alchemyTransactionsProvider
           .getTransactions({
             network,
             address:
@@ -561,7 +561,7 @@ export async function POST(
             graphDepth:
               current.depth,
             provider:
-              goldRushTransactionsProvider.id,
+              alchemyTransactionsProvider.id,
             result,
           },
           {
@@ -645,7 +645,7 @@ export async function POST(
           1;
 
         const result =
-          await goldRushTransfersProvider
+          await alchemyTransfersProvider
             .getTokenTransfers({
               network,
               address:
@@ -667,7 +667,7 @@ export async function POST(
               graphDepth:
                 current.depth,
               provider:
-                goldRushTransfersProvider.id,
+                alchemyTransfersProvider.id,
               result,
             },
             {
@@ -949,12 +949,12 @@ export async function POST(
 
     providers: {
       transactions:
-        goldRushTransactionsProvider.id,
+        alchemyTransactionsProvider.id,
 
       transfers:
         tokenAddress === null
           ? null
-          : goldRushTransfersProvider.id,
+          : alchemyTransfersProvider.id,
     },
 
     request: {

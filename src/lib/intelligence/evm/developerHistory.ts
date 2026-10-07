@@ -20,7 +20,9 @@ export type EvmDeveloperDeploymentObservation = {
 
 export type EvmDeveloperHistoryCoverage = {
   transactionHistorySource:
-    "goldrush_transactions_v3";
+    | "goldrush_transactions_v3"
+    | "alchemy_getAssetTransfers"
+    | "resilient_evm_transactions";
 
   requestedMaxPages: number;
   scannedPages: number;

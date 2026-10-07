@@ -79,9 +79,15 @@ export type TransactionResilienceDependencies = {
 
 const DEFAULT_PROVIDERS:
   readonly EvmTransactionsProvider[] = [
-  goldRushTransactionsProvider,
   alchemyTransactionsProvider,
   etherscanTransactionsProvider,
+  /*
+   * Legacy third-line fallback only.
+   *
+   * AYZO no longer relies on GoldRush as
+   * the primary EVM transaction provider.
+   */
+  goldRushTransactionsProvider,
 ];
 
 type TransactionCursorOwner =

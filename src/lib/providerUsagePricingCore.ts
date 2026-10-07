@@ -108,7 +108,9 @@ function alchemyComputeUnits(
    */
   if (
     operation ===
-      "evm.transactions"
+      "evm.transactions" ||
+    operation ===
+      "evm.transfers"
   ) {
     return 120;
   }

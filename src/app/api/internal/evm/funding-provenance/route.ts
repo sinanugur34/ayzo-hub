@@ -16,12 +16,12 @@ import {
 } from "@/lib/intelligence/evm/fundingProvenance";
 
 import {
-  goldRushTransactionsProvider,
-} from "@/lib/intelligence/evm/providers/goldrushTransactions";
+  alchemyTransactionsProvider,
+} from "@/lib/intelligence/evm/providers/alchemyTransactions";
 
 import {
-  goldRushTransfersProvider,
-} from "@/lib/intelligence/evm/providers/goldrushTransfers";
+  alchemyTransfersProvider,
+} from "@/lib/intelligence/evm/providers/alchemyTransfers";
 
 import {
   isNetworkId,
@@ -53,6 +53,14 @@ function isSafeDecimal(
 function isTransferCursor(
   value: string
 ): boolean {
+  if (
+    /^alchemy-transfer:[A-Za-z0-9_-]+$/.test(
+      value
+    )
+  ) {
+    return true;
+  }
+
   if (isSafeDecimal(value)) {
     return true;
   }
@@ -217,7 +225,7 @@ export async function POST(
       "__INVALID__" ||
     (
       transactionCursor !== null &&
-      !isSafeDecimal(
+      !/^alchemy:[A-Za-z0-9_-]+$/.test(
         transactionCursor
       )
     )
@@ -275,7 +283,7 @@ export async function POST(
   }
 
   const transactionResult =
-    await goldRushTransactionsProvider
+    await alchemyTransactionsProvider
       .getTransactions({
         network,
         address,
@@ -289,7 +297,7 @@ export async function POST(
         ok: false,
         network: networkId,
         provider:
-          goldRushTransactionsProvider.id,
+          alchemyTransactionsProvider.id,
         result:
           transactionResult,
       },
@@ -316,7 +324,7 @@ export async function POST(
 
   if (tokenAddress !== null) {
     const transferResult =
-      await goldRushTransfersProvider
+      await alchemyTransfersProvider
         .getTokenTransfers({
           network,
           address,
@@ -333,7 +341,7 @@ export async function POST(
           network:
             networkId,
           provider:
-            goldRushTransfersProvider.id,
+            alchemyTransfersProvider.id,
           result:
             transferResult,
         },
@@ -382,11 +390,11 @@ export async function POST(
 
     providers: {
       transactions:
-        goldRushTransactionsProvider.id,
+        alchemyTransactionsProvider.id,
       transfers:
         tokenAddress === null
           ? null
-          : goldRushTransfersProvider.id,
+          : alchemyTransfersProvider.id,
     },
 
     coverage: {
