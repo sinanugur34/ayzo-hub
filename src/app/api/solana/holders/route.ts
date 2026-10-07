@@ -1,3 +1,5 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
+import { runWithPropagatedProviderUsage } from "@/lib/providerUsagePropagation";
 import { isInternalApiRequest } from "@/lib/apiSecurity";
 import { isAddress } from "@solana/kit";
 
@@ -31,19 +33,36 @@ type ParsedTokenAccount = {
 };
 
 async function rpcCall(method: string, params: unknown[]) {
-  const response = await fetch(getRpcUrl(), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      id: 1,
-      method,
-      params,
-    }),
-    cache: "no-store",
-  });
+  const rpcUrl =
+    getRpcUrl();
+
+  const response =
+    await providerUsageFetch(
+      {
+        provider:
+          "helius",
+
+        operation:
+          `solana.rpc.${method}`,
+      },
+
+      rpcUrl,
+
+      () =>
+        fetch(rpcUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method,
+            params,
+          }),
+          cache: "no-store",
+        })
+    );
 
   if (!response.ok) {
     throw new Error(`RPC HTTP ${response.status}`);
@@ -77,6 +96,9 @@ export async function POST(request: Request) {
     );
   }
 
+  return runWithPropagatedProviderUsage(
+    request,
+    async () => {
   try {
     const body = await request.json();
 
@@ -335,4 +357,6 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+    }
+  );
 }
