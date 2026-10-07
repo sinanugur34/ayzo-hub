@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   ProviderCapability,
 } from "@/lib/providers/types";
@@ -305,7 +306,7 @@ export class AlchemyEvmProvider
       performance.now();
 
     try {
-      const response = await fetch(
+      const response = await providerUsageFetch({ provider: "alchemy", operation: `evm.rpc.${method}` }, `https://${config.httpHost}/v2`, () => fetch(
         `https://${config.httpHost}/v2`,
         {
           method: "POST",
@@ -324,7 +325,7 @@ export class AlchemyEvmProvider
           cache: "no-store",
           signal: controller.signal,
         }
-      );
+      ));
 
       const latencyMs =
         elapsedMs(startedAt);

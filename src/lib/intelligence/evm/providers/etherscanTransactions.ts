@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   ProviderCapability,
 } from "@/lib/providers/types";
@@ -592,7 +593,7 @@ export class EtherscanTransactionsProvider
 
     try {
       const response =
-        await fetch(
+        await providerUsageFetch({ provider: "etherscan", operation: "evm.transactions" }, url, () => fetch(
           url,
           {
             method:
@@ -609,7 +610,7 @@ export class EtherscanTransactionsProvider
             signal:
               controller.signal,
           }
-        );
+        ));
 
       const latencyMs =
         elapsedMs(

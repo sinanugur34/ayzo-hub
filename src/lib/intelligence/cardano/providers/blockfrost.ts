@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import {
   isCardanoPaymentAddress,
 } from "../address";
@@ -232,6 +233,9 @@ async function requestJson(
     };
   }
 
+  const projectId =
+    deps.projectId;
+
   const controller =
     new AbortController();
 
@@ -244,17 +248,17 @@ async function requestJson(
 
   try {
     const response =
-      await deps.fetchImpl(
+      await providerUsageFetch({ provider: "cardano-blockfrost", operation: "cardano.http" }, `${deps.baseUrl}${path}`, () => deps.fetchImpl(
         `${deps.baseUrl}${path}`,
         {
           headers: {
             project_id:
-              deps.projectId,
+              projectId,
           },
           signal:
             controller.signal,
         }
-      );
+      ));
 
     if (!response.ok) {
       return {

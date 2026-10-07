@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import {
   isBitcoinMainnetAddress,
 } from "../address";
@@ -356,7 +357,7 @@ export class MempoolBitcoinProvider
 
     try {
       const response =
-        await fetch(
+        await providerUsageFetch({ provider: "mempool", operation: "bitcoin.history" }, url, () => fetch(
           url,
           {
             method: "GET",
@@ -375,7 +376,7 @@ export class MempoolBitcoinProvider
             signal:
               controller.signal,
           }
-        );
+        ));
 
       const latencyMs =
         elapsedMs(

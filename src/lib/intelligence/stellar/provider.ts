@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   AnalysisDepthPlan,
 } from "@/lib/analysisDepthPolicy";
@@ -706,7 +707,7 @@ export async function getStellarEvidence(
       string
   ) {
     const response =
-      await deps.fetchImpl(
+      await providerUsageFetch({ provider: "stellar-horizon", operation: "stellar.horizon" }, `${deps.baseUrl}${path}`, () => deps.fetchImpl(
         `${deps.baseUrl}${path}`,
         {
           method:
@@ -723,7 +724,7 @@ export async function getStellarEvidence(
           signal:
             controller.signal,
         }
-      );
+      ));
 
     if (
       response.status ===

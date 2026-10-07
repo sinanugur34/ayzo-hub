@@ -1,3 +1,4 @@
+import { captureProviderUsageCore, runWithProviderUsageHintsCore } from "@/lib/providerUsageScopeCore";
 import {
   randomUUID,
   createHash,
@@ -774,6 +775,38 @@ async function waitForPeerCache(
   return null;
 }
 
+function captureTransactionCacheHit(
+  result:
+    EvmProviderSuccess<
+      EvmTransactionsPage
+    >
+) {
+  captureProviderUsageCore({
+    provider:
+      result.providerId,
+
+    operation:
+      "evm.transactions",
+
+    outcome:
+      "cache_hit",
+
+    latencyMs:
+      0,
+
+    cacheHit:
+      true,
+
+    estimatedUnits:
+      0,
+
+    metadata: {
+      event_kind:
+        "cache",
+    },
+  });
+}
+
 export async function getResilientEvmTransactions(
   request:
     EvmPaginatedAddressRequest,
@@ -801,6 +834,10 @@ export async function getResilientEvmTransactions(
     );
 
   if (cached) {
+    captureTransactionCacheHit(
+      cached
+    );
+
     return cached;
   }
 
@@ -828,6 +865,10 @@ export async function getResilientEvmTransactions(
       );
 
     if (peerCached) {
+      captureTransactionCacheHit(
+        peerCached
+      );
+
       return peerCached;
     }
   }
@@ -840,6 +881,9 @@ export async function getResilientEvmTransactions(
     transactionCursorOwner(
       request.cursor
     );
+
+  let attemptedProviders =
+    0;
 
   try {
     for (
@@ -882,11 +926,25 @@ export async function getResilientEvmTransactions(
           provider
         );
 
+      const fallbackUsed =
+        attemptedProviders >
+        0;
+
+      attemptedProviders +=
+        1;
+
       const result =
-        await provider
-          .getTransactions(
-            providerRequest
-          );
+        await runWithProviderUsageHintsCore(
+          {
+            fallbackUsed,
+          },
+
+          () =>
+            provider
+              .getTransactions(
+                providerRequest
+              )
+        );
 
       if (
         result.ok

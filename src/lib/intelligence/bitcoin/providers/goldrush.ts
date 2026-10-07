@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import {
   isBitcoinMainnetAddress,
 } from "../address";
@@ -568,7 +569,7 @@ export class GoldRushBitcoinProvider
 
     try {
       const response =
-        await fetch(
+        await providerUsageFetch({ provider: "goldrush", operation: "bitcoin.history" }, url, () => fetch(
           url,
           {
             method: "GET",
@@ -587,7 +588,7 @@ export class GoldRushBitcoinProvider
             signal:
               controller.signal,
           }
-        );
+        ));
 
       const latencyMs =
         elapsedMs(

@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   AnalysisDepthPlan,
 } from "@/lib/analysisDepthPolicy";
@@ -635,14 +636,14 @@ async function request(
     }
 
     const response =
-      await deps.fetchImpl(
+      await providerUsageFetch({ provider: "near-nearblocks", operation: "near.indexed_history" }, url, () => deps.fetchImpl(
         url,
         {
           headers,
           signal:
             controller.signal,
         }
-      );
+      ));
 
     if (
       !response.ok

@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   AnalysisDepthPlan,
 } from "@/lib/analysisDepthPolicy";
@@ -301,7 +302,7 @@ async function requestJson(
 
   try {
     const response =
-      await deps.fetchImpl(
+      await providerUsageFetch({ provider: "blockchair", operation: "zcash.blockchair" }, url, () => deps.fetchImpl(
         url,
         {
           method:
@@ -321,7 +322,7 @@ async function requestJson(
           signal:
             controller.signal,
         }
-      );
+      ));
 
     if (
       !response.ok

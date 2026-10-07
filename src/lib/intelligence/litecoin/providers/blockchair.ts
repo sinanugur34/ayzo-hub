@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import {
   isLitecoinMainnetAddress,
 } from "../address";
@@ -270,7 +271,7 @@ export class BlockchairLitecoinProvider
 
     try {
       const response =
-        await fetch(
+        await providerUsageFetch({ provider: "blockchair", operation: "litecoin.history" }, url, () => fetch(
           url,
           {
             method: "GET",
@@ -284,7 +285,7 @@ export class BlockchairLitecoinProvider
             signal:
               controller.signal,
           }
-        );
+        ));
 
       const latencyMs =
         elapsedMs(startedAt);

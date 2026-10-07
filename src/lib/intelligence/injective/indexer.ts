@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   AnalysisDepthPlan,
 } from "@/lib/analysisDepthPolicy";
@@ -1048,7 +1049,7 @@ export async function getInjectiveIndexedHistory(
         }
 
         const response =
-          await fetchImpl(
+          await providerUsageFetch({ provider: provider.id, operation: "injective.indexed_history" }, `${base}/api/explorer/v1/accountTxs/${encodeURIComponent(normalized)}?${params.toString()}`, () => fetchImpl(
             `${base}/api/explorer/v1/accountTxs/${encodeURIComponent(normalized)}?${params.toString()}`,
             {
               method:
@@ -1062,7 +1063,7 @@ export async function getInjectiveIndexedHistory(
               signal:
                 controller.signal,
             }
-          );
+          ));
 
         if (!response.ok) {
           last = {

@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   ProviderCapability,
 } from "@/lib/providers/types";
@@ -426,7 +427,7 @@ export class GoldRushTransactionsProvider
 
     try {
       const response =
-        await fetch(
+        await providerUsageFetch({ provider: "goldrush", operation: "evm.transactions" }, url, () => fetch(
           url,
           {
             method: "GET",
@@ -443,7 +444,7 @@ export class GoldRushTransactionsProvider
             signal:
               controller.signal,
           }
-        );
+        ));
 
       const latencyMs =
         elapsedMs(startedAt);

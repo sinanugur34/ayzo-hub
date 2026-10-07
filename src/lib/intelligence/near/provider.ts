@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   AnalysisDepthPlan,
 } from "@/lib/analysisDepthPolicy";
@@ -295,7 +296,7 @@ async function rpcRequest(
 
   try {
     const response =
-      await deps.fetchImpl(
+      await providerUsageFetch({ provider: "near-rpc", operation: "near.rpc" }, deps.baseUrl, () => deps.fetchImpl(
         deps.baseUrl,
         {
           method:
@@ -322,7 +323,7 @@ async function rpcRequest(
           signal:
             controller.signal,
         }
-      );
+      ));
 
     if (
       !response.ok

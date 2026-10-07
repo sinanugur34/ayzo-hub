@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   AnalysisDepthPlan,
 } from "@/lib/analysisDepthPolicy";
@@ -282,7 +283,10 @@ async function rpc(
 
   try {
     const response =
-      await fetch(
+      await providerUsageFetch({ provider: "xrpl-public", operation: `xrpl.rpc.${method}` }, process.env
+          .XRPL_RPC_URL
+          ?.trim() ||
+          DEFAULT_XRPL_RPC, () => fetch(
         process.env
           .XRPL_RPC_URL
           ?.trim() ||
@@ -318,7 +322,7 @@ async function rpc(
           cache:
             "no-store",
         }
-      );
+      ));
 
     const latencyMs =
       Date.now() -

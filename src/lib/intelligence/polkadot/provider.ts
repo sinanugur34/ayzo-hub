@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   AnalysisDepthPlan,
 } from "@/lib/analysisDepthPolicy";
@@ -338,7 +339,7 @@ async function requestJson(
 
   try {
     const response =
-      await fetchImpl(
+      await providerUsageFetch({ operation: "polkadot.http" }, url, () => fetchImpl(
         url,
         {
           ...init,
@@ -349,7 +350,7 @@ async function requestJson(
           cache:
             "no-store",
         }
-      );
+      ));
 
     if (!response.ok) {
       return {

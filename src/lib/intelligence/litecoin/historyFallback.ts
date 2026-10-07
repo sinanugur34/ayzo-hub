@@ -1,3 +1,4 @@
+import { runWithProviderUsageHintsCore } from "@/lib/providerUsageScopeCore";
 import type {
   LitecoinAddressTransactionsProvider,
   LitecoinPaginatedAddressRequest,
@@ -62,7 +63,15 @@ export async function getLitecoinAddressHistoryWithFallback(
     return primaryResult;
   }
 
-  return fallback.getAddressTransactions(
-    request
+  return runWithProviderUsageHintsCore(
+    {
+      fallbackUsed:
+        true,
+    },
+
+    () =>
+      fallback.getAddressTransactions(
+        request
+      )
   );
 }

@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   ProviderCapability,
 } from "@/lib/providers/types";
@@ -454,7 +455,7 @@ export class TronGridProvider
 
     try {
       const response =
-        await fetch(
+        await providerUsageFetch({ provider: "trongrid", operation: "tron.history" }, url, () => fetch(
           url,
           {
             method:
@@ -477,7 +478,7 @@ export class TronGridProvider
             signal:
               controller.signal,
           }
-        );
+        ));
 
       const latencyMs =
         elapsedMs(

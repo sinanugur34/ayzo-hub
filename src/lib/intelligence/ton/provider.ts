@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   AnalysisDepthPlan,
 } from "@/lib/analysisDepthPolicy";
@@ -741,7 +742,7 @@ export async function getTonEvidence(
     }
 
     const response =
-      await deps.fetchImpl(
+      await providerUsageFetch({ provider: "toncenter-v3", operation: "ton.http" }, url.toString(), () => deps.fetchImpl(
         url.toString(),
         {
           method:
@@ -755,7 +756,7 @@ export async function getTonEvidence(
           signal:
             controller.signal,
         }
-      );
+      ));
 
     if (
       response.status ===

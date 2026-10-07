@@ -1,3 +1,4 @@
+import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import type {
   AnalysisDepthPlan,
 } from "@/lib/analysisDepthPolicy";
@@ -420,13 +421,13 @@ async function request(
 
   try {
     const response =
-      await deps.fetchImpl(
+      await providerUsageFetch({ provider: "aptos-labs-fullnode", operation: "aptos.fullnode" }, url, () => deps.fetchImpl(
         url,
         {
           signal:
             controller.signal,
         }
-      );
+      ));
 
     if (!response.ok) {
       return {

@@ -1,3 +1,4 @@
+import { runProviderUsageAnalysis } from "@/lib/providerUsageAnalysis";
 import {
   isAddress,
 } from "@solana/kit";
@@ -795,7 +796,36 @@ export async function POST(
         );
       };
 
-    switch (
+        const runMeasuredAnalysis =
+      async <T>(
+        callback:
+          () => Promise<T>
+      ): Promise<T> => {
+        const measured =
+          await runProviderUsageAnalysis(
+            {
+              userId:
+                userId,
+
+              platform:
+                "api",
+
+              planId:
+                auth.identity.planId,
+
+              network:
+                resolution.networkId,
+            },
+
+            callback
+          );
+
+        return measured.value;
+      };
+
+    /* AYZO_PROVIDER_USAGE_SCOPE_V1 */
+    return runMeasuredAnalysis(async () => {
+switch (
       resolution.engine
     ) {
       case "solana": {
@@ -1146,6 +1176,7 @@ export async function POST(
       503
     );
 
+    });
   } catch {
     if (
       quota &&
