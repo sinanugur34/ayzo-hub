@@ -315,3 +315,48 @@ test(
     );
   }
 );
+
+test(
+  "Alchemy Solana RPC methods use verified public CU values",
+  () => {
+    const expected = [
+      ["solana.rpc.getAccountInfo", 10],
+      ["solana.rpc.getTokenSupply", 20],
+      ["solana.rpc.getTokenLargestAccounts", 20],
+      ["solana.rpc.getMultipleAccounts", 20],
+      ["solana.rpc.getSignaturesForAddress", 40],
+      ["solana.rpc.getTransaction", 40],
+      ["solana.rpc.getTransactionsForAddress", 100],
+    ] as const;
+
+    for (
+      const [
+        operation,
+        units,
+      ] of expected
+    ) {
+      const result =
+        resolveProviderUsagePricing({
+          provider:
+            "alchemy",
+
+          operation,
+        });
+
+      assert.equal(
+        result.nativeUnitKind,
+        "compute_unit"
+      );
+
+      assert.equal(
+        result.nativeUnits,
+        units
+      );
+
+      assert.equal(
+        result.pricingStatus,
+        "verified_public"
+      );
+    }
+  }
+);

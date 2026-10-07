@@ -4,17 +4,9 @@ import {
   getClientIp,
 } from "@/lib/rateLimit";
 import { readJsonObjectBody } from "@/lib/requestBody";
-
-function getRpcUrl() {
-  const apiKey = process.env.HELIUS_API_KEY;
-
-  if (!apiKey) {
-    throw new Error("HELIUS_API_KEY is not configured.");
-  }
-
-  return `https://mainnet.helius-rpc.com/?api-key=${encodeURIComponent(apiKey)}`;
-}
-
+import {
+  solanaRpcCall,
+} from "@/lib/intelligence/solana/rpcTransport";
 
 type RpcMintInfo = {
   mintAuthority: string | null;
@@ -94,46 +86,25 @@ export async function POST(request: Request) {
       );
     }
 
-    const rpcResponse = await fetch(getRpcUrl(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "getAccountInfo",
-        params: [
+    const accountResult =
+      await solanaRpcCall(
+        "getAccountInfo",
+
+        [
           address,
+
           {
-            encoding: "jsonParsed",
-            commitment: "confirmed",
+            encoding:
+              "jsonParsed",
+
+            commitment:
+              "confirmed",
           },
-        ],
-      }),
-      cache: "no-store",
-    });
-
-    if (!rpcResponse.ok) {
-      return Response.json(
-        { ok: false, error: "Solana RPC request failed." },
-        { status: 502 }
+        ]
       );
-    }
 
-    const rpc = await rpcResponse.json();
-
-    if (rpc.error) {
-      return Response.json(
-        {
-          ok: false,
-          error: "Solana RPC returned an error.",
-        },
-        { status: 502 }
-      );
-    }
-
-    const account = rpc?.result?.value;
+    const account =
+      accountResult?.value;
 
     if (!account) {
       return Response.json(

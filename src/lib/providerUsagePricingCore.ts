@@ -116,6 +116,55 @@ function alchemyComputeUnits(
   }
 
   /*
+   * Alchemy Solana Standard JSON-RPC CU table.
+   *
+   * Live capability was certified against the
+   * AYZO Free Alchemy account on 2026-10-07.
+   *
+   * AYZO does not use paid historical account
+   * archive parameters here.
+   */
+  const solanaPrefix =
+    "solana.rpc.";
+
+  if (
+    operation.startsWith(
+      solanaPrefix
+    )
+  ) {
+    const method =
+      operation.slice(
+        solanaPrefix.length
+      );
+
+    switch (method) {
+      case "getAccountInfo":
+        return 10;
+
+      case "getTokenSupply":
+        return 20;
+
+      case "getTokenLargestAccounts":
+        return 20;
+
+      case "getMultipleAccounts":
+        return 20;
+
+      case "getSignaturesForAddress":
+        return 40;
+
+      case "getTransaction":
+        return 40;
+
+      case "getTransactionsForAddress":
+        return 100;
+
+      default:
+        return null;
+    }
+  }
+
+  /*
    * AYZO Bitcoin/Dogecoin/Litecoin canonical
    * transaction adapters use getrawtransaction.
    */

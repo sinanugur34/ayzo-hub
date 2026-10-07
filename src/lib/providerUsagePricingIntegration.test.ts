@@ -169,3 +169,64 @@ test(
     );
   }
 );
+
+test(
+  "Alchemy Solana physical event carries compute-unit metadata",
+  async () => {
+    const result =
+      await runWithProviderUsageScopeCore(
+        CONTEXT,
+
+        async () =>
+          providerUsageFetch(
+            {
+              provider:
+                "alchemy",
+
+              operation:
+                "solana.rpc.getTransactionsForAddress",
+            },
+
+            "https://example.invalid",
+
+            async () => ({
+              ok:
+                true,
+
+              status:
+                200,
+            })
+          )
+      );
+
+    const event =
+      result.events[0];
+
+    assert.ok(
+      event
+    );
+
+    assert.equal(
+      event.estimatedUnits,
+      1
+    );
+
+    assert.equal(
+      event.metadata
+        .native_unit_kind,
+      "compute_unit"
+    );
+
+    assert.equal(
+      event.metadata
+        .native_units,
+      100
+    );
+
+    assert.equal(
+      event.metadata
+        .pricing_status,
+      "verified_public"
+    );
+  }
+);
