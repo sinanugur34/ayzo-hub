@@ -7,6 +7,10 @@ import {
   readProviderUsageHintsCore,
 } from "./providerUsageScopeCore";
 
+import {
+  resolveProviderUsagePricing,
+} from "./providerUsagePricingCore";
+
 export type ProviderUsageHttpResponse = {
   readonly ok:
     boolean;
@@ -234,6 +238,14 @@ export async function providerUsageFetch<
       request
     );
 
+  const pricing =
+    resolveProviderUsagePricing({
+      provider,
+
+      operation:
+        input.operation,
+    });
+
   try {
     const response =
       await callback();
@@ -284,6 +296,24 @@ export async function providerUsageFetch<
 
       metadata: {
         ...input.metadata,
+
+        native_unit_kind:
+          pricing.nativeUnitKind,
+
+        native_units:
+          pricing.nativeUnits,
+
+        estimated_public_cost_usd:
+          pricing.estimatedPublicCostUsd,
+
+        cost_basis:
+          pricing.costBasis,
+
+        pricing_status:
+          pricing.pricingStatus,
+
+        pricing_version:
+          pricing.pricingVersion,
 
         event_kind:
           "physical_http",
@@ -343,6 +373,24 @@ export async function providerUsageFetch<
 
       metadata: {
         ...input.metadata,
+
+        native_unit_kind:
+          pricing.nativeUnitKind,
+
+        native_units:
+          pricing.nativeUnits,
+
+        estimated_public_cost_usd:
+          pricing.estimatedPublicCostUsd,
+
+        cost_basis:
+          pricing.costBasis,
+
+        pricing_status:
+          pricing.pricingStatus,
+
+        pricing_version:
+          pricing.pricingVersion,
 
         event_kind:
           "physical_http",
