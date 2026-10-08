@@ -1,4 +1,5 @@
 import type { NetworkId } from "@/lib/networks/registry";
+import { verifyWave2Account, type Wave2AccountNetwork } from "./nativeAccountVerificationWave2";
 import { providerUsageFetch } from "@/lib/providerUsageHttpCore";
 import { normalizeHederaAccountId } from "@/lib/intelligence/hedera/address";
 import { isStellarAccountAddress } from "@/lib/intelligence/stellar/address";
@@ -6,7 +7,7 @@ import { normalizeAptosAddress } from "@/lib/intelligence/aptos/address";
 
 /** Only these native account-lookup strategies are certified in Wave 1. */
 export const NATIVE_ACCOUNT_NETWORKS = [
-  "hedera", "stellar", "aptos",
+  "hedera", "stellar", "aptos", "solana", "tron", "sui",
 ] as const satisfies readonly NetworkId[];
 
 export type NativeAccountNetwork = typeof NATIVE_ACCOUNT_NETWORKS[number];
@@ -45,6 +46,7 @@ export function validateNativeAccountPayload(
     return typeof row.account_id === "string" &&
       row.account_id === address.trim().toUpperCase();
   }
+  if (network !== "aptos") return false;
   return typeof row.sequence_number === "string" &&
     /^\d+$/.test(row.sequence_number) &&
     typeof row.authentication_key === "string" &&
@@ -61,6 +63,7 @@ function lookupUrl(network: NativeAccountNetwork, address: string): string | nul
     return isStellarAccountAddress(id)
       ? `https://horizon.stellar.org/accounts/${encodeURIComponent(id)}` : null;
   }
+  if (network !== "aptos") return null;
   const id = normalizeAptosAddress(address);
   return id ? `https://api.mainnet.aptoslabs.com/v1/accounts/${encodeURIComponent(id)}` : null;
 }
@@ -70,6 +73,9 @@ export async function verifyNativeAccount(
   address: string,
   request: typeof fetch = fetch
 ): Promise<NativeAccountEvidence> {
+  if (network === "solana" || network === "tron" || network === "sui") {
+    return verifyWave2Account(network as Wave2AccountNetwork, address, request);
+  }
   const unavailable: NativeAccountEvidence = { network, status: "unavailable" };
   const url = lookupUrl(network, address);
   if (!url) return unavailable;

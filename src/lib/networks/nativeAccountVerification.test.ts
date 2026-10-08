@@ -20,7 +20,7 @@ test("only explicitly certified native account networks are probed", () => {
   assert.equal(isNativeAccountNetwork("hedera"), true);
   assert.equal(isNativeAccountNetwork("stellar"), true);
   assert.equal(isNativeAccountNetwork("aptos"), true);
-  assert.equal(isNativeAccountNetwork("tron"), false);
+  assert.equal(isNativeAccountNetwork("tron"), true);
 });
 
 test("Hedera observed requires matching account identifier", async () => {
@@ -75,12 +75,19 @@ test("untrusted user input never changes provider origin", async () => {
 test("ambiguous Sui/Aptos shape does not discard Sui", async () => {
   const address = "0x" + "1".repeat(64);
   const x = await verifyNativeCandidates(["sui","aptos"], address, mocked(200, aptosBody));
-  assert.deepEqual(x, [{network:"aptos",status:"observed"}]);
+  assert.deepEqual(x, [
+    {network:"sui",status:"unavailable"},
+    {network:"aptos",status:"observed"},
+  ]);
 });
 
 test("cache validates exact candidates, order, and allowed statuses", () => {
   assert.equal(validNativeEvidenceCache([{network:"hedera",status:"observed"}], ["hedera"]),true);
   assert.equal(validNativeEvidenceCache([{network:"hedera",status:"unavailable"}], ["hedera"]),false);
   assert.equal(validNativeEvidenceCache([{network:"stellar",status:"observed"}], ["hedera"]),false);
-  assert.equal(validNativeEvidenceCache([{network:"aptos",status:"observed"}], ["sui","aptos"]),true);
+  assert.equal(validNativeEvidenceCache([{network:"aptos",status:"observed"}], ["sui","aptos"]),false);
+  assert.equal(validNativeEvidenceCache([
+    {network:"sui",status:"not_observed"},
+    {network:"aptos",status:"observed"},
+  ], ["sui","aptos"]),true);
 });
