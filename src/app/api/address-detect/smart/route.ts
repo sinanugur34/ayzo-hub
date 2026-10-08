@@ -15,6 +15,12 @@ import {
   uncoveredLiveNetworks,
 } from "@/lib/networks/smartNetworkDetection";
 import type { NetworkId } from "@/lib/networks/registry";
+import {
+  isNativeAccountNetwork,
+  validNativeEvidenceCache,
+  verifyNativeCandidates,
+  type NativeAccountEvidence,
+} from "@/lib/networks/nativeAccountVerification";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -95,7 +101,44 @@ export async function POST(request: Request): Promise<Response> {
     if (!perIp.allowed) return error(429, "RATE_LIMITED");
 
     if (!EVM_ACCOUNT_SHAPE.test(address)) {
-      return Response.json(formatResult(detectNativeCandidates(address)), { headers: HEADERS });
+      const candidates = detectNativeCandidates(address);
+      const base = formatResult(candidates);
+      const native = candidates.filter(isNativeAccountNetwork);
+      if (native.length === 0) return Response.json(base, { headers: HEADERS });
+
+      // Keep format-based candidates unchanged. Absence of an account is not
+      // evidence that its chain is wrong, including Aptos stateless accounts.
+      const fingerprint = createHmac("sha256", getInternalApiKey())
+        .update(address.toLowerCase()).digest("hex");
+      const nativeKey = `ayzo:${redisRuntimePrefix()}smart-native:v1:${fingerprint}`;
+      let evidence: NativeAccountEvidence[];
+      try {
+        const saved: unknown = await redis().get(nativeKey);
+        if (validNativeEvidenceCache(saved, candidates)) {
+          evidence = saved;
+        } else {
+          const budget = await checkRateLimit({
+            key: "smart-native-global-v1", limit: 180, windowMs: 3_600_000,
+          });
+          evidence = budget.allowed
+            ? await verifyNativeCandidates(candidates, address)
+            : native.map(network => ({ network, status: "unavailable" as const }));
+          if (evidence.every(row => row.status !== "unavailable")) {
+            try { await redis().set(nativeKey, evidence, { ex: 120 }); }
+            catch { /* Cache is best effort. Preserve valid provider evidence. */ }
+          }
+        }
+      } catch {
+        // A provider/cache failure must not break existing native detection.
+        evidence = native.map(network => ({ network, status: "unavailable" as const }));
+      }
+      const observed = candidates.length === 1 &&
+        evidence.length === 1 && evidence[0]?.status === "observed";
+      return Response.json({
+        ...base,
+        verification: observed ? "account_observed" : "validated_format",
+        nativeEvidence: evidence,
+      }, { headers: HEADERS });
     }
 
     const apiKey = process.env.ALCHEMY_API_KEY;
