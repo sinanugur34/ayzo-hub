@@ -3,6 +3,7 @@
 import {
   FormEvent,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -45,14 +46,15 @@ import {
 import {
   isLiveAnalysisNetworkId,
   resolveSelectedNetworkForAddress,
-  shouldPreserveEvmAddress,
   type LiveAnalysisNetworkId,
   type LiveEvmNetworkId,
 } from "@/lib/networks/addressSelection";
 import {
   NETWORKS,
   NETWORK_IDS,
+  type NetworkId,
 } from "@/lib/networks/registry";
+import { isNetworkSelectionBlocked } from "@/lib/networks/networkSelectionPolicy";
 
 import {
   isCardanoPaymentAddress,
@@ -165,6 +167,18 @@ type AddressDetectionResponse =
       error: string;
     };
 
+type SmartDetectionResponse =
+  | {
+      ok: true;
+      status: "single" | "multiple" | "none" | "partial";
+      network: string | null;
+      candidates: string[];
+      verification: "validated_format" | "contract_bytecode";
+      checked: number;
+      total: number;
+    }
+  | { ok: false; code?: string; error?: string };
+
 function shortAddress(
   address:
     string | null
@@ -244,6 +258,14 @@ function networkName(
 }
 
 export default function Home() {
+  const manuallySelectedAddress = useRef<string | null>(null);
+  const userSelectedNetwork = useRef<LiveAnalysisNetworkId | null>(null);
+  const [networkSuggestions, setNetworkSuggestions] =
+    useState<LiveAnalysisNetworkId[]>([]);
+  const [networkDetectionStatus, setNetworkDetectionStatus] =
+    useState<"pending" | "single" | "multiple" | "none" | "partial" | null>(null);
+  const [suggestionEvidence, setSuggestionEvidence] =
+    useState<"validated_format" | "contract_bytecode" | null>(null);
   const [
     network,
     setNetwork,
@@ -516,9 +538,13 @@ export default function Home() {
     value:
       LiveAnalysisNetworkId
   ) {
-    const preserveAddress =
-      shouldPreserveEvmAddress(tokenAddress, value);
-
+    // The user can pick a network AFTER pasting; never discard input.
+    const preserveAddress = tokenAddress.trim().length > 0;
+    userSelectedNetwork.current = value;
+    manuallySelectedAddress.current = tokenAddress.trim().toLowerCase() || null;
+    setNetworkSuggestions([]);
+    setSuggestionEvidence(null);
+    setNetworkDetectionStatus(null);
     setNetwork(value);
     setTokenAddress(preserveAddress ? tokenAddress : "");
     setMessage(
@@ -590,225 +616,95 @@ export default function Home() {
       return;
     }
 
-    const controller =
-      new AbortController();
-
-    const timer =
-      window.setTimeout(
-        async () => {
-          try {
-            const response =
-              await fetch(
-                "/api/address-detect",
-                {
-                  method:
-                    "POST",
-
-                  headers: {
-                    "Content-Type":
-                      "application/json",
-                  },
-
-                  body:
-                    JSON.stringify({
-                      address:
-                        value,
-                    }),
-
-                  signal:
-                    controller.signal,
-                }
-              );
-
-            if (!response.ok) {
-              return;
-            }
-
-            const result =
-              (
-                await response.json()
-              ) as AddressDetectionResponse;
-
-            if (
-              !result.ok ||
-              !result.network
-            ) {
-              return;
-            }
-
-            if (
-              network ===
-                "litecoin" &&
-              result.network ===
-                "bitcoin" &&
-              value.startsWith(
-                "3"
-              )
-            ) {
-              /*
-               * Bitcoin and Litecoin can share
-               * legacy P2SH version 0x05.
-               * Preserve explicit Litecoin selection;
-               * server checksum validation remains
-               * authoritative during analysis.
-               */
-              return;
-            }
-
-            if (
-              network ===
-                "sui" &&
-              result.network ===
-                "evm" &&
-              SUI_ADDRESS_SHAPE.test(
-                value
-              )
-            ) {
-              /*
-               * Preserve explicit Sui selection for
-               * structurally ambiguous 20-byte 0x
-               * addresses. Server-side Sui validation
-               * remains authoritative.
-               */
-              return;
-            }
-
-            if (
-              network ===
-                "aptos" &&
-              normalizeAptosAddress(
-                value
-              ) &&
-              (
-                result.network ===
-                  "evm" ||
-                result.network ===
-                  "sui"
-              )
-            ) {
-              /*
-               * Preserve explicit Aptos selection for
-               * ambiguous 0x hexadecimal account forms.
-               * Aptos is never auto-selected from generic
-               * 0x input.
-               */
-              return;
-            }
-
-            let detectedNetwork:
-              LiveAnalysisNetworkId | null =
-                null;
-
-            if (
-              result.network ===
-                "evm"
-            ) {
-              const resolved =
-                resolveSelectedNetworkForAddress(
-                  network,
-                  "evm"
-                );
-
-              detectedNetwork =
-                resolved && isLiveAnalysisNetworkId(resolved)
-                  ? resolved
-                  : null;
-
-              if (!detectedNetwork) {
-                setIsValid(null);
-                setMessage(
-                  "This address format is shared by EVM networks. Select the correct network before analyzing."
-                );
-                return;
-              }
-            } else if (
-              isLiveAnalysisNetworkId(
-                result.network
-              )
-            ) {
-              detectedNetwork =
-                result.network;
-            }
-
-            if (
-              !detectedNetwork ||
-              detectedNetwork ===
-                network
-            ) {
-              return;
-            }
-
-            setNetwork(
-              detectedNetwork
-            );
-
-            setSolanaResult(
-              null
-            );
-
-            setEvmAnalysis(
-              null
-            );
-
-            setBitcoinAnalysis(
-              null
-            );
-
-            setDogecoinAnalysis(
-              null
-            );
-
-            setLitecoinAnalysis(
-              null
-            );
-
-            setSuiAnalysis(
-              null
-            );
-
-            setTonAnalysis(
-              null
-            );
-
-            setStellarAnalysis(
-              null
-            );
-            setHyperliquidAnalysis(
-              null
-            );
-
-            setTronAnalysis(
-              null
-            );
-
-            setXrpAnalysis(
-              null
-            );
-
-            setHederaAnalysis(
-              null
-            );
-
-            setFinalFiveAnalysis(
-              null
-            );
-
-            setIsValid(
-              null
-            );
-
-            setMessage(
-              `${networkName(
-                detectedNetwork
-              )} detected automatically.`
-            );
-          } catch {
-            // Detection is a UX enhancement.
-            // Analysis remains authoritative.
-          }
-        },
-        250
-      );
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch("/api/address-detect/smart", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ address: value }),
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+        if (!response.ok) {
+          setNetworkDetectionStatus("partial");
+          setMessage("Network verification unavailable. Select the correct network manually.");
+          return;
+        }
+        const result = (await response.json()) as SmartDetectionResponse;
+        if (controller.signal.aborted) return;
+        if (!result.ok) {
+          setNetworkDetectionStatus("partial");
+          setMessage("Network verification unavailable. Select the correct network manually.");
+          return;
+        }
+        const candidates = result.candidates.filter(
+          (id): id is LiveAnalysisNetworkId =>
+            typeof id === "string" &&
+            Object.prototype.hasOwnProperty.call(NETWORKS, id) &&
+            isLiveAnalysisNetworkId(id as NetworkId)
+        );
+        setNetworkDetectionStatus(result.status);
+        setNetworkSuggestions(candidates);
+        setSuggestionEvidence(result.verification);
+        if (result.status !== "single" || candidates.length !== 1) {
+          setIsValid(null);
+          setMessage(
+            result.status === "multiple"
+              ? "Multiple possible networks. Select the intended network below."
+              : result.status === "partial"
+                ? "Chain verification was incomplete. AYZO will not guess a network."
+                : "No unique network could be verified. Choose a network manually."
+          );
+          return;
+        }
+        const detected = candidates[0];
+        if (manuallySelectedAddress.current === value.toLowerCase()) {
+          setMessage(
+            detected === network
+              ? `${networkName(network)} ${result.verification === "contract_bytecode" ? "contract verified on-chain" : "address format validated"}.`
+              : `Detected ${networkName(detected)}. Your explicit ${networkName(network)} selection was kept.`
+          );
+          return;
+        }
+        if (detected === network) {
+          setMessage(
+            result.verification === "contract_bytecode"
+              ? `${networkName(network)} contract verified on-chain.`
+              : `${networkName(network)} address format validated.`
+          );
+          return;
+        }
+        setNetwork(detected);
+        // Reset results without capturing a non-memoized helper in this effect.
+        setSolanaResult(null);
+        setEvmAnalysis(null);
+        setBitcoinAnalysis(null);
+        setDogecoinAnalysis(null);
+        setLitecoinAnalysis(null);
+        setSuiAnalysis(null);
+        setTonAnalysis(null);
+        setStellarAnalysis(null);
+        setCardanoAnalysis(null);
+        setAptosAnalysis(null);
+        setHyperliquidAnalysis(null);
+        setTronAnalysis(null);
+        setXrpAnalysis(null);
+        setHederaAnalysis(null);
+        setFinalFiveAnalysis(null);
+        setIsValid(null);
+        setMessage(
+          result.verification === "contract_bytecode"
+            ? `${networkName(detected)} contract verified on-chain and selected automatically.`
+            : `${networkName(detected)} address format validated and selected automatically.`
+        );
+      } catch {
+        if (!controller.signal.aborted) {
+          setNetworkDetectionStatus("partial");
+          setMessage("Network check unavailable. Select a network manually.");
+        }
+      }
+    }, 450);
 
     return () => {
       window.clearTimeout(
@@ -832,6 +728,18 @@ export default function Home() {
       tokenAddress.trim();
 
     resetResult();
+
+    if (isNetworkSelectionBlocked({
+      address: value,
+      detectionStatus: networkDetectionStatus,
+      selectedForThisAddress:
+        manuallySelectedAddress.current === value.toLowerCase(),
+      selectedBeforePasting: userSelectedNetwork.current === network,
+    })) {
+      setIsValid(false);
+      setMessage("Network detection is incomplete or ambiguous. Choose a network explicitly before analyzing.");
+      return;
+    }
 
     if (!value) {
       setIsValid(false);
@@ -2000,6 +1908,10 @@ export default function Home() {
                       event.target
                         .value
                     );
+                    manuallySelectedAddress.current = null;
+                    setNetworkSuggestions([]);
+                    setSuggestionEvidence(null);
+                    setNetworkDetectionStatus("pending");
 
                     setMessage(
                       ""
@@ -2080,6 +1992,23 @@ export default function Home() {
           )}
         </form>
 
+        {networkSuggestions.length > 0 && (
+          <div className="mx-auto mt-3 flex max-w-4xl flex-wrap items-center justify-center gap-2" aria-label="Network suggestions">
+            <span className="text-xs text-zinc-400">
+              {suggestionEvidence === "contract_bytecode" ? "Contract matches:" : "Possible networks:"}
+            </span>
+            {networkSuggestions.map(id => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => selectNetwork(id)}
+                className="rounded-lg border border-violet-500/50 bg-violet-500/10 px-3 py-2 text-xs text-violet-100 hover:bg-violet-500/20"
+              >
+                {networkName(id)}
+              </button>
+            ))}
+          </div>
+        )}
         <FreePlanStatus
           network={network}
         />
