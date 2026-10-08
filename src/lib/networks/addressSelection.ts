@@ -47,6 +47,16 @@ export type AddressKind =
   | "aptos"
   | "invalid";
 
+export function shouldPreserveEvmAddress(
+  address: string,
+  targetNetwork: NetworkId
+): boolean {
+  return (
+    /^0x[0-9a-fA-F]{40}$/.test(address.trim()) &&
+    NETWORKS[targetNetwork].family === "evm"
+  );
+}
+
 export function resolveSelectedNetworkForAddress<
   TNetwork extends NetworkId,
 >(
@@ -175,9 +185,11 @@ export function resolveSelectedNetworkForAddress<
     return selectedNetwork;
   }
 
-  return NETWORKS[
-    selectedNetwork
-  ].family === "evm"
-    ? selectedNetwork
-    : "ethereum";
+  if (addressKind === "evm") {
+    return NETWORKS[selectedNetwork].family === "evm"
+      ? selectedNetwork
+      : null;
+  }
+
+  return "solana";
 }

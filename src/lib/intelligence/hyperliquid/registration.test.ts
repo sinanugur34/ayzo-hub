@@ -82,14 +82,27 @@ test(
 );
 
 test(
-  "generic EVM shape still falls back to Ethereum when Hyperliquid is not selected",
+  "generic EVM addresses require explicit EVM network selection",
   () => {
+    for (const selected of [
+      "solana",
+      "bitcoin",
+      "tron",
+    ] as const) {
+      assert.equal(
+        resolveSelectedNetworkForAddress(selected, "evm"),
+        null
+      );
+    }
+
     assert.equal(
-      resolveSelectedNetworkForAddress(
-        "solana",
-        "evm"
-      ),
+      resolveSelectedNetworkForAddress("ethereum", "evm"),
       "ethereum"
+    );
+
+    assert.equal(
+      resolveSelectedNetworkForAddress("hyperliquid", "evm"),
+      "hyperliquid"
     );
   }
 );
