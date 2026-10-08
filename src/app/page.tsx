@@ -2001,6 +2001,7 @@ export default function Home() {
               <button
                 key={id}
                 type="button"
+                disabled={id === network && networkDetectionStatus === "single"}
                 onClick={() => selectNetwork(id)}
                 className="rounded-lg border border-violet-500/50 bg-violet-500/10 px-3 py-2 text-xs text-violet-100 hover:bg-violet-500/20"
               >
