@@ -611,7 +611,7 @@ export default function Home() {
 
     if (
       !value ||
-      value.length < 20
+      (value.length < 20 && !normalizeHederaAccountId(value))
     ) {
       return;
     }
