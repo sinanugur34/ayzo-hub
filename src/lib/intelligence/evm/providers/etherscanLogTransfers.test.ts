@@ -13,7 +13,7 @@ const log=(from:string,to:string,idx="0x4",block="0x1387")=>({
 const body=(v:unknown)=>new Response(JSON.stringify(v),{status:200});
 const context={networkId:"sonic" as const,name:"Sonic",chainId:146,nativeCurrency:"S"};
 const req={network:context,address:wallet,tokenAddress:token,limit:100};
-const opts={apiKey:"TEST_KEY",cursorSecret:"LOCAL_SIGN_ONLY",now:()=>1791480000000};
+const opts={apiKey:"TEST_KEY",cursorSecret:"LOCAL_SIGN_ONLY",preferCanonicalRpc:false,now:()=>1791480000000};
 function provider(outgoing:unknown[],incoming:unknown[]) {
   const requests:URL[]=[];
   const p=new EtherscanLogTransfersProvider({...opts,transport:async input=>{

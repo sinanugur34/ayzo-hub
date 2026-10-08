@@ -10,7 +10,7 @@ const hash="0x"+"a".repeat(64);
 const reply=(value:unknown)=>new Response(JSON.stringify(value),{status:200});
 const ctx={networkId:"sonic" as const,name:"Sonic",chainId:146,nativeCurrency:"S"};
 const req={network:ctx,address:wallet,tokenAddress:token,limit:100};
-const cfg={apiKey:"TEST_ONLY",cursorSecret:"LOCAL_SECRET",now:()=>1791480000000};
+const cfg={apiKey:"TEST_ONLY",cursorSecret:"LOCAL_SECRET",preferCanonicalRpc:false,now:()=>1791480000000};
 function testProvider(indexed:unknown[],rpc:unknown[],options?:{inbound?:unknown[];rpcInbound?:unknown[]}){
   const counters={etherscan:0,rpc:0};
   const p=new EtherscanLogTransfersProvider({...cfg,

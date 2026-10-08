@@ -25,6 +25,7 @@ export type LogTransferOptions = {
   cursorSecret?: string;
   transport?: typeof fetch;
   rpcTransport?: typeof fetch;
+  preferCanonicalRpc?: boolean;
   timeoutMs?: number;
   now?: () => number;
 };
@@ -198,19 +199,19 @@ function needsSonicRepair(x: Obj): boolean {
     });
 }
 async function sonicRpcLogs(dir:Direction,wallet:string,token:string,low:number,high:number,
-  options:LogTransferOptions,signal?:AbortSignal):Promise<SonicRepair>{
+  options:LogTransferOptions,signal?:AbortSignal,network:"sonic"|"mantle"="sonic"):Promise<SonicRepair>{
   const controller=new AbortController();
   if(signal?.aborted)return {json:null,code:"TIMEOUT"};
   const abort=()=>controller.abort();
   signal?.addEventListener("abort",abort,{once:true});
   const timer=setTimeout(abort,Math.min(TIMEOUT_MS,Math.max(100,options.timeoutMs??TIMEOUT_MS)));
-  const url=new URL("https://rpc.soniclabs.com/");
+  const url=new URL(network==="sonic"?"https://rpc.soniclabs.com/":"https://rpc.mantle.xyz/");
   const body=JSON.stringify({jsonrpc:"2.0",id:1,method:"eth_getLogs",params:[{
     address:token,fromBlock:`0x${low.toString(16)}`,toBlock:`0x${high.toString(16)}`,
     topics:dir==="outgoing"?[TRANSFER,padded(wallet)]:[TRANSFER,null,padded(wallet)],
   }]});
   try{
-    const response=await providerUsageFetch({provider:"sonic-rpc",operation:`evm.transfers.logs.sonic.verify.${dir}`},url,
+    const response=await providerUsageFetch({provider:`${network}-rpc`,operation:`evm.transfers.logs.canonical.${network}.${dir}`},url,
       ()=>(options.rpcTransport??options.transport??fetch)(url,{
         method:"POST",headers:{"content-type":"application/json"},body,
         cache:"no-store",redirect:"error",signal:controller.signal,
@@ -274,6 +275,27 @@ function normalizeSonicFromRpc(indexed:Obj,canonical:Obj,dir:Direction,
   return {status:"1",result};
 }
 
+
+/* Preview-only canonical event reader for Sonic/Mantle.
+   An indexer can omit logIndex or silently disagree with RPC. Neither an empty
+   indexer page nor malformed indexed evidence is authoritative. The returned
+   page is built only from complete, direction-filtered RPC eth_getLogs arrays.
+   A full direction (>=50) or any malformed record FAILS CLOSED downstream. */
+async function canonicalRpcPage(network:"sonic"|"mantle",wallet:string,token:string,
+  low:number,high:number,options:LogTransferOptions,signal?:AbortSignal):
+  Promise<{out:Obj|null;in:Obj|null;code:EvmProviderErrorCode|null}>{
+  const [outgoing,incoming]=await Promise.all([
+    sonicRpcLogs("outgoing",wallet,token,low,high,options,signal,network),
+    sonicRpcLogs("incoming",wallet,token,low,high,options,signal,network),
+  ]);
+  const code=outgoing.code??incoming.code;
+  if(code)return {out:null,in:null,code};
+  const a=outgoing.json?.result,b=incoming.json?.result;
+  if(!Array.isArray(a)||!Array.isArray(b)||a.length>=PER_DIRECTION||b.length>=PER_DIRECTION)
+    return {out:null,in:null,code:"UPSTREAM_ERROR"};
+  return {out:{status:"1",result:a},in:{status:"1",result:b},code:null};
+}
+
 export class EtherscanLogTransfersProvider implements EvmTransfersProvider {
   readonly id="etherscan" as const;
   readonly capabilities=CAPS;
@@ -312,6 +334,17 @@ export class EtherscanLogTransfersProvider implements EvmTransfersProvider {
       head=parsed;end=parsed;
     }
     const low=Math.max(0,end-WINDOW+1);
+    let oJson:Obj,iJson:Obj;
+    // Production never reaches this experimental adapter (Preview exit canary).
+    // Explicit false is available for backward-compatibility regression tests.
+    if(this.options.preferCanonicalRpc!==false){
+      const network=request.network.networkId;
+      if(network!=="sonic" && network!=="mantle")return failure("UNSUPPORTED_NETWORK",elapsed());
+      const canonical=await canonicalRpcPage(network,wallet,token,low,end,this.options,request.signal);
+      if(canonical.code||!canonical.out||!canonical.in)
+        return failure(canonical.code??"UPSTREAM_ERROR",elapsed());
+      oJson=canonical.out;iJson=canonical.in;
+    } else {
     const directionRequest=(dir:Direction)=>api(urlFor(request.network.chainId,key,{
       module:"logs",action:"getLogs",address:token,fromBlock:String(low),toBlock:String(end),
       topic0:TRANSFER,...(dir==="outgoing"?{topic1:padded(wallet),topic0_1_opr:"and"}:{topic2:padded(wallet),topic0_2_opr:"and"}),
@@ -320,7 +353,7 @@ export class EtherscanLogTransfersProvider implements EvmTransfersProvider {
     const [outgoing,incoming]=await Promise.all([directionRequest("outgoing"),directionRequest("incoming")]);
     if (outgoing.code || incoming.code) return failure(outgoing.code??incoming.code??"UPSTREAM_ERROR",elapsed());
     if (!outgoing.json || !incoming.json) return failure("UPSTREAM_ERROR",elapsed());
-    let oJson=outgoing.json, iJson=incoming.json;
+    oJson=outgoing.json; iJson=incoming.json;
     if(request.network.networkId==="sonic" &&
        (needsSonicRepair(oJson)||needsSonicRepair(iJson))){
       // Both directions: absence in Etherscan must also agree with canonical RPC.
@@ -335,6 +368,7 @@ export class EtherscanLogTransfersProvider implements EvmTransfersProvider {
       if(!repairedOut||!repairedIn)return failure("UPSTREAM_ERROR",elapsed());
       oJson=repairedOut;iJson=repairedIn;
     }
+    } // End legacy indexed-only regression branch.
     const o=logs(oJson,"outgoing",wallet,token,low,end);
     const i=logs(iJson,"incoming",wallet,token,low,end);
     if (o.code || i.code) return failure(o.code??i.code??"UPSTREAM_ERROR",elapsed());
