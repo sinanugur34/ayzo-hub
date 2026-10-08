@@ -13,6 +13,10 @@ const UINT = /^(?:0|[1-9][0-9]*)$/;
 const HEX = /^0x[0-9a-fA-F]+$/;
 const WINDOW = 2048;
 const PER_DIRECTION = 50;
+// Initial 2048-block slice can be too dense. Shrink only the newest suffix,
+// then issue a signed cursor for precisely the untouched older blocks.
+// 2048 -> 512 -> 128 -> 32 -> 8 -> 2 -> 1 = at most 7 attempts (14 RPC calls).
+const MAX_CANONICAL_ATTEMPTS = 7;
 const MAX_BYTES = 256 * 1024;
 const TIMEOUT_MS = 5000;
 const CURSOR_PREFIX = "etherscan-log:";
@@ -177,7 +181,7 @@ function logs(json:Obj,dir:Direction,wallet:string,token:string,low:number,high:
 /* RPC cross-check only when Sonic's indexed log lacks its real logIndex.
    Never synthesize an index or accept a partial set: compare every record
    against the full canonical RPC result for BOTH directions in this window. */
-type SonicRepair = {json: Obj | null; code: EvmProviderErrorCode | null};
+type SonicRepair = {json: Obj | null; code: EvmProviderErrorCode | null; oversized?: boolean};
 function eventFingerprint(raw: unknown): string | null {
   const r=obj(raw), ts=r?.topics;
   if(!r || r.removed===true || address(r.address)===null ||
@@ -220,7 +224,7 @@ async function sonicRpcLogs(dir:Direction,wallet:string,token:string,low:number,
     if(!response.ok){await response.body?.cancel();return {json:null,code:"UPSTREAM_ERROR"};}
     const len=response.headers.get("content-length");
     if(len&&(!UINT.test(len)||Number(len)>MAX_BYTES)){
-      await response.body?.cancel();return {json:null,code:"UPSTREAM_ERROR"};
+      await response.body?.cancel();return {json:null,code:"UPSTREAM_ERROR",oversized:UINT.test(len)};
     }
     const reader=response.body?.getReader();
     if(!reader)return {json:null,code:"UPSTREAM_ERROR"};
@@ -228,7 +232,7 @@ async function sonicRpcLogs(dir:Direction,wallet:string,token:string,low:number,
     while(true){
       const part=await reader.read();if(part.done)break;
       bytes+=part.value.byteLength;
-      if(bytes>MAX_BYTES){await reader.cancel();return {json:null,code:"UPSTREAM_ERROR"};}
+      if(bytes>MAX_BYTES){await reader.cancel();return {json:null,code:"UPSTREAM_ERROR",oversized:true};}
       chunks.push(part.value);
     }
     const responseObj:unknown=JSON.parse(new TextDecoder("utf8",{fatal:true}).decode(Buffer.concat(chunks)));
@@ -283,17 +287,27 @@ function normalizeSonicFromRpc(indexed:Obj,canonical:Obj,dir:Direction,
    A full direction (>=50) or any malformed record FAILS CLOSED downstream. */
 async function canonicalRpcPage(network:"sonic"|"mantle",wallet:string,token:string,
   low:number,high:number,options:LogTransferOptions,signal?:AbortSignal):
-  Promise<{out:Obj|null;in:Obj|null;code:EvmProviderErrorCode|null}>{
+  Promise<{out:Obj|null;in:Obj|null;code:EvmProviderErrorCode|null; saturated:boolean}>{
   const [outgoing,incoming]=await Promise.all([
     sonicRpcLogs("outgoing",wallet,token,low,high,options,signal,network),
     sonicRpcLogs("incoming",wallet,token,low,high,options,signal,network),
   ]);
+  // A response-size breach and a complete 50-row cap indicate this exact
+  // window is too wide. NEVER treat arbitrary HTTP/RPC failures as density.
+  // Never conceal an independent provider failure behind another direction's size cap.
+  const fatal=(outgoing.code&&!outgoing.oversized?outgoing.code:null)??
+    (incoming.code&&!incoming.oversized?incoming.code:null);
+  if(fatal)return {out:null,in:null,code:fatal,saturated:false};
+  if(outgoing.oversized||incoming.oversized)
+    return {out:null,in:null,code:"UPSTREAM_ERROR",saturated:true};
   const code=outgoing.code??incoming.code;
-  if(code)return {out:null,in:null,code};
+  if(code)return {out:null,in:null,code,saturated:false};
   const a=outgoing.json?.result,b=incoming.json?.result;
-  if(!Array.isArray(a)||!Array.isArray(b)||a.length>=PER_DIRECTION||b.length>=PER_DIRECTION)
-    return {out:null,in:null,code:"UPSTREAM_ERROR"};
-  return {out:{status:"1",result:a},in:{status:"1",result:b},code:null};
+  if(!Array.isArray(a)||!Array.isArray(b))
+    return {out:null,in:null,code:"UPSTREAM_ERROR",saturated:false};
+  if(a.length>=PER_DIRECTION||b.length>=PER_DIRECTION)
+    return {out:null,in:null,code:"UPSTREAM_ERROR",saturated:true};
+  return {out:{status:"1",result:a},in:{status:"1",result:b},code:null,saturated:false};
 }
 
 export class EtherscanLogTransfersProvider implements EvmTransfersProvider {
@@ -333,17 +347,36 @@ export class EtherscanLogTransfersProvider implements EvmTransfersProvider {
       if (parsed===null) return failure("UPSTREAM_ERROR",elapsed());
       head=parsed;end=parsed;
     }
-    const low=Math.max(0,end-WINDOW+1);
-    let oJson:Obj,iJson:Obj;
+    let low=Math.max(0,end-WINDOW+1);
+    let oJson:Obj|null=null,iJson:Obj|null=null;
     // Production never reaches this experimental adapter (Preview exit canary).
     // Explicit false is available for backward-compatibility regression tests.
     if(this.options.preferCanonicalRpc!==false){
       const network=request.network.networkId;
       if(network!=="sonic" && network!=="mantle")return failure("UNSUPPORTED_NETWORK",elapsed());
-      const canonical=await canonicalRpcPage(network,wallet,token,low,end,this.options,request.signal);
-      if(canonical.code||!canonical.out||!canonical.in)
-        return failure(canonical.code??"UPSTREAM_ERROR",elapsed());
-      oJson=canonical.out;iJson=canonical.in;
+      // An initial wide window may contain more than the safe 50-per-direction
+      // result cap. Query progressively narrower, contiguous newest suffixes.
+      // A cursor always points to low-1, so no block is skipped or duplicated.
+      let accepted=false;
+      for(let attempt=0;attempt<MAX_CANONICAL_ATTEMPTS;attempt++){
+        const canonical=await canonicalRpcPage(network,wallet,token,low,end,this.options,request.signal);
+        if(canonical.saturated){
+          const width=end-low+1;
+          if(width<=1 || attempt+1===MAX_CANONICAL_ATTEMPTS)
+            return failure("UPSTREAM_ERROR",elapsed());
+          const narrower=Math.max(1,Math.ceil(width/4));
+          const nextLow=end-narrower+1;
+          if(nextLow<=low)return failure("UPSTREAM_ERROR",elapsed());
+          low=nextLow;
+          continue;
+        }
+        if(canonical.code||!canonical.out||!canonical.in)
+          return failure(canonical.code??"UPSTREAM_ERROR",elapsed());
+        oJson=canonical.out;iJson=canonical.in;
+        accepted=true;
+        break;
+      }
+      if(!accepted)return failure("UPSTREAM_ERROR",elapsed());
     } else {
     const directionRequest=(dir:Direction)=>api(urlFor(request.network.chainId,key,{
       module:"logs",action:"getLogs",address:token,fromBlock:String(low),toBlock:String(end),
@@ -369,6 +402,7 @@ export class EtherscanLogTransfersProvider implements EvmTransfersProvider {
       oJson=repairedOut;iJson=repairedIn;
     }
     } // End legacy indexed-only regression branch.
+    if(!oJson||!iJson)return failure("UPSTREAM_ERROR",elapsed());
     const o=logs(oJson,"outgoing",wallet,token,low,end);
     const i=logs(iJson,"incoming",wallet,token,low,end);
     if (o.code || i.code) return failure(o.code??i.code??"UPSTREAM_ERROR",elapsed());

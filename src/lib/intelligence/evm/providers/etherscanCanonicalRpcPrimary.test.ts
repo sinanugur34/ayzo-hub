@@ -96,3 +96,93 @@ test("cross-wallet continuation stays rejected without new RPC requests",async()
   assert.equal(result.ok,false);
   assert.equal(requests.length,n);
 });
+
+// Phase 7.5: adaptive canonical window acceptance (never skip older blocks).
+test("adaptive canonical window acceptance shrinks dense Sonic/Mantle pages and preserves signed continuation",async()=>{
+  for(const network of ["sonic","mantle"] as const){
+    const ranges:{lo:number;hi:number;direction:string}[]=[];
+    const {p,request}=(()=>{
+      const chain=network==="sonic"?146:5000;
+      const rpcHost=network==="sonic"?"rpc.soniclabs.com":"rpc.mantle.xyz";
+      const p=new EtherscanLogTransfersProvider({
+        apiKey:"TEST",cursorSecret:"TEST_SECRET",preferCanonicalRpc:true,
+        now:()=>FIXED_TIME,
+        transport:async()=>response({jsonrpc:"2.0",result:"0x1388"}),
+        rpcTransport:async(input,init)=>{
+          assert.equal(new URL(String(input)).hostname,rpcHost);
+          const body=JSON.parse(String(init?.body));
+          const q=body.params[0];
+          const lo=Number(BigInt(q.fromBlock)),hi=Number(BigInt(q.toBlock));
+          const direction=q.topics[1]===null?"incoming":"outgoing";
+          ranges.push({lo,hi,direction});
+          // Full 2048-block window is too dense and must not be returned.
+          if(hi===5000 && lo===2953){
+            return response({jsonrpc:"2.0",id:1,result:direction==="outgoing"
+              ?Array.from({length:50},(_,n)=>event("outgoing","0x"+n.toString(16))) : []});
+          }
+          return response({jsonrpc:"2.0",id:1,result:hi===5000 && direction==="outgoing"
+            ?[event("outgoing")]:[]});
+        },
+      });
+      return {p,request:{network:{networkId:network,name:network,chainId:chain,nativeCurrency:"S"},
+        address:wallet,tokenAddress:token,limit:100}};
+    })();
+    const first=await p.getTokenTransfers(request);
+    assert.equal(first.ok,true,network);
+    if(!first.ok)continue;
+    assert.equal(first.data.transfers.length,1);
+    assert.equal(first.data.nextCursor?.startsWith("etherscan-log:"),true);
+    assert.equal(ranges.length,4); // exactly 2 requests for each of two widths
+    assert.deepEqual(ranges.slice(0,2).map(r=>r.lo),[2953,2953]);
+    assert.deepEqual(ranges.slice(2,4).map(r=>r.lo),[4489,4489]);
+    ranges.length=0;
+    const second=await p.getTokenTransfers({...request,cursor:first.data.nextCursor});
+    assert.equal(second.ok,true);
+    assert.equal(ranges.length,2);
+    assert.deepEqual(ranges.map(r=>r.hi),[4488,4488]);
+    assert.deepEqual(ranges.map(r=>r.lo),[2441,2441]);
+  }
+});
+
+test("adaptive canonical saturation at a single block fails closed within bounded attempts",async()=>{
+  let rpcCalls=0;
+  const p=new EtherscanLogTransfersProvider({
+    apiKey:"TEST",cursorSecret:"TEST_SECRET",preferCanonicalRpc:true,
+    now:()=>FIXED_TIME,
+    transport:async()=>response({jsonrpc:"2.0",result:"0x1388"}),
+    rpcTransport:async(_input,init)=>{
+      rpcCalls++;
+      const body=JSON.parse(String(init?.body));
+      const direction=body.params[0].topics[1]===null?"incoming":"outgoing";
+      return response({jsonrpc:"2.0",id:1,result:direction==="outgoing"
+        ?Array.from({length:50},(_,n)=>event("outgoing","0x"+n.toString(16))) : []});
+    },
+  });
+  const result=await p.getTokenTransfers({network:{networkId:"sonic",name:"Sonic",chainId:146,nativeCurrency:"S"},
+    address:wallet,tokenAddress:token,limit:100});
+  assert.equal(result.ok,false);
+  assert.equal(rpcCalls,14); // 7 widths x 2 directions: no unbounded retry
+});
+
+test("adaptive canonical oversize response shrinks; arbitrary RPC failure never retried",async()=>{
+  for(const kind of ["oversize","error"] as const){
+    let requests=0;
+    const p=new EtherscanLogTransfersProvider({
+      apiKey:"TEST",cursorSecret:"TEST_SECRET",preferCanonicalRpc:true,
+      now:()=>FIXED_TIME,
+      transport:async()=>response({jsonrpc:"2.0",result:"0x1388"}),
+      rpcTransport:async (_input,init)=>{
+        requests++;
+        const body=JSON.parse(String(init?.body));
+        const first=Number(BigInt(body.params[0].fromBlock))===2953;
+        if(first && kind==="oversize")return new Response("",{status:200,headers:{"content-length":"300000"}});
+        if(first && kind==="error")return response({jsonrpc:"2.0",id:1,error:{code:-32603}});
+        return response({jsonrpc:"2.0",id:1,result:[]});
+      },
+    });
+    const got=await p.getTokenTransfers({network:{networkId:"sonic",name:"Sonic",chainId:146,nativeCurrency:"S"},
+      address:wallet,tokenAddress:token,limit:100});
+    assert.equal(got.ok,kind==="oversize");
+    assert.equal(requests,kind==="oversize"?4:2);
+  }
+});
