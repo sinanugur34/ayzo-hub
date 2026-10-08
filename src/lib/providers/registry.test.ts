@@ -57,3 +57,28 @@ test(
     );
   }
 );
+
+test(
+  "registers Ankr as indexed primary provider",
+  () => {
+    assert.equal(
+      PROVIDERS.ankr.id,
+      "ankr"
+    );
+
+    assert.equal(
+      PROVIDERS.ankr.kind,
+      "indexed-data"
+    );
+
+    assert.equal(
+      PROVIDERS.ankr.role,
+      "primary"
+    );
+
+    assert.deepEqual(
+      getProvider("ankr"),
+      PROVIDERS.ankr
+    );
+  }
+);
