@@ -105,6 +105,36 @@ test("signed continuation reads the older window without refetching chain head",
   assert.equal(seen.filter(x=>x.searchParams.get("toBlock")==="2952").length,2);
   assert.equal(seen.filter(x=>x.searchParams.get("fromBlock")==="905").length,2);
 });
+test("Etherscan status=0 empty responses are exact and error-first",async()=>{
+  const variants = [
+    {status:"0",message:"No records found",result:[]},
+    {status:"0",message:"No records found",result:""},
+    {status:"0",message:"NOTOK",result:"No records found"},
+    {status:"0",message:"NOTOK",result:"No logs found"},
+  ];
+  for (const response of variants) {
+    const p=new EtherscanLogTransfersProvider({...opts,transport:async input=>{
+      const u=new URL(String(input));
+      return body(u.searchParams.get("action")==="eth_blockNumber"?head:response);
+    }});
+    const result=await p.getTokenTransfers(req);
+    assert.equal(result.ok,true,JSON.stringify(response));
+    if(result.ok){assert.equal(result.data.transfers.length,0);assert.equal(typeof result.data.nextCursor,"string");}
+  }
+  for (const response of [
+    {status:"0",message:"NOTOK",result:[]},
+    {status:"0",message:"NOTOK",result:""},
+    {status:"0",message:"NOTOK",result:"Invalid API Key"},
+    {status:"0",message:"No records found",result:"rate limit exceeded"},
+    {status:"0",message:"NOTOK",result:"No records found — rate limit exceeded"},
+  ]) {
+    const p=new EtherscanLogTransfersProvider({...opts,transport:async input=>{
+      const u=new URL(String(input));
+      return body(u.searchParams.get("action")==="eth_blockNumber"?head:response);
+    }});
+    assert.equal((await p.getTokenTransfers(req)).ok,false,JSON.stringify(response));
+  }
+});
 test("wrong network, invalid address and missing key fail closed",async()=>{
   const p=new EtherscanLogTransfersProvider({...opts,apiKey:""});
   assert.equal((await p.getTokenTransfers(req)).ok,false);

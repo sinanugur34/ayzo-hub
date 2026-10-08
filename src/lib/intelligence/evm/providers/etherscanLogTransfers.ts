@@ -148,11 +148,19 @@ function logs(json:Obj,dir:Direction,wallet:string,token:string,low:number,high:
   {data:ReturnType<typeof parseLog>[];code:EvmProviderErrorCode|null} {
   if (json.status==="0") {
     const message=json.message;
-    if ((message==="No records found" || message==="No logs found") &&
-        (Array.isArray(json.result) && json.result.length===0 ||
-         json.result==="" || json.result==="No records found")) return {data:[],code:null};
-    const raw=[json.result,json.message].filter(v=>typeof v==="string").join(" ").toLowerCase();
-    return {data:[],code:/rate limit|too many requests|max rate/.test(raw)?"RATE_LIMITED":"UPSTREAM_ERROR"};
+    const result=json.result;
+    const raw=[result,message].filter(v=>typeof v==="string").join(" ").toLowerCase();
+    // Etherscan V2 may use message=NOTOK and result="No records found".
+    // Never interpret empty arrays or a generic NOTOK as proof of no records.
+    // Known empty signals must be exact; error indicators always win.
+    if (/rate limit|too many requests|max rate/.test(raw)) return {data:[],code:"RATE_LIMITED"};
+    const exactEmpty=(v:unknown)=>v==="No records found" || v==="No logs found";
+    const messageEmpty=exactEmpty(message);
+    const resultEmpty=exactEmpty(result);
+    const emptyData=(Array.isArray(result) && result.length===0) || result==="";
+    if ((messageEmpty && (emptyData || resultEmpty)) ||
+        (message==="NOTOK" && resultEmpty)) return {data:[],code:null};
+    return {data:[],code:"UPSTREAM_ERROR"};
   }
   if (json.status!=="1" || !Array.isArray(json.result) || json.result.length>=PER_DIRECTION) {
     // A full page may hide additional results. Fail closed, never silently truncate.
