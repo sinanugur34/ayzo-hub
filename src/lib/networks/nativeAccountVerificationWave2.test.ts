@@ -126,3 +126,41 @@ test("Wave2 lookups reject provider errors and missing credentials fail closed",
   }
   assert.equal((await verifyWave2Account("sui",SUI,mock({},503))).status,"unavailable");
 });
+
+test("TRON accepts a 49KiB account response with unknown content-length", async () => {
+  const payload = { success: true, data: [{
+    address: TRON,
+    assets: "x".repeat(49_000),
+  }] };
+  const serialized = JSON.stringify(payload);
+  assert.ok(Buffer.byteLength(serialized) > 16_384);
+  assert.ok(Buffer.byteLength(serialized) < 131_072);
+  const result = await verifyWave2Account("tron", TRON, mock(payload), {tronGrid:"dummy"});
+  assert.deepEqual(result, {network:"tron", status:"observed"});
+});
+
+test("TRON rejects over 128KiB even when response omits content-length", async () => {
+  const oversized = { success: true, data: [{
+    address: TRON,
+    assets: "x".repeat(140_000),
+  }] };
+  const result = await verifyWave2Account("tron", TRON, mock(oversized), {tronGrid:"dummy"});
+  assert.deepEqual(result, {network:"tron", status:"unavailable"});
+});
+
+test("Sui keeps the 16KiB response cap", async () => {
+  const oversized = { ...suiPayload([{address:"0x2"}]),
+    extra: "x".repeat(20_000),
+  };
+  const result = await verifyWave2Account("sui", SUI, mock(oversized));
+  assert.deepEqual(result, {network:"sui", status:"unavailable"});
+});
+
+test("TRON invalid UTF-8 and malformed provider bodies fail closed", async () => {
+  const invalidUtf8: typeof fetch = async () =>
+    new Response(Uint8Array.from([0xc3, 0x28]), {status: 200});
+  const malformedJson: typeof fetch = async () =>
+    new Response("not-json", {status: 200});
+  assert.equal((await verifyWave2Account("tron", TRON, invalidUtf8, {tronGrid:"dummy"})).status,"unavailable");
+  assert.equal((await verifyWave2Account("tron", TRON, malformedJson, {tronGrid:"dummy"})).status,"unavailable");
+});

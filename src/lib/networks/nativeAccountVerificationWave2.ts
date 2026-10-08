@@ -11,7 +11,10 @@ export type Wave2Evidence = { network: Wave2AccountNetwork; status: Wave2Status 
 export type Wave2Keys = { alchemy?: string; helius?: string; tronGrid?: string };
 
 const TIMEOUT_MS = 4_500;
-const MAX_BODY_CHARS = 16_384;
+// Enforce the *decoded* HTTP body bound during streaming, in bytes.
+// TronGrid account payloads may include sizeable asset metadata.
+const DEFAULT_MAX_BODY_BYTES = 16_384;
+const TRONGRID_MAX_BODY_BYTES = 131_072;
 const SUI_GRAPHQL = "https://graphql.mainnet.sui.io/graphql";
 const TRONGRID = "https://api.trongrid.io";
 const SUI_QUERY = `query AyzoAccountPresence($address: SuiAddress!) {
@@ -107,10 +110,38 @@ async function readProviderJson(
       })
     );
     if (result.status !== 200 || !result.ok) return null;
+    const maxBytes = provider === "trongrid"
+      ? TRONGRID_MAX_BODY_BYTES
+      : DEFAULT_MAX_BODY_BYTES;
     const declaredSize = result.headers.get("content-length");
-    if (declaredSize !== null && Number(declaredSize) > MAX_BODY_CHARS) return null;
-    const text = await result.text();
-    if (text.length > MAX_BODY_CHARS) return null;
+    if (declaredSize !== null) {
+      const declaredBytes = Number(declaredSize);
+      if (!Number.isSafeInteger(declaredBytes) ||
+          declaredBytes < 0 || declaredBytes > maxBytes) return null;
+    }
+
+    // Never materialize a provider-controlled unbounded response body.
+    if (!result.body) return null;
+    const reader = result.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let receivedBytes = 0;
+    try {
+      while (true) {
+        const part = await reader.read();
+        if (part.done) break;
+        receivedBytes += part.value.byteLength;
+        if (receivedBytes > maxBytes) {
+          await reader.cancel();
+          return null;
+        }
+        chunks.push(part.value);
+      }
+    } finally {
+      reader.releaseLock();
+    }
+    // Fatal UTF-8 decoding rejects malformed input instead of modifying it.
+    const text = new TextDecoder("utf-8", { fatal: true })
+      .decode(Buffer.concat(chunks, receivedBytes));
     return JSON.parse(text) as unknown;
   } catch {
     return null;
