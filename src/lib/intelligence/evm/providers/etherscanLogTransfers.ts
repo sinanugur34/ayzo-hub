@@ -24,6 +24,7 @@ export type LogTransferOptions = {
   apiKey?: string;
   cursorSecret?: string;
   transport?: typeof fetch;
+  rpcTransport?: typeof fetch;
   timeoutMs?: number;
   now?: () => number;
 };
@@ -171,6 +172,108 @@ function logs(json:Obj,dir:Direction,wallet:string,token:string,low:number,high:
   return {data:parsed,code:null};
 }
 
+
+/* RPC cross-check only when Sonic's indexed log lacks its real logIndex.
+   Never synthesize an index or accept a partial set: compare every record
+   against the full canonical RPC result for BOTH directions in this window. */
+type SonicRepair = {json: Obj | null; code: EvmProviderErrorCode | null};
+function eventFingerprint(raw: unknown): string | null {
+  const r=obj(raw), ts=r?.topics;
+  if(!r || r.removed===true || address(r.address)===null ||
+     typeof r.transactionHash!=="string" || !HASH.test(r.transactionHash) ||
+     !Array.isArray(ts) || ts.length!==3 ||
+     ts.some(t=>typeof t!=="string" || !TOPIC.test(t)) ||
+     typeof r.data!=="string" || !TOPIC.test(r.data)) return null;
+  const block=uint(r.blockNumber);
+  if(block===null) return null;
+  return JSON.stringify([block,r.transactionHash.toLowerCase(),
+    (r.address as string).toLowerCase(),
+    (ts as string[]).map(t=>t.toLowerCase()),r.data.toLowerCase()]);
+}
+function needsSonicRepair(x: Obj): boolean {
+  return x.status==="1" && Array.isArray(x.result) &&
+    x.result.some(v=>{
+      const r=obj(v);
+      return r && (r.logIndex===undefined || r.logIndex===null || r.logIndex==="");
+    });
+}
+async function sonicRpcLogs(dir:Direction,wallet:string,token:string,low:number,high:number,
+  options:LogTransferOptions,signal?:AbortSignal):Promise<SonicRepair>{
+  const controller=new AbortController();
+  if(signal?.aborted)return {json:null,code:"TIMEOUT"};
+  const abort=()=>controller.abort();
+  signal?.addEventListener("abort",abort,{once:true});
+  const timer=setTimeout(abort,Math.min(TIMEOUT_MS,Math.max(100,options.timeoutMs??TIMEOUT_MS)));
+  const url=new URL("https://rpc.soniclabs.com/");
+  const body=JSON.stringify({jsonrpc:"2.0",id:1,method:"eth_getLogs",params:[{
+    address:token,fromBlock:`0x${low.toString(16)}`,toBlock:`0x${high.toString(16)}`,
+    topics:dir==="outgoing"?[TRANSFER,padded(wallet)]:[TRANSFER,null,padded(wallet)],
+  }]});
+  try{
+    const response=await providerUsageFetch({provider:"sonic-rpc",operation:`evm.transfers.logs.sonic.verify.${dir}`},url,
+      ()=>(options.rpcTransport??options.transport??fetch)(url,{
+        method:"POST",headers:{"content-type":"application/json"},body,
+        cache:"no-store",redirect:"error",signal:controller.signal,
+      }));
+    if(response.status===429){await response.body?.cancel();return {json:null,code:"RATE_LIMITED"};}
+    if(!response.ok){await response.body?.cancel();return {json:null,code:"UPSTREAM_ERROR"};}
+    const len=response.headers.get("content-length");
+    if(len&&(!UINT.test(len)||Number(len)>MAX_BYTES)){
+      await response.body?.cancel();return {json:null,code:"UPSTREAM_ERROR"};
+    }
+    const reader=response.body?.getReader();
+    if(!reader)return {json:null,code:"UPSTREAM_ERROR"};
+    const chunks:Uint8Array[]=[];let bytes=0;
+    while(true){
+      const part=await reader.read();if(part.done)break;
+      bytes+=part.value.byteLength;
+      if(bytes>MAX_BYTES){await reader.cancel();return {json:null,code:"UPSTREAM_ERROR"};}
+      chunks.push(part.value);
+    }
+    const responseObj:unknown=JSON.parse(new TextDecoder("utf8",{fatal:true}).decode(Buffer.concat(chunks)));
+    const payload=obj(responseObj);
+    if(!payload || payload.jsonrpc!=="2.0" || payload.id!==1 ||
+       payload.error!==undefined || !Array.isArray(payload.result))return {json:null,code:"UPSTREAM_ERROR"};
+    return {json:payload,code:null};
+  }catch{return {json:null,code:controller.signal.aborted?"TIMEOUT":"UPSTREAM_ERROR"};}
+  finally{clearTimeout(timer);signal?.removeEventListener("abort",abort);}
+}
+function normalizeSonicFromRpc(indexed:Obj,canonical:Obj,dir:Direction,
+  wallet:string,token:string,low:number,high:number): Obj | null {
+  // Never turn an indexed API failure into an empty set merely because RPC is empty.
+  if(indexed.status==="0" && logs(indexed,dir,wallet,token,low,high).code)return null;
+  const original=indexed.status==="1"&&Array.isArray(indexed.result)?indexed.result:
+    indexed.status==="0"?[]:null;
+  const rpcRows=canonical.result;
+  if(!Array.isArray(original)||!Array.isArray(rpcRows) ||
+     original.length>=PER_DIRECTION || rpcRows.length>=PER_DIRECTION ||
+     original.length!==rpcRows.length)return null;
+  const index=new Map<string,Obj>();
+  for(const raw of rpcRows){
+    const r=obj(raw), key=eventFingerprint(raw);
+    if(!r||!key || index.has(key) || uint(r.logIndex)===null)return null;
+    // Canonical RPC rows must pass the same strict token/wallet/window rules.
+    if(!parseLog(r,dir,wallet,token,low,high))return null;
+    index.set(key,r);
+  }
+  const result:Obj[]=[];
+  for(const raw of original){
+    const r=obj(raw),key=eventFingerprint(raw);
+    if(!r||!key)return null;
+    const authoritative=index.get(key);
+    if(!authoritative)return null;
+    const rpcIndex=uint(authoritative.logIndex),provided=uint(r.logIndex);
+    if(rpcIndex===null)return null;
+    // Invalid nonempty index is never repaired: only an absent index is.
+    if(r.logIndex!==undefined && r.logIndex!==null && r.logIndex!=="" &&
+       provided!==rpcIndex)return null;
+    result.push({...r,logIndex:authoritative.logIndex});
+    index.delete(key);
+  }
+  if(index.size!==0)return null;
+  return {status:"1",result};
+}
+
 export class EtherscanLogTransfersProvider implements EvmTransfersProvider {
   readonly id="etherscan" as const;
   readonly capabilities=CAPS;
@@ -217,8 +320,23 @@ export class EtherscanLogTransfersProvider implements EvmTransfersProvider {
     const [outgoing,incoming]=await Promise.all([directionRequest("outgoing"),directionRequest("incoming")]);
     if (outgoing.code || incoming.code) return failure(outgoing.code??incoming.code??"UPSTREAM_ERROR",elapsed());
     if (!outgoing.json || !incoming.json) return failure("UPSTREAM_ERROR",elapsed());
-    const o=logs(outgoing.json,"outgoing",wallet,token,low,end);
-    const i=logs(incoming.json,"incoming",wallet,token,low,end);
+    let oJson=outgoing.json, iJson=incoming.json;
+    if(request.network.networkId==="sonic" &&
+       (needsSonicRepair(oJson)||needsSonicRepair(iJson))){
+      // Both directions: absence in Etherscan must also agree with canonical RPC.
+      const [oRpc,iRpc]=await Promise.all([
+        sonicRpcLogs("outgoing",wallet,token,low,end,this.options,request.signal),
+        sonicRpcLogs("incoming",wallet,token,low,end,this.options,request.signal),
+      ]);
+      if(oRpc.code||iRpc.code)return failure(oRpc.code??iRpc.code??"UPSTREAM_ERROR",elapsed());
+      if(!oRpc.json||!iRpc.json)return failure("UPSTREAM_ERROR",elapsed());
+      const repairedOut=normalizeSonicFromRpc(oJson,oRpc.json,"outgoing",wallet,token,low,end);
+      const repairedIn=normalizeSonicFromRpc(iJson,iRpc.json,"incoming",wallet,token,low,end);
+      if(!repairedOut||!repairedIn)return failure("UPSTREAM_ERROR",elapsed());
+      oJson=repairedOut;iJson=repairedIn;
+    }
+    const o=logs(oJson,"outgoing",wallet,token,low,end);
+    const i=logs(iJson,"incoming",wallet,token,low,end);
     if (o.code || i.code) return failure(o.code??i.code??"UPSTREAM_ERROR",elapsed());
     const merged=new Map<string,NonNullable<ReturnType<typeof parseLog>>>();
     for (const row of [...o.data,...i.data]) {
