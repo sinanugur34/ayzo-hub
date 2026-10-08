@@ -11,6 +11,10 @@ import {
 } from "@/lib/intelligence/evm/providers/preferredHolders";
 
 import {
+  isValidEvmHolderCursor,
+} from "@/lib/intelligence/evm/providers/holderCursor";
+
+import {
   isNetworkId,
 } from "@/lib/networks/registry";
 
@@ -113,13 +117,7 @@ export async function POST(
     );
   }
 
-  if (
-    cursor === "__INVALID__" ||
-    (
-      cursor !== null &&
-      !/^(?:\d+|ankr:\S{1,12000})$/.test(cursor)
-    )
-  ) {
+  if (!isValidEvmHolderCursor(cursor)) {
     return Response.json(
       {
         ok: false,

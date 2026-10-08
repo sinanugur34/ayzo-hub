@@ -1662,7 +1662,7 @@ export async function runEvmUnifiedIntelligence(
       const holderLimitation =
         holdersResult.data
           .nextCursor !== null
-          ? "Holder intelligence was bounded to the first 100 holders."
+          ? `Holder intelligence includes ${holdersResult.data.holders.length} observed holder(s) across bounded provider pages; additional pages remain.`
           : null;
 
       modules

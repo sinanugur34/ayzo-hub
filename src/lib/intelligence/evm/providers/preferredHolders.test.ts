@@ -331,3 +331,41 @@ test(
     );
   }
 );
+
+
+test("indexed continuation stays closed outside the approved preview canary", async () => {
+  const previousFlag = process.env.AYZO_INDEXED_HOLDER_CANARY;
+  const previousVercel = process.env.VERCEL_ENV;
+  const ankrCalls = { value: 0 };
+  const goldrushCalls = { value: 0 };
+  try {
+    const dependencies = {
+      ankr: makeProvider("ankr", true, ankrCalls),
+      goldrush: makeProvider("goldrush", true, goldrushCalls),
+    };
+    for (const config of [
+      { flag: "0", vercel: "preview" },
+      { flag: "1", vercel: "production" },
+    ]) {
+      process.env.AYZO_INDEXED_HOLDER_CANARY = config.flag;
+      process.env.VERCEL_ENV = config.vercel;
+      for (const provider of ["routescan", "blockscout"]) {
+        const cursor = `${provider}:${Buffer.from(JSON.stringify({ next: "page" })).toString("base64url")}`;
+        const result = await getPreferredEvmTokenHolders({
+          network: BASE, address: ADDRESS, limit: 100, cursor,
+        }, dependencies);
+        assert.equal(result.ok, false);
+        if (result.ok) continue;
+        assert.equal(result.providerId, provider);
+        assert.match(result.error, /disabled in this environment/);
+      }
+    }
+    assert.equal(ankrCalls.value, 0);
+    assert.equal(goldrushCalls.value, 0);
+  } finally {
+    if (previousFlag === undefined) delete process.env.AYZO_INDEXED_HOLDER_CANARY;
+    else process.env.AYZO_INDEXED_HOLDER_CANARY = previousFlag;
+    if (previousVercel === undefined) delete process.env.VERCEL_ENV;
+    else process.env.VERCEL_ENV = previousVercel;
+  }
+});
