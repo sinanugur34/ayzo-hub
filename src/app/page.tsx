@@ -45,6 +45,7 @@ import {
 import {
   isLiveAnalysisNetworkId,
   resolveSelectedNetworkForAddress,
+  shouldPreserveEvmAddress,
   type LiveAnalysisNetworkId,
   type LiveEvmNetworkId,
 } from "@/lib/networks/addressSelection";
@@ -515,9 +516,16 @@ export default function Home() {
     value:
       LiveAnalysisNetworkId
   ) {
+    const preserveAddress =
+      shouldPreserveEvmAddress(tokenAddress, value);
+
     setNetwork(value);
-    setTokenAddress("");
-    setMessage("");
+    setTokenAddress(preserveAddress ? tokenAddress : "");
+    setMessage(
+      preserveAddress
+        ? `${networkName(value)} selected. Verify the network before analysis.`
+        : ""
+    );
     setIsValid(null);
     setLoading(false);
     resetResult();
@@ -695,13 +703,24 @@ export default function Home() {
               result.network ===
                 "evm"
             ) {
-              detectedNetwork =
-                NETWORKS[
-                  network
-                ].family ===
+              const resolved =
+                resolveSelectedNetworkForAddress(
+                  network,
                   "evm"
-                  ? network
-                  : "ethereum";
+                );
+
+              detectedNetwork =
+                resolved && isLiveAnalysisNetworkId(resolved)
+                  ? resolved
+                  : null;
+
+              if (!detectedNetwork) {
+                setIsValid(null);
+                setMessage(
+                  "This address format is shared by EVM networks. Select the correct network before analyzing."
+                );
+                return;
+              }
             } else if (
               isLiveAnalysisNetworkId(
                 result.network
@@ -1490,7 +1509,9 @@ export default function Home() {
     if (!detectedNetwork) {
       setIsValid(false);
       setMessage(
-        "This is not a valid address for the selected network."
+        isEvmAddress
+          ? "Select the correct EVM network before analyzing this address."
+          : "This is not a valid address for the selected network."
       );
       return;
     }

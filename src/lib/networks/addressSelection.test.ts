@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   resolveSelectedNetworkForAddress,
+  shouldPreserveEvmAddress,
 } from "./addressSelection";
 
 test(
@@ -27,15 +28,14 @@ test(
 );
 
 test(
-  "defaults a valid 0x address to Ethereum when Solana is selected",
+  "requires explicit EVM selection for ambiguous 0x addresses",
   () => {
-    assert.equal(
-      resolveSelectedNetworkForAddress(
-        "solana",
-        "evm"
-      ),
-      "ethereum"
-    );
+    for (const selected of ["solana", "bitcoin", "tron"] as const) {
+      assert.equal(
+        resolveSelectedNetworkForAddress(selected, "evm"),
+        null
+      );
+    }
   }
 );
 
@@ -349,3 +349,30 @@ test(
     );
   }
 );
+
+
+test("preserves EVM addresses when choosing another EVM network", () => {
+  const address = "0x176211869cA2b568f2A7D4EE941E073a821EE1ff";
+  assert.equal(shouldPreserveEvmAddress(address, "linea"), true);
+  assert.equal(shouldPreserveEvmAddress(address, "base"), true);
+  assert.equal(shouldPreserveEvmAddress(address, "solana"), false);
+  assert.equal(shouldPreserveEvmAddress("not-an-address", "linea"), false);
+});
+
+test("preserves explicitly selected Hyperliquid for 0x addresses", () => {
+  assert.equal(
+    resolveSelectedNetworkForAddress("hyperliquid", "evm"),
+    "hyperliquid"
+  );
+});
+
+test("routes recognized Solana addresses to Solana", () => {
+  assert.equal(
+    resolveSelectedNetworkForAddress("solana", "solana"),
+    "solana"
+  );
+  assert.equal(
+    resolveSelectedNetworkForAddress("ethereum", "solana"),
+    "solana"
+  );
+});
