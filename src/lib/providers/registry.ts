@@ -4,6 +4,20 @@ import type {
 } from "./types";
 
 export const PROVIDERS = {
+  routescan: {
+    id: "routescan",
+    name: "Routescan",
+    kind: "indexed-data",
+    role: "fallback",
+  },
+
+  blockscout: {
+    id: "blockscout",
+    name: "Blockscout",
+    kind: "indexed-data",
+    role: "fallback",
+  },
+
   goldrush: {
     id: "goldrush",
     name: "GoldRush",

@@ -18,6 +18,13 @@ import {
 import {
   goldRushEvmProvider,
 } from "./goldrush";
+import {
+  isIndexedHolderCanaryAllowed,
+} from "./indexedHolderCanary";
+import {
+  routescanHoldersProvider,
+  blockscoutHoldersProvider,
+} from "./indexedHolderAdapters";
 
 const ANKR_NETWORKS =
   new Set<NetworkId>([
@@ -99,6 +106,48 @@ export async function getPreferredEvmTokenHolders(
     EvmTokenHolders
   >
 > {
+  // All indexed access, including continuation requests, shares one gate.
+  // NODE_ENV=production on Vercel Preview; VERCEL_ENV distinguishes it.
+  const indexedCanaryAllowed = isIndexedHolderCanaryAllowed({
+    flag: process.env.AYZO_INDEXED_HOLDER_CANARY,
+    nodeEnv: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL_ENV,
+  });
+
+  // Never reroute a provider-owned cursor to Ankr or GoldRush.
+  // In production or with the flag off, reject it without provider I/O.
+  const indexedCursorProvider = request.cursor?.startsWith("routescan:")
+    ? routescanHoldersProvider
+    : request.cursor?.startsWith("blockscout:")
+      ? blockscoutHoldersProvider
+      : null;
+
+  if (indexedCursorProvider) {
+    if (!indexedCanaryAllowed) {
+      return {
+        ok: false,
+        providerId: indexedCursorProvider.id,
+        code: "UPSTREAM_ERROR",
+        latencyMs: null,
+        error: "Indexed holder continuation is disabled in this environment.",
+      };
+    }
+    return indexedCursorProvider.getTokenHolders(request);
+  }
+
+  // Preview-only canary; the legacy first-page behavior remains unchanged.
+  if (indexedCanaryAllowed && !request.cursor) {
+    const candidate = routescanHoldersProvider.supportsNetwork(request.network)
+      ? routescanHoldersProvider
+      : blockscoutHoldersProvider.supportsNetwork(request.network)
+        ? blockscoutHoldersProvider
+        : null;
+    if (candidate) {
+      const indexedResult = await candidate.getTokenHolders(request);
+      if (indexedResult.ok) return indexedResult;
+    }
+  }
+
   /*
    * Never translate provider cursors.
    */
