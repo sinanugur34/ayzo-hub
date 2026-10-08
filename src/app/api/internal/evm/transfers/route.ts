@@ -38,6 +38,7 @@ function isTransferCursor(
   value: string
 ): boolean {
   if (/^etherscan-transfer:[1-9]\d{0,5}$/.test(value)) return true;
+  if (/^etherscan-log:[A-Za-z0-9_-]{12,750}\.[A-Za-z0-9_-]{43}$/.test(value)) return true;
   if (
     /^alchemy-transfer:[A-Za-z0-9_-]+$/.test(
       value

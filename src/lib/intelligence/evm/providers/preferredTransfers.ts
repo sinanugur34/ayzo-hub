@@ -1,5 +1,5 @@
 import { isGoldRushExitCanaryActive } from "@/lib/goldRushExitCanary";
-import { etherscanTransfersProvider } from "./etherscanTransfers";
+import { etherscanLogTransfersProvider } from "./etherscanLogTransfers";
 
 import {
   runWithProviderUsageHintsCore,
@@ -111,15 +111,20 @@ export async function getPreferredEvmTokenTransfers(
   // New indexed coverage is strictly Preview/local-only until live certified.
   // Existing GoldRush cursors remain provider-owned and must never migrate.
   if (goldRushExit && !request.cursor &&
-      etherscanTransfersProvider.supportsNetwork(request.network) &&
-      etherscanTransfersProvider.supportsCapability("tokenTransfers")) {
-    const indexed = await etherscanTransfersProvider.getTokenTransfers(request);
+      etherscanLogTransfersProvider.supportsNetwork(request.network) &&
+      etherscanLogTransfersProvider.supportsCapability("tokenTransfers")) {
+    const indexed = await etherscanLogTransfersProvider.getTokenTransfers(request);
     if (indexed.ok) return indexed;
     // Do not claim empty or synthetic evidence if the indexer failed.
     return indexed;
   }
+  // Never reassign legacy tokentx cursors: they belong to the old adapter.
   if (goldRushExit && request.cursor?.startsWith("etherscan-transfer:")) {
-    return etherscanTransfersProvider.getTokenTransfers(request);
+    return { ok:false, providerId:"etherscan", latencyMs:null,
+      code:"UPSTREAM_ERROR",error:"Legacy Etherscan transfer cursor cannot be continued by log-native adapter." };
+  }
+  if (goldRushExit && request.cursor?.startsWith("etherscan-log:")) {
+    return etherscanLogTransfersProvider.getTokenTransfers(request);
   }
 
 
