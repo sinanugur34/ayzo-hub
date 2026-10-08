@@ -1,3 +1,5 @@
+import { isGoldRushExitCanaryActive } from "./goldRushExitCanary";
+
 import type {
   ProviderUsageOutcome,
 } from "./providerUsageTelemetryCore";
@@ -162,6 +164,18 @@ function inferProvider(
   return "http-upstream";
 }
 
+/** Defense in depth: blocks even a mislabelled GoldRush HTTP request. */
+function isGoldRushHost(request: unknown): boolean {
+  const raw = requestUrl(request);
+  if (!raw) return false;
+  try {
+    const host = new URL(raw).hostname.toLowerCase();
+    return host === "covalenthq.com" || host.endsWith(".covalenthq.com");
+  } catch {
+    return false;
+  }
+}
+
 function responseOutcome(
   status:
     number
@@ -237,6 +251,15 @@ export async function providerUsageFetch<
     inferProvider(
       request
     );
+
+  // A blocked request must never call fetch or be logged as a physical attempt.
+  // This enforcement applies to ALL four legacy GoldRush network adapters.
+  if (
+    isGoldRushExitCanaryActive() &&
+    (provider.toLowerCase() === "goldrush" || isGoldRushHost(request))
+  ) {
+    throw new Error("AYZO_GOLDRUSH_EXIT_CANARY: GoldRush outbound HTTP blocked.");
+  }
 
   const pricing =
     resolveProviderUsagePricing({

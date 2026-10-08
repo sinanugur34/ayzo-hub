@@ -1,3 +1,5 @@
+import { isGoldRushExitCanaryActive } from "@/lib/goldRushExitCanary";
+
 import {
   runWithProviderUsageHintsCore,
 } from "@/lib/providerUsageScopeCore";
@@ -103,6 +105,8 @@ export async function getPreferredEvmTokenTransfers(
       request.cursor
     );
 
+  const goldRushExit = isGoldRushExitCanaryActive();
+
   if (
     owner ===
       "alchemy"
@@ -117,6 +121,11 @@ export async function getPreferredEvmTokenTransfers(
     owner ===
       "goldrush"
   ) {
+    if (goldRushExit) {
+      return { ok: false, providerId: "goldrush", latencyMs: null,
+        code: "UPSTREAM_ERROR",
+        error: "GoldRush-owned transfer continuation disabled by Preview exit canary." };
+    }
     return goldrush
       .getTokenTransfers(
         request
@@ -146,6 +155,7 @@ export async function getPreferredEvmTokenTransfers(
     }
 
     if (
+      goldRushExit ||
       !FALLBACK_CODES.has(
         primary.code
       ) ||
@@ -178,6 +188,12 @@ export async function getPreferredEvmTokenTransfers(
               null,
           })
     );
+  }
+
+  if (goldRushExit) {
+    return { ok: false, providerId: "goldrush", latencyMs: null,
+      code: "UPSTREAM_ERROR",
+      error: "No non-GoldRush token transfer provider supports this network in Preview." };
   }
 
   return goldrush

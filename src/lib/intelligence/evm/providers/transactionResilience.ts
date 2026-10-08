@@ -1,3 +1,4 @@
+import { isGoldRushExitCanaryActive } from "@/lib/goldRushExitCanary";
 import { captureProviderUsageCore, runWithProviderUsageHintsCore } from "@/lib/providerUsageScopeCore";
 import {
   randomUUID,
@@ -273,7 +274,7 @@ function resilienceNamespace() {
     vercelEnv ===
       "development"
   ) {
-    return vercelEnv;
+    return isGoldRushExitCanaryActive() ? `${vercelEnv}:zero-goldrush-v1` : vercelEnv;
   }
 
   return process.env
@@ -896,6 +897,10 @@ export async function getResilientEvmTransactions(
       const provider
       of providers
     ) {
+      // Preview canary must never invoke GoldRush even with injected dependencies.
+      if (isGoldRushExitCanaryActive() && provider.id === "goldrush") {
+        continue;
+      }
       if (
         cursorOwner &&
         provider.id !==

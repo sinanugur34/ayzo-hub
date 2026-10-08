@@ -1,3 +1,4 @@
+import { isGoldRushExitCanaryActive } from "@/lib/goldRushExitCanary";
 import { runWithProviderUsageHintsCore } from "@/lib/providerUsageScopeCore";
 import type {
   BitcoinAddressTransactionsProvider,
@@ -65,6 +66,10 @@ export async function getBitcoinAddressHistoryWithFallback(
     ) ||
     request.signal?.aborted
   ) {
+    return primaryResult;
+  }
+
+  if (isGoldRushExitCanaryActive()) {
     return primaryResult;
   }
 

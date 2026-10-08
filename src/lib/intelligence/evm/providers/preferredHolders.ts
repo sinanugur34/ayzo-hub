@@ -1,3 +1,5 @@
+import { isGoldRushExitCanaryActive } from "@/lib/goldRushExitCanary";
+
 import type {
   NetworkId,
 } from "@/lib/networks/registry";
@@ -106,13 +108,19 @@ export async function getPreferredEvmTokenHolders(
     EvmTokenHolders
   >
 > {
+  const goldRushExit = isGoldRushExitCanaryActive();
+  const blockedGoldRush = (): EvmProviderResult<EvmTokenHolders> => ({
+    ok: false, providerId: "goldrush", code: "UPSTREAM_ERROR", latencyMs: null,
+    error: "GoldRush holder path disabled in Preview; no verified alternative result.",
+  });
+
   // All indexed access, including continuation requests, shares one gate.
   // NODE_ENV=production on Vercel Preview; VERCEL_ENV distinguishes it.
   const indexedCanaryAllowed = isIndexedHolderCanaryAllowed({
     flag: process.env.AYZO_INDEXED_HOLDER_CANARY,
     nodeEnv: process.env.NODE_ENV,
     vercelEnv: process.env.VERCEL_ENV,
-  });
+  }) || goldRushExit;
 
   // Never reroute a provider-owned cursor to Ankr or GoldRush.
   // In production or with the flag off, reject it without provider I/O.
@@ -168,6 +176,7 @@ export async function getPreferredEvmTokenHolders(
       request.cursor
     )
   ) {
+    if (goldRushExit) return blockedGoldRush();
     return dependencies
       .goldrush
       .getTokenHolders(
@@ -180,6 +189,7 @@ export async function getPreferredEvmTokenHolders(
       request.network.networkId
     ) === "goldrush"
   ) {
+    if (goldRushExit) return blockedGoldRush();
     return dependencies
       .goldrush
       .getTokenHolders(
@@ -235,6 +245,8 @@ export async function getPreferredEvmTokenHolders(
   ) {
     return primary;
   }
+
+  if (goldRushExit) return primary;
 
   const fallback =
     await dependencies
