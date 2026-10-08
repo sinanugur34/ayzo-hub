@@ -44,9 +44,11 @@ const uint = (v: unknown): number | null => {
   } catch { return null; }
 };
 const padded = (a: string) => "0x" + "0".repeat(24) + a.slice(2);
-const failure = (code: EvmProviderErrorCode, ms: number | null): EvmProviderResult<EvmTransfersPage> => ({
-  ok: false, providerId: "etherscan", latencyMs: ms, code,
-  error: `Preview-only Etherscan log transfers unavailable (${code}).`,
+type TransferSource = "etherscan" | "sonic-rpc" | "mantle-rpc";
+const failure = (code: EvmProviderErrorCode, ms: number | null,
+  source:TransferSource="etherscan"): EvmProviderResult<EvmTransfersPage> => ({
+  ok: false, providerId: source, latencyMs: ms, code,
+  error: `Preview-only transfer source unavailable (${code}).`,
 });
 function sign(payload: string, secret: string): string {
   return createHmac("sha256", secret).update(payload).digest("base64url");
@@ -285,6 +287,48 @@ function normalizeSonicFromRpc(indexed:Obj,canonical:Obj,dir:Direction,
    indexer page nor malformed indexed evidence is authoritative. The returned
    page is built only from complete, direction-filtered RPC eth_getLogs arrays.
    A full direction (>=50) or any malformed record FAILS CLOSED downstream. */
+type RpcScalar = {value:number|null;code:EvmProviderErrorCode|null};
+async function canonicalRpcScalar(network:"sonic"|"mantle",method:"eth_blockNumber"|"eth_chainId",
+  options:LogTransferOptions,signal?:AbortSignal):Promise<RpcScalar>{
+  const controller=new AbortController();
+  if(signal?.aborted)return {value:null,code:"TIMEOUT"};
+  const abort=()=>controller.abort();
+  signal?.addEventListener("abort",abort,{once:true});
+  const timer=setTimeout(abort,Math.min(TIMEOUT_MS,Math.max(100,options.timeoutMs??TIMEOUT_MS)));
+  const url=new URL(network==="sonic"?"https://rpc.soniclabs.com/":"https://rpc.mantle.xyz/");
+  const payload=JSON.stringify({jsonrpc:"2.0",id:1,method,params:[]});
+  try{
+    const r=await providerUsageFetch({provider:`${network}-rpc`,operation:`evm.transfers.rpc.${method}`},url,
+      ()=>(options.rpcTransport??options.transport??fetch)(url,{
+        method:"POST",headers:{"content-type":"application/json"},body:payload,
+        cache:"no-store",redirect:"error",signal:controller.signal,
+      }));
+    if(r.status===429){await r.body?.cancel();return {value:null,code:"RATE_LIMITED"};}
+    if(!r.ok){await r.body?.cancel();return {value:null,code:"UPSTREAM_ERROR"};}
+    const len=r.headers.get("content-length");
+    if(len&&(!UINT.test(len)||Number(len)>MAX_BYTES)){
+      await r.body?.cancel();return {value:null,code:"UPSTREAM_ERROR"};
+    }
+    const reader=r.body?.getReader();
+    if(!reader)return {value:null,code:"UPSTREAM_ERROR"};
+    const chunks:Uint8Array[]=[];let bytes=0;
+    while(true){
+      const part=await reader.read();if(part.done)break;
+      bytes+=part.value.byteLength;
+      if(bytes>MAX_BYTES){await reader.cancel();return {value:null,code:"UPSTREAM_ERROR"};}
+      chunks.push(part.value);
+    }
+    const raw:unknown=JSON.parse(new TextDecoder("utf8",{fatal:true}).decode(Buffer.concat(chunks)));
+    const body=obj(raw);
+    if(!body||body.jsonrpc!=="2.0"||body.id!==1||body.error!==undefined||
+       typeof body.result!=="string"||!/^0x[0-9a-fA-F]{1,16}$/.test(body.result))
+      return {value:null,code:"UPSTREAM_ERROR"};
+    const value=uint(body.result);
+    return value===null?{value:null,code:"UPSTREAM_ERROR"}:{value,code:null};
+  }catch{return {value:null,code:controller.signal.aborted?"TIMEOUT":"UPSTREAM_ERROR"};}
+  finally{clearTimeout(timer);signal?.removeEventListener("abort",abort);}
+}
+
 async function canonicalRpcPage(network:"sonic"|"mantle",wallet:string,token:string,
   low:number,high:number,options:LogTransferOptions,signal?:AbortSignal):
   Promise<{out:Obj|null;in:Obj|null;code:EvmProviderErrorCode|null; saturated:boolean}>{
@@ -321,31 +365,55 @@ export class EtherscanLogTransfersProvider implements EvmTransfersProvider {
   async getTokenTransfers(request:EvmTokenTransfersRequest):Promise<EvmProviderResult<EvmTransfersPage>> {
     const started=performance.now();
     const elapsed=()=>Math.max(0,Math.round(performance.now()-started));
-    if (!this.supportsNetwork(request.network)) return failure("UNSUPPORTED_NETWORK",null);
+    const canonical=this.options.preferCanonicalRpc!==false;
+    const source:TransferSource=canonical && request.network.networkId==="sonic"?"sonic-rpc":
+      canonical && request.network.networkId==="mantle"?"mantle-rpc":"etherscan";
+    const fail=(code:EvmProviderErrorCode,ms:number|null)=>failure(code,ms,source);
+    if (!this.supportsNetwork(request.network)) return fail("UNSUPPORTED_NETWORK",null);
     const wallet=address(request.address),token=address(request.tokenAddress);
-    if (!wallet) return failure("INVALID_ADDRESS",null);
-    if (!token) return failure("INVALID_TOKEN_ADDRESS",null);
-    if (request.limit!==undefined && request.limit!==100) return failure("UPSTREAM_ERROR",null);
-    const key=(this.options.apiKey??process.env.ETHERSCAN_API_KEY)?.trim();
+    if (!wallet) return fail("INVALID_ADDRESS",null);
+    if (!token) return fail("INVALID_TOKEN_ADDRESS",null);
+    if (request.limit!==undefined && request.limit!==100) return fail("UPSTREAM_ERROR",null);
+    const key=(this.options.apiKey??process.env.ETHERSCAN_API_KEY)?.trim()??"";
     const secret=(this.options.cursorSecret??process.env.AYZO_INTERNAL_API_KEY)?.trim();
-    if (!key || !secret) return failure("UPSTREAM_ERROR",null);
+    if (!secret || (!canonical && !key)) return fail("UPSTREAM_ERROR",null);
     const now=(this.options.now??Date.now)();
-    if (!Number.isSafeInteger(now)) return failure("UPSTREAM_ERROR",null);
+    if (!Number.isSafeInteger(now)) return fail("UPSTREAM_ERROR",null);
     let head:number,end:number;
     if (request.cursor) {
       const cursor=decodeEtherscanLogCursor(request.cursor,secret,{
         chain:request.network.chainId,wallet,token,now});
-      if (!cursor) return failure("UPSTREAM_ERROR",null);
+      if (!cursor) return fail("UPSTREAM_ERROR",null);
       head=cursor.head;end=cursor.end;
+    } else if(canonical) {
+      const network=request.network.networkId;
+      if(network!=="sonic"&&network!=="mantle")return fail("UNSUPPORTED_NETWORK",elapsed());
+      // Pin the initial head to the canonical RPC, not an unrelated indexer.
+      const [identity,latest]=await Promise.all([
+        canonicalRpcScalar(network,"eth_chainId",this.options,request.signal),
+        canonicalRpcScalar(network,"eth_blockNumber",this.options,request.signal),
+      ]);
+      if(identity.code||latest.code)return fail(identity.code??latest.code??"UPSTREAM_ERROR",elapsed());
+      if(identity.value!==request.network.chainId||latest.value===null)
+        return fail("UPSTREAM_ERROR",elapsed());
+      head=latest.value;end=latest.value;
     } else {
       const response=await api(urlFor(request.network.chainId,key,{module:"proxy",action:"eth_blockNumber"}),
         "evm.transfers.logs.head",this.options,request.signal);
-      if (response.code) return failure(response.code,elapsed());
+      if (response.code) return fail(response.code,elapsed());
       const raw=response.json?.result;
-      if (typeof raw!=="string" || !/^0x[0-9a-fA-F]{1,16}$/.test(raw)) return failure("UPSTREAM_ERROR",elapsed());
+      if (typeof raw!=="string" || !/^0x[0-9a-fA-F]{1,16}$/.test(raw)) return fail("UPSTREAM_ERROR",elapsed());
       const parsed=uint(raw);
-      if (parsed===null) return failure("UPSTREAM_ERROR",elapsed());
+      if (parsed===null) return fail("UPSTREAM_ERROR",elapsed());
       head=parsed;end=parsed;
+    }
+    if(canonical && request.cursor){
+      const network=request.network.networkId;
+      if(network!=="sonic"&&network!=="mantle")return fail("UNSUPPORTED_NETWORK",elapsed());
+      // Validate the chain for continuation, without refreshing immutable head.
+      const identity=await canonicalRpcScalar(network,"eth_chainId",this.options,request.signal);
+      if(identity.code)return fail(identity.code,elapsed());
+      if(identity.value!==request.network.chainId)return fail("UPSTREAM_ERROR",elapsed());
     }
     let low=Math.max(0,end-WINDOW+1);
     let oJson:Obj|null=null,iJson:Obj|null=null;
@@ -353,7 +421,7 @@ export class EtherscanLogTransfersProvider implements EvmTransfersProvider {
     // Explicit false is available for backward-compatibility regression tests.
     if(this.options.preferCanonicalRpc!==false){
       const network=request.network.networkId;
-      if(network!=="sonic" && network!=="mantle")return failure("UNSUPPORTED_NETWORK",elapsed());
+      if(network!=="sonic" && network!=="mantle")return fail("UNSUPPORTED_NETWORK",elapsed());
       // An initial wide window may contain more than the safe 50-per-direction
       // result cap. Query progressively narrower, contiguous newest suffixes.
       // A cursor always points to low-1, so no block is skipped or duplicated.
@@ -363,20 +431,20 @@ export class EtherscanLogTransfersProvider implements EvmTransfersProvider {
         if(canonical.saturated){
           const width=end-low+1;
           if(width<=1 || attempt+1===MAX_CANONICAL_ATTEMPTS)
-            return failure("UPSTREAM_ERROR",elapsed());
+            return fail("UPSTREAM_ERROR",elapsed());
           const narrower=Math.max(1,Math.ceil(width/4));
           const nextLow=end-narrower+1;
-          if(nextLow<=low)return failure("UPSTREAM_ERROR",elapsed());
+          if(nextLow<=low)return fail("UPSTREAM_ERROR",elapsed());
           low=nextLow;
           continue;
         }
         if(canonical.code||!canonical.out||!canonical.in)
-          return failure(canonical.code??"UPSTREAM_ERROR",elapsed());
+          return fail(canonical.code??"UPSTREAM_ERROR",elapsed());
         oJson=canonical.out;iJson=canonical.in;
         accepted=true;
         break;
       }
-      if(!accepted)return failure("UPSTREAM_ERROR",elapsed());
+      if(!accepted)return fail("UPSTREAM_ERROR",elapsed());
     } else {
     const directionRequest=(dir:Direction)=>api(urlFor(request.network.chainId,key,{
       module:"logs",action:"getLogs",address:token,fromBlock:String(low),toBlock:String(end),
@@ -384,8 +452,8 @@ export class EtherscanLogTransfersProvider implements EvmTransfersProvider {
       page:"1",offset:String(PER_DIRECTION),
     }),`evm.transfers.logs.${dir}`,this.options,request.signal);
     const [outgoing,incoming]=await Promise.all([directionRequest("outgoing"),directionRequest("incoming")]);
-    if (outgoing.code || incoming.code) return failure(outgoing.code??incoming.code??"UPSTREAM_ERROR",elapsed());
-    if (!outgoing.json || !incoming.json) return failure("UPSTREAM_ERROR",elapsed());
+    if (outgoing.code || incoming.code) return fail(outgoing.code??incoming.code??"UPSTREAM_ERROR",elapsed());
+    if (!outgoing.json || !incoming.json) return fail("UPSTREAM_ERROR",elapsed());
     oJson=outgoing.json; iJson=incoming.json;
     if(request.network.networkId==="sonic" &&
        (needsSonicRepair(oJson)||needsSonicRepair(iJson))){
@@ -394,33 +462,33 @@ export class EtherscanLogTransfersProvider implements EvmTransfersProvider {
         sonicRpcLogs("outgoing",wallet,token,low,end,this.options,request.signal),
         sonicRpcLogs("incoming",wallet,token,low,end,this.options,request.signal),
       ]);
-      if(oRpc.code||iRpc.code)return failure(oRpc.code??iRpc.code??"UPSTREAM_ERROR",elapsed());
-      if(!oRpc.json||!iRpc.json)return failure("UPSTREAM_ERROR",elapsed());
+      if(oRpc.code||iRpc.code)return fail(oRpc.code??iRpc.code??"UPSTREAM_ERROR",elapsed());
+      if(!oRpc.json||!iRpc.json)return fail("UPSTREAM_ERROR",elapsed());
       const repairedOut=normalizeSonicFromRpc(oJson,oRpc.json,"outgoing",wallet,token,low,end);
       const repairedIn=normalizeSonicFromRpc(iJson,iRpc.json,"incoming",wallet,token,low,end);
-      if(!repairedOut||!repairedIn)return failure("UPSTREAM_ERROR",elapsed());
+      if(!repairedOut||!repairedIn)return fail("UPSTREAM_ERROR",elapsed());
       oJson=repairedOut;iJson=repairedIn;
     }
     } // End legacy indexed-only regression branch.
-    if(!oJson||!iJson)return failure("UPSTREAM_ERROR",elapsed());
+    if(!oJson||!iJson)return fail("UPSTREAM_ERROR",elapsed());
     const o=logs(oJson,"outgoing",wallet,token,low,end);
     const i=logs(iJson,"incoming",wallet,token,low,end);
-    if (o.code || i.code) return failure(o.code??i.code??"UPSTREAM_ERROR",elapsed());
+    if (o.code || i.code) return fail(o.code??i.code??"UPSTREAM_ERROR",elapsed());
     const merged=new Map<string,NonNullable<ReturnType<typeof parseLog>>>();
     for (const row of [...o.data,...i.data]) {
-      if (!row) return failure("UPSTREAM_ERROR",elapsed());
+      if (!row) return fail("UPSTREAM_ERROR",elapsed());
       const existing=merged.get(row.id);
       if (existing) {
-        if (JSON.stringify(existing.transfer)!==JSON.stringify(row.transfer)) return failure("UPSTREAM_ERROR",elapsed());
+        if (JSON.stringify(existing.transfer)!==JSON.stringify(row.transfer)) return fail("UPSTREAM_ERROR",elapsed());
       } else merged.set(row.id,row);
     }
     const transfers=[...merged.values()]
       .sort((a,b)=>b.block-a.block || b.index-a.index || a.id.localeCompare(b.id))
       .map(x=>x.transfer);
-    if (transfers.length>100) return failure("UPSTREAM_ERROR",elapsed());
+    if (transfers.length>100) return fail("UPSTREAM_ERROR",elapsed());
     const nextCursor=low===0?null:encodeEtherscanLogCursor({v:1,chain:request.network.chainId,
       subject:subjectBinding(request.network.chainId,wallet,token,secret),head,end:low-1,expires:now+TTL_MS},secret);
-    return {ok:true,providerId:this.id,latencyMs:elapsed(),data:{transfers,nextCursor}};
+    return {ok:true,providerId:source,latencyMs:elapsed(),data:{transfers,nextCursor}};
   }
 }
 export const etherscanLogTransfersProvider=new EtherscanLogTransfersProvider();

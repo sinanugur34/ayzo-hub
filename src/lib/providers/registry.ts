@@ -46,6 +46,20 @@ export const PROVIDERS = {
     role: "fallback",
   },
 
+  "sonic-rpc": {
+    id: "sonic-rpc",
+    name: "Sonic Public RPC",
+    kind: "rpc",
+    role: "fallback",
+  },
+
+  "mantle-rpc": {
+    id: "mantle-rpc",
+    name: "Mantle Public RPC",
+    kind: "rpc",
+    role: "fallback",
+  },
+
   blockchair: {
     id: "blockchair",
     name: "Blockchair",

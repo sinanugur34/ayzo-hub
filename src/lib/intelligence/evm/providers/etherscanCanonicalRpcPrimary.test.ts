@@ -20,16 +20,19 @@ function make(network:"sonic"|"mantle",options?:{
   const rpcHost=network==="sonic"?"rpc.soniclabs.com":"rpc.mantle.xyz";
   const p=new EtherscanLogTransfersProvider({
     apiKey:"TEST_KEY_NO_SECRETS",cursorSecret:"TEST_CURSOR_SECRET",preferCanonicalRpc:true,
-    now:()=>FIXED_TIME,transport:async input=>{
-      const url=new URL(String(input));
-      assert.equal(url.hostname,"api.etherscan.io");
-      assert.equal(url.searchParams.get("action"),"eth_blockNumber");
-      requests.push({method:"head",url:url.hostname});
-      return response({jsonrpc:"2.0",result:"0x1388"});
-    },rpcTransport:async (input,init)=>{
+    now:()=>FIXED_TIME,transport:async()=>{throw Error("Unexpected Etherscan request");},
+    rpcTransport:async (input,init)=>{
       const u=new URL(String(input));assert.equal(u.hostname,rpcHost);
       assert.equal(init?.method,"POST");
       const body=JSON.parse(String(init?.body));
+      if(body.method==="eth_chainId"){
+        requests.push({method:"identity",url:u.hostname});
+        return response({jsonrpc:"2.0",id:1,result:network==="sonic"?"0x92":"0x1388"});
+      }
+      if(body.method==="eth_blockNumber"){
+        requests.push({method:"head",url:u.hostname});
+        return response({jsonrpc:"2.0",id:1,result:"0x1388"});
+      }
       assert.equal(body.method,"eth_getLogs");
       const x=body.params[0],direction=x.topics[1]===null?"incoming":"outgoing";
       assert.equal(x.address,token);
@@ -111,6 +114,8 @@ test("adaptive canonical window acceptance shrinks dense Sonic/Mantle pages and 
         rpcTransport:async(input,init)=>{
           assert.equal(new URL(String(input)).hostname,rpcHost);
           const body=JSON.parse(String(init?.body));
+          if(body.method==="eth_chainId")return response({jsonrpc:"2.0",id:1,result:network==="sonic"?"0x92":"0x1388"});
+          if(body.method==="eth_blockNumber")return response({jsonrpc:"2.0",id:1,result:"0x1388"});
           const q=body.params[0];
           const lo=Number(BigInt(q.fromBlock)),hi=Number(BigInt(q.toBlock));
           const direction=q.topics[1]===null?"incoming":"outgoing";
@@ -151,8 +156,10 @@ test("adaptive canonical saturation at a single block fails closed within bounde
     now:()=>FIXED_TIME,
     transport:async()=>response({jsonrpc:"2.0",result:"0x1388"}),
     rpcTransport:async(_input,init)=>{
-      rpcCalls++;
       const body=JSON.parse(String(init?.body));
+      if(body.method==="eth_chainId")return response({jsonrpc:"2.0",id:1,result:"0x92"});
+      if(body.method==="eth_blockNumber")return response({jsonrpc:"2.0",id:1,result:"0x1388"});
+      rpcCalls++;
       const direction=body.params[0].topics[1]===null?"incoming":"outgoing";
       return response({jsonrpc:"2.0",id:1,result:direction==="outgoing"
         ?Array.from({length:50},(_,n)=>event("outgoing","0x"+n.toString(16))) : []});
@@ -172,8 +179,10 @@ test("adaptive canonical oversize response shrinks; arbitrary RPC failure never 
       now:()=>FIXED_TIME,
       transport:async()=>response({jsonrpc:"2.0",result:"0x1388"}),
       rpcTransport:async (_input,init)=>{
-        requests++;
         const body=JSON.parse(String(init?.body));
+        if(body.method==="eth_chainId")return response({jsonrpc:"2.0",id:1,result:"0x92"});
+        if(body.method==="eth_blockNumber")return response({jsonrpc:"2.0",id:1,result:"0x1388"});
+        requests++;
         const first=Number(BigInt(body.params[0].fromBlock))===2953;
         if(first && kind==="oversize")return new Response("",{status:200,headers:{"content-length":"300000"}});
         if(first && kind==="error")return response({jsonrpc:"2.0",id:1,error:{code:-32603}});
@@ -184,5 +193,66 @@ test("adaptive canonical oversize response shrinks; arbitrary RPC failure never 
       address:wallet,tokenAddress:token,limit:100});
     assert.equal(got.ok,kind==="oversize");
     assert.equal(requests,kind==="oversize"?4:2);
+  }
+});
+
+test("canonical transfer head is keyless and branded by real RPC source on both networks",async()=>{
+  for(const network of ["sonic","mantle"] as const){
+    const chain=network==="sonic"?146:5000;
+    const seen:string[]=[];
+    let indexedCalls=0;
+    const p=new EtherscanLogTransfersProvider({
+      apiKey:"",cursorSecret:"LOCAL_TEST_SECRET",preferCanonicalRpc:true,now:()=>FIXED_TIME,
+      transport:async()=>{indexedCalls++;throw Error("Indexer must not be touched");},
+      rpcTransport:async(input,init)=>{
+        assert.equal(new URL(String(input)).hostname,network==="sonic"?"rpc.soniclabs.com":"rpc.mantle.xyz");
+        const body=JSON.parse(String(init?.body));
+        seen.push(body.method);
+        if(body.method==="eth_chainId")return response({jsonrpc:"2.0",id:1,result:network==="sonic"?"0x92":"0x1388"});
+        if(body.method==="eth_blockNumber")return response({jsonrpc:"2.0",id:1,result:"0x1388"});
+        assert.equal(body.method,"eth_getLogs");
+        return response({jsonrpc:"2.0",id:1,result:[]});
+      },
+    });
+    const request={network:{networkId:network,name:network,chainId:chain,nativeCurrency:"S"},
+      address:wallet,tokenAddress:token,limit:100};
+    const first=await p.getTokenTransfers(request);
+    assert.equal(first.ok,true,network);
+    assert.equal(first.providerId,`${network}-rpc`);
+    if(!first.ok)continue;
+    assert.deepEqual(seen.slice(0,2).sort(),["eth_blockNumber","eth_chainId"]);
+    assert.equal(seen.filter(x=>x==="eth_getLogs").length,2);
+    const second=await p.getTokenTransfers({...request,cursor:first.data.nextCursor});
+    assert.equal(second.ok,true);
+    assert.equal(second.providerId,`${network}-rpc`);
+    assert.equal(seen.filter(x=>x==="eth_blockNumber").length,1);
+    assert.equal(seen.filter(x=>x==="eth_chainId").length,2);
+    assert.equal(seen.filter(x=>x==="eth_getLogs").length,4);
+    assert.equal(indexedCalls,0);
+  }
+});
+
+test("canonical wrong-chain and malformed head never produce transfer evidence",async()=>{
+  for(const kind of ["wrong_chain","bad_head","rpc_error"] as const){
+    let logCalls=0;
+    const p=new EtherscanLogTransfersProvider({
+      apiKey:"",cursorSecret:"SECRET",preferCanonicalRpc:true,now:()=>FIXED_TIME,
+      transport:async()=>{throw Error("Etherscan disabled");},
+      rpcTransport:async(_input,init)=>{
+        const body=JSON.parse(String(init?.body));
+        if(body.method==="eth_getLogs"){
+          logCalls++;
+          return response({jsonrpc:"2.0",id:1,result:[]});
+        }
+        if(kind==="rpc_error")return response({jsonrpc:"2.0",id:1,error:{code:-32603}});
+        if(body.method==="eth_chainId")return response({jsonrpc:"2.0",id:1,result:kind==="wrong_chain"?"0x1":"0x92"});
+        return response({jsonrpc:"2.0",id:1,result:kind==="bad_head"?"bad":"0x1388"});
+      },
+    });
+    const result=await p.getTokenTransfers({network:{networkId:"sonic",name:"Sonic",chainId:146,nativeCurrency:"S"},
+      address:wallet,tokenAddress:token,limit:100});
+    assert.equal(result.ok,false);
+    assert.equal(result.providerId,"sonic-rpc");
+    assert.equal(logCalls,0);
   }
 });
