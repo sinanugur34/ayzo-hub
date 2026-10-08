@@ -173,11 +173,28 @@ type SmartDetectionResponse =
       status: "single" | "multiple" | "none" | "partial";
       network: string | null;
       candidates: string[];
-      verification: "validated_format" | "contract_bytecode";
+      verification: "validated_format" | "contract_bytecode" | "account_observed";
+      nativeEvidence?: Array<{
+        network: string;
+        status: "observed" | "not_observed" | "unavailable";
+      }>;
       checked: number;
       total: number;
     }
   | { ok: false; code?: string; error?: string };
+
+function nativeVerificationMessage(
+  result: Extract<SmartDetectionResponse, { ok: true }>,
+  network: LiveAnalysisNetworkId
+): string {
+  const name = NETWORKS[network].name;
+  if (result.verification === "contract_bytecode") return `${name} contract verified on-chain`;
+  if (result.verification === "account_observed") return `${name} account observed on-chain`;
+  const row = result.nativeEvidence?.find(item => item.network === network);
+  if (row?.status === "not_observed") return `${name} address format valid; account not observed on-chain`;
+  if (row?.status === "unavailable") return `${name} address format valid; account lookup unavailable`;
+  return `${name} address format validated`;
+}
 
 function shortAddress(
   address:
@@ -265,7 +282,7 @@ export default function Home() {
   const [networkDetectionStatus, setNetworkDetectionStatus] =
     useState<"pending" | "single" | "multiple" | "none" | "partial" | null>(null);
   const [suggestionEvidence, setSuggestionEvidence] =
-    useState<"validated_format" | "contract_bytecode" | null>(null);
+    useState<"validated_format" | "contract_bytecode" | "account_observed" | null>(null);
   const [
     network,
     setNetwork,
@@ -662,16 +679,14 @@ export default function Home() {
         if (manuallySelectedAddress.current === value.toLowerCase()) {
           setMessage(
             detected === network
-              ? `${networkName(network)} ${result.verification === "contract_bytecode" ? "contract verified on-chain" : "address format validated"}.`
+              ? `${nativeVerificationMessage(result, network)}.`
               : `Detected ${networkName(detected)}. Your explicit ${networkName(network)} selection was kept.`
           );
           return;
         }
         if (detected === network) {
           setMessage(
-            result.verification === "contract_bytecode"
-              ? `${networkName(network)} contract verified on-chain.`
-              : `${networkName(network)} address format validated.`
+            `${nativeVerificationMessage(result, network)}.`
           );
           return;
         }
@@ -694,9 +709,7 @@ export default function Home() {
         setFinalFiveAnalysis(null);
         setIsValid(null);
         setMessage(
-          result.verification === "contract_bytecode"
-            ? `${networkName(detected)} contract verified on-chain and selected automatically.`
-            : `${networkName(detected)} address format validated and selected automatically.`
+          `${nativeVerificationMessage(result, detected)} and selected automatically.`
         );
       } catch {
         if (!controller.signal.aborted) {
@@ -1995,7 +2008,8 @@ export default function Home() {
         {networkSuggestions.length > 0 && (
           <div className="mx-auto mt-3 flex max-w-4xl flex-wrap items-center justify-center gap-2" aria-label="Network suggestions">
             <span className="text-xs text-zinc-400">
-              {suggestionEvidence === "contract_bytecode" ? "Contract matches:" : "Possible networks:"}
+              {suggestionEvidence === "contract_bytecode" ? "Contract matches:" :
+                suggestionEvidence === "account_observed" ? "Account match:" : "Possible networks:"}
             </span>
             {networkSuggestions.map(id => (
               <button
