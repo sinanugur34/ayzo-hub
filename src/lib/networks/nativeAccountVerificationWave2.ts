@@ -148,7 +148,7 @@ export async function verifyWave2Account(
         body: JSON.stringify({
           jsonrpc: "2.0", id: 1, method: "getAccountInfo",
           params: [address, {
-            encoding: "base64", commitment: "confirmed",
+            encoding: "base64", commitment: "finalized",
             dataSlice: { offset: 0, length: 0 },
           }],
         }),

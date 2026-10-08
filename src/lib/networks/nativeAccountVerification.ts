@@ -47,10 +47,13 @@ export function validateNativeAccountPayload(
       row.account_id === address.trim().toUpperCase();
   }
   if (network !== "aptos") return false;
-  return typeof row.sequence_number === "string" &&
-    /^\d+$/.test(row.sequence_number) &&
-    typeof row.authentication_key === "string" &&
-    /^0x[0-9a-fA-F]{64}$/.test(row.authentication_key);
+  const resource = record(row.data);
+  return row.type === "0x1::account::Account" &&
+    !!resource &&
+    typeof resource.sequence_number === "string" &&
+    /^\d+$/.test(resource.sequence_number) &&
+    typeof resource.authentication_key === "string" &&
+    /^0x[0-9a-fA-F]{64}$/.test(resource.authentication_key);
 }
 
 function lookupUrl(network: NativeAccountNetwork, address: string): string | null {
@@ -65,7 +68,7 @@ function lookupUrl(network: NativeAccountNetwork, address: string): string | nul
   }
   if (network !== "aptos") return null;
   const id = normalizeAptosAddress(address);
-  return id ? `https://api.mainnet.aptoslabs.com/v1/accounts/${encodeURIComponent(id)}` : null;
+  return id ? `https://api.mainnet.aptoslabs.com/v1/accounts/${encodeURIComponent(id)}/resource/0x1%3A%3Aaccount%3A%3AAccount` : null;
 }
 
 export async function verifyNativeAccount(
@@ -91,6 +94,7 @@ export async function verifyNativeAccount(
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       })
     );
+    // Aptos resource 404 means no activated Account resource; not a wrong chain.
     if (response.status === 404) return { network, status: "not_observed" };
     if (response.status !== 200 || !response.ok) return unavailable;
     const size = Number(response.headers.get("content-length"));

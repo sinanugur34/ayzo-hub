@@ -10,8 +10,8 @@ import {
 
 const STELLAR = "GDMQQNJM4UL7QIA66P7R2PZHMQINWZBM77BEBMHLFXD5JEUAHGJ7R4JZ";
 const aptosBody = {
-  sequence_number: "1",
-  authentication_key: "0x" + "1".repeat(64),
+  type: "0x1::account::Account",
+  data: { sequence_number: "1", authentication_key: "0x" + "1".repeat(64) },
 };
 const mocked = (status: number, body: unknown = {}): typeof fetch =>
   async () => new Response(JSON.stringify(body), { status });
@@ -37,12 +37,23 @@ test("Stellar observed requires the exact StrKey account identifier", async () =
     "unavailable");
 });
 
-test("Aptos observed requires account record fields", async () => {
-  assert.equal((await verifyNativeAccount("aptos", "0x1", mocked(200, aptosBody))).status,
+test("Aptos observed requires actual on-chain Account resource", async () => {
+  const aptosMock: typeof fetch = async (url) => {
+    assert.equal(String(url), "https://api.mainnet.aptoslabs.com/v1/accounts/0x" +
+      "0".repeat(63) + "1/resource/0x1%3A%3Aaccount%3A%3AAccount");
+    return new Response(JSON.stringify(aptosBody), {status:200});
+  };
+  assert.equal((await verifyNativeAccount("aptos", "0x1", aptosMock)).status,
     "observed");
   assert.equal((await verifyNativeAccount("aptos", "0x1", mocked(200, {}))).status,
     "unavailable");
   assert.ok(validateNativeAccountPayload("aptos", "0x1", aptosBody));
+  assert.equal(validateNativeAccountPayload("aptos", "0x1", {
+    sequence_number: "0", authentication_key: "0x" + "1".repeat(64),
+  }), false, "synthetic account metadata must not count as on-chain proof");
+  assert.equal(validateNativeAccountPayload("aptos", "0x1", {
+    type: "0x1::account::Account", data: { sequence_number: "0" },
+  }), false, "partial on-chain resource is unavailable, not observed");
 });
 
 test("404 means not_observed, not wrong network", async () => {

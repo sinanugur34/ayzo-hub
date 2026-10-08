@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { verifyNativeCandidates, validNativeEvidenceCache, isNativeAccountNetwork } from "./nativeAccountVerification";
+import { tronAddressToHex } from "@/lib/intelligence/tron/address";
 import { solanaAccountStatus, tronAccountStatus, suiActivityStatus, verifyWave2Account } from "./nativeAccountVerificationWave2";
 
 const SOLANA = "11111111111111111111111111111111";
@@ -40,6 +41,7 @@ test("Solana verification uses keyless body, primary Alchemy and Helius fallback
     assert.equal(body.method, "getAccountInfo");
     assert.equal(body.params[0], SOLANA);
     assert.equal(body.params[1].dataSlice.length, 0);
+    assert.equal(body.params[1].commitment, "finalized");
     return new Response(JSON.stringify(called.length === 1 ? { error: {code:429} } : SOLANA_FOUND), {status:200});
   };
   assert.deepEqual(await verifyWave2Account("solana", SOLANA, handler,
@@ -60,6 +62,8 @@ test("Solana nonexistent account is never guessed to be invalid chain", async ()
 
 test("TRON activated account and empty success envelope are distinguishable", () => {
   assert.equal(tronAccountStatus({success:true,data:[{address:TRON}]}, TRON), "observed");
+  // TronGrid returns the 21-byte address in hex; both equivalent encodings must match.
+  assert.equal(tronAccountStatus({success:true,data:[{address:tronAddressToHex(TRON)}]}, TRON), "observed");
   assert.equal(tronAccountStatus({success:true,data:[]}, TRON), "not_observed");
   assert.equal(tronAccountStatus({success:false,data:[]}, TRON), "unavailable");
   assert.equal(tronAccountStatus({success:true,data:[{address:"BAD"}]}, TRON), "unavailable");
