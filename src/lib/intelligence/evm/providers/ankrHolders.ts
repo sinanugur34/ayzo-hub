@@ -421,7 +421,10 @@ function errorMessage(
   return fallback;
 }
 
+type HolderRpcProvider = "ankr" | "alchemy";
+
 async function rpcRequest(
+  provider: HolderRpcProvider,
   url: URL,
   operation: string,
   body: unknown,
@@ -465,7 +468,7 @@ async function rpcRequest(
     const response =
       await providerUsageFetch(
         {
-          provider: "ankr",
+          provider,
           operation,
         },
         url,
@@ -522,6 +525,168 @@ async function rpcRequest(
   }
 }
 
+function isAdvancedRateLimit(
+  response: Response,
+  payload: unknown
+): boolean {
+  if (response.status === 429) {
+    return true;
+  }
+
+  const root = asObject(payload);
+  const error = asObject(root?.error);
+
+  if (!error) {
+    return false;
+  }
+
+  if (error.code === -32090) {
+    return true;
+  }
+
+  const message =
+    typeof error.message === "string"
+      ? error.message.toLowerCase()
+      : "";
+
+  return (
+    message.includes("rate limit") ||
+    message.includes("too many requests") ||
+    message.includes("quota exceeded")
+  );
+}
+
+function getRetryDelay(
+  response: Response
+): number | null {
+  const header =
+    response.headers.get("retry-after");
+
+  if (!header) {
+    return 1500;
+  }
+
+  let delay: number;
+
+  const seconds = Number(header);
+
+  if (
+    Number.isFinite(seconds) &&
+    seconds >= 0
+  ) {
+    delay = Math.ceil(seconds * 1000);
+  } else {
+    const date = Date.parse(header);
+
+    if (!Number.isFinite(date)) {
+      return null;
+    }
+
+    delay = Math.max(0, date - Date.now());
+  }
+
+  if (delay > 3000) {
+    return null;
+  }
+
+  return Math.max(0, delay);
+}
+
+async function waitForRetry(
+  ms: number,
+  signal?: AbortSignal
+): Promise<void> {
+  if (signal?.aborted) {
+    throw new DOMException(
+      "Aborted",
+      "AbortError"
+    );
+  }
+
+  if (ms <= 0) {
+    return;
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    /*
+     * const timer fixes the previous
+     * ESLint prefer-const failure.
+     */
+    const timer = setTimeout(() => {
+      signal?.removeEventListener(
+        "abort",
+        onAbort
+      );
+
+      resolve();
+    }, ms);
+
+    function onAbort() {
+      clearTimeout(timer);
+
+      signal?.removeEventListener(
+        "abort",
+        onAbort
+      );
+
+      reject(
+        new DOMException(
+          "Aborted",
+          "AbortError"
+        )
+      );
+    }
+
+    signal?.addEventListener(
+      "abort",
+      onAbort,
+      { once: true }
+    );
+  });
+}
+
+async function requestAnkrAdvanced(
+  url: URL,
+  body: unknown,
+  signal?: AbortSignal
+): Promise<{
+  response: Response;
+  payload: unknown;
+}> {
+  const first = await rpcRequest(
+    "ankr",
+    url,
+    "ankr_getTokenHolders",
+    body,
+    signal
+  );
+
+  if (
+    !isAdvancedRateLimit(
+      first.response,
+      first.payload
+    )
+  ) {
+    return first;
+  }
+
+  const delay = getRetryDelay(first.response);
+
+  if (delay === null) {
+    return first;
+  }
+
+  await waitForRetry(delay, signal);
+
+  return rpcRequest(
+    "ankr",
+    url,
+    "ankr_getTokenHolders",
+    body,
+    signal
+  );
+}
+
 async function readTotalSupply(
   config: AnkrNetworkConfig,
   tokenAddress: string,
@@ -539,10 +704,29 @@ async function readTotalSupply(
       error: string;
     }
 > {
-  const url =
-    new URL(
+  let url: URL;
+
+  if (config.networkId === "linea") {
+    const alchemyKey =
+      process.env.ALCHEMY_API_KEY?.trim();
+
+    if (!alchemyKey) {
+      return {
+        ok: false,
+        code: "UPSTREAM_ERROR",
+        error:
+          "ALCHEMY_API_KEY is not configured for Linea totalSupply.",
+      };
+    }
+
+    url = new URL(
+      `https://linea-mainnet.g.alchemy.com/v2/${alchemyKey}`
+    );
+  } else {
+    url = new URL(
       `https://rpc.ankr.com/${config.rpcChain}/${apiKey}`
     );
+  }
 
   try {
     const {
@@ -550,6 +734,10 @@ async function readTotalSupply(
       payload,
     } =
       await rpcRequest(
+        config.networkId === "linea"
+          ? "alchemy"
+          : "ankr",
+
         url,
 
         "evm.holders.totalSupply",
@@ -821,10 +1009,8 @@ export class AnkrHoldersProvider
         response,
         payload,
       } =
-        await rpcRequest(
+        await requestAnkrAdvanced(
           url,
-
-          "ankr_getTokenHolders",
 
           {
             jsonrpc: "2.0",
