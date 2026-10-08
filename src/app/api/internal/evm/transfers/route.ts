@@ -37,6 +37,7 @@ function isSafeDecimal(
 function isTransferCursor(
   value: string
 ): boolean {
+  if (/^etherscan-transfer:[1-9]\d{0,5}$/.test(value)) return true;
   if (
     /^alchemy-transfer:[A-Za-z0-9_-]+$/.test(
       value

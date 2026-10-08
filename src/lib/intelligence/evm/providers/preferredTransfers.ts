@@ -1,4 +1,5 @@
 import { isGoldRushExitCanaryActive } from "@/lib/goldRushExitCanary";
+import { etherscanTransfersProvider } from "./etherscanTransfers";
 
 import {
   runWithProviderUsageHintsCore,
@@ -106,6 +107,21 @@ export async function getPreferredEvmTokenTransfers(
     );
 
   const goldRushExit = isGoldRushExitCanaryActive();
+
+  // New indexed coverage is strictly Preview/local-only until live certified.
+  // Existing GoldRush cursors remain provider-owned and must never migrate.
+  if (goldRushExit && !request.cursor &&
+      etherscanTransfersProvider.supportsNetwork(request.network) &&
+      etherscanTransfersProvider.supportsCapability("tokenTransfers")) {
+    const indexed = await etherscanTransfersProvider.getTokenTransfers(request);
+    if (indexed.ok) return indexed;
+    // Do not claim empty or synthetic evidence if the indexer failed.
+    return indexed;
+  }
+  if (goldRushExit && request.cursor?.startsWith("etherscan-transfer:")) {
+    return etherscanTransfersProvider.getTokenTransfers(request);
+  }
+
 
   if (
     owner ===
