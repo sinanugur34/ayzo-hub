@@ -376,7 +376,9 @@ export async function runTonIntelligence(
       analysisPlan,
 
       coverage:
-        data.transactions
+        data.coverage.jettonTransfersAvailable === false
+          ? "limited"
+          : data.transactions
           .length >
           0 ||
         data.jettonWallets
@@ -478,7 +480,9 @@ export async function runTonIntelligence(
             "limited",
 
           error:
-            `Jetton holdings and transfers are bounded to ${data.coverage.jettonWalletLimit} wallets and ${data.coverage.jettonTransferLimit} transfers.`,
+            data.coverage.jettonTransfersAvailable === false
+              ? "Jetton transfer history is unavailable due to a temporary upstream server error; missing transfers must not be interpreted as zero activity."
+              : `Jetton holdings and transfers are bounded to ${data.coverage.jettonWalletLimit} wallets and ${data.coverage.jettonTransferLimit} transfers.`,
         },
       },
 
@@ -488,6 +492,9 @@ export async function runTonIntelligence(
         "TON is message-driven: one user action can produce multiple internal messages and transactions.",
         "AYZO reports direct observed message relationships and does not infer common ownership or real-world identity.",
         "Jettons use separate Jetton master and Jetton wallet contracts; token metadata is not proof of authenticity.",
+        ...(data.coverage.jettonTransfersAvailable === false
+          ? ["Jetton transfer history is temporarily unavailable. An empty transfer list here does not establish that no Jetton transfers occurred."]
+          : []),
         "Transaction, Jetton wallet and transfer queries are intentionally bounded according to the active plan.",
         "Observed funding identifies an early direct inbound message in the bounded evidence window, not the ultimate origin of funds.",
       ],
