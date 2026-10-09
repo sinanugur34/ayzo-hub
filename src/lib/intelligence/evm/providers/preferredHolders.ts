@@ -140,16 +140,24 @@ export async function getPreferredEvmTokenHolders(
         error: "Indexed holder continuation is disabled in this environment.",
       };
     }
+    if (indexedCursorProvider.id === "routescan") {
+      // Phase 8.4B proved Routescan's raw holder pages are not balance ordered.
+      // Reject legacy continuation rather than relabeling unordered holders as TOP holders.
+      return {
+        ok: false, providerId: "routescan", code: "UPSTREAM_ERROR", latencyMs: null,
+        error: "Routescan holder ordering is unverified; continuation rejected.",
+      };
+    }
     return indexedCursorProvider.getTokenHolders(request);
   }
 
   // Preview-only canary; the legacy first-page behavior remains unchanged.
   if (indexedCanaryAllowed && !request.cursor) {
-    const candidate = routescanHoldersProvider.supportsNetwork(request.network)
-      ? routescanHoldersProvider
-      : blockscoutHoldersProvider.supportsNetwork(request.network)
-        ? blockscoutHoldersProvider
-        : null;
+    // Only balance-ordered Blockscout can enter the indexed canary.
+    // Routescan's unsorted holder pages cannot establish the global top 100.
+    const candidate = blockscoutHoldersProvider.supportsNetwork(request.network)
+      ? blockscoutHoldersProvider
+      : null;
     if (candidate) {
       const indexedResult = await candidate.getTokenHolders(request);
       if (indexedResult.ok) return indexedResult;
