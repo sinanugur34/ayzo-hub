@@ -348,22 +348,40 @@ export class BlockscoutHoldersProvider implements EvmTokenHoldersProvider {
     const authParams: Record<string, string> = key ? { apikey: key } : {};
     const headers = { accept: "application/json" };
     // Fetch metadata once; use the same supply snapshot for both indexed pages.
-    const token = await getJson(
+    let token = await getJson(
       this.id, "evm.holders.metadata",
       boundedUrl(base, root, authParams), headers, request.signal,
     );
     if (token.status !== 200) return fail(failureCode(token.status));
     if (publicEthereum) {
-      // An indexer snapshot can lag current chain state. Never claim a verified
-      // concentration figure when independently read raw ERC20 supply differs.
-      const onChain = await alchemyEvmProvider.callContract({
-        network: request.network, address: request.address,
-        data: "0x18160ddd", signal: request.signal,
-      });
-      const indexed = rawUint(obj(token.payload)?.total_supply);
-      if (!onChain.ok || !indexed || BigInt(indexed) <= 0n ||
-        !/^0x[0-9a-fA-F]+$/.test(onChain.data.result) ||
-        BigInt(onChain.data.result) !== BigInt(indexed)) return fail("UPSTREAM_ERROR");
+      // Only the Ethereum Preview canary reaches this branch. Snapshot drift
+      // may disappear after refreshing BOTH metadata and independent supply.
+      // Strict equality remains mandatory: zero tolerance, maximum two pairs.
+      let verified = false;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        if (request.signal?.aborted) return fail("TIMEOUT");
+        const onChain = await alchemyEvmProvider.callContract({
+          network: request.network, address: request.address,
+          data: "0x18160ddd", signal: request.signal,
+        });
+        const indexed = rawUint(obj(token.payload)?.total_supply);
+        // Do not retry malformed metadata, RPC errors or missing supply.
+        if (!onChain.ok || !indexed || BigInt(indexed) <= 0n ||
+          !/^0x[0-9a-fA-F]{1,64}$/.test(onChain.data.result)) return fail("UPSTREAM_ERROR");
+        if (BigInt(onChain.data.result) === BigInt(indexed)) {
+          verified = true;
+          break;
+        }
+        if (attempt === 1) break;
+        // Bounded retry: one more metadata GET and one more on-chain read.
+        // No holder requests are permitted until a matching pair is verified.
+        token = await getJson(
+          this.id, "evm.holders.metadata",
+          boundedUrl(base, root, authParams), headers, request.signal,
+        );
+        if (token.status !== 200) return fail(failureCode(token.status));
+      }
+      if (!verified) return fail("UPSTREAM_ERROR");
     }
 
     // Blockscout has a 50-row indexer page. AYZO requests 100 root holders.

@@ -89,7 +89,11 @@ test("Ethereum indexer supply disagreement fails closed before fetching holders"
   try {
     const result = await blockscoutHoldersProvider.getTokenHolders({ network, address: token, limit: 100, cursor: null });
     assert.equal(result.ok, false);
-    assert.equal(requested.length, 2);
+    // Preview retries one paired metadata + RPC read, but never accesses holders.
+    assert.equal(requested.length, 4);
+    assert.equal(requested.filter(u => u === urlPrefix).length, 2);
+    assert.equal(requested.filter(u => u === "https://eth-mainnet.g.alchemy.com/v2").length, 2);
+    assert.equal(requested.filter(u => u.includes("/holders")).length, 0);
   } finally {
     globalThis.fetch = fetchOriginal;
     if (previous === undefined) delete process.env.ALCHEMY_API_KEY;
@@ -241,5 +245,69 @@ test("Ethereum public holder adapter refuses missing HMAC signing secret before 
     if (oldEnv === undefined) delete process.env.VERCEL_ENV; else process.env.VERCEL_ENV = oldEnv;
     if (oldIndexed === undefined) delete process.env.AYZO_INDEXED_HOLDER_CANARY; else process.env.AYZO_INDEXED_HOLDER_CANARY = oldIndexed;
     if (oldInternal === undefined) delete process.env.AYZO_INTERNAL_API_KEY; else process.env.AYZO_INTERNAL_API_KEY = oldInternal;
+  }
+});
+
+
+test("Ethereum Preview revalidates both supply sources once on transient drift and then serves 100", async () => {
+  const originalFetch = globalThis.fetch;
+  const keys = ["VERCEL_ENV", "AYZO_INDEXED_HOLDER_CANARY", "ALCHEMY_API_KEY", "AYZO_INTERNAL_API_KEY"] as const;
+  const saved = Object.fromEntries(keys.map(k => [k, process.env[k]]));
+  process.env.VERCEL_ENV = "preview";
+  process.env.AYZO_INDEXED_HOLDER_CANARY = "1";
+  process.env.ALCHEMY_API_KEY = "test-only-alchemy-retry";
+  process.env.AYZO_INTERNAL_API_KEY = "unit-test-cursor-signing-secret-32-chars";
+  const requested: string[] = [];
+  let metadata = 0;
+  globalThis.fetch = (async raw => {
+    const url = String(raw);
+    requested.push(url);
+    if (url === urlPrefix) return response({total_supply: ++metadata === 1 ? "999999" : amount});
+    if (url === "https://eth-mainnet.g.alchemy.com/v2")
+      return response({jsonrpc:"2.0",id:1,result:"0x" + BigInt(amount).toString(16)});
+    if (url === `${urlPrefix}/holders`)
+      return response({items:pages[0],next_page_params:{address_hash:pages[0][49].address.hash,value:pages[0][49].value,items_count:50}});
+    if (url.startsWith(`${urlPrefix}/holders?`))
+      return response({items:pages[1],next_page_params:null});
+    throw Error("unapproved network target");
+  }) as typeof fetch;
+  try {
+    const result = await blockscoutHoldersProvider.getTokenHolders({network,address:token,limit:100,cursor:null});
+    assert.equal(result.ok,true);
+    if (result.ok) assert.equal(result.data.holders.length,100);
+    assert.equal(metadata,2);
+    assert.equal(requested.length,6); // 2 metadata + 2 RPC + 2 holder pages
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const k of keys) { const value = saved[k]; if (value === undefined) delete process.env[k]; else process.env[k] = value; }
+  }
+});
+
+test("Ethereum Preview rejects persistent supply drift after exactly two pairs with no holder egress", async () => {
+  const originalFetch = globalThis.fetch;
+  const keys = ["VERCEL_ENV", "AYZO_INDEXED_HOLDER_CANARY", "ALCHEMY_API_KEY", "AYZO_INTERNAL_API_KEY"] as const;
+  const saved = Object.fromEntries(keys.map(k => [k, process.env[k]]));
+  process.env.VERCEL_ENV = "preview";
+  process.env.AYZO_INDEXED_HOLDER_CANARY = "1";
+  process.env.ALCHEMY_API_KEY = "test-only-alchemy-retry";
+  process.env.AYZO_INTERNAL_API_KEY = "unit-test-cursor-signing-secret-32-chars";
+  const requested: string[] = [];
+  globalThis.fetch = (async raw => {
+    const url = String(raw);
+    requested.push(url);
+    if (url === urlPrefix) return response({total_supply:"999999"});
+    if (url === "https://eth-mainnet.g.alchemy.com/v2")
+      return response({jsonrpc:"2.0",id:1,result:"0x" + BigInt(amount).toString(16)});
+    throw Error("holders must not be fetched when supply differs");
+  }) as typeof fetch;
+  try {
+    const result = await blockscoutHoldersProvider.getTokenHolders({network,address:token,limit:100,cursor:null});
+    assert.equal(result.ok,false);
+    assert.equal(requested.length,4);
+    assert.equal(requested.filter(u=>u===urlPrefix).length,2);
+    assert.equal(requested.filter(u=>u.includes("/holders")).length,0);
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const k of keys) { const value = saved[k]; if (value === undefined) delete process.env[k]; else process.env[k] = value; }
   }
 });
