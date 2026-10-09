@@ -132,6 +132,39 @@ test("Direct Ethereum Blockscout adapter cannot activate on Vercel Production", 
   }
 });
 
+test("Direct Blockscout on Ethereum Optimism and Scroll cannot bypass Production canary even with credentials", async () => {
+  const names = ["VERCEL_ENV", "AYZO_INDEXED_HOLDER_CANARY", "AYZO_GOLDRUSH_EXIT_CANARY", "BLOCKSCOUT_API_KEY"] as const;
+  const saved = Object.fromEntries(names.map(name => [name, process.env[name]]));
+  const originalFetch = globalThis.fetch;
+  let egress = 0;
+  process.env.VERCEL_ENV = "production";
+  process.env.AYZO_INDEXED_HOLDER_CANARY = "1";
+  process.env.AYZO_GOLDRUSH_EXIT_CANARY = "1";
+  process.env.BLOCKSCOUT_API_KEY = "proapi_local-test-only-do-not-use";
+  globalThis.fetch = (async () => { egress++; throw Error("PRODUCTION_EGRESS_PROHIBITED"); }) as typeof fetch;
+  try {
+    const cases = [
+      network,
+      { networkId: "optimism" as const, name: "Optimism", chainId: 10, nativeCurrency: "ETH" },
+      { networkId: "scroll" as const, name: "Scroll", chainId: 534352, nativeCurrency: "ETH" },
+    ];
+    for (const ctx of cases) {
+      const result = await blockscoutHoldersProvider.getTokenHolders({
+        network: ctx, address: token, limit: 100, cursor: null,
+      });
+      assert.equal(result.ok, false, `${ctx.networkId} must fail closed`);
+      assert.equal(result.providerId, "blockscout");
+    }
+    assert.equal(egress, 0, "none of the three networks may reach fetch");
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const name of names) {
+      if (saved[name] === undefined) delete process.env[name];
+      else process.env[name] = saved[name];
+    }
+  }
+});
+
 test("Routescan legacy cursor is closed in Preview and Mantle does not get a fallback", async () => {
   const oldFlag = process.env.AYZO_GOLDRUSH_EXIT_CANARY;
   const oldVercel = process.env.VERCEL_ENV;

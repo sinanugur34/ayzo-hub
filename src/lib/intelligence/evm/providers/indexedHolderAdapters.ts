@@ -325,12 +325,15 @@ export class BlockscoutHoldersProvider implements EvmTokenHoldersProvider {
     if (!this.supportsNetwork(request.network)) return fail("UNSUPPORTED_NETWORK");
     if (!ADDRESS.test(request.address)) return fail("INVALID_ADDRESS");
     const publicEthereum = request.network.networkId === "ethereum" && request.network.chainId === 1;
-    // Defense in depth: even direct adapter calls cannot enable Ethereum on Production.
-    if (publicEthereum && !(isGoldRushExitCanaryActive() || isIndexedHolderCanaryAllowed({
+    // Defense in depth: ALL indexed Blockscout networks are Preview/development
+    // canaries. Direct adapter callers may not bypass the preferred provider gate.
+    // The GoldRush exit gate itself is environment-restricted.
+    const directIndexedCanaryAllowed = isGoldRushExitCanaryActive() || isIndexedHolderCanaryAllowed({
       flag: process.env.AYZO_INDEXED_HOLDER_CANARY,
       nodeEnv: process.env.NODE_ENV,
       vercelEnv: process.env.VERCEL_ENV,
-    }))) return fail("UPSTREAM_ERROR");
+    });
+    if (!directIndexedCanaryAllowed) return fail("UPSTREAM_ERROR");
     // Never issue upstream requests without a strong internal cursor signing key.
     if (publicEthereum && !ethereumCursorKey()) return fail("UPSTREAM_ERROR");
     const key = publicEthereum ? null : process.env.BLOCKSCOUT_API_KEY?.trim();
