@@ -279,38 +279,3 @@ test(
     );
   }
 );
-
-
-test("TON keeps account evidence but marks jetton transfers unavailable on HTTP 500", async () => {
-  const seen: string[] = [];
-  const fetchImpl: TonFetch = async input => {
-    const path = new URL(input).pathname;
-    seen.push(path);
-    if (path.endsWith("/jetton/transfers")) return response({}, 500);
-    if (path.endsWith("/accountStates")) return response({accounts:[{address:ADDRESS,balance:"123",status:"active"}]});
-    if (path.endsWith("/transactions")) return response({transactions:[]});
-    if (path.endsWith("/jetton/wallets")) return response({jetton_wallets:[]});
-    throw Error("unexpected endpoint");
-  };
-  const result = await getTonEvidence({address:ADDRESS,analysisPlan:"free"},{fetchImpl,baseUrl:"https://example.invalid/api/v3",apiKey:"test",timeoutMs:1000,unauthenticatedDelayMs:0});
-  assert.equal(result.ok,true);
-  if (!result.ok) assert.fail("Expected bounded partial evidence");
-  assert.equal(result.data.account.balanceNano,"123");
-  assert.equal(result.data.coverage.jettonTransfersAvailable,false);
-  assert.equal(result.data.jettonTransfers.length,0);
-  assert.equal(seen.length,5);
-});
-
-test("TON never degrades 429 or malformed 200 into a successful transfer result", async () => {
-  for (const [status,body] of [[429,{}],[200,{}]] as const) {
-    const fetchImpl:TonFetch = async input => {
-      const path = new URL(input).pathname;
-      if (path.endsWith("/jetton/transfers")) return response(body,status);
-      if (path.endsWith("/accountStates")) return response({accounts:[{address:ADDRESS,balance:"123"}]});
-      if (path.endsWith("/transactions")) return response({transactions:[]});
-      return response({jetton_wallets:[]});
-    };
-    const result=await getTonEvidence({address:ADDRESS,analysisPlan:"free"},{fetchImpl,baseUrl:"https://example.invalid/api/v3",apiKey:"test",timeoutMs:1000,unauthenticatedDelayMs:0});
-    assert.equal(result.ok,false);
-  }
-});

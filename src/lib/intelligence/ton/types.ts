@@ -149,7 +149,6 @@ export type TonEvidence = {
     readonly TonJettonTransferEvidence[];
 
   coverage: {
-    jettonTransfersAvailable?: boolean;
     plan:
       AnalysisDepthPlan;
 

@@ -972,10 +972,8 @@ export async function getTonEvidence(
         }
       );
 
-    let jettonTransfersAvailable = true;
-    let jettonTransferBody: JsonRecord | null = null;
-    try {
-      jettonTransferBody = await request(
+    const jettonTransferBody =
+      await request(
         "/jetton/transfers",
         {
           owner_address:
@@ -994,16 +992,6 @@ export async function getTonEvidence(
             "desc",
         }
       );
-      if (!jettonTransferBody || !Array.isArray(jettonTransferBody.jetton_transfers)) {
-        throw new Error("Malformed TON Jetton transfer evidence.");
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "";
-      // Degrade only server-side errors in this optional module.
-      // Never suppress throttling, auth, timeout, or malformed responses.
-      if (!/^TON Center HTTP 5\d\d$/.test(message)) throw error;
-      jettonTransfersAvailable = false;
-    }
 
     const data:
       TonEvidence = {
@@ -1024,8 +1012,6 @@ export async function getTonEvidence(
           ),
 
         coverage: {
-          jettonTransfersAvailable,
-
           plan:
             analysisPlan,
 
