@@ -14,8 +14,8 @@ import {
 } from "./alchemyTransactions";
 
 import {
-  goldRushTransactionsProvider,
-} from "./goldrushTransactions";
+  etherscanTransactionsProvider,
+} from "./etherscanTransactions";
 
 export type EvmTransactionFallbackDependencies = {
   primary:
@@ -31,7 +31,7 @@ const DEFAULT_DEPENDENCIES:
     alchemyTransactionsProvider,
 
   fallback:
-    goldRushTransactionsProvider,
+    etherscanTransactionsProvider,
 };
 
 const FALLBACK_CODES =

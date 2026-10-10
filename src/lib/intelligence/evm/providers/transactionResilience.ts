@@ -1,3 +1,4 @@
+import { isGoldRushExitCanaryActive } from "@/lib/goldRushExitCanary";
 import { captureProviderUsageCore, runWithProviderUsageHintsCore } from "@/lib/providerUsageScopeCore";
 import {
   randomUUID,
@@ -27,10 +28,6 @@ import {
 import {
   etherscanTransactionsProvider,
 } from "./etherscanTransactions";
-
-import {
-  goldRushTransactionsProvider,
-} from "./goldrushTransactions";
 
 export type TransactionResilienceStore = {
   get<T = unknown>(
@@ -81,13 +78,6 @@ const DEFAULT_PROVIDERS:
   readonly EvmTransactionsProvider[] = [
   alchemyTransactionsProvider,
   etherscanTransactionsProvider,
-  /*
-   * Legacy third-line fallback only.
-   *
-   * AYZO no longer relies on GoldRush as
-   * the primary EVM transaction provider.
-   */
-  goldRushTransactionsProvider,
 ];
 
 type TransactionCursorOwner =
@@ -273,7 +263,7 @@ function resilienceNamespace() {
     vercelEnv ===
       "development"
   ) {
-    return vercelEnv;
+    return isGoldRushExitCanaryActive() ? `${vercelEnv}:zero-goldrush-v1` : vercelEnv;
   }
 
   return process.env
@@ -456,9 +446,8 @@ async function readCache(
         )
       );
 
-    return isCachedSuccess(
-      cached
-    )
+    // Never recycle a legacy cached GoldRush result after retirement.
+    return isCachedSuccess(cached) && cached.providerId !== "goldrush"
       ? cached
       : null;
   } catch {
@@ -896,6 +885,10 @@ export async function getResilientEvmTransactions(
       const provider
       of providers
     ) {
+      // Preview canary must never invoke GoldRush even with injected dependencies.
+      if (isGoldRushExitCanaryActive() && provider.id === "goldrush") {
+        continue;
+      }
       if (
         cursorOwner &&
         provider.id !==

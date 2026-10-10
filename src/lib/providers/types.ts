@@ -7,6 +7,8 @@ export type ProviderId =
   | "ankr"
   | "alchemy"
   | "etherscan"
+  | "sonic-rpc"
+  | "mantle-rpc"
   | "blockchair"
   | "mempool"
   | "blockcypher"

@@ -1,3 +1,4 @@
+
 import type {
   ProviderUsageOutcome,
 } from "./providerUsageTelemetryCore";
@@ -162,6 +163,18 @@ function inferProvider(
   return "http-upstream";
 }
 
+/** Defense in depth: blocks even a mislabelled GoldRush HTTP request. */
+function isGoldRushHost(request: unknown): boolean {
+  const raw = requestUrl(request);
+  if (!raw) return false;
+  try {
+    const host = new URL(raw).hostname.toLowerCase();
+    return host === "covalenthq.com" || host.endsWith(".covalenthq.com");
+  } catch {
+    return false;
+  }
+}
+
 function responseOutcome(
   status:
     number
@@ -237,6 +250,12 @@ export async function providerUsageFetch<
     inferProvider(
       request
     );
+
+  // Permanent retirement boundary: no environment variable can re-enable
+  // outgoing GoldRush HTTP. Block before telemetry or physical transport.
+  if (provider.toLowerCase() === "goldrush" || isGoldRushHost(request)) {
+    throw new Error("AYZO_GOLDRUSH_RETIRED: outbound transport forbidden.");
+  }
 
   const pricing =
     resolveProviderUsagePricing({

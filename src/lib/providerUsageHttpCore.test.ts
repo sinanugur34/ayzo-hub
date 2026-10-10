@@ -143,7 +143,7 @@ test(
               providerUsageFetch(
                 {
                   provider:
-                    "goldrush",
+                    "etherscan",
 
                   operation:
                     "evm.transactions",

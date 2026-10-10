@@ -16,6 +16,10 @@ async function withMock<T>(
 ): Promise<T> {
   const old = globalThis.fetch;
   const oldKey = process.env.BLOCKSCOUT_API_KEY;
+  const oldVercelEnv = process.env.VERCEL_ENV;
+  const oldIndexedCanary = process.env.AYZO_INDEXED_HOLDER_CANARY;
+  process.env.VERCEL_ENV = "preview";
+  process.env.AYZO_INDEXED_HOLDER_CANARY = "1";
   process.env.BLOCKSCOUT_API_KEY = "proapi_test_only";
   let calls = 0;
   globalThis.fetch = async (input: RequestInfo | URL) => {
@@ -42,8 +46,24 @@ async function withMock<T>(
     globalThis.fetch = old;
     if (oldKey === undefined) delete process.env.BLOCKSCOUT_API_KEY;
     else process.env.BLOCKSCOUT_API_KEY = oldKey;
+    if (oldVercelEnv === undefined) delete process.env.VERCEL_ENV;
+    else process.env.VERCEL_ENV = oldVercelEnv;
+    if (oldIndexedCanary === undefined) delete process.env.AYZO_INDEXED_HOLDER_CANARY;
+    else process.env.AYZO_INDEXED_HOLDER_CANARY = oldIndexedCanary;
   }
 }
+
+test("Blockscout top-100 mock restores Preview environment after invocation", async () => {
+  const prevVercel = process.env.VERCEL_ENV;
+  const prevIndexed = process.env.AYZO_INDEXED_HOLDER_CANARY;
+  await withMock("ok", async calls => {
+    assert.equal(process.env.VERCEL_ENV, "preview");
+    assert.equal(process.env.AYZO_INDEXED_HOLDER_CANARY, "1");
+    assert.equal(calls(), 0);
+  });
+  assert.equal(process.env.VERCEL_ENV, prevVercel);
+  assert.equal(process.env.AYZO_INDEXED_HOLDER_CANARY, prevIndexed);
+});
 
 test("Blockscout aggregates 50 + 50 holder rows to full AYZO top-100", async () => {
   await withMock("ok", async calls => {

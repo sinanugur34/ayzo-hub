@@ -18,13 +18,6 @@ export const PROVIDERS = {
     role: "fallback",
   },
 
-  goldrush: {
-    id: "goldrush",
-    name: "GoldRush",
-    kind: "indexed-data",
-    role: "primary",
-  },
-
   ankr: {
     id: "ankr",
     name: "Ankr",
@@ -43,6 +36,20 @@ export const PROVIDERS = {
     id: "etherscan",
     name: "Etherscan",
     kind: "indexed-data",
+    role: "fallback",
+  },
+
+  "sonic-rpc": {
+    id: "sonic-rpc",
+    name: "Sonic Public RPC",
+    kind: "rpc",
+    role: "fallback",
+  },
+
+  "mantle-rpc": {
+    id: "mantle-rpc",
+    name: "Mantle Public RPC",
+    kind: "rpc",
     role: "fallback",
   },
 
@@ -74,12 +81,15 @@ export const PROVIDERS = {
     role: "primary",
   },
 } as const satisfies Record<
-  ProviderId,
+  Exclude<ProviderId, "goldrush">,
   ProviderDefinition
 >;
 
+// GoldRush is retired. Its historical ProviderId remains in telemetry types
+// so previous billing events retain their original attribution.
 export function getProvider(
   id: ProviderId
-): ProviderDefinition {
+): ProviderDefinition | null {
+  if (id === "goldrush") return null;
   return PROVIDERS[id];
 }

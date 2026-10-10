@@ -34,27 +34,12 @@ test(
 );
 
 test(
-  "keeps existing GoldRush and Alchemy provider roles unchanged",
+  "retired GoldRush has no selectable provider definition",
   () => {
-    assert.equal(
-      PROVIDERS.goldrush.kind,
-      "indexed-data"
-    );
-
-    assert.equal(
-      PROVIDERS.goldrush.role,
-      "primary"
-    );
-
-    assert.equal(
-      PROVIDERS.alchemy.kind,
-      "rpc"
-    );
-
-    assert.equal(
-      PROVIDERS.alchemy.role,
-      "fallback"
-    );
+    assert.equal(getProvider("goldrush"), null);
+    assert.equal("goldrush" in PROVIDERS, false);
+    assert.equal(PROVIDERS.alchemy.kind, "rpc");
+    assert.equal(PROVIDERS.alchemy.role, "fallback");
   }
 );
 

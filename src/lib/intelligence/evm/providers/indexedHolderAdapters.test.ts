@@ -52,6 +52,7 @@ test("adapters advertise only the network configurations we certified", () => {
     ({networkId,name:networkId,chainId,nativeCurrency:"ETH"} as Parameters<typeof routescanHoldersProvider.supportsNetwork>[0]);
   assert.ok(routescanHoldersProvider.supportsNetwork(net("ethereum",1)));
   assert.ok(routescanHoldersProvider.supportsNetwork(net("mantle",5000)));
+  assert.ok(blockscoutHoldersProvider.supportsNetwork(net("ethereum",1)));
   assert.ok(blockscoutHoldersProvider.supportsNetwork(net("optimism",10)));
   assert.ok(blockscoutHoldersProvider.supportsNetwork(net("scroll",534352)));
   assert.ok(!blockscoutHoldersProvider.supportsNetwork(net("sonic",146)));
@@ -89,4 +90,13 @@ test("Blockscout rejects rounded overflow and impossible aggregate balances", ()
     { address: { hash: A }, value: "600" },
     { address: { hash: B }, value: "600" },
   ] }, { total_supply: "1000" }, 100), null);
+});
+
+
+test("Blockscout rejects descending-order violations before sorting", () => {
+  const bad = decodeBlockscoutHolders({ items: [
+    { address: { hash: A }, value: "100" },
+    { address: { hash: B }, value: "200" },
+  ], next_page_params: null }, { total_supply: "1000" }, 100);
+  assert.equal(bad, null);
 });

@@ -1,3 +1,4 @@
+import { isLocalDevelopmentSmokeRequest } from "@/lib/internalSmokeSecurity";
 import {
   isInternalApiRequest,
 } from "@/lib/apiSecurity";
@@ -94,12 +95,7 @@ function parseBoundedInteger(
 export async function POST(
   request: Request
 ) {
-  const isDevelopmentTestRequest =
-    process.env.NODE_ENV !==
-      "production" &&
-    request.headers.get(
-      "x-ayzo-test-request"
-    ) === "smoke";
+  const isDevelopmentTestRequest = isLocalDevelopmentSmokeRequest(request);
 
   if (
     !isDevelopmentTestRequest &&
