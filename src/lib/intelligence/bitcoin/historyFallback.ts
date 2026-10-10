@@ -1,4 +1,3 @@
-import { isGoldRushExitCanaryActive } from "@/lib/goldRushExitCanary";
 import { runWithProviderUsageHintsCore } from "@/lib/providerUsageScopeCore";
 import type {
   BitcoinAddressTransactionsProvider,
@@ -10,10 +9,6 @@ import type {
   BitcoinProviderErrorCode,
   BitcoinProviderResult,
 } from "./types";
-
-import {
-  goldRushBitcoinProvider,
-} from "./providers/goldrush";
 
 import {
   mempoolBitcoinProvider,
@@ -166,8 +161,7 @@ export async function getBitcoinAddressHistoryWithFallback(
   request: BitcoinPaginatedAddressRequest,
   primary: BitcoinHistoryProvider =
     mempoolBitcoinProvider,
-  fallback: BitcoinHistoryProvider =
-    goldRushBitcoinProvider
+  fallback: BitcoinHistoryProvider | null = null
 ): Promise<
   BitcoinProviderResult<
     BitcoinAddressHistoryPage
@@ -192,9 +186,9 @@ export async function getBitcoinAddressHistoryWithFallback(
     return primaryResult;
   }
 
-  if (isGoldRushExitCanaryActive()) {
-    return primaryResult;
-  }
+  // No uncertified replacement is invoked by default. Missing evidence
+  // remains an explicit provider failure, never an empty history.
+  if (!fallback) return primaryResult;
 
   return runWithProviderUsageHintsCore(
     {

@@ -103,72 +103,19 @@ test(
   }
 );
 
-test(
-  "GoldRush physical event preserves unresolved pricing truthfully",
-  async () => {
-    const result =
-      await runWithProviderUsageScopeCore(
-        {
-          ...CONTEXT,
-
-          network:
-            "ethereum",
-        },
-
-        async () =>
-          providerUsageFetch(
-            {
-              provider:
-                "goldrush",
-
-              operation:
-                "evm.transactions",
-            },
-
-            "https://example.invalid",
-
-            async () => ({
-              ok:
-                true,
-
-              status:
-                200,
-            })
-          )
-      );
-
-    const event =
-      result.events[0];
-
-    assert.ok(
-      event
-    );
-
-    assert.equal(
-      event.metadata
-        .native_unit_kind,
-      "credit"
-    );
-
-    assert.equal(
-      event.metadata
-        .native_units,
-      null
-    );
-
-    assert.equal(
-      event.metadata
-        .estimated_public_cost_usd,
-      null
-    );
-
-    assert.equal(
-      event.metadata
-        .pricing_status,
-      "dynamic_unresolved"
-    );
-  }
-);
+test("Retired physical provider cannot generate billable HTTP events", async () => {
+  const result = await runWithProviderUsageScopeCore(
+    { ...CONTEXT, network: "ethereum" },
+    async () => {
+      await assert.rejects(() => providerUsageFetch(
+        { provider: "goldrush", operation: "evm.transactions" },
+        "https://example.invalid",
+        async () => ({ ok: true, status: 200 }),
+      ), /AYZO_GOLDRUSH_RETIRED/);
+    },
+  );
+  assert.equal(result.events.length, 0);
+});
 
 test(
   "Alchemy Solana physical event carries compute-unit metadata",

@@ -29,10 +29,6 @@ import {
   etherscanTransactionsProvider,
 } from "./etherscanTransactions";
 
-import {
-  goldRushTransactionsProvider,
-} from "./goldrushTransactions";
-
 export type TransactionResilienceStore = {
   get<T = unknown>(
     key:
@@ -82,13 +78,6 @@ const DEFAULT_PROVIDERS:
   readonly EvmTransactionsProvider[] = [
   alchemyTransactionsProvider,
   etherscanTransactionsProvider,
-  /*
-   * Legacy third-line fallback only.
-   *
-   * AYZO no longer relies on GoldRush as
-   * the primary EVM transaction provider.
-   */
-  goldRushTransactionsProvider,
 ];
 
 type TransactionCursorOwner =
@@ -457,9 +446,8 @@ async function readCache(
         )
       );
 
-    return isCachedSuccess(
-      cached
-    )
+    // Never recycle a legacy cached GoldRush result after retirement.
+    return isCachedSuccess(cached) && cached.providerId !== "goldrush"
       ? cached
       : null;
   } catch {

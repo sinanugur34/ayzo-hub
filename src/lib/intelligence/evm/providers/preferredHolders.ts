@@ -1,277 +1,63 @@
-import { isGoldRushExitCanaryActive } from "@/lib/goldRushExitCanary";
+import type { NetworkId } from "@/lib/networks/registry";
+import type { EvmPaginatedAddressRequest, EvmTokenHoldersProvider } from "../provider";
+import type { EvmProviderResult, EvmTokenHolders } from "../types";
+import { ankrHoldersProvider } from "./ankrHolders";
+import { isIndexedHolderCanaryAllowed } from "./indexedHolderCanary";
+import { blockscoutHoldersProvider } from "./indexedHolderAdapters";
 
-import type {
-  NetworkId,
-} from "@/lib/networks/registry";
+const ANKR_NETWORKS = new Set<NetworkId>([
+  "base", "bnb", "arbitrum", "polygon", "avalanche", "linea",
+]);
+export type PreferredHoldersDependencies = { ankr: EvmTokenHoldersProvider };
+const DEFAULT_DEPENDENCIES: PreferredHoldersDependencies = { ankr: ankrHoldersProvider };
 
-import type {
-  EvmPaginatedAddressRequest,
-  EvmTokenHoldersProvider,
-} from "../provider";
-import type {
-  EvmProviderErrorCode,
-  EvmProviderResult,
-  EvmTokenHolders,
-} from "../types";
-
-import {
-  ankrHoldersProvider,
-} from "./ankrHolders";
-import {
-  goldRushEvmProvider,
-} from "./goldrush";
-import {
-  isIndexedHolderCanaryAllowed,
-} from "./indexedHolderCanary";
-import {
-  routescanHoldersProvider,
-  blockscoutHoldersProvider,
-} from "./indexedHolderAdapters";
-
-const ANKR_NETWORKS =
-  new Set<NetworkId>([
-    "base",
-    "bnb",
-    "arbitrum",
-    "polygon",
-    "avalanche",
-    "linea",
-  ]);
-
-const FALLBACK_CODES =
-  new Set<
-    EvmProviderErrorCode
-  >([
-    "RATE_LIMITED",
-    "TIMEOUT",
-    "UPSTREAM_ERROR",
-  ]);
-
-export type PreferredHoldersDependencies = {
-  ankr:
-    EvmTokenHoldersProvider;
-
-  goldrush:
-    EvmTokenHoldersProvider;
-};
-
-const DEFAULT_DEPENDENCIES:
-  PreferredHoldersDependencies = {
-    ankr:
-      ankrHoldersProvider,
-
-    goldrush:
-      goldRushEvmProvider,
-  };
-
-function isAnkrCursor(
-  cursor?: string | null
-): boolean {
-  return (
-    typeof cursor ===
-      "string" &&
-    cursor.startsWith(
-      "ankr:"
-    )
-  );
+export function getPreferredEvmHolderProviderId(networkId: NetworkId):
+  "ankr" | "blockscout" | "unavailable" {
+  if (ANKR_NETWORKS.has(networkId)) return "ankr";
+  if (["ethereum", "optimism", "scroll"].includes(networkId)) return "blockscout";
+  return "unavailable";
 }
 
-function isGoldRushCursor(
-  cursor?: string | null
-): boolean {
-  return (
-    typeof cursor ===
-      "string" &&
-    /^\d+$/.test(cursor)
-  );
-}
-
-export function getPreferredEvmHolderProviderId(
-  networkId: NetworkId
-): "ankr" | "goldrush" {
-  return ANKR_NETWORKS.has(
-    networkId
-  )
-    ? "ankr"
-    : "goldrush";
-}
+const fail = (message: string): EvmProviderResult<EvmTokenHolders> => ({
+  ok: false, providerId: "blockscout", latencyMs: null,
+  code: "UPSTREAM_ERROR", error: message,
+});
 
 export async function getPreferredEvmTokenHolders(
-  request:
-    EvmPaginatedAddressRequest,
-
-  dependencies:
-    PreferredHoldersDependencies =
-      DEFAULT_DEPENDENCIES
-): Promise<
-  EvmProviderResult<
-    EvmTokenHolders
-  >
-> {
-  const goldRushExit = isGoldRushExitCanaryActive();
-  const blockedGoldRush = (): EvmProviderResult<EvmTokenHolders> => ({
-    ok: false, providerId: "goldrush", code: "UPSTREAM_ERROR", latencyMs: null,
-    error: "GoldRush holder path disabled in Preview; no verified alternative result.",
-  });
-
-  // All indexed access, including continuation requests, shares one gate.
-  // NODE_ENV=production on Vercel Preview; VERCEL_ENV distinguishes it.
-  const indexedCanaryAllowed = isIndexedHolderCanaryAllowed({
+  request: EvmPaginatedAddressRequest,
+  dependencies: PreferredHoldersDependencies = DEFAULT_DEPENDENCIES
+): Promise<EvmProviderResult<EvmTokenHolders>> {
+  const cursor = request.cursor ?? "";
+  const indexedAllowed = isIndexedHolderCanaryAllowed({
     flag: process.env.AYZO_INDEXED_HOLDER_CANARY,
     nodeEnv: process.env.NODE_ENV,
     vercelEnv: process.env.VERCEL_ENV,
-  }) || goldRushExit;
-
-  // Never reroute a provider-owned cursor to Ankr or GoldRush.
-  // In production or with the flag off, reject it without provider I/O.
-  const indexedCursorProvider = request.cursor?.startsWith("routescan:")
-    ? routescanHoldersProvider
-    : request.cursor?.startsWith("blockscout:")
-      ? blockscoutHoldersProvider
-      : null;
-
-  if (indexedCursorProvider) {
-    if (!indexedCanaryAllowed) {
-      return {
-        ok: false,
-        providerId: indexedCursorProvider.id,
-        code: "UPSTREAM_ERROR",
-        latencyMs: null,
-        error: "Indexed holder continuation is disabled in this environment.",
-      };
-    }
-    if (indexedCursorProvider.id === "routescan") {
-      // Phase 8.4B proved Routescan's raw holder pages are not balance ordered.
-      // Reject legacy continuation rather than relabeling unordered holders as TOP holders.
-      return {
-        ok: false, providerId: "routescan", code: "UPSTREAM_ERROR", latencyMs: null,
-        error: "Routescan holder ordering is unverified; continuation rejected.",
-      };
-    }
-    return indexedCursorProvider.getTokenHolders(request);
+  });
+  // Provider-owned pagination MUST NOT be translated between providers.
+  if (cursor && /^\d+$/.test(cursor))
+    return fail("Retired holder cursor cannot be continued by a different provider.");
+  if (cursor.startsWith("routescan:")) {
+    return { ok: false, providerId: "routescan", latencyMs: null,
+      code: "UPSTREAM_ERROR", error: "Unverified holder ordering; continuation rejected." };
   }
-
-  // Preview-only canary; the legacy first-page behavior remains unchanged.
-  if (indexedCanaryAllowed && !request.cursor) {
-    // Only balance-ordered Blockscout can enter the indexed canary.
-    // Routescan's unsorted holder pages cannot establish the global top 100.
-    const candidate = blockscoutHoldersProvider.supportsNetwork(request.network)
-      ? blockscoutHoldersProvider
-      : null;
-    if (candidate) {
-      const indexedResult = await candidate.getTokenHolders(request);
-      if (indexedResult.ok) return indexedResult;
-    }
+  if (cursor.startsWith("blockscout:")) {
+    if (!indexedAllowed || !blockscoutHoldersProvider.supportsNetwork(request.network))
+      return fail("Indexed holder continuation is disabled in this environment.");
+    return blockscoutHoldersProvider.getTokenHolders(request);
   }
-
-  /*
-   * Never translate provider cursors.
-   */
-  if (
-    isAnkrCursor(
-      request.cursor
-    )
-  ) {
-    return dependencies
-      .ankr
-      .getTokenHolders(
-        request
-      );
+  if (cursor && !cursor.startsWith("ankr:"))
+    return fail("Unknown holder cursor; refusing cross-provider continuation.");
+  if (cursor.startsWith("ankr:")) {
+    if (!ANKR_NETWORKS.has(request.network.networkId)) return fail("Ankr cursor network mismatch.");
+    return dependencies.ankr.getTokenHolders(request);
   }
-
-  if (
-    isGoldRushCursor(
-      request.cursor
-    )
-  ) {
-    if (goldRushExit) return blockedGoldRush();
-    return dependencies
-      .goldrush
-      .getTokenHolders(
-        request
-      );
+  // The preview-only canary is not independent holder certification.
+  if (indexedAllowed && blockscoutHoldersProvider.supportsNetwork(request.network)) {
+    const result = await blockscoutHoldersProvider.getTokenHolders(request);
+    if (result.ok) return result;
+    if (!ANKR_NETWORKS.has(request.network.networkId)) return result;
   }
-
-  if (
-    getPreferredEvmHolderProviderId(
-      request.network.networkId
-    ) === "goldrush"
-  ) {
-    if (goldRushExit) return blockedGoldRush();
-    return dependencies
-      .goldrush
-      .getTokenHolders(
-        request
-      );
-  }
-
-  const primary =
-    await dependencies
-      .ankr
-      .getTokenHolders(
-        request
-      );
-
-  if (primary.ok) {
-    return primary;
-  }
-
-  /*
-   * Provider fallback is allowed
-   * only from the first page.
-   */
-  if (
-    request.cursor !==
-      undefined &&
-    request.cursor !==
-      null &&
-    request.cursor !==
-      ""
-  ) {
-    return primary;
-  }
-
-  if (
-    !FALLBACK_CODES.has(
-      primary.code
-    )
-  ) {
-    return primary;
-  }
-
-  if (
-    !dependencies
-      .goldrush
-      .supportsNetwork(
-        request.network
-      ) ||
-    !dependencies
-      .goldrush
-      .supportsCapability(
-        "tokenHolders"
-      )
-  ) {
-    return primary;
-  }
-
-  if (goldRushExit) return primary;
-
-  const fallback =
-    await dependencies
-      .goldrush
-      .getTokenHolders({
-        ...request,
-        cursor: null,
-      });
-
-  if (fallback.ok) {
-    return fallback;
-  }
-
-  return {
-    ...fallback,
-
-    error:
-      `Primary Ankr holder provider unavailable (${primary.code}); GoldRush holder fallback unavailable (${fallback.code}).`,
-  };
+  if (ANKR_NETWORKS.has(request.network.networkId))
+    return dependencies.ankr.getTokenHolders(request);
+  return fail("No certified non-retired holder provider is available for this network.");
 }

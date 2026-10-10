@@ -181,7 +181,7 @@ test("Routescan legacy cursor is closed in Preview and Mantle does not get a fal
     assert.equal(x.providerId, "routescan");
     const y = await getPreferredEvmTokenHolders({ network: MANTLE, address: token, limit: 100, cursor: null });
     assert.equal(y.ok, false);
-    assert.equal(y.providerId, "goldrush"); // blocked before egress by exit canary
+    assert.equal(y.providerId, "blockscout"); // indexed attempt fails closed; retired provider is never contacted
   } finally {
     globalThis.fetch = fetchOriginal;
     if (oldFlag === undefined) delete process.env.AYZO_GOLDRUSH_EXIT_CANARY;

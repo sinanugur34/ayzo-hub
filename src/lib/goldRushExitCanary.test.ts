@@ -35,7 +35,7 @@ test("Preview ON prevents GoldRush callback and is not a synthetic HTTP success"
       { provider: "goldrush", operation: "evm.transactions" },
       new URL("https://api.covalenthq.com/v1/1/address/0x0/"),
       async () => { calls++; return { ok: true, status: 200 }; },
-    ), /GoldRush outbound HTTP blocked/);
+    ), /AYZO_GOLDRUSH_RETIRED/);
     assert.equal(calls, 0);
   });
 });
@@ -47,7 +47,7 @@ test("Preview ON blocks mislabelled requests by exact GoldRush host", async () =
       { provider: "other-provider", operation: "test" },
       new URL("https://api.covalenthq.com/v1/"),
       async () => { calls++; return { ok: true, status: 200 }; },
-    ), /blocked/);
+    ), /AYZO_GOLDRUSH_RETIRED/);
     assert.equal(calls, 0);
   });
 });
@@ -67,15 +67,14 @@ test("Preview ON does not block alternative hosts or lookalike domains", async (
   });
 });
 
-test("Production ignores zero-egress Preview flag", async () => {
+test("Production permanently rejects retired HTTP egress", async () => {
   await withEnv({ AYZO_GOLDRUSH_EXIT_CANARY: "1", VERCEL_ENV: "production" }, async () => {
     let calls = 0;
-    const response = await providerUsageFetch(
+    await assert.rejects(() => providerUsageFetch(
       { provider: "goldrush", operation: "test" },
       new URL("https://api.covalenthq.com/v1/"),
       async () => { calls++; return { ok: true, status: 200 }; },
-    );
-    assert.equal(response.status, 200);
-    assert.equal(calls, 1);
+    ), /AYZO_GOLDRUSH_RETIRED/);
+    assert.equal(calls, 0);
   });
 });

@@ -1,4 +1,3 @@
-import { isGoldRushExitCanaryActive } from "./goldRushExitCanary";
 
 import type {
   ProviderUsageOutcome,
@@ -252,13 +251,10 @@ export async function providerUsageFetch<
       request
     );
 
-  // A blocked request must never call fetch or be logged as a physical attempt.
-  // This enforcement applies to ALL four legacy GoldRush network adapters.
-  if (
-    isGoldRushExitCanaryActive() &&
-    (provider.toLowerCase() === "goldrush" || isGoldRushHost(request))
-  ) {
-    throw new Error("AYZO_GOLDRUSH_EXIT_CANARY: GoldRush outbound HTTP blocked.");
+  // Permanent retirement boundary: no environment variable can re-enable
+  // outgoing GoldRush HTTP. Block before telemetry or physical transport.
+  if (provider.toLowerCase() === "goldrush" || isGoldRushHost(request)) {
+    throw new Error("AYZO_GOLDRUSH_RETIRED: outbound transport forbidden.");
   }
 
   const pricing =
