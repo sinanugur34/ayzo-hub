@@ -59,6 +59,8 @@ export type EvmTokenHolders = {
   totalSupply: string | null;
   totalCount: number | null;
   nextCursor: string | null;
+  /** Verified = matched on-chain/indexed supply. Indexed-only = no reliable concentration. */
+  supplyEvidence?: "verified" | "indexed_snapshot_only";
 };
 
 export type EvmTransaction = {

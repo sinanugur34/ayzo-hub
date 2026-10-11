@@ -234,10 +234,11 @@ export function decodeRoutescanHolders(
 /** Pure parser. Blockscout supplies raw (unscaled) balances and total_supply. */
 export function decodeBlockscoutHolders(
   holderPayload: unknown, tokenPayload: unknown, limit: number,
+  options?: Readonly<{ canonicalSupply: string; omitPercentages: boolean }>,
 ): EvmTokenHolders | null {
   const root = obj(holderPayload), token = obj(tokenPayload);
   if (!root || !token || !Array.isArray(root.items) || root.items.length > limit) return null;
-  const supply = rawUint(token.total_supply);
+  const supply = rawUint(options?.canonicalSupply ?? token.total_supply);
   if (!supply || BigInt(supply) <= 0n) return null;
   const holders: EvmTokenHolder[] = [];
   let previousBalance: bigint | null = null;
@@ -253,7 +254,8 @@ export function decodeBlockscoutHolders(
     previousBalance = currentBalance;
     const p = percentage(balance, supply);
     if (p === null) return null;
-    holders.push({address: addr, balance, percentage: p});
+    // A stale indexed snapshot must never fabricate current concentration data.
+    holders.push({address: addr, balance, percentage: options?.omitPercentages ? null : p});
   }
   const unique = sortedUnique(holders);
   if (!unique) return null;
@@ -312,6 +314,30 @@ export class RoutescanHoldersProvider implements EvmTokenHoldersProvider {
     return {ok: true, providerId: this.id, latencyMs: Math.round(performance.now() - start), data: parsed};
   }
 }
+/**
+ * An explicitly bounded preview-only escape hatch for OPTIMISM WETH metadata lag.
+ * A valid 100-row indexed balance list can be shown, but we must withhold both
+ * percentages and totalSupply when indexer and chain state are not reconciled.
+ * The exception is restricted to WETH on Optimism, one basis point maximum,
+ * and never applies to production (the existing canary gate remains mandatory).
+ * Everything else, including a downward supply drift, fails closed.
+ */
+export function classifyIndexedSupplySnapshot(
+  networkId: string, tokenAddress: string, indexedRaw: string, chainHex: string,
+): "verified" | "indexed_snapshot_only" | "reject" {
+  if (!rawUint(indexedRaw) || BigInt(indexedRaw) <= 0n ||
+    !/^0x[0-9a-fA-F]{1,64}$/.test(chainHex)) return "reject";
+  const indexed = BigInt(indexedRaw);
+  const chain = BigInt(chainHex);
+  if (chain <= 0n) return "reject";
+  if (chain === indexed) return "verified";
+  if (networkId !== "optimism" ||
+      tokenAddress.toLowerCase() !== "0x4200000000000000000000000000000000000006" ||
+      chain <= indexed ||
+      (chain - indexed) * 10_000n > chain) return "reject";
+  return "indexed_snapshot_only";
+}
+
 export class BlockscoutHoldersProvider implements EvmTokenHoldersProvider {
   readonly id = "blockscout" as const;
   readonly capabilities = CAPABILITIES;
@@ -360,38 +386,45 @@ export class BlockscoutHoldersProvider implements EvmTokenHoldersProvider {
       boundedUrl(base, root, authParams), headers, request.signal,
     );
     if (token.status !== 200) return fail(failureCode(token.status));
-    {
-      // All three public Blockscout Preview networks MUST reconcile the
-      // indexer supply with on-chain ERC20 totalSupply() before holder egress.
-      // Snapshot drift
-      // may disappear after refreshing BOTH metadata and independent supply.
-      // Strict equality remains mandatory: zero tolerance, maximum two pairs.
-      let verified = false;
-      for (let attempt = 0; attempt < 2; attempt++) {
-        if (request.signal?.aborted) return fail("TIMEOUT");
-        const onChain = await alchemyEvmProvider.callContract({
-          network: request.network, address: request.address,
-          data: "0x18160ddd", signal: request.signal,
-        });
-        const indexed = rawUint(obj(token.payload)?.total_supply);
-        // Do not retry malformed metadata, RPC errors or missing supply.
-        if (!onChain.ok || !indexed || BigInt(indexed) <= 0n ||
-          !/^0x[0-9a-fA-F]{1,64}$/.test(onChain.data.result)) return fail("UPSTREAM_ERROR");
-        if (BigInt(onChain.data.result) === BigInt(indexed)) {
-          verified = true;
-          break;
-        }
-        if (attempt === 1) break;
-        // Bounded retry: one more metadata GET and one more on-chain read.
-        // No holder requests are permitted until a matching pair is verified.
-        token = await getJson(
-          this.id, "evm.holders.metadata",
-          boundedUrl(base, root, authParams), headers, request.signal,
-        );
-        if (token.status !== 200) return fail(failureCode(token.status));
+    // Strict equality for all tokens except bounded Optimism WETH indexed-only
+    // Preview evidence. Re-read BOTH sources when there is a mismatch.
+    let supplyEvidence: "verified" | "indexed_snapshot_only" | null = null;
+    let verifiedChainSupply: string | null = null;
+    let indexedSnapshotSupply: string | null = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (request.signal?.aborted) return fail("TIMEOUT");
+      const onChain = await alchemyEvmProvider.callContract({
+        network: request.network, address: request.address,
+        data: "0x18160ddd", signal: request.signal,
+      });
+      const indexed = rawUint(obj(token.payload)?.total_supply);
+      if (!onChain.ok || !indexed || BigInt(indexed) <= 0n ||
+        !/^0x[0-9a-fA-F]{1,64}$/.test(onChain.data.result)) {
+        console.warn("AYZO_HOLDER_FAILURE", { network: request.network.networkId, stage: "supply_rpc_or_metadata" });
+        return fail("UPSTREAM_ERROR");
       }
-      if (!verified) return fail("UPSTREAM_ERROR");
+      const classification = classifyIndexedSupplySnapshot(
+        request.network.networkId, request.address, indexed, onChain.data.result,
+      );
+      if (classification === "verified" || attempt === 1) {
+        if (classification === "reject") {
+          console.warn("AYZO_HOLDER_FAILURE", { network: request.network.networkId, stage: "supply_mismatch" });
+          return fail("UPSTREAM_ERROR");
+        }
+        supplyEvidence = classification;
+        verifiedChainSupply = BigInt(onChain.data.result).toString();
+        indexedSnapshotSupply = indexed;
+        break;
+      }
+      // One bounded refresh pair. No network requests to /holders before this.
+      token = await getJson(
+        this.id, "evm.holders.metadata",
+        boundedUrl(base, root, authParams), headers, request.signal,
+      );
+      if (token.status !== 200) return fail(failureCode(token.status));
     }
+    if (!supplyEvidence || !verifiedChainSupply || !indexedSnapshotSupply) return fail("UPSTREAM_ERROR");
+    const indexerDrift = supplyEvidence === "indexed_snapshot_only";
 
     // Blockscout has a 50-row indexer page. AYZO requests 100 root holders.
     // Fetch at most two pages; never substitute a 50-row page for top 100.
@@ -424,20 +457,24 @@ export class BlockscoutHoldersProvider implements EvmTokenHoldersProvider {
         // On transient failure of page two, preserve the verified first 50
         // with its continuation marker and explicit partial-coverage status.
         if (!request.signal?.aborted && collected.length > 0 && continuation &&
-          (response.status === 0 || response.status === 429 || response.status >= 500)) {
+          (response.status === 0 || response.status === 429 || response.status >= 500) &&
+          (!indexerDrift || collected.reduce((sum, h) => sum + BigInt(h.balance), 0n) <= BigInt(indexedSnapshotSupply))) {
           const clientCursor = signEthereumHolderCursor(continuation, request.address, request.network.networkId);
           if (!clientCursor) return fail("UPSTREAM_ERROR");
           return { ok: true, providerId: this.id,
             latencyMs: Math.round(performance.now() - start),
-            data: { holders: collected, totalSupply: supply,
-              totalCount: null, nextCursor: clientCursor } };
+            data: { holders: collected, totalSupply: indexerDrift ? null : supply,
+              totalCount: null, nextCursor: clientCursor, supplyEvidence } };
         }
         return fail(failureCode(response.status));
       }
 
       // Per-page parser validates addresses, raw integer balances, percentages,
       // duplicate addresses and bounded cursor structure.
-      const parsed = decodeBlockscoutHolders(response.payload, token.payload, limit);
+      const parsed = decodeBlockscoutHolders(
+        response.payload, token.payload, limit,
+        indexerDrift ? {canonicalSupply: verifiedChainSupply, omitPercentages: true} : undefined,
+      );
       if (!parsed || !parsed.totalSupply || parsed.holders.length === 0) return fail("UPSTREAM_ERROR");
       if (supply !== null && supply !== parsed.totalSupply) return fail("UPSTREAM_ERROR");
       supply = parsed.totalSupply;
@@ -461,8 +498,10 @@ export class BlockscoutHoldersProvider implements EvmTokenHoldersProvider {
       if (!activeCursor) return fail("UPSTREAM_ERROR");
     }
 
+    const totalIndexedBalances = collected.reduce((sum, h) => sum + BigInt(h.balance), 0n);
     if (!supply || collected.length === 0 ||
-      collected.reduce((sum, h) => sum + BigInt(h.balance), 0n) > BigInt(supply)) {
+      totalIndexedBalances > BigInt(supply) ||
+      (indexerDrift && totalIndexedBalances > BigInt(indexedSnapshotSupply))) {
       return fail("UPSTREAM_ERROR");
     }
     const clientCursor = continuation
@@ -470,8 +509,8 @@ export class BlockscoutHoldersProvider implements EvmTokenHoldersProvider {
     if (continuation && !clientCursor) return fail("UPSTREAM_ERROR");
     return { ok: true, providerId: this.id,
       latencyMs: Math.round(performance.now() - start),
-      data: { holders: collected, totalSupply: supply,
-        totalCount: null, nextCursor: clientCursor } };
+      data: { holders: collected, totalSupply: indexerDrift ? null : supply,
+        totalCount: null, nextCursor: clientCursor, supplyEvidence } };
 
   }
 }
