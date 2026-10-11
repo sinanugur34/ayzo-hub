@@ -1,4 +1,5 @@
 import { isLocalDevelopmentSmokeRequest } from "@/lib/internalSmokeSecurity";
+import { isIsolatedPreviewHolderTestRequest } from "@/lib/isolatedPreviewHolderAuth";
 import {
   isInternalApiRequest,
 } from "@/lib/apiSecurity";
@@ -32,7 +33,8 @@ export async function POST(
     !isDevelopmentTestRequest &&
     !isInternalApiRequest(
       request
-    )
+    ) &&
+    !isIsolatedPreviewHolderTestRequest(request)
   ) {
     return Response.json(
       {

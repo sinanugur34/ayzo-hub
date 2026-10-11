@@ -24,14 +24,14 @@ test("Ethereum public Blockscout reads 100 ordered holders with a verified suppl
   const fetchOriginal = globalThis.fetch;
   const originalAlchemy = process.env.ALCHEMY_API_KEY;
   const originalBlockscout = process.env.BLOCKSCOUT_API_KEY;
-  const originalInternal = process.env.AYZO_INTERNAL_API_KEY;
+  const originalInternal = process.env.AYZO_HOLDER_CURSOR_SIGNING_KEY;
   const originalVercel = process.env.VERCEL_ENV;
   const originalIndexed = process.env.AYZO_INDEXED_HOLDER_CANARY;
   const called: string[] = [];
   process.env.VERCEL_ENV = "preview";
   process.env.AYZO_INDEXED_HOLDER_CANARY = "1";
   process.env.ALCHEMY_API_KEY = "test-eth-supply-credential";
-  process.env.AYZO_INTERNAL_API_KEY = "unit-test-cursor-signing-secret-32-chars";
+  process.env.AYZO_HOLDER_CURSOR_SIGNING_KEY = "a".repeat(64);
   delete process.env.BLOCKSCOUT_API_KEY;
   globalThis.fetch = (async (raw) => {
     const url = String(raw);
@@ -59,8 +59,8 @@ test("Ethereum public Blockscout reads 100 ordered holders with a verified suppl
     else process.env.ALCHEMY_API_KEY = originalAlchemy;
     if (originalBlockscout === undefined) delete process.env.BLOCKSCOUT_API_KEY;
     else process.env.BLOCKSCOUT_API_KEY = originalBlockscout;
-    if (originalInternal === undefined) delete process.env.AYZO_INTERNAL_API_KEY;
-    else process.env.AYZO_INTERNAL_API_KEY = originalInternal;
+    if (originalInternal === undefined) delete process.env.AYZO_HOLDER_CURSOR_SIGNING_KEY;
+    else process.env.AYZO_HOLDER_CURSOR_SIGNING_KEY = originalInternal;
     if (originalIndexed === undefined) delete process.env.AYZO_INDEXED_HOLDER_CANARY;
     else process.env.AYZO_INDEXED_HOLDER_CANARY = originalIndexed;
     if (originalVercel === undefined) delete process.env.VERCEL_ENV;
@@ -73,12 +73,12 @@ test("Ethereum indexer supply disagreement fails closed before fetching holders"
   const previous = process.env.ALCHEMY_API_KEY;
   const previousVercel = process.env.VERCEL_ENV;
   const previousIndexed = process.env.AYZO_INDEXED_HOLDER_CANARY;
-  const previousSigningKey = process.env.AYZO_INTERNAL_API_KEY;
+  const previousSigningKey = process.env.AYZO_HOLDER_CURSOR_SIGNING_KEY;
   const requested: string[] = [];
   process.env.VERCEL_ENV = "preview";
   process.env.AYZO_INDEXED_HOLDER_CANARY = "1";
   process.env.ALCHEMY_API_KEY = "test-eth-supply-credential";
-  process.env.AYZO_INTERNAL_API_KEY = "unit-test-cursor-signing-secret-32-chars";
+  process.env.AYZO_HOLDER_CURSOR_SIGNING_KEY = "a".repeat(64);
   globalThis.fetch = (async (raw) => {
     const url = String(raw);
     requested.push(url);
@@ -98,8 +98,8 @@ test("Ethereum indexer supply disagreement fails closed before fetching holders"
     globalThis.fetch = fetchOriginal;
     if (previous === undefined) delete process.env.ALCHEMY_API_KEY;
     else process.env.ALCHEMY_API_KEY = previous;
-    if (previousSigningKey === undefined) delete process.env.AYZO_INTERNAL_API_KEY;
-    else process.env.AYZO_INTERNAL_API_KEY = previousSigningKey;
+    if (previousSigningKey === undefined) delete process.env.AYZO_HOLDER_CURSOR_SIGNING_KEY;
+    else process.env.AYZO_HOLDER_CURSOR_SIGNING_KEY = previousSigningKey;
     if (previousIndexed === undefined) delete process.env.AYZO_INDEXED_HOLDER_CANARY;
     else process.env.AYZO_INDEXED_HOLDER_CANARY = previousIndexed;
     if (previousVercel === undefined) delete process.env.VERCEL_ENV;
@@ -196,7 +196,7 @@ test("Routescan legacy cursor is closed in Preview and Mantle does not get a fal
 
 test("Ethereum signed holder continuation rejects tamper, other token and expiry before network", async () => {
   const beforeFetch = globalThis.fetch;
-  const keys = ["VERCEL_ENV", "AYZO_INDEXED_HOLDER_CANARY", "ALCHEMY_API_KEY", "AYZO_INTERNAL_API_KEY"] as const;
+  const keys = ["VERCEL_ENV", "AYZO_INDEXED_HOLDER_CANARY", "ALCHEMY_API_KEY", "AYZO_HOLDER_CURSOR_SIGNING_KEY"] as const;
   const saved = Object.fromEntries(keys.map(k => [k, process.env[k]]));
   const originalNow = Date.now;
   const addressAt = (n: number) => holder(n).address.hash;
@@ -204,7 +204,7 @@ test("Ethereum signed holder continuation rejects tamper, other token and expiry
   process.env.VERCEL_ENV = "preview";
   process.env.AYZO_INDEXED_HOLDER_CANARY = "1";
   process.env.ALCHEMY_API_KEY = "test-eth-supply-credential";
-  process.env.AYZO_INTERNAL_API_KEY = "unit-test-cursor-signing-secret-32-chars";
+  process.env.AYZO_HOLDER_CURSOR_SIGNING_KEY = "a".repeat(64);
   const start = Date.now();
   globalThis.fetch = (async raw => {
     const url = String(raw);
@@ -263,11 +263,11 @@ test("Ethereum public holder adapter refuses missing HMAC signing secret before 
   const prevFetch = globalThis.fetch;
   const oldEnv = process.env.VERCEL_ENV;
   const oldIndexed = process.env.AYZO_INDEXED_HOLDER_CANARY;
-  const oldInternal = process.env.AYZO_INTERNAL_API_KEY;
+  const oldInternal = process.env.AYZO_HOLDER_CURSOR_SIGNING_KEY;
   let calls = 0;
   process.env.VERCEL_ENV = "preview";
   process.env.AYZO_INDEXED_HOLDER_CANARY = "1";
-  delete process.env.AYZO_INTERNAL_API_KEY;
+  delete process.env.AYZO_HOLDER_CURSOR_SIGNING_KEY;
   globalThis.fetch = (async () => { calls++; throw Error("Forbidden network egress"); }) as typeof fetch;
   try {
     const result = await blockscoutHoldersProvider.getTokenHolders({ network, address: token, limit: 100, cursor: null });
@@ -277,19 +277,19 @@ test("Ethereum public holder adapter refuses missing HMAC signing secret before 
     globalThis.fetch = prevFetch;
     if (oldEnv === undefined) delete process.env.VERCEL_ENV; else process.env.VERCEL_ENV = oldEnv;
     if (oldIndexed === undefined) delete process.env.AYZO_INDEXED_HOLDER_CANARY; else process.env.AYZO_INDEXED_HOLDER_CANARY = oldIndexed;
-    if (oldInternal === undefined) delete process.env.AYZO_INTERNAL_API_KEY; else process.env.AYZO_INTERNAL_API_KEY = oldInternal;
+    if (oldInternal === undefined) delete process.env.AYZO_HOLDER_CURSOR_SIGNING_KEY; else process.env.AYZO_HOLDER_CURSOR_SIGNING_KEY = oldInternal;
   }
 });
 
 
 test("Ethereum Preview revalidates both supply sources once on transient drift and then serves 100", async () => {
   const originalFetch = globalThis.fetch;
-  const keys = ["VERCEL_ENV", "AYZO_INDEXED_HOLDER_CANARY", "ALCHEMY_API_KEY", "AYZO_INTERNAL_API_KEY"] as const;
+  const keys = ["VERCEL_ENV", "AYZO_INDEXED_HOLDER_CANARY", "ALCHEMY_API_KEY", "AYZO_HOLDER_CURSOR_SIGNING_KEY"] as const;
   const saved = Object.fromEntries(keys.map(k => [k, process.env[k]]));
   process.env.VERCEL_ENV = "preview";
   process.env.AYZO_INDEXED_HOLDER_CANARY = "1";
   process.env.ALCHEMY_API_KEY = "test-only-alchemy-retry";
-  process.env.AYZO_INTERNAL_API_KEY = "unit-test-cursor-signing-secret-32-chars";
+  process.env.AYZO_HOLDER_CURSOR_SIGNING_KEY = "a".repeat(64);
   const requested: string[] = [];
   let metadata = 0;
   globalThis.fetch = (async raw => {
@@ -318,12 +318,12 @@ test("Ethereum Preview revalidates both supply sources once on transient drift a
 
 test("Ethereum Preview rejects persistent supply drift after exactly two pairs with no holder egress", async () => {
   const originalFetch = globalThis.fetch;
-  const keys = ["VERCEL_ENV", "AYZO_INDEXED_HOLDER_CANARY", "ALCHEMY_API_KEY", "AYZO_INTERNAL_API_KEY"] as const;
+  const keys = ["VERCEL_ENV", "AYZO_INDEXED_HOLDER_CANARY", "ALCHEMY_API_KEY", "AYZO_HOLDER_CURSOR_SIGNING_KEY"] as const;
   const saved = Object.fromEntries(keys.map(k => [k, process.env[k]]));
   process.env.VERCEL_ENV = "preview";
   process.env.AYZO_INDEXED_HOLDER_CANARY = "1";
   process.env.ALCHEMY_API_KEY = "test-only-alchemy-retry";
-  process.env.AYZO_INTERNAL_API_KEY = "unit-test-cursor-signing-secret-32-chars";
+  process.env.AYZO_HOLDER_CURSOR_SIGNING_KEY = "a".repeat(64);
   const requested: string[] = [];
   globalThis.fetch = (async raw => {
     const url = String(raw);
