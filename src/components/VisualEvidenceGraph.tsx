@@ -292,7 +292,10 @@ export default function VisualEvidenceGraph({
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto border-b border-zinc-900">
+          <div
+            data-mobile-scroll-graph
+            className="overflow-x-auto overscroll-x-contain border-b border-zinc-900"
+          >
             <svg
               viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
               className="min-w-[720px]"

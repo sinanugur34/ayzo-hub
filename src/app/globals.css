@@ -24,3 +24,969 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* =========================================================
+   AYZO MOBILE PRODUCT V1 — GLOBAL GUARD
+   ========================================================= */
+
+html,
+body {
+  max-width: 100%;
+}
+
+@media (max-width: 800px) {
+  html,
+  body {
+    overflow-x: clip;
+  }
+
+  body {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overscroll-behavior-x: none;
+  }
+
+  main,
+  section,
+  article,
+  header,
+  footer,
+  nav,
+  form {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  img,
+  video,
+  canvas {
+    max-width: 100%;
+    height: auto;
+  }
+
+  button,
+  select,
+  textarea,
+  input:not([type="checkbox"]):not([type="radio"]) {
+    min-height: 44px;
+  }
+
+  input,
+  select,
+  textarea {
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  summary {
+    min-height: 44px;
+  }
+
+  pre {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  [data-mobile-scroll-graph] {
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* =========================================================
+   AYZO MOBILE PRODUCT V2
+   Analyzer + canonical 30-network selector
+   ========================================================= */
+
+[data-mobile-network-quick] {
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+[data-mobile-network-quick]::-webkit-scrollbar {
+  display: none;
+}
+
+[data-mobile-network-panel] {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+@media (max-width: 639px) {
+  [data-mobile-analyzer-network-shell] {
+    isolation: isolate;
+  }
+
+  [data-mobile-network-row] {
+    min-width: 0;
+  }
+
+  [data-mobile-network-quick] {
+    width: 100%;
+    max-width: 100%;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-inline: contain;
+  }
+
+  [data-mobile-network-quick] > button {
+    scroll-snap-align: start;
+  }
+
+  [data-mobile-network-menu] {
+    width: 100%;
+  }
+
+  [data-mobile-network-summary] {
+    width: 100%;
+    min-height: 56px;
+  }
+
+  [data-mobile-network-panel] {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100%;
+    max-height: min(
+      62dvh,
+      31rem
+    );
+    padding: 10px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  [data-mobile-network-grid] {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+  [data-mobile-network-grid] button {
+    min-width: 0;
+    min-height: 48px;
+  }
+
+  #analyzer {
+    scroll-margin-top: 12px;
+  }
+
+  #analyzer input[type="text"] {
+    width: 100%;
+  }
+
+  #analyzer button[type="submit"] {
+    min-height: 56px;
+  }
+}
+
+@media (max-width: 370px) {
+  [data-mobile-network-grid] {
+    grid-template-columns:
+      minmax(0, 1fr);
+  }
+
+  [data-mobile-network-panel] {
+    max-height: 58dvh;
+  }
+}
+
+@media (min-width: 640px) {
+  [data-mobile-network-panel] {
+    max-height: min(
+      70vh,
+      38rem
+    );
+  }
+}
+
+/* =========================================================
+   AYZO APP VISUAL V2B — PRODUCT SURFACES
+   Example Investigation · Ask AYZO · Pricing & Access
+   Scoped only. No analysis, billing or entitlement logic.
+========================================================= */
+
+.ayzo-example-v2,
+.ayzo-pricing-v2,
+.ayzo-plan-matrix-v2,
+.ayzo-ask-v2,
+.ayzo-plans-access-v2 {
+  --az-bg: #0b1020;
+  --az-panel: #151e30;
+  --az-deep: #101829;
+  --az-border: #2c3952;
+  --az-text: #f3f6fc;
+  --az-muted: #a8b5cc;
+  --az-purple: #baa7ff;
+  --az-mint: #a8fcdb;
+
+  font-family:
+    Manrope,
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+}
+
+/* ---------------- Frozen example investigations ---------------- */
+
+.ayzo-example-v2 {
+  border-color:
+    var(--az-border) !important;
+  border-radius:
+    14px !important;
+  background:
+    linear-gradient(
+      150deg,
+      #151e30,
+      #101829
+    ) !important;
+  box-shadow:
+    inset 0 1px 0
+    rgba(255,255,255,.02);
+}
+
+.ayzo-example-v2::before {
+  position:
+    absolute;
+  inset:
+    0;
+  pointer-events:
+    none;
+  content:
+    "";
+  background:
+    radial-gradient(
+      circle at 92% 8%,
+      rgba(186,167,255,.10),
+      transparent 30%
+    );
+}
+
+.ayzo-example-v2 [data-ayzo-example-tab] {
+  min-height:
+    44px;
+  border-color:
+    var(--az-border) !important;
+  border-radius:
+    8px !important;
+  color:
+    var(--az-muted) !important;
+  background:
+    var(--az-deep) !important;
+}
+
+.ayzo-example-v2
+[data-ayzo-example-tab][aria-pressed="true"] {
+  color:
+    var(--az-text) !important;
+  border-color:
+    var(--az-purple) !important;
+  background:
+    rgba(186,167,255,.09) !important;
+  box-shadow:
+    inset 0 0 0 1px
+    rgba(186,167,255,.07);
+}
+
+.ayzo-example-v2
+[data-ayzo-example-tab]:hover {
+  color:
+    var(--az-text) !important;
+  border-color:
+    rgba(186,167,255,.65) !important;
+}
+
+.ayzo-example-v2
+[data-ayzo-example-expand] {
+  min-height:
+    48px;
+  border-color:
+    rgba(168,252,219,.30) !important;
+  border-radius:
+    9px !important;
+  color:
+    var(--az-bg) !important;
+  background:
+    var(--az-mint) !important;
+  font-weight:
+    800 !important;
+}
+
+.ayzo-example-v2
+[data-ayzo-example-expand]:hover {
+  background:
+    #c0ffe6 !important;
+  border-color:
+    var(--az-mint) !important;
+}
+
+.ayzo-example-v2
+[data-ayzo-example-preview] {
+  border-color:
+    var(--az-border) !important;
+  border-radius:
+    9px !important;
+  background:
+    var(--az-deep) !important;
+}
+
+.ayzo-example-v2
+:is(
+  button,
+  summary,
+  a
+):focus-visible {
+  outline:
+    2px solid
+    var(--az-mint);
+  outline-offset:
+    3px;
+}
+
+/* ---------------- Pricing access trigger ---------------- */
+
+.ayzo-plans-access-v2 {
+  border-color:
+    var(--az-border) !important;
+}
+
+.ayzo-plans-trigger-v2 {
+  max-width:
+    540px !important;
+  min-height:
+    82px;
+  border:
+    1px solid
+    var(--az-border) !important;
+  border-radius:
+    12px !important;
+  color:
+    var(--az-text) !important;
+  background:
+    linear-gradient(
+      145deg,
+      #151e30,
+      #101829
+    ) !important;
+  box-shadow:
+    inset 0 1px 0
+    rgba(255,255,255,.02),
+    0 14px 35px
+    rgba(0,0,0,.13) !important;
+}
+
+.ayzo-plans-trigger-v2:hover {
+  border-color:
+    rgba(186,167,255,.66) !important;
+  background:
+    #182339 !important;
+}
+
+.ayzo-plans-trigger-v2:focus-visible {
+  outline:
+    2px solid
+    var(--az-mint);
+  outline-offset:
+    3px;
+}
+
+/* ---------------- Pricing root ---------------- */
+
+.ayzo-pricing-v2 {
+  margin-top:
+    32px !important;
+  max-width:
+    1180px !important;
+  color:
+    var(--az-text);
+}
+
+.ayzo-pricing-v2 h2,
+.ayzo-pricing-v2 h3 {
+  color:
+    var(--az-text) !important;
+  font-weight:
+    800 !important;
+}
+
+.ayzo-pricing-v2 p {
+  color:
+    var(--az-muted);
+}
+
+.ayzo-pricing-v2
+[data-ayzo-guest-access] {
+  border-color:
+    rgba(168,252,219,.24) !important;
+  border-radius:
+    10px !important;
+  background:
+    rgba(168,252,219,.045) !important;
+}
+
+.ayzo-pricing-v2
+[data-ayzo-plan-card] {
+  border-color:
+    var(--az-border) !important;
+  border-radius:
+    12px !important;
+  background:
+    linear-gradient(
+      155deg,
+      #151e30,
+      #101829
+    ) !important;
+  box-shadow:
+    inset 0 1px 0
+    rgba(255,255,255,.02);
+}
+
+.ayzo-pricing-v2
+[data-ayzo-plan-card="pro"] {
+  border-color:
+    rgba(186,167,255,.42) !important;
+}
+
+.ayzo-pricing-v2
+[data-ayzo-plan-card="advanced"] {
+  border-color:
+    rgba(168,252,219,.30) !important;
+}
+
+.ayzo-pricing-v2
+[data-ayzo-plan-card]
+button {
+  min-height:
+    46px;
+  border-radius:
+    8px !important;
+}
+
+.ayzo-pricing-v2
+[data-ayzo-plan-card]
+button:focus-visible,
+.ayzo-pricing-v2
+a:focus-visible {
+  outline:
+    2px solid
+    var(--az-mint);
+  outline-offset:
+    3px;
+}
+
+/* ---------------- Full feature matrix ---------------- */
+
+.ayzo-plan-matrix-v2 {
+  color:
+    var(--az-text);
+}
+
+.ayzo-plan-matrix-v2 table {
+  border-color:
+    var(--az-border) !important;
+  background:
+    var(--az-deep) !important;
+}
+
+.ayzo-plan-matrix-v2
+:is(
+  th,
+  td
+) {
+  border-color:
+    var(--az-border) !important;
+}
+
+.ayzo-plan-matrix-v2 thead tr {
+  background:
+    #111a2b !important;
+}
+
+.ayzo-plan-matrix-v2 tbody tr {
+  border-color:
+    var(--az-border) !important;
+}
+
+.ayzo-plan-matrix-v2 tbody tr:hover {
+  background:
+    rgba(186,167,255,.025) !important;
+}
+
+.ayzo-plan-matrix-v2 section {
+  border-color:
+    var(--az-border) !important;
+  background:
+    var(--az-panel) !important;
+}
+
+.ayzo-plan-matrix-v2
+[class*="bg-zinc-950"],
+.ayzo-plan-matrix-v2
+[class*="bg-black"] {
+  background:
+    var(--az-deep) !important;
+}
+
+.ayzo-plan-matrix-v2
+[class*="border-zinc"] {
+  border-color:
+    var(--az-border) !important;
+}
+
+.ayzo-plan-matrix-v2
+[class*="text-zinc-2"],
+.ayzo-plan-matrix-v2
+[class*="text-white"] {
+  color:
+    var(--az-text) !important;
+}
+
+.ayzo-plan-matrix-v2
+[class*="text-zinc-5"],
+.ayzo-plan-matrix-v2
+[class*="text-zinc-6"] {
+  color:
+    var(--az-muted) !important;
+}
+
+/* ---------------- Ask AYZO ---------------- */
+
+.ayzo-ask-v2 {
+  border:
+    1px solid
+    var(--az-border) !important;
+  border-radius:
+    14px !important;
+  color:
+    var(--az-text);
+  background:
+    rgba(11,16,32,.985) !important;
+  box-shadow:
+    0 28px 85px
+    rgba(0,0,0,.58) !important;
+}
+
+.ayzo-ask-v2 header {
+  border-color:
+    var(--az-border) !important;
+  background:
+    #101829;
+}
+
+.ayzo-ask-v2 h3 {
+  color:
+    var(--az-text) !important;
+}
+
+.ayzo-ask-v2
+.ayzo-ask-close-v2 {
+  width:
+    44px !important;
+  height:
+    44px !important;
+  border-color:
+    var(--az-border) !important;
+  color:
+    var(--az-muted) !important;
+  background:
+    var(--az-panel);
+}
+
+.ayzo-ask-v2
+.ayzo-ask-close-v2:hover {
+  color:
+    var(--az-text) !important;
+  border-color:
+    var(--az-purple) !important;
+}
+
+.ayzo-ask-suggestion-v2 {
+  min-height:
+    44px;
+  border-color:
+    var(--az-border) !important;
+  border-radius:
+    8px !important;
+  color:
+    var(--az-muted) !important;
+  background:
+    var(--az-deep) !important;
+}
+
+.ayzo-ask-suggestion-v2:hover {
+  color:
+    var(--az-text) !important;
+  border-color:
+    var(--az-purple) !important;
+  background:
+    #182239 !important;
+}
+
+.ayzo-ask-user-v2 {
+  border-color:
+    rgba(186,167,255,.30) !important;
+  color:
+    var(--az-text) !important;
+  background:
+    rgba(186,167,255,.09) !important;
+}
+
+.ayzo-ask-result-v2 {
+  border-color:
+    var(--az-border) !important;
+  border-radius:
+    11px !important;
+  background:
+    var(--az-panel) !important;
+}
+
+.ayzo-ask-form-v2 {
+  border-color:
+    var(--az-border) !important;
+  background:
+    #101829 !important;
+}
+
+.ayzo-ask-input-v2 {
+  min-height:
+    48px !important;
+  border-color:
+    var(--az-border) !important;
+  border-radius:
+    8px !important;
+  color:
+    var(--az-text) !important;
+  background:
+    var(--az-deep) !important;
+  font-size:
+    16px !important;
+}
+
+.ayzo-ask-input-v2::placeholder {
+  color:
+    #78869f !important;
+}
+
+.ayzo-ask-input-v2:focus {
+  border-color:
+    var(--az-mint) !important;
+  box-shadow:
+    0 0 0 3px
+    rgba(168,252,219,.07);
+}
+
+.ayzo-ask-submit-v2 {
+  min-height:
+    48px !important;
+  border:
+    0 !important;
+  border-radius:
+    8px !important;
+  color:
+    var(--az-bg) !important;
+  background:
+    var(--az-mint) !important;
+  font-weight:
+    800 !important;
+}
+
+.ayzo-ask-submit-v2:hover {
+  background:
+    #c0ffe6 !important;
+}
+
+.ayzo-ask-submit-v2:disabled {
+  color:
+    #7f8da4 !important;
+  background:
+    #1b263a !important;
+}
+
+.ayzo-ask-trigger-v2 {
+  min-height:
+    52px !important;
+  border:
+    1px solid
+    rgba(168,252,219,.28) !important;
+  color:
+    var(--az-text) !important;
+  background:
+    rgba(16,24,41,.97) !important;
+  box-shadow:
+    0 16px 45px
+    rgba(0,0,0,.40) !important;
+}
+
+.ayzo-ask-trigger-v2:hover {
+  border-color:
+    var(--az-mint) !important;
+  background:
+    #172337 !important;
+}
+
+.ayzo-ask-v2
+:is(
+  button,
+  input
+):focus-visible,
+.ayzo-ask-trigger-v2:focus-visible {
+  outline:
+    2px solid
+    var(--az-mint);
+  outline-offset:
+    3px;
+}
+
+/* ---------------- Responsive micro parity ---------------- */
+
+@media (max-width: 640px) {
+  .ayzo-example-v2 {
+    padding:
+      18px !important;
+  }
+
+  .ayzo-plans-access-v2 {
+    margin-top:
+      32px !important;
+    padding-top:
+      22px !important;
+  }
+
+  .ayzo-plans-trigger-v2 {
+    max-width:
+      none !important;
+    min-height:
+      86px;
+    padding:
+      14px !important;
+  }
+
+  .ayzo-pricing-v2 {
+    margin-top:
+      24px !important;
+  }
+
+  .ayzo-ask-v2 {
+    right:
+      8px !important;
+    bottom:
+      calc(
+        72px +
+        env(safe-area-inset-bottom)
+      ) !important;
+    left:
+      8px !important;
+    max-height:
+      min(
+        76dvh,
+        680px
+      ) !important;
+    min-height:
+      390px !important;
+    border-radius:
+      14px !important;
+  }
+
+  .ayzo-ask-trigger-v2 {
+    right:
+      10px !important;
+    bottom:
+      max(
+        10px,
+        env(safe-area-inset-bottom)
+      ) !important;
+  }
+}
+
+@media (max-width: 370px) {
+  .ayzo-ask-v2 {
+    min-height:
+      360px !important;
+  }
+
+  .ayzo-ask-trigger-v2 {
+    padding-right:
+      12px !important;
+    padding-left:
+      12px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ayzo-example-v2 *,
+  .ayzo-pricing-v2 *,
+  .ayzo-plan-matrix-v2 *,
+  .ayzo-ask-v2 *,
+  .ayzo-ask-trigger-v2,
+  .ayzo-plans-trigger-v2 {
+    scroll-behavior:
+      auto !important;
+    transition:
+      none !important;
+  }
+}
+
+/* ================================================================
+   AYZO APP VISUAL V3C — RESPONSIVE COORDINATION
+   Confirmed visual defects only.
+   ================================================================ */
+
+[data-ayzo-analytics-consent="true"] {
+  bottom:
+    max(
+      1rem,
+      env(safe-area-inset-bottom)
+    );
+}
+
+[data-ayzo-analytics-consent="true"] button {
+  min-height: 44px;
+}
+
+/*
+ * The analytics consent surface owns the bottom interaction zone
+ * until the user makes a choice. Ask AYZO must not compete with or
+ * sit behind that privacy choice.
+ */
+body:has(
+  [data-ayzo-analytics-consent="true"]
+)
+[data-ayzo-ask-trigger="true"] {
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px);
+}
+
+/*
+ * Defensive case: if an already-open assistant and the consent
+ * surface coexist, keep the assistant above the consent region.
+ */
+body:has(
+  [data-ayzo-analytics-consent="true"]
+)
+[data-ayzo-ask-dialog="true"] {
+  bottom: 12rem;
+  max-height:
+    calc(
+      100dvh -
+      13.5rem -
+      env(safe-area-inset-top)
+    );
+}
+
+[data-ayzo-access-state="unavailable"] {
+  color: #a8b5cc;
+}
+
+@media (max-width: 640px) {
+  [data-ayzo-analytics-consent="true"] {
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom:
+      max(
+        0.75rem,
+        env(safe-area-inset-bottom)
+      );
+    padding: 1rem;
+    border-radius: 1rem;
+  }
+
+  [data-ayzo-analytics-consent="true"] > div {
+    gap: 0.875rem;
+  }
+
+  [data-ayzo-analytics-consent="true"] p {
+    line-height: 1.5;
+  }
+
+  [data-ayzo-analytics-consent="true"] button {
+    min-height: 44px;
+  }
+
+  body:has(
+    [data-ayzo-analytics-consent="true"]
+  )
+  [data-ayzo-ask-dialog="true"] {
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom:
+      calc(
+        11.5rem +
+        env(safe-area-inset-bottom)
+      );
+    max-height:
+      calc(
+        100dvh -
+        13rem -
+        env(safe-area-inset-top) -
+        env(safe-area-inset-bottom)
+      );
+  }
+}
+
+@media (max-width: 370px) {
+  [data-ayzo-analytics-consent="true"] {
+    left: 0.625rem;
+    right: 0.625rem;
+    padding: 0.875rem;
+  }
+
+  [data-ayzo-analytics-consent="true"] button {
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-ayzo-ask-trigger="true"],
+  [data-ayzo-ask-dialog="true"],
+  [data-ayzo-analytics-consent="true"] {
+    scroll-behavior: auto;
+    transition: none !important;
+  }
+}
+
+/* ==============================================================
+   AYZO APP VISUAL V3F — FINAL FLOATING-SURFACE COORDINATION
+
+   Visual-only rules:
+   - once Ask AYZO is open, the launcher yields to the dialog
+   - while Pricing & Access is expanded, the launcher yields to
+     the feature matrix so no pricing evidence is obscured
+
+   No Ask AYZO request, entitlement or investigator logic changes.
+   ============================================================== */
+
+[data-ayzo-ask-trigger="true"][aria-expanded="true"],
+body:has(#ayzo-plans-access-trigger[aria-expanded="true"])
+  [data-ayzo-ask-trigger="true"] {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: translateY(0.5rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-ayzo-ask-trigger="true"] {
+    transition: none !important;
+  }
+}

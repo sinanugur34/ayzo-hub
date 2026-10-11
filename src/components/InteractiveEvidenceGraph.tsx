@@ -744,7 +744,7 @@ export default function InteractiveEvidenceGraph({
               >
                 <path
                   d="M0 0 L6 3.5 L0 7 Z"
-                  fill="#61829a"
+                  fill="#64738f"
                 />
               </marker>
 
@@ -758,7 +758,7 @@ export default function InteractiveEvidenceGraph({
               >
                 <path
                   d="M0 0 L6 3.5 L0 7 Z"
-                  fill="#63ddf1"
+                  fill="#a8fcdb"
                 />
               </marker>
 
@@ -772,7 +772,7 @@ export default function InteractiveEvidenceGraph({
               >
                 <path
                   d="M0 0 L6 3.5 L0 7 Z"
-                  fill="#ac96fb"
+                  fill="#baa7ff"
                 />
               </marker>
             </defs>

@@ -111,6 +111,14 @@ export default function FreePlanStatus({
       null
     );
 
+  const [
+    loadFailed,
+    setLoadFailed,
+  ] =
+    useState(
+      false
+    );
+
   const loadStatus =
     useCallback(
       async () => {
@@ -129,6 +137,14 @@ export default function FreePlanStatus({
               }
             );
 
+          if (
+            !response.ok
+          ) {
+            throw new Error(
+              "Analysis access status request failed."
+            );
+          }
+
           const data =
             (
               await response.json()
@@ -140,12 +156,19 @@ export default function FreePlanStatus({
             setStatus(
               data
             );
+
+            setLoadFailed(
+              false
+            );
           }
         } catch {
           /*
            * Quota display must never prevent
            * the analysis form from working.
            */
+          setLoadFailed(
+            true
+          );
         }
       },
       [
@@ -188,8 +211,19 @@ export default function FreePlanStatus({
 
   if (!status) {
     return (
-      <div className="mt-4 text-center text-xs text-zinc-600">
-        Checking analysis access…
+      <div
+        role="status"
+        aria-live="polite"
+        data-ayzo-access-state={
+          loadFailed
+            ? "unavailable"
+            : "loading"
+        }
+        className="mt-4 text-center text-xs text-zinc-600"
+      >
+        {loadFailed
+          ? "Analysis access status is temporarily unavailable. You can still try an analysis."
+          : "Checking analysis access…"}
       </div>
     );
   }
@@ -230,80 +264,65 @@ export default function FreePlanStatus({
     totalExhausted ||
     networkExhausted;
 
-  const planLabel =
-    guest
-      ? "GUEST ACCESS"
-      : plan ===
-          "advanced"
-        ? "ADVANCED PLAN"
-        : plan ===
-            "pro"
-          ? "PRO PLAN"
-          : "FREE ACCOUNT";
-
   return (
     <div
-      className={`mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs ${
+      className={`mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-left text-xs ${
         exhausted
           ? "text-amber-300"
-          : "text-zinc-500"
+          : "text-[#a8b5cc]"
       }`}
     >
-      <span
-        className={`rounded-full border px-2.5 py-1 text-[9px] font-medium tracking-[0.14em] ${
-          exhausted
-            ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
-            : guest ||
-              plan ===
-                "free"
-              ? "border-cyan-500/20 bg-cyan-500/5 text-cyan-300"
-              : "border-violet-400/30 bg-violet-500/10 text-violet-200"
-        }`}
-      >
-        {planLabel}
+      <span>
+        <strong className="font-semibold text-[#f3f6fc]">
+          {guest
+            ? "Guest"
+            : plan ===
+                "advanced"
+              ? "Advanced"
+              : plan ===
+                  "pro"
+                ? "Pro"
+                : "Free"}
+        </strong>
+
+        {" · "}
+
+        {status.remaining ===
+          null
+          ? `${fallbackLimit} analyses / 24h`
+          : `${status.remaining} of ${status.limit} analyses remaining`}
       </span>
 
       <span>
-        {status.remaining ===
-          null
-          ? `${fallbackLimit} analyses per 24 hours`
-          : guest
-            ? `${status.remaining} of ${status.limit} guest analysis remaining`
-            : `${status.remaining} of ${status.limit} total analyses remaining`}
-      </span>
-
-      <span className="text-zinc-700">
-        ·
-      </span>
-
-      {guest ? (
-        <span>
-          Create a free account for{" "}
-          <strong className="font-medium text-cyan-300">
-            {quotaCount(
+        {guest
+          ? `Free account · ${quotaCount(
               "free"
-            )} analyses / 24h
-          </strong>
-          {" · "}
-          <Link
-            href="/login?mode=signup"
-            className="font-medium text-violet-300 transition hover:text-violet-200"
-          >
-            Create Free Account
-          </Link>
-        </span>
-      ) : (
-        <span>
-          {freeAccount
+            )} analyses / 24h`
+          : freeAccount
             ? status.networkRemaining !==
                 null &&
               perNetworkLimit !==
                 null
               ? `${NETWORKS[network].name}: ${status.networkRemaining} of ${perNetworkLimit} same-network analyses remaining`
-              : `Max ${perNetworkLimit ?? 2} analyses on the same network per 24 hours`
+              : `Max ${perNetworkLimit ?? 2} per network / 24h`
             : "No per-network analysis limit"}
-        </span>
+      </span>
+
+      {guest && (
+        <Link
+          href="/login?mode=signup"
+          className="inline-flex min-h-11 items-center font-semibold text-[#a8fcdb] transition hover:text-white"
+        >
+          Create Free Account →
+        </Link>
       )}
+
+      <Link
+        href="#ayzo-plans-access-trigger"
+        className="inline-flex min-h-11 items-center font-semibold text-[#a8fcdb] transition hover:text-white"
+      >
+        View plans ↗
+      </Link>
     </div>
   );
 }

@@ -7,9 +7,12 @@ import {
 
 import Link from "next/link";
 
-import PlanComparisonMatrix from "@/components/PlanComparisonMatrix";
-import PlanCheckoutButton from "@/components/billing/PlanCheckoutButton";
+import PlanComparisonMatrix, {
+  PLAN_COMPARISON_CATEGORY_COUNT,
+  PLAN_COMPARISON_FEATURE_COUNT,
+} from "@/components/PlanComparisonMatrix";
 
+import PricingPlanCards from "@/components/PricingPlanCards";
 import {
   trackEvent,
 } from "@/lib/analytics/client";
@@ -37,6 +40,10 @@ type AccountState = {
   authenticated: boolean;
   plan: PlanId;
 };
+type BillingPeriod =
+  | "monthly"
+  | "annual";
+
 
 function isPlanId(
   value: unknown
@@ -48,14 +55,6 @@ function isPlanId(
   );
 }
 
-function annualLabel(
-  value: number | null
-) {
-  return value === null
-    ? "—"
-    : value.toFixed(2);
-}
-
 export default function PricingPlans() {
   const [
     account,
@@ -64,6 +63,16 @@ export default function PricingPlans() {
     useState<
       AccountState | null
     >(null);
+
+  const [
+    billingPeriod,
+    setBillingPeriod,
+  ] =
+    useState<BillingPeriod>(
+      "monthly"
+    );
+
+
 
   const paidCheckoutEnabled =
     process.env
@@ -182,28 +191,18 @@ export default function PricingPlans() {
         )
       : [...PLAN_ORDER];
 
-  const showPro =
-    visiblePlans.includes(
-      "pro"
-    );
-
-  const showAdvanced =
-    visiblePlans.includes(
-      "advanced"
-    );
-
-  const currentPro =
-    currentPlan ===
-    "pro";
-
-  const currentAdvanced =
-    currentPlan ===
-    "advanced";
-
   return (
     <section
       id="plans"
-      className="mt-24 w-full max-w-6xl text-left"
+      data-ayzo-pricing
+      data-authenticated={
+        account.authenticated
+      }
+      data-current-plan={
+        currentPlan ??
+        "guest"
+      }
+      className="ayzo-pricing-v2 mt-24 w-full max-w-6xl text-left"
     >
       <div className="mx-auto max-w-3xl text-center">
         <div className="text-xs font-medium tracking-[0.2em] text-violet-300">
@@ -221,7 +220,10 @@ export default function PricingPlans() {
         </p>
 
         {!account.authenticated && (
-          <div className="mx-auto mt-5 max-w-2xl rounded-2xl border border-cyan-500/15 bg-cyan-500/[0.035] px-4 py-3">
+          <div
+            data-ayzo-guest-access
+            className="mx-auto mt-5 max-w-2xl rounded-2xl border border-cyan-500/15 bg-cyan-500/[0.035] px-4 py-3"
+          >
             <div className="text-[9px] font-semibold tracking-[0.14em] text-cyan-300">
               TRY AYZO WITHOUT AN ACCOUNT
             </div>
@@ -256,174 +258,78 @@ export default function PricingPlans() {
         )}
       </div>
 
-      <PlanComparisonMatrix
+      <div className="ayzo-pricing-matrix-shell">
+        <PricingPlanCards
         visiblePlans={
           visiblePlans
         }
         currentPlan={
           currentPlan
         }
+        authenticated={
+          account.authenticated
+        }
+        billingPeriod={
+          billingPeriod
+        }
+        onBillingPeriodChange={
+          setBillingPeriod
+        }
+        paidCheckoutEnabled={
+          paidCheckoutEnabled
+        }
       />
 
-      {(showPro ||
-        showAdvanced) && (
-        <div
-          className={`mx-auto mt-8 grid w-full gap-4 ${
-            showPro &&
-            showAdvanced
-              ? "max-w-4xl md:grid-cols-2"
-              : "max-w-2xl md:grid-cols-1"
-          }`}
-        >
-          {showPro && (
-            <div className="rounded-2xl border border-violet-500/25 bg-violet-500/[0.05] p-5">
-              <div className="mb-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-[10px] font-semibold tracking-[0.16em] text-violet-300">
-                      PRO ACCESS
-                    </div>
-
-                    <div className="mt-1 text-lg font-semibold text-white">
-                      AYZO Pro
-                    </div>
-                  </div>
-
-                  {currentPro ? (
-                    <div className="rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1.5 text-[9px] font-semibold tracking-[0.12em] text-emerald-300">
-                      CURRENT PLAN
-                    </div>
-                  ) : (
-                    <div className="text-right">
-                      <div className="text-lg font-semibold text-white">
-                        $
-                        {PLANS.pro.monthlyPriceUsd?.toFixed(
-                          0
-                        )}
-
-                        <span className="ml-1 text-[10px] font-normal text-zinc-500">
-                          /mo
-                        </span>
-                      </div>
-
-                      <div className="mt-1 text-[9px] text-zinc-600">
-                        Founding price
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <p className="mt-3 text-xs leading-5 text-zinc-500">
-                  {currentPro
-                    ? "Your AYZO Pro access is active."
-                    : "Higher usage limits and live Pro intelligence features for individual research."}
-                </p>
-              </div>
-
-              {!currentPro && (
-                paidCheckoutEnabled ? (
-                  <div className="space-y-2">
-                    <PlanCheckoutButton
-                      plan="pro"
-                      interval="monthly"
-                      label={`Start Monthly · $${PLANS.pro.monthlyPriceUsd?.toFixed(
-                        0
-                      )}/mo`}
-                    />
-
-                    <PlanCheckoutButton
-                      plan="pro"
-                      interval="annual"
-                      variant="secondary"
-                      label={`Start Annual · $${annualLabel(
-                        PLANS.pro.annualPriceUsd
-                      )}/yr`}
-                    />
-                  </div>
-                ) : (
-                  <p className="rounded-xl border border-zinc-800 bg-black/20 px-4 py-3 text-xs leading-5 text-zinc-500">
-                    Secure checkout is temporarily unavailable.
-                  </p>
-                )
-              )}
+      <details
+        data-ayzo-plan-comparison="true"
+        className="group mx-auto mt-8 w-full max-w-6xl overflow-hidden rounded-2xl border border-zinc-800 bg-[#101829]/55"
+      >
+        <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 marker:hidden">
+          <div>
+            <div className="text-sm font-semibold text-zinc-100">
+              Compare key features
             </div>
-          )}
 
-          {showAdvanced && (
-            <div className="rounded-2xl border border-purple-400/25 bg-purple-500/[0.05] p-5">
-              <div className="mb-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-[10px] font-semibold tracking-[0.16em] text-purple-300">
-                      ADVANCED ACCESS
-                    </div>
-
-                    <div className="mt-1 text-lg font-semibold text-white">
-                      AYZO Advanced
-                    </div>
-                  </div>
-
-                  {currentAdvanced ? (
-                    <div className="rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1.5 text-[9px] font-semibold tracking-[0.12em] text-emerald-300">
-                      CURRENT PLAN
-                    </div>
-                  ) : (
-                    <div className="text-right">
-                      <div className="text-lg font-semibold text-white">
-                        $
-                        {PLANS.advanced.monthlyPriceUsd?.toFixed(
-                          0
-                        )}
-
-                        <span className="ml-1 text-[10px] font-normal text-zinc-500">
-                          /mo
-                        </span>
-                      </div>
-
-                      <div className="mt-1 text-[9px] text-zinc-600">
-                        Premium individual plan
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <p className="mt-3 text-xs leading-5 text-zinc-500">
-                  {currentAdvanced
-                    ? "Your AYZO Advanced access is active."
-                    : "Includes every live Pro capability plus live Advanced investigation workflows."}
-                </p>
-              </div>
-
-              {!currentAdvanced && (
-                paidCheckoutEnabled ? (
-                  <div className="space-y-2">
-                    <PlanCheckoutButton
-                      plan="advanced"
-                      interval="monthly"
-                      label={`Start Monthly · $${PLANS.advanced.monthlyPriceUsd?.toFixed(
-                        0
-                      )}/mo`}
-                    />
-
-                    <PlanCheckoutButton
-                      plan="advanced"
-                      interval="annual"
-                      variant="secondary"
-                      label={`Start Annual · $${annualLabel(
-                        PLANS.advanced.annualPriceUsd
-                      )}/yr`}
-                    />
-                  </div>
-                ) : (
-                  <p className="rounded-xl border border-zinc-800 bg-black/20 px-4 py-3 text-xs leading-5 text-zinc-500">
-                    Secure checkout is temporarily unavailable.
-                  </p>
-                )
-              )}
+            <div className="mt-1 text-[10px] leading-4 text-zinc-500">
+              {PLAN_COMPARISON_FEATURE_COUNT} features ·{" "}
+              {PLAN_COMPARISON_CATEGORY_COUNT} categories ·{" "}
+              full plan details
             </div>
-          )}
+          </div>
+
+          <span className="shrink-0 text-xs font-medium text-violet-300">
+            <span
+              data-ayzo-comparison-action="open"
+              className="group-open:hidden"
+            >
+              Open comparison ↓
+            </span>
+
+            <span
+              data-ayzo-comparison-action="close"
+              className="hidden group-open:inline"
+            >
+              Close comparison ↑
+            </span>
+          </span>
+        </summary>
+
+        <div className="border-t border-zinc-800 px-4 pb-6 sm:px-6">
+          <PlanComparisonMatrix
+            visiblePlans={
+              visiblePlans
+            }
+            currentPlan={
+              currentPlan
+            }
+            billingPeriod={
+              billingPeriod
+            }
+          />
         </div>
-      )}
+      </details>
+      </div>
+
 
       <div className="mt-5 text-center text-[10px] leading-5 text-zinc-600">
         Lower tiers are hidden for authenticated paid accounts.

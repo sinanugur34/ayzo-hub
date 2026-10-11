@@ -2595,3 +2595,159 @@ button {
       minmax(0, 0.75fr);
   }
 }
+
+/* =========================================================
+   AYZO MOBILE V3 — NATIVE PLAY EXPERIENCE
+   ========================================================= */
+
+.network-control {
+  display: grid;
+  min-width: 0;
+  justify-items: end;
+  gap: 5px;
+}
+
+.network-live-count {
+  color: #7e758c;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.network-pill {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+.network-pill select {
+  min-height: 42px;
+  font-size: 16px;
+}
+
+.search-box input {
+  min-height: 48px;
+  font-size: 16px;
+}
+
+.analyze-button {
+  min-height: 48px;
+  touch-action: manipulation;
+}
+
+button,
+[role="button"],
+summary {
+  touch-action: manipulation;
+}
+
+.analysis-workspace-mobile,
+.mobile-analysis-overview-grid,
+.mobile-evidence-map,
+.mobile-evidence-brief,
+.mobile-activity-workspace,
+.mobile-detailed-evidence,
+.mobile-detailed-evidence-body,
+.mobile-research-tools-bridge {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.analysis-workspace-mobile {
+  overflow-x: clip;
+}
+
+.mobile-evidence-connection-path {
+  min-width: 0;
+}
+
+.mobile-evidence-connection-path span {
+  min-width: 0;
+}
+
+.mobile-detailed-evidence-body,
+.mobile-evidence-limit,
+.mobile-evidence-primary,
+.mobile-activity-content {
+  overflow-wrap: anywhere;
+}
+
+.mobile-detailed-evidence > summary {
+  min-height: 48px;
+}
+
+@media (max-width: 420px) {
+  .topbar {
+    gap: 10px;
+  }
+
+  .network-control {
+    max-width: 48%;
+  }
+
+  .network-pill {
+    width: 100%;
+  }
+
+  .network-pill select {
+    max-width: 100%;
+  }
+
+  .search-box {
+    min-width: 0;
+  }
+
+  .analysis-workspace-header {
+    padding-inline: 14px;
+  }
+
+  .analysis-workspace-subject {
+    grid-template-columns:
+      auto
+      minmax(0, 1fr);
+  }
+
+  .analysis-workspace-subject > small {
+    grid-column: 2;
+  }
+
+  .mobile-analysis-section-heading {
+    flex-wrap: wrap;
+  }
+
+  .mobile-evidence-connection-path {
+    gap: 5px;
+  }
+}
+
+@media (max-width: 340px) {
+  .network-live-count {
+    display: none;
+  }
+
+  .network-control {
+    max-width: 46%;
+  }
+
+  .analysis-workspace-metrics {
+    grid-template-columns:
+      minmax(0, 1fr);
+  }
+
+  .mobile-evidence-brief-stats {
+    grid-template-columns:
+      minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

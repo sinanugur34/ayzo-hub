@@ -819,7 +819,12 @@ function Dashboard({
           </div>
         </div>
 
-        <label className="network-pill">
+        <div className="network-control">
+          <span className="network-live-count">
+            {liveNetworks.length} LIVE NETWORKS
+          </span>
+
+          <label className="network-pill">
           <span className="network-dot" />
           <select
             aria-label="Network"
@@ -842,7 +847,8 @@ function Dashboard({
             ))}
           </select>
           <span className="chevron">⌄</span>
-        </label>
+          </label>
+        </div>
       </header>
 
       <section
@@ -870,6 +876,11 @@ function Dashboard({
           <input
             placeholder="Wallet, token or contract address"
             aria-label="Wallet, token or contract address"
+            inputMode="text"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            enterKeyHint="go"
             value={analysisInput}
             onChange={(event) =>
               setAnalysisInput(

@@ -2,61 +2,94 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 
-const source =
+const home =
   fs.readFileSync(
     "src/app/page.tsx",
     "utf8"
   );
 
+const desk =
+  fs.readFileSync(
+    "src/components/AppResearchDesk.tsx",
+    "utf8"
+  );
+
 test(
-  "home hero derives live network count from registry-backed LIVE_NETWORKS",
+  "home passes registry-backed LIVE_NETWORKS into the research desk",
   () => {
-    assert.ok(
-      source.includes(
-        "{LIVE_NETWORKS.length} live networks"
-      )
+    assert.match(
+      home,
+      /liveNetworks=\{LIVE_NETWORKS\}/
     );
 
-    assert.equal(
-      /across\s+\d+\s+live networks/.test(
-        source
-      ),
-      false
+    assert.match(
+      home,
+      /NETWORK_IDS\.filter/
+    );
+
+    assert.match(
+      home,
+      /\.status === "live"/
     );
   }
 );
 
 test(
-  "home research desk derives network count from registry-backed LIVE_NETWORKS",
+  "research desk renders its live-network count from the passed canonical array",
   () => {
-    assert.ok(
-      source.includes(
-        "{LIVE_NETWORKS.length} networks"
-      )
+    assert.match(
+      desk,
+      /\{\s*liveNetworks\.length\s*\}/
     );
 
-    assert.equal(
-      /\b17 networks\b/.test(
-        source
-      ),
-      false
+    assert.match(
+      desk,
+      /LIVE NETWORKS/
+    );
+
+    assert.match(
+      desk,
+      /Network ·\{" "\}\s*\{\s*liveNetworks\.length\s*\}/
     );
   }
 );
 
 test(
-  "home network-count copy contains no hardcoded live-network total",
+  "network selector renders the supplied live network collection instead of a duplicated list",
   () => {
+    assert.match(
+      desk,
+      /filteredNetworks\.map/
+    );
+
+    assert.match(
+      desk,
+      /const filteredNetworks/
+    );
+
+    assert.match(
+      desk,
+      /return liveNetworks/
+    );
+  }
+);
+
+test(
+  "home and research desk contain no hardcoded live-network total",
+  () => {
+    const combined =
+      `${home}\n${desk}`;
+
     assert.equal(
-      /\b\d+\s+live networks\b/.test(
-        source
+      /\b30\s+live networks\b/i.test(
+        combined
       ),
       false
     );
 
     assert.equal(
-      /\b17\s+networks\b/.test(
-        source
+      /\b17\s+networks\b/i.test(
+        combined
       ),
       false
     );
