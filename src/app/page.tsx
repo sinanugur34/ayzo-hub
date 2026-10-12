@@ -31,6 +31,7 @@ import XrplIntelligenceReport from "@/components/XrplIntelligenceReport";
 import EvmIntelligenceReport from "@/components/EvmIntelligenceReport";
 import FreePlanStatus from "@/components/FreePlanStatus";
 import AppResearchDesk from "@/components/AppResearchDesk";
+import AppInstallPromo from "@/components/AppInstallPromo";
 import IntelligenceReport from "@/components/IntelligenceReport";
 import AnalysisWorkspaceFrame from "@/components/AnalysisWorkspaceFrame";
 import ExampleInvestigationGallery from "@/components/ExampleInvestigationGallery";
@@ -2191,6 +2192,7 @@ export default function Home() {
           </div>
         )}
 
+        <AppInstallPromo placement={hasResult ? "results" : "home"} />
         <PlansAccessPanel />
       </section>
     </main>

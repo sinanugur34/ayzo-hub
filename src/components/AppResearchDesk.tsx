@@ -21,6 +21,7 @@ import type {
 } from "@/lib/networks/addressSelection";
 
 import styles from "./AppResearchDesk.module.css";
+import { AppStoreInlineLink } from "./AppInstallPromo";
 
 type PlanId =
   | "free"
@@ -539,6 +540,10 @@ export default function AppResearchDesk({
           >
             Start with a public address. Follow the funds and inspect the connections.
           </p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <AppStoreInlineLink placement="research" />
+            <span className="text-xs text-[#a8b5cc]">Available on Google Play</span>
+          </div>
 
           <div
             className={

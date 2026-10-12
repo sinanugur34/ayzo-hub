@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import GoogleAnalytics from "../components/GoogleAnalytics";
 import AskAyzoAssistantProvider from "@/components/AskAyzoAssistantProvider";
+import { AppStoreInlineLink } from "@/components/AppInstallPromo";
 import { NETWORKS } from "@/lib/networks/registry";
 
 import "./globals.css";
@@ -99,6 +100,7 @@ export default function RootLayout({
             >
               Support · contact@ayzo.io
             </a>
+            <AppStoreInlineLink placement="footer" />
           </nav>
         </footer>
 

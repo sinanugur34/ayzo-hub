@@ -16,6 +16,7 @@ export const PRODUCT_EVENT_NAMES = [
   "smart_alert_enabled",
   "ask_ayzo_opened",
   "pricing_viewed",
+  "android_play_store_click",
   "checkout_started",
   "checkout_auth_required",
   "checkout_failed",
