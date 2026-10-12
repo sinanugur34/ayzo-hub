@@ -1,6 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { alchemyEvmProvider } from "./alchemy";
-import { isGoldRushExitCanaryActive } from "@/lib/goldRushExitCanary";
 import { isIndexedHolderCanaryAllowed } from "./indexedHolderCanary";
 import type {
   ProviderCapability,
@@ -93,14 +92,15 @@ function readCursor(provider: "routescan" | "blockscout", cursor?: string | null
   try { return JSON.parse(Buffer.from(cursor.slice(prefix.length), "base64url").toString("utf8")); }
   catch { return undefined; }
 }
-// Signed Ethereum holder pagination is scoped to the internal Preview canary.
-// Existing Optimism and Scroll provider cursors keep their legacy form.
+// All public indexed holder continuations are network- and token-bound HMAC cursors.
+// The adapter remains Preview/local-only.
 const ETH_CURSOR_TTL_MS = 15 * 60 * 1000;
-const ETH_CURSOR_DOMAIN = "AYZO/ethereum/blockscout/holders/cursor/v1\n";
+const ETH_CURSOR_DOMAIN = "AYZO/blockscout/holders/cursor/v2\n";
 type EthereumHolderCursorClaims = {
   v: 1;
   c: 1;
   a: string;
+  n: string;
   iat: number;
   p: JsonObject;
 };
@@ -114,30 +114,30 @@ function ethereumCursorSignature(claims: EthereumHolderCursorClaims, key: string
     .update(JSON.stringify(claims), "utf8")
     .digest();
 }
-function signEthereumHolderCursor(raw: string, token: string): string | null {
+function signEthereumHolderCursor(raw: string, token: string, network: string): string | null {
   const key = ethereumCursorKey();
   const page = obj(readCursor("blockscout", raw));
   if (!key || !page || !ADDRESS.test(token)) return null;
   const claims: EthereumHolderCursorClaims = {
-    v: 1, c: 1, a: token.toLowerCase(), iat: Date.now(), p: page,
+    v: 1, c: 1, a: token.toLowerCase(), n: network, iat: Date.now(), p: page,
   };
   const s = ethereumCursorSignature(claims, key).toString("base64url");
   const result = `blockscout:${Buffer.from(JSON.stringify({ ...claims, s }), "utf8").toString("base64url")}`;
   return result.length <= 2200 ? result : null;
 }
-function verifyEthereumHolderCursor(cursor: string, token: string): JsonObject | undefined {
+function verifyEthereumHolderCursor(cursor: string, token: string, network: string): JsonObject | undefined {
   const key = ethereumCursorKey();
   const envelope = obj(readCursor("blockscout", cursor));
   if (!key || !envelope || !ADDRESS.test(token) ||
-    Object.keys(envelope).sort().join(",") !== "a,c,iat,p,s,v" ||
-    envelope.v !== 1 || envelope.c !== 1 || envelope.a !== token.toLowerCase() ||
+    Object.keys(envelope).sort().join(",") !== "a,c,iat,n,p,s,v" ||
+    envelope.v !== 1 || envelope.c !== 1 || envelope.a !== token.toLowerCase() || envelope.n !== network ||
     typeof envelope.iat !== "number" || !Number.isSafeInteger(envelope.iat) ||
     typeof envelope.s !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(envelope.s) ||
     !obj(envelope.p)) return undefined;
   const now = Date.now();
   if (envelope.iat > now + 30_000 || now - envelope.iat > ETH_CURSOR_TTL_MS) return undefined;
   const claims: EthereumHolderCursorClaims = {
-    v: 1, c: 1, a: envelope.a, iat: envelope.iat, p: envelope.p as JsonObject,
+    v: 1, c: 1, a: envelope.a, n: network, iat: envelope.iat, p: envelope.p as JsonObject,
   };
   const actual = Buffer.from(envelope.s, "base64url");
   const expected = ethereumCursorSignature(claims, key);
@@ -324,31 +324,35 @@ export class BlockscoutHoldersProvider implements EvmTokenHoldersProvider {
     const fail = (code: EvmProviderErrorCode) => failure(this.id, code, Math.round(performance.now() - start));
     if (!this.supportsNetwork(request.network)) return fail("UNSUPPORTED_NETWORK");
     if (!ADDRESS.test(request.address)) return fail("INVALID_ADDRESS");
-    const publicEthereum = request.network.networkId === "ethereum" && request.network.chainId === 1;
+
     // Defense in depth: ALL indexed Blockscout networks are Preview/development
     // canaries. Direct adapter callers may not bypass the preferred provider gate.
     // The GoldRush exit gate itself is environment-restricted.
-    const directIndexedCanaryAllowed = isGoldRushExitCanaryActive() || isIndexedHolderCanaryAllowed({
+    const directIndexedCanaryAllowed = isIndexedHolderCanaryAllowed({
       flag: process.env.AYZO_INDEXED_HOLDER_CANARY,
       nodeEnv: process.env.NODE_ENV,
       vercelEnv: process.env.VERCEL_ENV,
     });
     if (!directIndexedCanaryAllowed) return fail("UPSTREAM_ERROR");
     // Never issue upstream requests without a strong internal cursor signing key.
-    if (publicEthereum && !ethereumCursorKey()) return fail("UPSTREAM_ERROR");
-    const key = publicEthereum ? null : process.env.BLOCKSCOUT_API_KEY?.trim();
-    if (!publicEthereum && (!key || !/^proapi_[A-Za-z0-9_-]+$/.test(key))) return fail("UPSTREAM_ERROR");
+    // All public Blockscout Preview networks require strong HMAC signing, before HTTP.
+    if (!ethereumCursorKey()) return fail("UPSTREAM_ERROR");
     // This adapter is reached for Ethereum only through the indexed Preview canary.
     const limit = parseLimit(request.limit);
-    const cursor = publicEthereum && request.cursor
-      ? verifyEthereumHolderCursor(request.cursor, request.address)
-      : readCursor(this.id, request.cursor);
+    const cursor = request.cursor
+      ? verifyEthereumHolderCursor(request.cursor, request.address, request.network.networkId)
+      : null;
     if (limit === null || cursor === undefined || (cursor !== null && !obj(cursor))) return fail("UPSTREAM_ERROR");
-    const root = publicEthereum
-      ? `/api/v2/tokens/${request.address}`
-      : `/${request.network.chainId}/api/v2/tokens/${request.address}`;
-    const base = publicEthereum ? "https://eth.blockscout.com" : "https://api.blockscout.com";
-    const authParams: Record<string, string> = key ? { apikey: key } : {};
+    // Fixed allowlist: no dynamic host, API key query or redirects.
+    const publicHosts: Readonly<Record<string, string>> = {
+      ethereum: "https://eth.blockscout.com",
+      optimism: "https://explorer.optimism.io",
+      scroll: "https://scrollscan.com",
+    };
+    const base = publicHosts[request.network.networkId];
+    if (!base) return fail("UNSUPPORTED_NETWORK");
+    const root = `/api/v2/tokens/${request.address}`;
+    const authParams: Record<string, string> = {};
     const headers = { accept: "application/json" };
     // Fetch metadata once; use the same supply snapshot for both indexed pages.
     let token = await getJson(
@@ -356,8 +360,10 @@ export class BlockscoutHoldersProvider implements EvmTokenHoldersProvider {
       boundedUrl(base, root, authParams), headers, request.signal,
     );
     if (token.status !== 200) return fail(failureCode(token.status));
-    if (publicEthereum) {
-      // Only the Ethereum Preview canary reaches this branch. Snapshot drift
+    {
+      // All three public Blockscout Preview networks MUST reconcile the
+      // indexer supply with on-chain ERC20 totalSupply() before holder egress.
+      // Snapshot drift
       // may disappear after refreshing BOTH metadata and independent supply.
       // Strict equality remains mandatory: zero tolerance, maximum two pairs.
       let verified = false;
@@ -419,8 +425,7 @@ export class BlockscoutHoldersProvider implements EvmTokenHoldersProvider {
         // with its continuation marker and explicit partial-coverage status.
         if (!request.signal?.aborted && collected.length > 0 && continuation &&
           (response.status === 0 || response.status === 429 || response.status >= 500)) {
-          const clientCursor = publicEthereum
-            ? signEthereumHolderCursor(continuation, request.address) : continuation;
+          const clientCursor = signEthereumHolderCursor(continuation, request.address, request.network.networkId);
           if (!clientCursor) return fail("UPSTREAM_ERROR");
           return { ok: true, providerId: this.id,
             latencyMs: Math.round(performance.now() - start),
@@ -460,8 +465,8 @@ export class BlockscoutHoldersProvider implements EvmTokenHoldersProvider {
       collected.reduce((sum, h) => sum + BigInt(h.balance), 0n) > BigInt(supply)) {
       return fail("UPSTREAM_ERROR");
     }
-    const clientCursor = publicEthereum && continuation
-      ? signEthereumHolderCursor(continuation, request.address) : continuation;
+    const clientCursor = continuation
+      ? signEthereumHolderCursor(continuation, request.address, request.network.networkId) : null;
     if (continuation && !clientCursor) return fail("UPSTREAM_ERROR");
     return { ok: true, providerId: this.id,
       latencyMs: Math.round(performance.now() - start),
