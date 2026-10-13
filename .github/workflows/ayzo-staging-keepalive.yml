@@ -1,0 +1,82 @@
+name: AYZO Staging - Supabase database keepalive
+
+on:
+  # UTC; Istanbul (UTC+3): 07:17 / 15:17 / 23:17
+  schedule:
+    - cron: '17 4,12,20 * * *'
+  workflow_dispatch:
+
+# This job requires no GitHub repository/API permissions.
+permissions: {}
+
+concurrency:
+  group: ayzo-staging-keepalive
+  cancel-in-progress: false
+
+jobs:
+  staging-db-read:
+    # Refuse to run in copied/forked repositories.
+    if: github.repository == 'sinanugur34/ayzo-hub'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verify staging target and run single harmless SELECT
+        shell: bash
+        env:
+          STAGING_URL: ${{ vars.AYZO_STAGING_SUPABASE_URL }}
+          STAGING_REF: ${{ vars.AYZO_STAGING_PROJECT_REF }}
+          PRODUCTION_REF: ${{ vars.AYZO_PRODUCTION_PROJECT_REF }}
+          STAGING_PUBLISHABLE_KEY: ${{ secrets.AYZO_STAGING_PUBLISHABLE_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          # Never use a service_role/secret key, or a production project.
+          for k in STAGING_URL STAGING_REF PRODUCTION_REF STAGING_PUBLISHABLE_KEY; do
+            if [[ -z "${!k:-}" ]]; then
+              echo "SAFE_STOP: Required staging/production identity input missing ($k)" >&2
+              exit 1
+            fi
+          done
+          if [[ ! "$STAGING_REF" =~ ^[a-z0-9]{20}$ || ! "$PRODUCTION_REF" =~ ^[a-z0-9]{20}$ ]]; then
+            echo 'SAFE_STOP: Invalid Supabase project ref format' >&2
+            exit 1
+          fi
+          if [[ "$STAGING_REF" == "$PRODUCTION_REF" ]]; then
+            echo 'SAFE_STOP: Staging and production project refs are identical' >&2
+            exit 1
+          fi
+          if [[ "$STAGING_URL" != "https://${STAGING_REF}.supabase.co" ]]; then
+            echo 'SAFE_STOP: Staging URL does not exactly match pinned project ref' >&2
+            exit 1
+          fi
+          if [[ "$STAGING_PUBLISHABLE_KEY" != sb_publishable_* ]]; then
+            echo 'SAFE_STOP: Expected a staging-only sb_publishable_ key' >&2
+            exit 1
+          fi
+          if ! command -v jq >/dev/null || ! command -v curl >/dev/null; then
+            echo 'SAFE_STOP: Required runner tools unavailable' >&2
+            exit 1
+          fi
+          echo 'TARGET_PIN: NON_PRODUCTION_STAGING_ONLY'
+          # This GET reaches the PostgREST database, not just Auth or an HTTP health endpoint.
+          # Its table has one non-sensitive, anon-readable row. All writes are denied to anon.
+          response="$(curl -q \
+            --silent --show-error --fail \
+            --proto '=https' --tlsv1.2 \
+            --connect-timeout 10 --max-time 25 \
+            --retry 2 --retry-delay 3 --retry-all-errors \
+            --get "${STAGING_URL}/rest/v1/ayzo_staging_heartbeat" \
+            --data-urlencode 'select=id,label' \
+            --data-urlencode 'id=eq.1' \
+            -H "apikey: ${STAGING_PUBLISHABLE_KEY}" \
+            -H 'Accept: application/json')" || {
+              echo 'STAGING_DB_READ: FAIL_HTTP_OR_NETWORK' >&2
+              exit 1
+            }
+          if ! jq -e 'type == "array" and length == 1 and .[0].id == 1 and .[0].label == "AYZO_STAGING_HEARTBEAT"' \
+              >/dev/null <<< "$response"; then
+            echo 'STAGING_DB_READ: FAIL_UNEXPECTED_ROW' >&2
+            exit 1
+          fi
+          echo 'STAGING_DB_READ: PASS'
+          echo 'PRODUCTION_REQUESTS: 0'
